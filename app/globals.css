@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 /* P402 V2 Design System: Neo-Brutalist */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
   /* Core Colors */
@@ -31,8 +30,8 @@
   --info: #22D3EE;
 
   /* Typography */
-  --font-ui: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  --font-ui: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono), 'JetBrains Mono', monospace;
 
   /* Spacing & Borders */
   --border-width: 2px;
@@ -212,4 +211,14 @@ textarea:focus {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
+}
+
+@keyframes loading {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(400%);
+  }
 }

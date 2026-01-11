@@ -317,8 +317,8 @@ export class AnthropicAdapter extends BaseProviderAdapter {
         for (const msg of messages) {
             if (msg.role === 'system') {
                 // Anthropic uses a separate system parameter
-                system = typeof msg.content === 'string' 
-                    ? msg.content 
+                system = typeof msg.content === 'string'
+                    ? msg.content
                     : (msg.content as ContentPart[]).map(p => p.text).join('\n');
                 continue;
             }
@@ -347,7 +347,11 @@ export class AnthropicAdapter extends BaseProviderAdapter {
                 // Convert OpenAI image format to Anthropic format
                 const url = part.image_url.url;
                 if (url.startsWith('data:')) {
-                    const [header, data] = url.split(',');
+                    const parts = url.split(',');
+                    const header = parts[0];
+                    const data = parts[1];
+                    if (!header || !data) return { type: 'text', text: '' };
+
                     const mediaType = header.match(/data:(.*);/)?.[1] || 'image/png';
                     return {
                         type: 'image',

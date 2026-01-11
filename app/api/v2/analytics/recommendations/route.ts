@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
         `;
 
         const usageResult = await pool.query(usageQuery, [tenantId]);
-        
+
         // Generate recommendations based on usage
         for (const row of usageResult.rows) {
             const monthlyRequests = parseInt(row.request_count);
@@ -77,7 +77,9 @@ export async function GET(req: NextRequest) {
             // Recommendation 1: Cheaper model alternatives
             const cheaperModels = findCheaperAlternatives(registry, provider, avgCost, task);
             if (cheaperModels.length > 0) {
-                const best = cheaperModels[0];
+                const best = cheaperModels[0]!; // Use non-null assertion or check
+                if (!best) continue;
+
                 const savingsPercent = Math.round((1 - best.costPer1k / avgCost) * 100);
                 const savingsUsd = monthlyCost * (savingsPercent / 100);
 
@@ -121,12 +123,12 @@ export async function GET(req: NextRequest) {
 
         const cacheResult = await pool.query(cacheQuery, [tenantId]);
         const cacheRow = cacheResult.rows[0];
-        
+
         if (cacheRow && parseInt(cacheRow.total_requests) > 100) {
             const totalRequests = parseInt(cacheRow.total_requests);
             const uniquePatterns = parseInt(cacheRow.unique_patterns);
             const totalCost = parseFloat(cacheRow.total_cost || 0);
-            
+
             // Estimate cache hit rate potential
             const potentialHitRate = Math.min(0.30, 1 - (uniquePatterns / totalRequests));
             const potentialSavings = totalCost * potentialHitRate;
@@ -170,11 +172,11 @@ export async function GET(req: NextRequest) {
         `;
 
         const speedResult = await pool.query(speedQuery, [tenantId]);
-        
+
         for (const row of speedResult.rows) {
             const requests = parseInt(row.request_count);
             const cost = parseFloat(row.total_cost || 0);
-            
+
             // Groq is often 2-10x cheaper for simple tasks
             const estimatedGroqCost = cost * 0.3; // ~70% savings estimate
             const savings = cost - estimatedGroqCost;
@@ -260,7 +262,7 @@ function findCheaperAlternatives(
     task: string
 ): Array<{ provider: string; model: string; costPer1k: number }> {
     const alternatives: Array<{ provider: string; model: string; costPer1k: number }> = [];
-    
+
     // Get all models
     const allModels = registry.getAllModels();
 
@@ -302,7 +304,8 @@ function isModelSuitableForTask(capabilities: string[], task: string): boolean {
         'default': ['chat']
     };
 
-    const required = taskRequirements[task] || taskRequirements['default'];
+    const required = taskRequirements[task] || taskRequirements['default']!;
+    if (!required) return true; // Fallback
     return required.every(cap => capabilities.includes(cap));
 }
 

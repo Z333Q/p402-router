@@ -325,7 +325,11 @@ export class GoogleAdapter extends BaseProviderAdapter {
             if (part.type === 'image_url' && part.image_url) {
                 const url = part.image_url.url;
                 if (url.startsWith('data:')) {
-                    const [header, data] = url.split(',');
+                    const parts = url.split(',');
+                    const header = parts[0];
+                    const data = parts[1];
+                    if (!header || !data) return { text: '' };
+
                     const mimeType = header.match(/data:(.*);/)?.[1] || 'image/png';
                     return {
                         inlineData: { mimeType, data }

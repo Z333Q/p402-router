@@ -117,7 +117,7 @@ export class ProviderRegistry {
 
     getAllModels(): Array<{ provider: string; model: ModelInfo }> {
         const models: Array<{ provider: string; model: ModelInfo }> = [];
-        
+
         for (const provider of this.providers.values()) {
             for (const model of provider.models) {
                 models.push({ provider: provider.id, model });
@@ -138,7 +138,7 @@ export class ProviderRegistry {
     }
 
     findModelsWithCapability(capability: ModelCapability): Array<{ provider: string; model: ModelInfo }> {
-        return this.getAllModels().filter(({ model }) => 
+        return this.getAllModels().filter(({ model }) =>
             model.capabilities.includes(capability)
         );
     }
@@ -152,8 +152,8 @@ export class ProviderRegistry {
     // =========================================================================
 
     async route(request: CompletionRequest, options: RoutingOptions = { mode: 'balanced' }): Promise<RoutingDecision> {
-        const weights = typeof options.mode === 'string' 
-            ? ROUTING_PRESETS[options.mode] 
+        const weights = typeof options.mode === 'string'
+            ? ROUTING_PRESETS[options.mode]
             : options.mode;
 
         // Get all candidate models
@@ -177,6 +177,14 @@ export class ProviderRegistry {
         }
 
         const winner = scored[0];
+        if (!winner) {
+            throw new AIProviderError(
+                'No suitable model found after scoring',
+                'registry',
+                'NO_MODEL_FOUND'
+            );
+        }
+
         const provider = this.providers.get(winner.providerId)!;
         const model = provider.getModel(winner.modelId)!;
 
@@ -274,8 +282,10 @@ export class ProviderRegistry {
         const costRange = maxCost - minCost || 1;
 
         const scored = candidates.map(({ provider, model }, i) => {
+            const currentCost = costs[i]!;
+
             // Cost score (lower is better, so invert)
-            const costScore = 1 - ((costs[i] - minCost) / costRange);
+            const costScore = 1 - ((currentCost - minCost) / costRange);
 
             // Quality score from tier
             const qualityScore = TIER_QUALITY_SCORES[model.tier];
@@ -284,7 +294,7 @@ export class ProviderRegistry {
             const speedScore = TIER_SPEED_SCORES[model.tier];
 
             // Weighted total
-            const total = 
+            const total =
                 (costScore * weights.cost) +
                 (qualityScore * weights.quality) +
                 (speedScore * weights.speed);
@@ -494,7 +504,7 @@ export class ProviderRegistry {
             return costA - costB;
         });
 
-        const cheapest = models[0];
+        const cheapest = models[0]!;
         return {
             provider: cheapest.provider,
             model: cheapest.model.id,
@@ -513,7 +523,7 @@ export class ProviderRegistry {
         modelsByCapability: Record<string, number>;
     } {
         const models = this.getAllModels();
-        
+
         const modelsByTier: Record<ModelTier, number> = {
             budget: 0,
             mid: 0,
@@ -524,7 +534,7 @@ export class ProviderRegistry {
 
         for (const { model } of models) {
             modelsByTier[model.tier]++;
-            
+
             for (const cap of model.capabilities) {
                 modelsByCapability[cap] = (modelsByCapability[cap] || 0) + 1;
             }

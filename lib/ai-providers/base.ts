@@ -61,7 +61,9 @@ export abstract class BaseProviderAdapter implements AIProviderAdapter {
 
     getDefaultModel(): ModelInfo {
         // Return the first mid-tier model, or first available
-        return this.models.find(m => m.tier === 'mid') || this.models[0];
+        const model = this.models.find(m => m.tier === 'mid') || this.models[0];
+        if (!model) throw new Error(`No models defined for provider ${this.id}`);
+        return model;
     }
 
     getBestModelForTask(task: string, maxTier?: string): ModelInfo {
@@ -69,7 +71,7 @@ export abstract class BaseProviderAdapter implements AIProviderAdapter {
         const maxTierIndex = maxTier ? tierOrder.indexOf(maxTier) : 2;
 
         // Filter by tier
-        const eligible = this.models.filter(m => 
+        const eligible = this.models.filter(m =>
             tierOrder.indexOf(m.tier) <= maxTierIndex
         );
 
@@ -82,7 +84,7 @@ export abstract class BaseProviderAdapter implements AIProviderAdapter {
 
         if (task.includes('reason') || task.includes('complex') || task.includes('analysis')) {
             // Prefer premium models for reasoning
-            const reasonModel = eligible.find(m => 
+            const reasonModel = eligible.find(m =>
                 m.capabilities.includes('reasoning') || m.tier === 'premium'
             );
             if (reasonModel) return reasonModel;
@@ -95,7 +97,9 @@ export abstract class BaseProviderAdapter implements AIProviderAdapter {
         }
 
         // Default to mid-tier
-        return eligible.find(m => m.tier === 'mid') || eligible[0];
+        const fallback = eligible.find(m => m.tier === 'mid') || eligible[0];
+        if (!fallback) throw new Error(`No eligible models found for task: ${task}`);
+        return fallback;
     }
 
     // =========================================================================

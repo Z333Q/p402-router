@@ -260,8 +260,7 @@ export class CohereAdapter extends BaseProviderAdapter {
         const chatHistory: any[] = [];
         let lastUserMessage = '';
 
-        for (let i = 0; i < messages.length; i++) {
-            const msg = messages[i];
+        for (const [i, msg] of messages.entries()) {
             const content = typeof msg.content === 'string'
                 ? msg.content
                 : (msg.content as ContentPart[]).map(p => p.text).join('\n');

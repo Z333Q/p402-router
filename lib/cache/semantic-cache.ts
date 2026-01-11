@@ -88,9 +88,11 @@ function cosineSimilarity(a: number[], b: number[]): number {
     let normB = 0;
 
     for (let i = 0; i < a.length; i++) {
-        dotProduct += a[i] * b[i];
-        normA += a[i] * a[i];
-        normB += b[i] * b[i];
+        const valA = a[i]!;
+        const valB = b[i]!;
+        dotProduct += valA * valB;
+        normA += valA * valA;
+        normB += valB * valB;
     }
 
     const denominator = Math.sqrt(normA) * Math.sqrt(normB);
@@ -109,8 +111,8 @@ function generateRequestHash(request: CompletionRequest): string {
     const normalized = {
         messages: request.messages.map(m => ({
             role: m.role,
-            content: typeof m.content === 'string' 
-                ? m.content 
+            content: typeof m.content === 'string'
+                ? m.content
                 : JSON.stringify(m.content)
         })),
         model: request.model || 'default',
@@ -174,7 +176,7 @@ export class SemanticCache {
         try {
             // Generate hash for exact match first (fast path)
             const hash = generateRequestHash(request);
-            
+
             // Try exact match
             const exactMatch = await this.getExactMatch(hash);
             if (exactMatch) {
@@ -193,7 +195,7 @@ export class SemanticCache {
 
             // Search for similar entries
             const similarEntry = await this.findSimilar(embedding);
-            
+
             if (similarEntry) {
                 await this.incrementHitCount(similarEntry.entry.id);
                 return {
@@ -226,7 +228,7 @@ export class SemanticCache {
             const hash = generateRequestHash(request);
             const semanticContent = extractSemanticContent(request);
             const embedding = await generateEmbedding(semanticContent);
-            
+
             const expiresAt = new Date();
             expiresAt.setSeconds(expiresAt.getSeconds() + this.config.ttlSeconds);
 
@@ -449,7 +451,7 @@ export async function withCache<T>(
 
     // Check cache
     const cacheResult = await cache.get(request);
-    
+
     if (cacheResult.hit && cacheResult.entry) {
         return {
             ...cacheResult.entry.response as T,
@@ -460,7 +462,7 @@ export async function withCache<T>(
 
     // Execute and cache result
     const result = await execute();
-    
+
     // Store in cache (async, don't await)
     cache.set(request, result as any).catch(console.error);
 

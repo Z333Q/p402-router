@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
     // Apply filters
     if (capability) {
-        models = models.filter(({ model }) => 
+        models = models.filter(({ model }) =>
             model.capabilities.includes(capability)
         );
     }
@@ -121,6 +121,8 @@ export async function POST(req: NextRequest) {
         );
 
         // Format response
+        const maxCost = comparison.length > 0 ? comparison[comparison.length - 1]!.costUsd : 0;
+
         const results = comparison.map((item, index) => ({
             rank: index + 1,
             provider: item.provider,
@@ -130,13 +132,15 @@ export async function POST(req: NextRequest) {
             input_cost_per_1k: item.inputCostPer1k,
             output_cost_per_1k: item.outputCostPer1k,
             // Calculate savings vs most expensive
-            savings_vs_max: comparison.length > 0 
-                ? Math.round((1 - item.costUsd / comparison[comparison.length - 1].costUsd) * 100)
+            savings_vs_max: maxCost > 0
+                ? Math.round((1 - item.costUsd / maxCost) * 100)
                 : 0
         }));
 
         // Get cheapest recommendation
         const cheapest = registry.getCheapestModel(capabilities);
+        const cheapestResult = results[0];
+        const priciestResult = results[results.length - 1];
 
         return NextResponse.json({
             object: 'cost_comparison',
@@ -153,10 +157,10 @@ export async function POST(req: NextRequest) {
             data: results,
             meta: {
                 total_models_compared: results.length,
-                cheapest_cost_usd: results[0]?.estimated_cost_usd || 0,
-                most_expensive_cost_usd: results[results.length - 1]?.estimated_cost_usd || 0,
-                potential_savings_percent: results.length > 1 
-                    ? Math.round((1 - results[0].estimated_cost_usd / results[results.length - 1].estimated_cost_usd) * 100)
+                cheapest_cost_usd: cheapestResult?.estimated_cost_usd || 0,
+                most_expensive_cost_usd: priciestResult?.estimated_cost_usd || 0,
+                potential_savings_percent: (cheapestResult && priciestResult && priciestResult.estimated_cost_usd > 0)
+                    ? Math.round((1 - cheapestResult.estimated_cost_usd / priciestResult.estimated_cost_usd) * 100)
                     : 0
             }
         });

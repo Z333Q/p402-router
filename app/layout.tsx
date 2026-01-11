@@ -55,6 +55,20 @@ const jsonLd = {
     }
 }
 
+import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+
+const sans = IBM_Plex_Sans({
+    weight: ['400', '500', '700'],
+    subsets: ['latin'],
+    variable: '--font-sans',
+});
+
+const mono = IBM_Plex_Mono({
+    weight: ['400', '500', '700'],
+    subsets: ['latin'],
+    variable: '--font-mono',
+});
+
 import { Providers } from './providers'
 
 export default function RootLayout({
@@ -63,7 +77,7 @@ export default function RootLayout({
     children: React.ReactNode
 }) {
     return (
-        <html lang="en">
+        <html lang="en" className={`${sans.variable} ${mono.variable}`}>
             <head>
                 <script
                     type="application/ld+json"

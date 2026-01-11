@@ -235,6 +235,9 @@ export class AI21Adapter extends BaseProviderAdapter {
         if (!model.startsWith('jamba')) {
             // Fallback to non-streaming
             const response = await this.complete(request);
+            const choice = response.choices[0]!;
+            const content = choice.message.content;
+
             yield {
                 id: response.id,
                 object: 'chat.completion.chunk',
@@ -242,7 +245,11 @@ export class AI21Adapter extends BaseProviderAdapter {
                 model: response.model,
                 choices: [{
                     index: 0,
-                    delta: { content: response.choices[0].message.content },
+                    delta: {
+                        content: typeof content === 'string'
+                            ? content
+                            : content.map(p => p.type === 'text' ? p.text : '').join('')
+                    },
                     finishReason: 'stop'
                 }]
             };
@@ -290,18 +297,18 @@ export class AI21Adapter extends BaseProviderAdapter {
     private formatMessages(messages: Message[]): any[] {
         return messages.map(m => ({
             role: m.role,
-            content: typeof m.content === 'string' 
-                ? m.content 
+            content: typeof m.content === 'string'
+                ? m.content
                 : m.content.map((p: any) => p.text).join('\n')
         }));
     }
 
     private messagesToPrompt(messages: Message[]): string {
         return messages.map(m => {
-            const content = typeof m.content === 'string' 
-                ? m.content 
+            const content = typeof m.content === 'string'
+                ? m.content
                 : m.content.map((p: any) => p.text).join('\n');
-            
+
             if (m.role === 'system') return content;
             if (m.role === 'user') return `User: ${content}`;
             if (m.role === 'assistant') return `Assistant: ${content}`;

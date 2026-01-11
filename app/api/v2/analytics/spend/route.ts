@@ -58,19 +58,22 @@ export async function GET(req: NextRequest) {
             totals.total_cost_usd += parseFloat(row.total_cost_usd || 0);
 
             // Aggregate by provider
-            if (!totals.by_provider[row.provider]) {
-                totals.by_provider[row.provider] = { requests: 0, cost_usd: 0 };
+            const provider = row.provider || 'unknown';
+            if (!totals.by_provider[provider]) {
+                totals.by_provider[provider] = { requests: 0, cost_usd: 0 };
             }
-            totals.by_provider[row.provider].requests += parseInt(row.request_count);
-            totals.by_provider[row.provider].cost_usd += parseFloat(row.total_cost_usd || 0);
+            const pData = totals.by_provider[provider]!;
+            pData.requests += parseInt(row.request_count);
+            pData.cost_usd += parseFloat(row.total_cost_usd || 0);
 
             // Aggregate by task
             const task = row.task || 'default';
             if (!totals.by_task[task]) {
                 totals.by_task[task] = { requests: 0, cost_usd: 0 };
             }
-            totals.by_task[task].requests += parseInt(row.request_count);
-            totals.by_task[task].cost_usd += parseFloat(row.total_cost_usd || 0);
+            const tData = totals.by_task[task]!;
+            tData.requests += parseInt(row.request_count);
+            tData.cost_usd += parseFloat(row.total_cost_usd || 0);
         }
 
         if (totals.total_requests > 0) {
@@ -106,7 +109,7 @@ export async function GET(req: NextRequest) {
                 provider,
                 requests: data.requests,
                 cost_usd: Math.round(data.cost_usd * 1000000) / 1000000,
-                percentage: totals.total_cost_usd > 0 
+                percentage: totals.total_cost_usd > 0
                     ? Math.round((data.cost_usd / totals.total_cost_usd) * 100)
                     : 0
             })).sort((a, b) => b.cost_usd - a.cost_usd),
@@ -114,7 +117,7 @@ export async function GET(req: NextRequest) {
                 task,
                 requests: data.requests,
                 cost_usd: Math.round(data.cost_usd * 1000000) / 1000000,
-                percentage: totals.total_cost_usd > 0 
+                percentage: totals.total_cost_usd > 0
                     ? Math.round((data.cost_usd / totals.total_cost_usd) * 100)
                     : 0
             })).sort((a, b) => b.cost_usd - a.cost_usd),
@@ -123,7 +126,7 @@ export async function GET(req: NextRequest) {
 
     } catch (error: any) {
         console.error('[Analytics/Spend] Error:', error);
-        
+
         // Return empty analytics if no data
         return NextResponse.json({
             object: 'spend_analytics',
@@ -153,8 +156,8 @@ function parsePeriod(period: string): number {
     const match = period.match(/^(\d+)(d|w|m)$/);
     if (!match) return 30;
 
-    const value = parseInt(match[1]);
-    const unit = match[2];
+    const value = parseInt(match[1]!);
+    const unit = match[2]!;
 
     switch (unit) {
         case 'd': return value;
