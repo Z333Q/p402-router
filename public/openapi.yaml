@@ -1,0 +1,301 @@
+openapi: 3.1.0
+info:
+  title: P402 Router APIs
+  version: 1.1.0
+  description: Router APIs for x402 payment planning and settlement.
+servers:
+  - url: https://p402.io
+paths:
+  /api/v1/router/plan:
+    post:
+      operationId: planPayment
+      summary: Get payment plan and policy decision
+      description: |
+        Evaluates a payment request against policies and routes it to the best facilitator.
+        Returns a decision (allow/deny) and a set of candidate facilitators.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanRequest'
+      responses:
+        '200':
+          description: Success or denied (check `allow` field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/router/settle:
+    post:
+      operationId: settlePayment
+      summary: Verify and settle on-chain payment
+      description: |
+        Verifies a transaction hash on-chain, checks for replays, and records the settlement.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettleRequest'
+      responses:
+        '200':
+          description: Settled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettleResponse'
+        '400':
+          description: Invalid input, verification failed, or unsupported asset
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ApiError'
+                  - $ref: '#/components/schemas/ValidationError'
+        '409':
+          description: Replay detected (transaction already settled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+components:
+  schemas:
+    PlanRequest:
+      type: object
+      required: [policyId, routeId, payment]
+      properties:
+        policyId:
+          type: string
+          description: "ID of the policy to evaluate (or 'default')"
+        routeId:
+          type: string
+          description: "ID of the route being accessed"
+        payment:
+          type: object
+          required: [network, scheme, amount, asset]
+          properties:
+            network:
+              type: string
+              description: "CAIP-2 network identifier"
+              examples: ["eip155:8453"]
+            scheme:
+              type: string
+              description: "x402 scheme"
+              examples: ["exact"]
+            amount:
+              type: string
+              description: "Decimal string amount"
+              examples: ["10.00"]
+            asset:
+              type: string
+              description: "Asset symbol or address"
+              examples: ["USDC"]
+            legacyXPayment:
+              type: boolean
+              description: "True if request used legacy X-PAYMENT header"
+        buyer:
+          type: object
+          properties:
+            buyerId:
+              type: string
+
+    PlanResponse:
+      type: object
+      required: [decisionId, allow, policy, candidates, recommendedAcceptIndex]
+      properties:
+        decisionId:
+          type: string
+          format: uuid
+        allow:
+          type: boolean
+        policy:
+          allOf:
+            - type: object
+              required: [policyId, allow, reasons, appliedOverrides]
+              properties:
+                policyId:
+                  type: string
+                allow:
+                  type: boolean
+                reasons:
+                  type: array
+                  items:
+                    type: string
+                appliedOverrides:
+                  type: array
+                  items:
+                    type: string
+            - $ref: '#/components/schemas/PolicyEvalResultOptional'
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilitatorCandidate'
+        recommendedAcceptIndex:
+          type: integer
+          minimum: 0
+
+    PolicyEvalResultOptional:
+      type: object
+      properties:
+        schemaVersion:
+          type: string
+          examples: ["1.0.0"]
+        deny:
+          $ref: '#/components/schemas/PolicyDeny'
+        decisionTrace:
+          $ref: '#/components/schemas/DecisionTrace'
+
+    PolicyDeny:
+      type: object
+      required: [code, retryable]
+      properties:
+        code:
+          type: string
+          examples: ["X402_LEGACY_HEADER_X_PAYMENT"]
+        retryable:
+          type: boolean
+        detail:
+          type: string
+
+    DecisionTrace:
+      type: object
+      properties:
+        schemaVersion:
+          type: string
+          examples: ["1.0.0"]
+        decisionId:
+          type: string
+          format: uuid
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              t:
+                type: string
+                format: date-time
+              kind:
+                type: string
+              status:
+                type: string
+              meta:
+                type: object
+                additionalProperties: true
+
+    FacilitatorCandidate:
+      type: object
+      required: [facilitatorId, score, supported, health]
+      properties:
+        facilitatorId:
+          type: string
+        score:
+          type: integer
+        supported:
+          type: boolean
+        health:
+          $ref: '#/components/schemas/FacilitatorHealth'
+
+    FacilitatorHealth:
+      type: object
+      required: [status, p95VerifyMs, p95SettleMs, successRate]
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, down]
+        p95VerifyMs:
+          type: integer
+        p95SettleMs:
+          type: integer
+        successRate:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    SettleRequest:
+      type: object
+      required: [txHash, amount, asset]
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        decisionId:
+          type: string
+        txHash:
+          type: string
+          pattern: '^0x[a-fA-F0-9]{64}$'
+        amount:
+          type: string
+          pattern: '^\\d*\\.?\\d+$'
+        asset:
+          type: string
+          minLength: 2
+          maxLength: 10
+
+    SettleResponse:
+      type: object
+      required: [settled, facilitatorId, receipt]
+      properties:
+        settled:
+          type: boolean
+        facilitatorId:
+          type: string
+        receipt:
+          type: object
+          required: [txHash, verifiedAmount, asset, timestamp]
+          properties:
+            txHash:
+              type: string
+            verifiedAmount:
+              type: string
+            asset:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          examples: ["INTERNAL_ERROR"]
+        message:
+          type: string
+        requestId:
+          type: string
+          format: uuid
+
+    ValidationError:
+      type: object
+      required: [code, message, errors]
+      properties:
+        code:
+          type: string
+          examples: ["INVALID_INPUT"]
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties: true

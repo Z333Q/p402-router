@@ -1,0 +1,58 @@
+
+> p402-router@1.0.0 build
+> next build
+
+   ▲ Next.js 15.5.9
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ⚠ Compiled with warnings in 51s
+
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/za/Library/CloudStorage/Dropbox/Nature Of Commerce LLC/P402.io-Corporate/V2/p402-router/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./app/login/page.tsx
+
+ ⚠ Compiled with warnings in 36.6s
+
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+Module not found: Can't resolve '@react-native-async-storage/async-storage' in '/Users/za/Library/CloudStorage/Dropbox/Nature Of Commerce LLC/P402.io-Corporate/V2/p402-router/node_modules/@metamask/sdk/dist/browser/es'
+
+Import trace for requested module:
+./node_modules/@metamask/sdk/dist/browser/es/metamask-sdk.js
+./node_modules/@wagmi/connectors/dist/esm/metaMask.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/wagmi/dist/esm/exports/connectors.js
+./node_modules/@rainbow-me/rainbowkit/dist/index.js
+./app/providers.tsx
+
+ ✓ Compiled successfully in 90s
+   Skipping linting
+   Checking validity of types ...
+Failed to compile.
+
+./components/landing/RoutingSimulation.tsx:17:37
+Type error: Argument of type 'string | undefined' is not assignable to parameter of type 'SetStateAction<string>'.
+  Type 'undefined' is not assignable to type 'SetStateAction<string>'.
+
+[0m [90m 15 |[39m             setStep((s) [33m=>[39m (s [33m+[39m [35m1[39m) [33m%[39m [35m4[39m)[33m;[39m
+ [90m 16 |[39m             [36mif[39m (step [33m===[39m [35m3[39m) {
+[31m[1m>[22m[39m[90m 17 |[39m                 setSelectedProvider([33mPROVIDERS[39m[[33mMath[39m[33m.[39mfloor([33mMath[39m[33m.[39mrandom() [33m*[39m [33mPROVIDERS[39m[33m.[39mlength)])[33m;[39m
+ [90m    |[39m                                     [31m[1m^[22m[39m
+ [90m 18 |[39m                 setMode([33mMODES[39m[[33mMath[39m[33m.[39mfloor([33mMath[39m[33m.[39mrandom() [33m*[39m [33mMODES[39m[33m.[39mlength)])[33m;[39m
+ [90m 19 |[39m             }
+ [90m 20 |[39m         }[33m,[39m [35m2000[39m)[33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+m*[39m [33mPROVIDERS[39m[33m.[39mlength)])[33m;[39m
+ [90m    |[39m                                     [31m[1m^[22m[39m
+ [90m 18 |[39m                 setMode([33mMODES[39m[[33mMath[39m[33m.[39mfloor([33mMath[39m[33m.[39mrandom() [33m*[39m [33mMODES[39m[33m.[39mlength)])[33m;[39m
+ [90m 19 |[39m             }
+ [90m 20 |[39m         }[33m,[39m [35m2000[39m)[33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+l

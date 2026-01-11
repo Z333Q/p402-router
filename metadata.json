@@ -1,0 +1,5 @@
+{
+  "name": "P402 Router",
+  "description": "A routing and policy layer for x402 v2 payments. Includes a landing page and a full-featured admin console for managing routes, policies, and facilitators.",
+  "requestFramePermissions": []
+}

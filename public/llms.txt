@@ -1,0 +1,42 @@
+# P402 - Payment Router for x402 Protocol
+
+> P402 is a routing control plane for HTTP 402 payments. It enables developers to monetize APIs with stablecoins (USDC, USDT) on Base blockchain.
+
+## What is P402?
+
+P402 Router sits between paid endpoints and blockchain facilitators. It handles:
+- Payment verification (trustless, on-chain)
+- Policy enforcement (budgets, rate limits, spend caps)
+- Multi-token support (USDC, USDT on Base Mainnet)
+- Observability (traces, decision logs)
+
+## SDK
+
+Install: `npm install @p402/sdk`
+
+```typescript
+import { P402Client } from '@p402/sdk';
+const client = new P402Client('https://p402.io');
+await client.checkout({ amount: "10.00", asset: "USDC" }, signerCallback);
+```
+
+## API Endpoints
+
+- POST /api/v1/router/plan - Get payment plan and policy decision
+- POST /api/v1/router/settle - Verify and settle blockchain payment
+- GET /api/v1/events - Retrieve payment event history (authenticated)
+- GET /api/v1/facilitators - List available payment facilitators
+
+## Supported Assets
+
+- USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913) on Base
+- USDT (0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2) on Base
+
+## Documentation
+
+Full developer guide: https://p402.io/docs/sdk
+
+## Contact
+
+- Website: https://p402.io
+- Email: dev@p402.io
