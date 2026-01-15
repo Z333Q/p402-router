@@ -200,12 +200,12 @@ function ProviderBar({ name, amount, percent, requests }: ProviderBarProps) {
     const color = providerColors[name.toLowerCase()] || '#B6FF2E';
 
     return (
-        <div className="flex items-center gap-4">
-            <div className="w-24 flex-shrink-0">
-                <span className="text-sm font-bold uppercase">{name}</span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <div className="sm:w-24 flex-shrink-0">
+                <span className="text-[11px] sm:text-sm font-bold uppercase">{name}</span>
             </div>
             <div className="flex-grow">
-                <div className="h-6 bg-neutral-100 border-2 border-black relative">
+                <div className="h-4 sm:h-6 bg-neutral-100 border-2 border-black relative">
                     <div
                         className="h-full transition-all duration-300"
                         style={{
@@ -213,16 +213,16 @@ function ProviderBar({ name, amount, percent, requests }: ProviderBarProps) {
                             backgroundColor: color
                         }}
                     />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold">
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] sm:text-xs font-bold">
                         {percent}%
                     </span>
                 </div>
             </div>
-            <div className="w-28 text-right flex-shrink-0">
+            <div className="sm:w-28 text-right flex-shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center">
                 <span className="text-sm font-extrabold font-mono">
                     ${amount.toFixed(4)}
                 </span>
-                <span className="text-xs text-neutral-500 block">
+                <span className="text-[10px] text-neutral-500 sm:block">
                     {requests.toLocaleString()} req
                 </span>
             </div>

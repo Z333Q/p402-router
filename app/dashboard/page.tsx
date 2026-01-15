@@ -35,63 +35,36 @@ export default function DashboardPage() {
     }, [mutate]);
 
     return (
-        <div className="min-h-screen bg-neutral-100">
-            {/* Header */}
-            <header className="bg-white border-b-2 border-black">
-                <div className="max-w-[1280px] mx-auto px-6 py-4">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                            <h1 className="text-2xl font-extrabold uppercase tracking-tight">
-                                P402
-                            </h1>
-                            <span className="text-xs font-bold uppercase text-neutral-500 border-l-0 md:border-l-2 border-black pl-0 md:pl-4">
-                                Cost Intelligence
-                            </span>
-                        </div>
-
-                        {/* Quick Stats */}
-                        <div className="flex flex-wrap justify-center gap-4">
-                            <SpendMini />
-                            <CacheMini />
-                            <ProviderMini />
-                        </div>
-                    </div>
+        <div className="space-y-8">
+            {/* Quick Stats Summary Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-6 border-b-2 border-black/5 pb-8">
+                <div className="space-y-1">
+                    <h1 className="text-4xl font-black uppercase tracking-tighter text-black">Mission Control</h1>
+                    <p className="text-neutral-500 font-medium">Global AI spend intelligence & routing optimization.</p>
                 </div>
-            </header>
-
-            {/* Main Content */}
-            <main className="max-w-[1280px] mx-auto px-6 py-8">
-                {/* Top Row: Spend + Alerts */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <SpendOverview />
-                    <OptimizationAlerts />
+                <div className="flex flex-wrap gap-4">
+                    <SpendMini />
+                    <CacheMini />
+                    <ProviderMini />
                 </div>
+            </div>
 
-                {/* Middle Row: Cache + Cost Comparison */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <CacheAnalytics />
-                    <div className="lg:col-span-2">
-                        <CostComparison />
-                    </div>
+            {/* Top Row: Spend + Alerts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <SpendOverview />
+                <OptimizationAlerts />
+            </div>
+
+            {/* Middle Row: Cache + Cost Comparison */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <CacheAnalytics />
+                <div className="lg:col-span-2">
+                    <CostComparison />
                 </div>
+            </div>
 
-                {/* Bottom: Provider Status (full width) */}
-                <ProviderStatus />
-            </main>
-
-            {/* Footer */}
-            <footer className="border-t-2 border-black bg-white mt-12">
-                <div className="max-w-[1280px] mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between text-xs text-neutral-500">
-                        <span>P402 AI Orchestration Layer</span>
-                        <span>
-                            <a href="/docs" className="text-[#22D3EE] hover:underline">API Docs</a>
-                            {' • '}
-                            <a href="/settings" className="text-[#22D3EE] hover:underline">Settings</a>
-                        </span>
-                    </div>
-                </div>
-            </footer>
+            {/* Bottom: Provider Status (full width) */}
+            <ProviderStatus />
         </div>
     );
 }

@@ -14,6 +14,7 @@ import { Quickstart } from '@/components/landing/Quickstart'
 import { FAQ } from '@/components/landing/FAQ'
 import { FinalCTA } from '@/components/landing/FinalCTA'
 import { AgenticPatterns } from '@/components/landing/AgenticPatterns'
+import { AuditorSection } from '@/components/landing/AuditorSection'
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,7 @@ export default async function Page() {
             <TopNav />
             <main>
                 <Hero />
+                <AuditorSection />
                 <LandingGuide />
                 <Compatibility />
                 <Problem />

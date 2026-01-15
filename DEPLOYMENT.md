@@ -93,6 +93,7 @@ git add .
 git commit -m "chore: prepare for v2 production launch"
 git push origin main
 ```
+crashes
 
 Vercel will automatically detect the push and build the project.
 

@@ -14,7 +14,8 @@ import {
     Settings,
     LogOut,
     Unplug,
-    Activity
+    Activity,
+    X
 } from "lucide-react"
 import { useSession, signOut } from "next-auth/react"
 import { useDisconnect } from 'wagmi'
@@ -23,6 +24,7 @@ import { Badge } from "@/app/dashboard/_components/ui"
 const NAV_ITEMS = [
     { name: "Mission Control", href: "/dashboard", icon: LayoutDashboard },
     { name: "Live Traffic", href: "/dashboard/traffic", icon: Activity },
+    { name: "AI Cost Auditor", href: "/dashboard/audit", icon: Bot },
     { name: "Policies", href: "/dashboard/policies", icon: ShieldCheck },
     { name: "Facilitators", href: "/dashboard/facilitators", icon: Network },
     { name: "Discovery Bazaar", href: "/dashboard/bazaar", icon: Store },
@@ -32,7 +34,7 @@ const ADMIN_ITEMS = [
     { name: "Global Sync", href: "#", icon: Activity, adminOnly: true, action: 'sync' },
 ]
 
-export function AppSidebar() {
+export function AppSidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (val: boolean) => void }) {
     const pathname = usePathname()
     const { data: session } = useSession()
     const { disconnect } = useDisconnect()
@@ -44,21 +46,26 @@ export function AppSidebar() {
     }
 
     return (
-        <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r-2 border-black bg-white selection:bg-primary selection:text-black shadow-[4px_0_0_0_rgba(0,0,0,0.05)]">
+        <aside className={`
+            fixed left-0 top-0 z-40 h-screen w-64 border-r-2 border-black bg-white transition-transform duration-300 ease-in-out lg:translate-x-0
+            ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+            selection:bg-primary selection:text-black shadow-[4px_0_0_0_rgba(0,0,0,0.05)]
+        `}>
             {/* Logo Area */}
             <div className="flex h-16 items-center border-b-2 border-black px-6 bg-white relative overflow-hidden group">
                 <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none animate-flicker" />
-                <Link href="/" className="flex items-center gap-2 relative z-10 w-full">
+                <Link href="/" className="flex items-center gap-2 relative z-10 w-full" onClick={() => setIsOpen(false)}>
                     <img src="/favicon.png" alt="P402 Logo" className="h-8 w-8 border-2 border-black" />
                     <span className="font-sans text-xl font-black tracking-tighter text-black uppercase italic">
                         P402<span className="text-primary NOT-italic">.io</span>
                     </span>
-                    {isAdmin && (
-                        <Badge tone="ok" className="ml-auto bg-primary text-black text-[8px] py-0.5 px-1.5 border-none">
-                            ADMIN
-                        </Badge>
-                    )}
                 </Link>
+                <button
+                    onClick={() => setIsOpen(false)}
+                    className="lg:hidden ml-auto p-2 hover:bg-neutral-100 border-2 border-black"
+                >
+                    <X size={16} />
+                </button>
             </div>
 
             {/* Navigation */}
@@ -71,6 +78,7 @@ export function AppSidebar() {
                             <Link
                                 key={item.href}
                                 href={item.href}
+                                onClick={() => setIsOpen(false)}
                                 className={`
                                     group flex items-center gap-3 rounded-none border-l-4 px-3 py-3 text-[11px] font-black uppercase tracking-widest transition-all
                                     ${isActive

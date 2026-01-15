@@ -112,7 +112,7 @@ export default function BazaarIndexPage() {
                             placeholder="SEARCH DISCOVERY LAYER..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-neutral-900 border-2 border-transparent focus:border-primary/30 text-primary font-mono text-[10px] tracking-widest h-12 pl-10 pr-4 outline-none transition-all placeholder:text-primary/20"
+                            className="w-full bg-neutral-900 border-2 border-transparent focus:border-primary/30 text-primary font-mono text-[10px] tracking-widest h-12 pl-10 pr-4 outline-none transition-all placeholder:text-neutral-500"
                         />
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar w-full md:w-auto">
@@ -120,7 +120,7 @@ export default function BazaarIndexPage() {
                             onClick={() => setSelectedTag(null)}
                             className={clsx(
                                 "px-4 h-12 text-[10px] font-black uppercase tracking-widest transition-all border-2 border-transparent whitespace-nowrap",
-                                !selectedTag ? "bg-primary text-black border-primary" : "bg-neutral-900 text-primary/40 hover:text-primary"
+                                !selectedTag ? "bg-primary text-black border-primary" : "bg-neutral-800 text-neutral-400 hover:text-primary hover:bg-neutral-700"
                             )}
                         >
                             ALL CATEGORIES
@@ -131,7 +131,7 @@ export default function BazaarIndexPage() {
                                 onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
                                 className={clsx(
                                     "px-4 h-12 text-[10px] font-black uppercase tracking-widest transition-all border-2 border-transparent whitespace-nowrap",
-                                    tag === selectedTag ? "bg-primary text-black border-primary" : "bg-neutral-900 text-primary/40 hover:text-primary"
+                                    tag === selectedTag ? "bg-primary text-black border-primary" : "bg-neutral-800 text-neutral-400 hover:text-primary hover:bg-neutral-700"
                                 )}
                             >
                                 {tag}

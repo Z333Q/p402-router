@@ -219,7 +219,6 @@ export default function PolicyBuilderPage() {
                                                     rpmLimits: draft.rules?.rpmLimits,
                                                     budgets: draft.rules?.budgets
                                                 }}
-                                                className="bg-neutral-50"
                                             />
                                         </div>
                                     </div>
@@ -313,7 +312,7 @@ function ToggleRule({ label, checked, onChange }: { label: string; checked: bool
             "flex items-center justify-between p-4 border-2 border-black cursor-pointer transition-colors group",
             checked ? "bg-primary/5" : "bg-white"
         )}>
-            <span className="text-sm font-bold text-black uppercase tracking-tight group-hover:underline underline-offset-4 decoration-2">{label} spans</span>
+            <span className="text-sm font-bold text-black uppercase tracking-tight group-hover:underline underline-offset-4 decoration-2">{label}</span>
             <input
                 type="checkbox"
                 checked={checked}

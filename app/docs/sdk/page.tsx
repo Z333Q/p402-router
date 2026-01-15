@@ -13,69 +13,89 @@ export default function SDKDocsPage() {
             <main style={{ maxWidth: 1000, margin: '0 auto', padding: '64px 24px' }}>
                 {/* Hero Section */}
                 <div style={{ borderBottom: '2px solid #000', paddingBottom: 48, marginBottom: 48 }}>
-                    <div className="badge badge-success" style={{ marginBottom: 16 }}>v1.0.0 Stable</div>
-                    <h1 className="title-1" style={{ fontSize: '3.5rem', marginBottom: 24 }}>TypeScript SDK</h1>
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+                        <div className="badge badge-success">v2.0.0 (Core API)</div>
+                        <div className="badge badge-primary">v1.1.0 (Legacy SDK)</div>
+                    </div>
+                    <h1 className="title-1" style={{ fontSize: '3.5rem', marginBottom: 24 }}>SDK & V2 API Guide</h1>
                     <p style={{ fontSize: '1.25rem', color: '#4A4A4A', maxWidth: 700, lineHeight: 1.6 }}>
-                        The official P402 SDK provides a secure, lightweight wrapper for the x402 protocol.
-                        Abstract away the complexity of payment discovery, policy enforcement, and on-chain verification in just a few lines of code.
+                        The P402 ecosystem has evolved into a full <strong>AI Orchestration Layer</strong>.
+                        Use the V2 API for resilient, cost-optimized routing across 100+ models, or the V1 SDK for legacy x402 payment settlement.
                     </p>
                 </div>
 
                 <div className="grid-responsive grid-3" style={{ gap: 24, marginBottom: 64 }}>
                     <FeatureCard
-                        icon="🔒"
-                        title="Non-Custodial"
-                        desc="Your keys never leave your environment. The SDK uses a secure callback pattern for signing transactions."
+                        icon="🔀"
+                        title="Smart Routing"
+                        desc="Automatically routes requests to the optimal provider based on cost, quality, and real-time health metrics."
                     />
                     <FeatureCard
-                        icon="🚀"
-                        title="Auto-Routing"
-                        desc="Automatically finds the best facilitator for your payment based on health, latency, and cost."
+                        icon="💰"
+                        title="Cost Intelligence"
+                        desc="Real-time spend tracking and AI-powered recommendations to save up to 40% on API costs."
                     />
                     <FeatureCard
                         icon="⚡"
-                        title="EIP-3009"
-                        desc="Built-in support for gas-optimized USDC transfers on Base, Ethereum, and more."
+                        title="Semantic Cache"
+                        desc="Eliminate redundant API calls using embedding-based similarity search, saving both time and money."
                     />
                 </div>
 
-                {/* Installation */}
+                {/* V2 API Quick Start */}
                 <section style={{ marginBottom: 64 }}>
-                    <h2 className="title-2">Installation</h2>
-                    <div className="code-block" style={{ marginTop: 24 }}>
-                        <code>npm install @p402/sdk viem</code>
+                    <div className="flex items-center gap-4 mb-6">
+                        <h2 className="title-2 m-0">V2 API (Recommended)</h2>
+                        <div className="badge badge-success">Latest</div>
+                    </div>
+                    <p style={{ marginBottom: 24, color: '#4A4A4A' }}>
+                        The V2 API is OpenAI-compatible and provides access to the full orchestration layer.
+                        Use it to get resilient, multi-provider chat completions with semantic caching.
+                    </p>
+                    <div className="code-block">
+                        <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{`// Simple Request with Cost Optimization
+const response = await fetch('https://p402.io/api/v2/chat/completions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer YOUR_API_KEY'
+  },
+  body: JSON.stringify({
+    model: 'gpt-4o', // Or leave empty to let P402 pick
+    messages: [{ role: 'user', content: 'What is the most efficient way to route AI calls?' }],
+    p402: {
+      mode: 'cost', // Pick the cheapest compatible provider
+      cache: true   // Enable semantic caching
+    }
+  })
+});
+
+const data = await response.json();
+console.log('Response:', data.choices[0].message.content);
+console.log('Saved Content:', data.p402_metadata.cached ? 'Yes' : 'No');`} </pre>
                     </div>
                 </section>
 
-                {/* Quick Start */}
+                {/* Legacy V1 SDK */}
                 <section style={{ marginBottom: 64 }}>
-                    <h2 className="title-2">Quick Start</h2>
+                    <h2 className="title-2">Legacy V1 SDK (Payments)</h2>
                     <p style={{ marginBottom: 24, color: '#4A4A4A' }}>
-                        Initialize the client with optional debug mode. The SDK handles the protocol logic while you control the wallet signature.
+                        The V1 SDK is primarily used for the legacy <strong>x402 payment flow</strong>.
+                        A V2 SDK package with native orchestration support is currently in development.
                     </p>
+                    <div className="code-block" style={{ marginBottom: 24 }}>
+                        <code>npm install @p402/sdk</code>
+                    </div>
                     <div className="code-block">
                         <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{`import { P402Client } from '@p402/sdk';
 
-// 1. Initialize (Debug mode enabled for development)
-const client = new P402Client({ 
-    routerUrl: 'https://p402.io',
-    debug: process.env.NODE_ENV === 'development' 
-});
-
-// 2. Execute checkout
+const client = new P402Client();
 const result = await client.checkout({
   amount: "1.00",
   network: "eip155:8453"
 }, async (to, data, value) => {
-  // Your wallet signer (e.g., wagmi, ethers.js, viem)
   return await walletClient.sendTransaction({ to, data, value });
-});
-
-if (result.success) {
-  console.log('Settled:', result.txHash);
-} else {
-  console.error('Failed:', result.error.code, result.error.message);
-}`} </pre>
+});`} </pre>
                     </div>
                 </section>
 

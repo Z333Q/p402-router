@@ -1,10 +1,10 @@
+'use client';
 /**
  * P402 UI Components
  * ===================
  * Neo-brutalist component library following P402 design system.
  * High contrast, thick borders, no shadows, minimal rounding.
  */
-
 import React from 'react';
 
 // =============================================================================
