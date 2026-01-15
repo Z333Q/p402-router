@@ -20,6 +20,7 @@ export async function GET(
                 session_id,
                 tenant_id,
                 agent_identifier,
+                wallet_address,
                 budget_total,
                 budget_used,
                 budget_total - budget_used as budget_remaining,
@@ -65,6 +66,7 @@ export async function GET(
             id: row.session_id,
             tenant_id: row.tenant_id,
             agent_identifier: row.agent_identifier,
+            wallet_address: row.wallet_address,
             budget: {
                 total_usd: parseFloat(row.budget_total),
                 used_usd: parseFloat(row.budget_used),

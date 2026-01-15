@@ -247,3 +247,19 @@ CREATE TABLE IF NOT EXISTS access_requests (
     status VARCHAR(50) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+
+-- Session Transactions: Track funding events for sessions
+CREATE TABLE IF NOT EXISTS session_transactions (
+    id VARCHAR(64) PRIMARY KEY,
+    session_id VARCHAR(64) NOT NULL,
+    tx_hash VARCHAR(66) UNIQUE,
+    amount DECIMAL(18, 6) NOT NULL,
+    source VARCHAR(50), -- 'base_pay', 'direct', 'test'
+    network VARCHAR(20), -- 'base', 'base_sepolia'
+    status VARCHAR(20) NOT NULL DEFAULT 'confirmed',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_session_transactions_session ON session_transactions(session_id);
+CREATE INDEX IF NOT EXISTS idx_session_transactions_tx_hash ON session_transactions(tx_hash);

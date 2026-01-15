@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
                 session_id,
                 tenant_id,
                 agent_identifier,
+                wallet_address,
                 budget_total,
                 budget_used,
                 budget_total - budget_used as budget_remaining,
@@ -51,6 +52,7 @@ export async function GET(req: NextRequest) {
                 id: row.session_id,
                 tenant_id: row.tenant_id,
                 agent_identifier: row.agent_identifier,
+                wallet_address: row.wallet_address,
                 budget: {
                     total_usd: parseFloat(row.budget_total),
                     used_usd: parseFloat(row.budget_used),
@@ -80,6 +82,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const {
             agent_identifier,
+            wallet_address,
             budget_usd = 10.0,
             expires_in_hours = 24,
             policy = {}
@@ -108,13 +111,14 @@ export async function POST(req: NextRequest) {
                 session_id,
                 tenant_id,
                 agent_identifier,
+                wallet_address,
                 budget_total,
                 budget_used,
                 policy_snapshot,
                 status,
                 created_at,
                 expires_at
-            ) VALUES ($1, $2, $3, $4, 0, $5, 'active', NOW(), $6)
+            ) VALUES ($1, $2, $3, $4, $5, 0, $6, 'active', NOW(), $7)
             RETURNING *
         `;
 
@@ -122,6 +126,7 @@ export async function POST(req: NextRequest) {
             sessionId,
             tenantId,
             agent_identifier || null,
+            wallet_address || null,
             budget_usd,
             JSON.stringify(policy),
             expiresAt
@@ -134,6 +139,7 @@ export async function POST(req: NextRequest) {
             id: row.session_id,
             tenant_id: row.tenant_id,
             agent_identifier: row.agent_identifier,
+            wallet_address: row.wallet_address,
             budget: {
                 total_usd: parseFloat(row.budget_total),
                 used_usd: 0,
