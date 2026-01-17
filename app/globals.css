@@ -51,10 +51,7 @@ html {
 
 body {
   font-family: var(--font-ui);
-  /* The spec defines component backgrounds as white/black. 
-     We'll default to a high-contrast dark background for the "developer tool" vibe, 
-     but components will pop with white backgrounds as per spec. */
-  background: var(--neutral-100);
+  background: var(--neutral-50);
   color: var(--neutral-900);
   line-height: 1.5;
 }

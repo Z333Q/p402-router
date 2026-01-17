@@ -3,7 +3,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-
 interface Testimonial {
     company: string;
     quote: string;
@@ -44,38 +43,46 @@ export function Testimonials() {
     }, []);
 
     return (
-        <section className="py-24 bg-black overflow-hidden border-t border-zinc-900">
-            <div className="container mx-auto px-6 mb-12 text-center">
-                <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">Trust the Protocol</h2>
-                <p className="text-xl text-zinc-400">Adopted by industry leaders defining the Agentic Web.</p>
+        <section className="py-24 bg-white overflow-hidden border-b-4 border-black">
+            <div className="container mx-auto px-6 mb-16">
+                <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-4 text-black italic">Adopted By Leaders</h2>
+                <div className="h-2 w-32 bg-primary border-2 border-black mb-6" />
+                <p className="text-xl font-bold text-neutral-600 uppercase">Defining the economic layer of the Agentic Web.</p>
             </div>
 
             <div
-                ref={scrollerRef}
-                className={`flex gap-6 w-max hover:[animation-play-state:paused] ${start ? 'animate-scroll' : ''}`}
+                className="relative flex overflow-hidden group"
             >
-                {testimonials.map((t, idx) => (
-                    <div
-                        key={idx}
-                        className="w-[350px] md:w-[450px] p-8 rounded-2xl bg-zinc-900/50 border border-zinc-800 flex-shrink-0"
-                    >
-                        <div className="h-full flex flex-col justify-between">
-                            <p className="text-lg text-zinc-300 mb-6 font-medium leading-relaxed">"{t.quote}"</p>
-                            <div>
-                                <div className="text-lime-400 font-bold text-sm uppercase tracking-wide mb-1">{t.company}</div>
-                                <div className="text-zinc-500 text-sm">{t.author}</div>
+                <div
+                    ref={scrollerRef}
+                    className={`flex gap-0 w-max hover:[animation-play-state:paused] ${start ? 'animate-scroll' : ''}`}
+                >
+                    {testimonials.map((t, idx) => (
+                        <div
+                            key={idx}
+                            className="w-[350px] md:w-[500px] p-10 border-r-4 border-y-4 border-black bg-white flex-shrink-0"
+                        >
+                            <div className="h-full flex flex-col justify-between">
+                                <p className="text-lg font-bold text-black mb-8 leading-tight italic">"{t.quote}"</p>
+                                <div>
+                                    <div className="inline-block bg-primary text-black px-2 py-0.5 border-2 border-black font-black text-xs uppercase tracking-widest mb-2">{t.company}</div>
+                                    <div className="text-neutral-500 font-bold text-sm uppercase">{t.author}</div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
             <style jsx>{`
                 .animate-scroll {
-                    animation: scroll 40s linear infinite;
+                    animation: scroll 60s linear infinite;
                 }
                 @keyframes scroll {
+                    from {
+                        transform: translateX(0);
+                    }
                     to {
-                        transform: translate(calc(-50% - 1.5rem));
+                        transform: translateX(-50%);
                     }
                 }
             `}</style>
