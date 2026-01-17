@@ -35,6 +35,17 @@ Built on the HTTP 402 Payment Required standard.
 
 ---
 
+## 🤝 Trusted By Industry Leaders
+
+P402 implements the **Agent-to-Agent (A2A) Protocol**, a standard supported by industry giants including:
+- **Google Cloud**
+- **Salesforce**
+- **Atlassian**
+- **Cognizant**
+- and many others defining the Agentic Web.
+
+---
+
 ## 🛠️ Integration Guide
 
 ### 1. Agent Discovery
