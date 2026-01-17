@@ -15,6 +15,15 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+
+  // Ignore React Native modules in web build
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@react-native-async-storage/async-storage': false,
+    };
+    return config;
+  },
 };
 
 export default nextConfig;
