@@ -12,6 +12,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:a2a": "tsx scripts/test-a2a.ts",
     "prepare": "husky install"
   },
   "lint-staged": {
