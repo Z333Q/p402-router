@@ -102,9 +102,10 @@ And many more including Together AI, Fireworks, Cohere, and OpenRouter.
 
 ## 🔗 Resources
 
-- [P402 Documentation](https://docs.p402.io)
+- [P402 Documentation](https://p402.io/docs)
+- [SDK Reference](https://p402.io/docs/sdk)
 - [A2A Protocol Spec](https://github.com/google/a2a-protocol)
-- [x402 Standard](https://x402.org)
+- [AP2 Mandates Guide](https://p402.io/docs/mandates)
 
 ---
 
