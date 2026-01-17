@@ -23,120 +23,52 @@ export class OpenAIAdapter extends BaseProviderAdapter {
     baseUrl = 'https://api.openai.com/v1';
 
     models: ModelInfo[] = [
-        // GPT-4o Family (Latest)
+        // GPT-5.2 Family (2026 Flagship)
         {
-            id: 'gpt-4o',
-            name: 'GPT-4o',
+            id: 'gpt-5.2',
+            name: 'GPT-5.2',
             tier: 'premium',
-            contextWindow: 128000,
-            inputCostPer1k: 0.0025,
-            outputCostPer1k: 0.01,
-            capabilities: ['chat', 'vision', 'function_calling', 'json_mode', 'streaming', 'code', 'reasoning'],
+            contextWindow: 1000000, // 1M Context
+            inputCostPer1k: 0.005,
+            outputCostPer1k: 0.02,
+            capabilities: ['chat', 'vision', 'function_calling', 'json_mode', 'streaming', 'code', 'reasoning', 'long_context'],
             supportsStreaming: true,
-            maxOutputTokens: 16384
+            maxOutputTokens: 32768
         },
         {
-            id: 'gpt-4o-mini',
-            name: 'GPT-4o Mini',
+            id: 'gpt-5.2-turbo',
+            name: 'GPT-5.2 Turbo',
             tier: 'mid',
-            contextWindow: 128000,
-            inputCostPer1k: 0.00015,
-            outputCostPer1k: 0.0006,
+            contextWindow: 1000000,
+            inputCostPer1k: 0.0005,
+            outputCostPer1k: 0.002,
             capabilities: ['chat', 'vision', 'function_calling', 'json_mode', 'streaming', 'code'],
             supportsStreaming: true,
             maxOutputTokens: 16384
         },
-        // GPT-4 Turbo
+        // o3 Reasoning (State of the art reasoning)
         {
-            id: 'gpt-4-turbo',
-            name: 'GPT-4 Turbo',
+            id: 'o3-high',
+            name: 'o3 High Reasoning',
             tier: 'premium',
-            contextWindow: 128000,
+            contextWindow: 200000,
             inputCostPer1k: 0.01,
-            outputCostPer1k: 0.03,
-            capabilities: ['chat', 'vision', 'function_calling', 'json_mode', 'streaming', 'code', 'reasoning'],
+            outputCostPer1k: 0.04,
+            capabilities: ['chat', 'reasoning', 'code', 'hard_math'],
             supportsStreaming: true,
-            maxOutputTokens: 4096
+            maxOutputTokens: 100000
         },
+        // Legacy GPT-4o
         {
-            id: 'gpt-4-turbo-preview',
-            name: 'GPT-4 Turbo Preview',
-            tier: 'premium',
-            contextWindow: 128000,
-            inputCostPer1k: 0.01,
-            outputCostPer1k: 0.03,
-            capabilities: ['chat', 'function_calling', 'json_mode', 'streaming', 'code', 'reasoning'],
-            supportsStreaming: true,
-            maxOutputTokens: 4096
-        },
-        // GPT-4
-        {
-            id: 'gpt-4',
-            name: 'GPT-4',
-            tier: 'premium',
-            contextWindow: 8192,
-            inputCostPer1k: 0.03,
-            outputCostPer1k: 0.06,
-            capabilities: ['chat', 'function_calling', 'streaming', 'code', 'reasoning'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        {
-            id: 'gpt-4-32k',
-            name: 'GPT-4 32K',
-            tier: 'premium',
-            contextWindow: 32768,
-            inputCostPer1k: 0.06,
-            outputCostPer1k: 0.12,
-            capabilities: ['chat', 'function_calling', 'streaming', 'code', 'reasoning', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        // GPT-3.5 Turbo
-        {
-            id: 'gpt-3.5-turbo',
-            name: 'GPT-3.5 Turbo',
+            id: 'gpt-4o',
+            name: 'GPT-4o (Legacy)',
             tier: 'budget',
-            contextWindow: 16385,
-            inputCostPer1k: 0.0005,
-            outputCostPer1k: 0.0015,
-            capabilities: ['chat', 'function_calling', 'json_mode', 'streaming'],
-            supportsStreaming: true,
-            maxOutputTokens: 4096
-        },
-        {
-            id: 'gpt-3.5-turbo-16k',
-            name: 'GPT-3.5 Turbo 16K',
-            tier: 'budget',
-            contextWindow: 16385,
-            inputCostPer1k: 0.0005,
-            outputCostPer1k: 0.0015,
-            capabilities: ['chat', 'function_calling', 'streaming', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 4096
-        },
-        // o1 Reasoning Models
-        {
-            id: 'o1-preview',
-            name: 'o1 Preview',
-            tier: 'premium',
             contextWindow: 128000,
-            inputCostPer1k: 0.015,
-            outputCostPer1k: 0.06,
-            capabilities: ['chat', 'reasoning', 'code'],
-            supportsStreaming: false, // o1 doesn't support streaming yet
-            maxOutputTokens: 32768
-        },
-        {
-            id: 'o1-mini',
-            name: 'o1 Mini',
-            tier: 'mid',
-            contextWindow: 128000,
-            inputCostPer1k: 0.003,
-            outputCostPer1k: 0.012,
-            capabilities: ['chat', 'reasoning', 'code'],
-            supportsStreaming: false,
-            maxOutputTokens: 65536
+            inputCostPer1k: 0.0025,
+            outputCostPer1k: 0.01,
+            capabilities: ['chat', 'vision', 'function_calling', 'streaming'],
+            supportsStreaming: true,
+            maxOutputTokens: 16384
         }
     ];
 

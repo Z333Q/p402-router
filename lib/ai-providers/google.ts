@@ -23,83 +23,37 @@ export class GoogleAdapter extends BaseProviderAdapter {
     baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
 
     models: ModelInfo[] = [
-        // Gemini 2.0 (Latest)
+        // Gemini 3.0 (2026 Flagship)
         {
-            id: 'gemini-2.0-flash-exp',
-            name: 'Gemini 2.0 Flash',
-            tier: 'mid',
-            contextWindow: 1048576,
-            inputCostPer1k: 0.0,  // Currently free in preview
-            outputCostPer1k: 0.0,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        // Gemini 1.5 Family
-        {
-            id: 'gemini-1.5-pro',
-            name: 'Gemini 1.5 Pro',
+            id: 'gemini-3.0-ultra',
+            name: 'Gemini 3.0 Ultra',
             tier: 'premium',
-            contextWindow: 2097152,  // 2M tokens!
-            inputCostPer1k: 0.00125,
-            outputCostPer1k: 0.005,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning', 'long_context'],
+            contextWindow: 10000000, // 10M Context
+            inputCostPer1k: 0.002,
+            outputCostPer1k: 0.008,
+            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning', 'long_context', 'audio', 'video'],
             supportsStreaming: true,
-            maxOutputTokens: 8192
+            maxOutputTokens: 32768
         },
         {
-            id: 'gemini-1.5-pro-latest',
-            name: 'Gemini 1.5 Pro (Latest)',
-            tier: 'premium',
-            contextWindow: 2097152,
-            inputCostPer1k: 0.00125,
-            outputCostPer1k: 0.005,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        {
-            id: 'gemini-1.5-flash',
-            name: 'Gemini 1.5 Flash',
-            tier: 'budget',
-            contextWindow: 1048576,
-            inputCostPer1k: 0.000075,
-            outputCostPer1k: 0.0003,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        {
-            id: 'gemini-1.5-flash-latest',
-            name: 'Gemini 1.5 Flash (Latest)',
-            tier: 'budget',
-            contextWindow: 1048576,
-            inputCostPer1k: 0.000075,
-            outputCostPer1k: 0.0003,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        {
-            id: 'gemini-1.5-flash-8b',
-            name: 'Gemini 1.5 Flash 8B',
-            tier: 'budget',
-            contextWindow: 1048576,
-            inputCostPer1k: 0.0000375,
-            outputCostPer1k: 0.00015,
-            capabilities: ['chat', 'vision', 'streaming', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        // Gemini 1.0 (Legacy)
-        {
-            id: 'gemini-pro',
-            name: 'Gemini Pro',
+            id: 'gemini-3.0-pro',
+            name: 'Gemini 3.0 Pro',
             tier: 'mid',
-            contextWindow: 32768,
+            contextWindow: 5000000, // 5M Context
             inputCostPer1k: 0.0005,
             outputCostPer1k: 0.0015,
-            capabilities: ['chat', 'function_calling', 'streaming', 'code'],
+            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning', 'long_context'],
+            supportsStreaming: true,
+            maxOutputTokens: 16384
+        },
+        {
+            id: 'gemini-3.0-flash',
+            name: 'Gemini 3.0 Flash',
+            tier: 'budget',
+            contextWindow: 2000000,
+            inputCostPer1k: 0.00005,
+            outputCostPer1k: 0.0002,
+            capabilities: ['chat', 'vision', 'streaming', 'long_context'],
             supportsStreaming: true,
             maxOutputTokens: 8192
         }

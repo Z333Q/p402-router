@@ -24,130 +24,39 @@ export class AnthropicAdapter extends BaseProviderAdapter {
     private apiVersion = '2024-01-01';
 
     models: ModelInfo[] = [
-        // Claude 4.5 Family (Latest)
+        // Claude 4.5 Family (2026 Flagship)
         {
-            id: 'claude-opus-4-5-20251101',
-            name: 'Claude Opus 4.5',
+            id: 'claude-opus-4.5-20260101',
+            name: 'Claude 4.5 Opus',
             tier: 'premium',
-            contextWindow: 200000,
-            inputCostPer1k: 0.015,
-            outputCostPer1k: 0.075,
+            contextWindow: 500000,
+            inputCostPer1k: 0.01,
+            outputCostPer1k: 0.05,
             capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning', 'long_context'],
+            supportsStreaming: true,
+            maxOutputTokens: 65536
+        },
+        {
+            id: 'claude-sonnet-4.5-20260101',
+            name: 'Claude 4.5 Sonnet',
+            tier: 'mid',
+            contextWindow: 500000,
+            inputCostPer1k: 0.002,
+            outputCostPer1k: 0.01,
+            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'long_context'],
             supportsStreaming: true,
             maxOutputTokens: 32768
         },
         {
-            id: 'claude-sonnet-4-5-20250929',
-            name: 'Claude Sonnet 4.5',
-            tier: 'mid',
-            contextWindow: 200000,
-            inputCostPer1k: 0.003,
-            outputCostPer1k: 0.015,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 16384
-        },
-        {
-            id: 'claude-haiku-4-5-20251001',
-            name: 'Claude Haiku 4.5',
+            id: 'claude-haiku-4.5-20260101',
+            name: 'Claude 4.5 Haiku',
             tier: 'budget',
-            contextWindow: 200000,
-            inputCostPer1k: 0.0008,
-            outputCostPer1k: 0.004,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        // Convenience aliases
-        {
-            id: 'claude-opus-4-5',
-            name: 'Claude Opus 4.5 (Latest)',
-            tier: 'premium',
-            contextWindow: 200000,
-            inputCostPer1k: 0.015,
-            outputCostPer1k: 0.075,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 32768
-        },
-        {
-            id: 'claude-sonnet-4-5',
-            name: 'Claude Sonnet 4.5 (Latest)',
-            tier: 'mid',
-            contextWindow: 200000,
-            inputCostPer1k: 0.003,
-            outputCostPer1k: 0.015,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 16384
-        },
-        {
-            id: 'claude-haiku-4-5',
-            name: 'Claude Haiku 4.5 (Latest)',
-            tier: 'budget',
-            contextWindow: 200000,
-            inputCostPer1k: 0.0008,
-            outputCostPer1k: 0.004,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        // Claude 3.5 Family (Legacy but still supported)
-        {
-            id: 'claude-3-5-sonnet-20241022',
-            name: 'Claude 3.5 Sonnet',
-            tier: 'mid',
-            contextWindow: 200000,
-            inputCostPer1k: 0.003,
-            outputCostPer1k: 0.015,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        {
-            id: 'claude-3-5-haiku-20241022',
-            name: 'Claude 3.5 Haiku',
-            tier: 'budget',
-            contextWindow: 200000,
-            inputCostPer1k: 0.0008,
-            outputCostPer1k: 0.004,
+            contextWindow: 500000,
+            inputCostPer1k: 0.0005,
+            outputCostPer1k: 0.0025,
             capabilities: ['chat', 'vision', 'streaming', 'long_context'],
             supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        // Claude 3 Family
-        {
-            id: 'claude-3-opus-20240229',
-            name: 'Claude 3 Opus',
-            tier: 'premium',
-            contextWindow: 200000,
-            inputCostPer1k: 0.015,
-            outputCostPer1k: 0.075,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 4096
-        },
-        {
-            id: 'claude-3-sonnet-20240229',
-            name: 'Claude 3 Sonnet',
-            tier: 'mid',
-            contextWindow: 200000,
-            inputCostPer1k: 0.003,
-            outputCostPer1k: 0.015,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 4096
-        },
-        {
-            id: 'claude-3-haiku-20240307',
-            name: 'Claude 3 Haiku',
-            tier: 'budget',
-            contextWindow: 200000,
-            inputCostPer1k: 0.00025,
-            outputCostPer1k: 0.00125,
-            capabilities: ['chat', 'vision', 'streaming', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 4096
+            maxOutputTokens: 16384
         }
     ];
 

@@ -1,6 +1,7 @@
 
 import { TopNav } from "@/components/TopNav"
 import { Footer } from "@/components/Footer"
+import { Testimonials } from "@/components/landing/Testimonials"
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic';
@@ -68,10 +69,12 @@ export default async function Page() {
                                 </p>
                                 <Link href="/docs/router" className="text-lime-400 font-medium hover:underline">Explore the Engine &rarr;</Link>
                             </div>
-
                         </div>
                     </div>
                 </section>
+
+                {/* TESTIMONIALS */}
+                <Testimonials />
 
                 {/* CODE DEMO */}
                 <section className="py-24 bg-zinc-900/30">

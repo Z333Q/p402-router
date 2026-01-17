@@ -80,13 +80,13 @@ curl -X POST https://p402.io/api/a2a/mandates -d '{
 
 | Provider | Models | Capabilities |
 |----------|--------|--------------|
-| **OpenAI** | GPT-4o, o1, GPT-3.5 | Reasoning, Vision, Functions |
-| **Anthropic** | Claude 3.5 Sonnet, Opus | Long Context, Coding |
-| **Google** | Gemini 1.5 Pro/Flash | Multimodal, huge context |
-| **Groq** | Llama 3, Mixtral | Ultra-low latency (LPU) |
+| **OpenAI** | GPT-5.2, o3-high, GPT-5.2 Turbo | Reasoning+, Vision, Agents |
+| **Anthropic** | Claude 4.5 Opus, Sonnet 4.5 | Long Context, Coding, Reasoning |
+| **Google** | Gemini 3.0 Ultra/Pro/Flash | Multimodal, 10M+ Context |
+| **Groq** | Llama 4, Mixtral 8x22B | Ultra-low latency (LPU) |
 | **DeepSeek** | DeepSeek R1/V3 | Cost-effective reasoning |
 | **Perplexity** | Sonar Online | Real-time web search |
-| **Mistral** | Large, Codestral | Open-weight mastery |
+| **Mistral** | Large 3, Codestral | Open-weight mastery |
 
 And many more including Together AI, Fireworks, Cohere, and OpenRouter.
 
