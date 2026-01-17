@@ -61,7 +61,7 @@ async function handleMessageSend(params: any, id: string | number, tenantId: str
         tenantUuid = tenantId;
     } else {
         const tRes = await query('SELECT id FROM tenants LIMIT 1');
-        if (tRes.rowCount > 0) tenantUuid = tRes.rows[0].id;
+        if (tRes && tRes.rowCount && tRes.rowCount > 0) tenantUuid = tRes.rows[0].id;
     }
 
     if (!tenantUuid) {
@@ -83,10 +83,13 @@ async function handleMessageSend(params: any, id: string | number, tenantId: str
         const message: A2AMessage = params.message;
 
         // Mock processing result
+        const firstPart = message.parts && message.parts.length > 0 ? message.parts[0] : null;
+        const textContent = firstPart && 'text' in firstPart ? firstPart.text : "";
+
         const resultMessage: A2AMessage = {
             role: 'agent',
             parts: [
-                { type: 'text', text: "I have received your message: " + (message.parts[0].text || "") }
+                { type: 'text', text: "I have received your message: " + (textContent || "") }
             ]
         };
 

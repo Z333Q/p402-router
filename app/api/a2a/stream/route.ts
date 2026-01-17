@@ -30,7 +30,9 @@ export async function POST(req: NextRequest) {
                 await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'task.status', data: { state: 'processing' } })}\n\n`));
 
                 // 2. Simulate streaming delta (In reality, we'd call an AI model here)
-                const responseText = "This is a streamed response to: " + (userMessage.parts[0].text || "your message");
+                const firstPart = userMessage.parts && userMessage.parts.length > 0 ? userMessage.parts[0] : null;
+                const textContent = firstPart && 'text' in firstPart ? firstPart.text : "your message";
+                const responseText = "This is a streamed response to: " + (textContent || "your message");
                 const chunks = responseText.split(' ');
 
                 for (const chunk of chunks) {

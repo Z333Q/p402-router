@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/utils'; // Assuming this exists, or I will use standard classnames
+
 
 interface Testimonial {
     company: string;
