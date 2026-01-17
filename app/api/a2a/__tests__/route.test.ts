@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '../route';
 import { NextRequest } from 'next/server';
-import { query } from '../../../lib/db';
+import { A2AMessage, A2ATask, A2ATaskState, A2ATaskStatus } from '../../../../lib/a2a-types';
+import { query } from '../../../../lib/db';
+import { A2A_ERRORS, A2AError } from '../../../../lib/a2a-errors';
 
-vi.mock('@/lib/db', () => ({
+vi.mock('../../../../lib/db', () => ({
     query: vi.fn(),
 }));
 

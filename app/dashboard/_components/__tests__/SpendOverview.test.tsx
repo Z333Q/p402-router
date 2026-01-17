@@ -14,8 +14,8 @@ vi.mock('../ui', async (importOriginal) => {
     const actual = await importOriginal<any>();
     return {
         ...actual,
-        Card: ({ title, children, className }: any) => (
-            <div data-testid="card" className={className} title={title}>
+        Card: ({ title, children, className = '' }: any) => (
+            <div data-testid="card" className={`border-2 border-black ${className}`} title={title}>
                 {children}
             </div>
         ),
@@ -52,10 +52,14 @@ describe('SpendOverview', () => {
             summary: {
                 total_cost_usd: 125.50,
                 total_requests: 1200,
-                avg_latency_ms: 450
+                avg_latency_ms: 450,
+                avg_cost_per_request: 0.10,
+                projected_monthly_cost: 3000.00
             },
             period: { days: 30 },
-            by_provider: [],
+            by_provider: [
+                { provider: 'openai', cost_usd: 50, percentage: 40, requests: 500 }
+            ],
             by_task: []
         };
 

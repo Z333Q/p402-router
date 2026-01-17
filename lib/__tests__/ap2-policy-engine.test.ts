@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AP2PolicyEngine } from '../ap2-policy-engine';
 import { query } from '../db';
 
-vi.mock('./db', () => ({
+vi.mock('../db', () => ({
     query: vi.fn(),
 }));
 
