@@ -37,10 +37,18 @@ export function middleware(request: NextRequest) {
         return preflightResponse;
     }
 
-    // Check protected API paths for session header
+    // Check protected API paths for session header or session cookie
     const isProtectedPath = PROTECTED_API_PATHS.some(path => pathname.startsWith(path));
     if (isProtectedPath) {
         const sessionId = request.headers.get('x-p402-session');
+        const sessionToken = request.cookies.get('next-auth.session-token') ||
+            request.cookies.get('__Secure-next-auth.session-token');
+
+        // Allow if it's an analytics path and we have a session token (internal dashboard)
+        const isAnalyticsPath = pathname.startsWith('/api/v2/analytics');
+        if (isAnalyticsPath && sessionToken) {
+            return NextResponse.next();
+        }
 
         if (!sessionId) {
             return NextResponse.json(

@@ -37,7 +37,17 @@ interface SpendData {
     };
 }
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) {
+        const error = new Error('An error occurred while fetching the data.');
+        // Attach extra info to the error object.
+        (error as any).info = await res.json().catch(() => ({}));
+        (error as any).status = res.status;
+        throw error;
+    }
+    return res.json();
+};
 
 export function SpendOverview() {
     const { data, error, isLoading } = useSWR<SpendData>(
@@ -56,20 +66,24 @@ export function SpendOverview() {
         );
     }
 
-    if (isLoading || !data) {
+    if (isLoading || !data || !data.summary) {
         return (
             <Card title="COST INTELLIGENCE">
-                <div className="grid grid-cols-3 gap-6 mb-8">
-                    <Skeleton className="h-16" />
-                    <Skeleton className="h-16" />
-                    <Skeleton className="h-16" />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <Skeleton className="h-20" />
+                    <Skeleton className="h-20" />
+                    <Skeleton className="h-20" />
+                    <Skeleton className="h-20" />
                 </div>
-                <Skeleton className="h-48" />
+                <div className="space-y-4">
+                    <Skeleton className="h-10" />
+                    <Skeleton className="h-32" />
+                </div>
             </Card>
         );
     }
 
-    const { summary, by_provider, by_task, period } = data;
+    const { summary, by_provider = [], by_task = [], period } = data;
 
     // Calculate daily average and today's estimated spend
     const dailyAverage = summary.total_cost_usd / period.days;
@@ -235,21 +249,24 @@ function ProviderBar({ name, amount, percent, requests }: ProviderBarProps) {
 // =============================================================================
 
 export function SpendMini() {
-    const { data, isLoading } = useSWR<SpendData>(
+    const { data, isLoading, error } = useSWR<SpendData>(
         '/api/v2/analytics/spend?period=7d',
         fetcher
     );
 
-    if (isLoading || !data) {
+    if (isLoading || error || !data || !data.summary) {
         return (
-            <div className="border-2 border-black p-3 bg-white">
-                <Skeleton className="h-8 w-24" />
+            <div className="border-2 border-black p-3 bg-white min-w-[120px]">
+                <div className="animate-pulse flex flex-col gap-2">
+                    <div className="h-3 w-12 bg-neutral-100" />
+                    <div className="h-6 w-20 bg-neutral-100" />
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="border-2 border-black p-3 bg-white flex items-center justify-between">
+        <div className="border-2 border-black p-3 bg-white flex items-center justify-between min-w-[150px]">
             <div>
                 <span className="text-xs font-bold uppercase text-neutral-500">
                     7-DAY SPEND
@@ -258,9 +275,11 @@ export function SpendMini() {
                     ${data.summary.total_cost_usd.toFixed(2)}
                 </span>
             </div>
-            <Badge variant={data.summary.total_cost_usd < 10 ? 'success' : 'warning'}>
-                {data.summary.total_requests} REQ
-            </Badge>
+            <div className="ml-4">
+                <Badge variant={data.summary.total_cost_usd < 10 ? 'success' : 'warning'}>
+                    {data.summary.total_requests} REQ
+                </Badge>
+            </div>
         </div>
     );
 }
