@@ -5,9 +5,9 @@ import GoogleAnalytics from './components/GoogleAnalytics'
 export const metadata: Metadata = {
     title: 'P402 Router | x402 Payment Infrastructure',
     description:
-        'Route, verify, and settle x402 payments with policies, traces, and Bazaar-ready metadata. Accept USDC and USDT on Base blockchain.',
+        'The Payment-Aware AI Orchestration Layer. Route LLM requests, enable Agent-to-Agent (A2A) communication, and settle x402 payments with AP2 Mandates on Base.',
     metadataBase: new URL('https://p402.io'),
-    keywords: ['x402', 'HTTP 402', 'payment API', 'USDC', 'USDT', 'Base blockchain', 'crypto payments', 'stablecoin'],
+    keywords: ['AI Agents', 'A2A Protocol', 'x402', 'Payment Mandates', 'LLM Routing', 'Agentic Web', 'USDC', 'Base blockchain'],
     authors: [{ name: 'P402' }],
     openGraph: {
         title: 'P402 Router - x402 Payment Infrastructure',

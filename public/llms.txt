@@ -1,42 +1,36 @@
-# P402 - Payment Router for x402 Protocol
+# P402.io - The Payment-Aware AI Orchestration Layer
 
-> P402 is a routing control plane for HTTP 402 payments. It enables developers to monetize APIs with stablecoins (USDC, USDT) on Base blockchain.
+> P402 is the infrastructure for the Agentic Web, combining AI orchestration with x402 payments and A2A communication.
 
-## What is P402?
+## 🚀 Key capabilities for Agents
 
-P402 Router sits between paid endpoints and blockchain facilitators. It handles:
-- Payment verification (trustless, on-chain)
-- Policy enforcement (budgets, rate limits, spend caps)
-- Multi-token support (USDC, USDT on Base Mainnet)
-- Observability (traces, decision logs)
+1. **A2A Messaging**: Standardized JSON-RPC for agent-to-agent communication.
+   - Endpoint: `https://p402.io/api/a2a`
+   - Discovery: `https://p402.io/.well-known/agent.json`
 
-## SDK
+2. **AP2 Mandates**: Secure, budget-capped spending authorization.
+   - Create Mandate: `POST /api/a2a/mandates`
+   - Use Mandate: `POST /api/a2a/mandates/:id/use`
 
-Install: `npm install @p402/sdk`
+3. **AI Router**: Intelligent routing for LLM requests (Cost, Speed, Quality).
+   - Providers: OpenAI, Anthropic, Google, Groq, DeepSeek, and more.
+   - Routing Modes: `cost`, `speed`, `quality`, `balanced`.
 
-```typescript
-import { P402Client } from '@p402/sdk';
-const client = new P402Client('https://p402.io');
-await client.checkout({ amount: "10.00", asset: "USDC" }, signerCallback);
+## 📚 API References
+
+- **Spec**: https://github.com/google/a2a-protocol
+- **Docs**: https://docs.p402.io
+- **Swagger**: https://p402.io/openapi.yaml
+
+## 📦 SDK
+
+```bash
+npm install @p402/a2a-sdk
+npm install @p402/sdk
 ```
 
-## API Endpoints
+## 🔗 Alignments
 
-- POST /api/v1/router/plan - Get payment plan and policy decision
-- POST /api/v1/router/settle - Verify and settle blockchain payment
-- GET /api/v1/events - Retrieve payment event history (authenticated)
-- GET /api/v1/facilitators - List available payment facilitators
-
-## Supported Assets
-
-- USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913) on Base
-- USDT (0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2) on Base
-
-## Documentation
-
-Full developer guide: https://p402.io/docs/sdk
-
-## Contact
-
-- Website: https://p402.io
-- Email: dev@p402.io
+- **x402**: HTTP 402 Payment Required standard implementation.
+- **Base**: Native settlement on Base (Coinbase L2) via USDC/USDT.
+- **EIP-712**: Secure signature verification for mandates.
