@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { A2AMessage, A2ATask, A2ATaskState, A2ATaskStatus } from '@/lib/a2a-types';
-import { query } from '@/lib/db';
-import { A2A_ERRORS, A2AError } from '@/lib/a2a-errors';
+import { A2AMessage, A2ATask, A2ATaskState, A2ATaskStatus } from '../../../lib/a2a-types';
+import { query } from '../../../lib/db';
+import { A2A_ERRORS, A2AError } from '../../../lib/a2a-errors';
 
 export async function POST(req: NextRequest) {
     try {
