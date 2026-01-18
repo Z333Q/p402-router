@@ -16,16 +16,16 @@ export function Footer() {
                             <img src="/favicon.png" alt="P402 Logo" className="w-12 h-12 border-2 border-black" />
                             <span className="text-xl">P402<span className="text-primary NOT-italic">.io</span></span>
                         </div>
-                        <div className="text-sm text-neutral-600 mb-6 font-medium">Automatic cost control for your AI agents.</div>
+                        <div className="text-sm text-neutral-600 mb-6 font-bold uppercase tracking-tight">Automatic cost control for AI agents.</div>
                         <button
                             onClick={() => setHelpOpen(true)}
-                            className="text-[10px] font-black uppercase tracking-widest bg-primary px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none transition-all"
+                            className="text-[10px] font-black uppercase tracking-widest bg-primary px-3 py-1.5 border-2 border-black hover:bg-black hover:text-white transition-all shadow-none"
                         >
                             Interactive Guide
                         </button>
                         <div className="mt-8">
                             <a href="https://www.producthunt.com/products/p402-io?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-p402-io" target="_blank" rel="noopener noreferrer">
-                                <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1060148&theme=light&t=1767960638366" alt="P402.io - Route, verify, and settle paid API calls with clear traces | Product Hunt" style={{ width: '250px', height: '54px' }} width="250" height="54" />
+                                <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1060148&theme=light&t=1767960638366" alt="P402.io - Route, verify, and settle paid API calls with clear traces | Product Hunt" style={{ width: '200px', height: '43px' }} width="200" height="43" className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all border-2 border-black" />
                             </a>
                         </div>
                     </div>
@@ -61,19 +61,16 @@ export function Footer() {
                     </div>
                 </div>
 
-                <div className="border-t-2 border-neutral-100 mt-12 pt-6">
+                <div className="border-t-2 border-black mt-12 pt-6">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                        <div className="text-xs text-neutral-500 order-2 md:order-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 order-2 md:order-1">
                             © {new Date().getFullYear()} P402. Tokens: USDC, USDT on Base.
                         </div>
-                        <div className="flex items-center gap-6 opacity-60 grayscale order-1 md:order-2">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Trusted Infrastructure</span>
-                            <div className="flex items-center gap-1.5 font-extrabold text-base text-[#0052FF]">
-                                <div className="w-3 h-3 rounded-full border-[3px] border-[#0052FF]" />
-                                Base
-                            </div>
-                            <div className="font-bold text-[0.9rem] text-[#375BD2]">Chainlink</div>
-                            <div className="font-extrabold text-[0.9rem] text-[#0052FF]">coinbase</div>
+                        <div className="flex items-center gap-8 order-1 md:order-2 grayscale opacity-40">
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Infrastructure</span>
+                            <div className="font-black text-xs uppercase tracking-tighter">Base L2</div>
+                            <div className="font-black text-xs uppercase tracking-tighter">Chainlink</div>
+                            <div className="font-black text-xs uppercase tracking-tighter">Coinbase</div>
                         </div>
                     </div>
                 </div>

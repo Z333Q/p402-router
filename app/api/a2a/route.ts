@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { A2AMessage, A2ATask, A2ATaskState, A2ATaskStatus } from '../../../lib/a2a-types';
 import { query } from '../../../lib/db';
 import { A2A_ERRORS, A2AError } from '../../../lib/a2a-errors';
+import { pushNotificationService } from '../../../lib/push-service';
 
 export async function POST(req: NextRequest) {
     try {
@@ -108,7 +109,15 @@ async function handleMessageSend(params: any, id: string | number, tenantId: str
             ]
         );
 
-        // 3. Construct Response
+        // 4. Notify via Push
+        pushNotificationService.notifyTaskStateChange({
+            task_id: taskId,
+            context_id: contextId,
+            tenant_id: tenantUuid,
+            state: 'completed'
+        }).catch(err => console.error('Push Notification Error:', err));
+
+        // 5. Construct Response
         const task: A2ATask = {
             id: taskId,
             contextId,

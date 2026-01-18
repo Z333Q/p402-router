@@ -50,6 +50,12 @@ export function middleware(request: NextRequest) {
             return NextResponse.next();
         }
 
+        // Allow if Authorization header is present (external agents like Google Cloud)
+        const authHeader = request.headers.get('authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            return NextResponse.next();
+        }
+
         if (!sessionId) {
             return NextResponse.json(
                 { error: { type: 'unauthorized', message: 'Session required', code: 'MISSING_SESSION' } },

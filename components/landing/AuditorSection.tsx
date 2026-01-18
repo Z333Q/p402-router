@@ -6,10 +6,7 @@ import { Search, ShieldAlert, Zap, TrendingDown } from 'lucide-react';
 
 export function AuditorSection() {
     return (
-        <section className="py-32 bg-white border-y-8 border-black overflow-hidden relative">
-            {/* Background Accent */}
-            <div className="absolute top-0 right-0 w-1/3 h-full bg-[#B6FF2E] -skew-x-12 translate-x-32 hidden lg:block" />
-
+        <section className="py-32 bg-white border-y-2 border-black overflow-hidden relative">
             <div className="container mx-auto px-6 max-w-7xl relative z-10">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
                     <div className="space-y-8">
@@ -63,8 +60,8 @@ export function AuditorSection() {
                     </div>
 
                     <div className="relative">
-                        {/* Fake Results Preview */}
-                        <div className="border-4 border-black bg-[#141414] p-8 shadow-[24px_24px_0px_0px_rgba(182,255,46,1)] transform rotate-2">
+                        {/* Split Pane Audit Preview */}
+                        <div className="border-2 border-black bg-[#141414] p-8 shadow-none">
                             <div className="flex justify-between items-center mb-8 border-b-2 border-neutral-800 pb-4">
                                 <div className="font-mono text-[10px] text-neutral-500 uppercase tracking-widest">Audit Result: p402-v2-demo</div>
                                 <Badge variant="danger">High Savings</Badge>
@@ -83,7 +80,7 @@ export function AuditorSection() {
 
                                 <div className="pt-4 space-y-3">
                                     <div className="text-[10px] font-bold text-neutral-500 uppercase">Top Recommendation</div>
-                                    <div className="text-sm font-bold text-neutral-300">
+                                    <div className="text-sm font-bold text-neutral-300 leading-tight">
                                         Route 80% of classification tasks to Claude 3 Haiku via P402 Orchestrator.
                                     </div>
                                     <div className="h-2 w-full bg-neutral-800">
@@ -93,9 +90,9 @@ export function AuditorSection() {
                             </div>
                         </div>
 
-                        {/* Floating elements */}
-                        <div className="absolute -top-12 -right-8 w-24 h-24 bg-white border-4 border-black flex items-center justify-center transform -rotate-12 animate-bounce">
-                            <Zap className="h-12 w-12 text-[#B6FF2E] fill-current" />
+                        {/* Status Label instead of floating emoji */}
+                        <div className="absolute -bottom-6 -right-6 bg-white border-2 border-black px-4 py-2 transform rotate-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest">Efficiency: 42% Optimized</span>
                         </div>
                     </div>
                 </div>

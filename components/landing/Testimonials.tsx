@@ -43,11 +43,11 @@ export function Testimonials() {
     }, []);
 
     return (
-        <section className="py-24 bg-white overflow-hidden border-b-4 border-black">
+        <section className="py-24 bg-white overflow-hidden border-b-2 border-black">
             <div className="container mx-auto px-6 mb-16">
                 <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-4 text-black italic">Adopted By Leaders</h2>
                 <div className="h-2 w-32 bg-primary border-2 border-black mb-6" />
-                <p className="text-xl font-bold text-neutral-600 uppercase">Defining the economic layer of the Agentic Web.</p>
+                <p className="text-xl font-bold text-neutral-600 uppercase tracking-widest">Defining the economic layer of the Agentic Web.</p>
             </div>
 
             <div
@@ -60,7 +60,7 @@ export function Testimonials() {
                     {testimonials.map((t, idx) => (
                         <div
                             key={idx}
-                            className="w-[350px] md:w-[500px] p-10 border-r-4 border-y-4 border-black bg-white flex-shrink-0"
+                            className="w-[350px] md:w-[500px] p-10 border-r-2 border-y-2 border-black bg-white flex-shrink-0"
                         >
                             <div className="h-full flex flex-col justify-between">
                                 <p className="text-lg font-bold text-black mb-8 leading-tight italic">"{t.quote}"</p>

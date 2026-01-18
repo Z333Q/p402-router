@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
     const agentCard = {
+        protocolVersion: "v1.0",
         name: "P402 Payment Router",
         description: "Payment-aware AI orchestration layer for the agentic web.",
-        protocolVersion: "1.0",
+        url: "https://p402.io",
+        iconUrl: "https://p402.io/favicon.png",
+        version: "1.0.0",
 
         capabilities: {
             streaming: true,
@@ -18,6 +21,9 @@ export async function GET() {
                 description: "Route chat completion requests to optimal providers based on cost/performance."
             }
         ],
+
+        defaultInputModes: ["text/plain"],
+        defaultOutputModes: ["text/plain"],
 
         extensions: [
             {

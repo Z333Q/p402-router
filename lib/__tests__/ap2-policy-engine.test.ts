@@ -1,9 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AP2PolicyEngine } from '../ap2-policy-engine';
 import { query } from '../db';
+import { pushNotificationService } from '../push-service';
 
 vi.mock('../db', () => ({
     query: vi.fn(),
+}));
+
+vi.mock('../push-service', () => ({
+    pushNotificationService: {
+        notifyBudgetExhausted: vi.fn().mockResolvedValue([]),
+    },
 }));
 
 describe('AP2PolicyEngine', () => {
@@ -101,14 +108,52 @@ describe('AP2PolicyEngine', () => {
         });
     });
 
+    describe('getMandate()', () => {
+        it('should return mandate if it exists', async () => {
+            const mockMandate = { id: 'm1', tenant_id: 't1' };
+            vi.mocked(query).mockResolvedValueOnce({ rowCount: 1, rows: [mockMandate] } as any);
+
+            const result = await AP2PolicyEngine.getMandate('m1');
+            expect(result).toEqual(mockMandate);
+        });
+
+        it('should return null if mandate does not exist', async () => {
+            vi.mocked(query).mockResolvedValueOnce({ rowCount: 0, rows: [] } as any);
+            const result = await AP2PolicyEngine.getMandate('missing');
+            expect(result).toBeNull();
+        });
+    });
+
     describe('recordUsage()', () => {
         it('should update the database with correct values', async () => {
+            vi.mocked(query).mockResolvedValueOnce({ rowCount: 0 } as any); // RETURNING nothing to skip notification check
             await AP2PolicyEngine.recordUsage('mandate-123', 0.50);
 
             expect(query).toHaveBeenCalledWith(
                 expect.stringContaining('UPDATE ap2_mandates'),
                 [0.50, 'mandate-123']
             );
+        });
+
+        it('should trigger notification and status update if budget exhausted', async () => {
+            vi.mocked(query).mockResolvedValueOnce({
+                rowCount: 1,
+                rows: [{
+                    id: 'm1',
+                    tenant_id: 't1',
+                    constraints: { max_amount_usd: 10.0 },
+                    amount_spent_usd: 10.0
+                }]
+            } as any);
+
+            await AP2PolicyEngine.recordUsage('m1', 5.0);
+
+            expect(pushNotificationService.notifyBudgetExhausted).toHaveBeenCalledWith(expect.objectContaining({
+                tenant_id: 't1',
+                budget_total_usd: 10.0,
+                budget_used_usd: 10.0
+            }));
+            expect(query).toHaveBeenCalledWith(expect.stringContaining("UPDATE ap2_mandates SET status = 'exhausted'"), ['m1']);
         });
     });
 });

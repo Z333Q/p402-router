@@ -19,6 +19,7 @@ export interface A2AConfiguration {
 }
 
 export type A2ATaskState = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+export type TaskState = A2ATaskState; // Alias for compatibility
 
 export interface A2ATaskArtifact {
     id: string;
@@ -37,6 +38,11 @@ export interface A2ATask {
     contextId?: string;
     status: A2ATaskStatus;
     artifacts?: A2ATaskArtifact[];
+    metadata?: {
+        cost_usd?: number;
+        latency_ms?: number;
+        [key: string]: any;
+    };
 }
 
 // AP2 Mandates
@@ -50,6 +56,7 @@ export interface MandateConstraints {
 
 export interface AP2Mandate {
     id: string;
+    tenant_id: string;
     type: MandateType;
     user_did: string;
     agent_did: string;
@@ -58,4 +65,41 @@ export interface AP2Mandate {
     public_key?: string;
     amount_spent_usd: number;
     status: 'active' | 'exhausted' | 'expired' | 'revoked';
+}
+
+export interface Skill {
+    id: string;
+    name: string;
+    description: string;
+    tags?: string[];
+}
+
+export interface Extension {
+    uri: string;
+    config?: any;
+}
+
+export interface AgentCard {
+    protocolVersion: string;
+    name: string;
+    description: string;
+    url: string;
+    iconUrl?: string;
+    version?: string;
+    capabilities?: {
+        streaming?: boolean;
+        pushNotifications?: boolean;
+        [key: string]: any;
+    };
+    skills?: Skill[];
+    defaultInputModes?: string[];
+    defaultOutputModes?: string[];
+    extensions?: Extension[];
+    endpoints?: {
+        a2a?: {
+            jsonrpc?: string;
+            stream?: string;
+        };
+        [key: string]: any;
+    };
 }

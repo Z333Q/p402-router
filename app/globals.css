@@ -42,6 +42,7 @@
 *::before,
 *::after {
   box-sizing: border-box;
+  border-radius: 0px !important;
 }
 
 html {
@@ -77,12 +78,12 @@ h6 {
   align-items: center;
   justify-content: center;
   padding: 10px 14px;
-  border-radius: var(--radius);
+  border-radius: 0px !important;
   font-weight: 800;
   text-transform: uppercase;
   transition: transform 80ms ease-out;
   cursor: pointer;
-  border: 2px solid #000000;
+  border: 2px solid #000000 !important;
   font-family: var(--font-ui);
   line-height: 1;
 }
@@ -105,13 +106,19 @@ h6 {
   color: #000000;
 }
 
+.btn-dark {
+  background: #000000;
+  color: #FFFFFF;
+}
+
 /* Cards */
 .card {
   padding: 16px;
-  border-radius: var(--radius);
+  border-radius: 0px !important;
   background: #FFFFFF;
-  border: 2px solid #000000;
+  border: 2px solid #000000 !important;
   color: #000000;
+  box-shadow: none !important;
 }
 
 /* Inputs */
@@ -122,8 +129,8 @@ select,
 textarea {
   height: 44px;
   padding: 10px 12px;
-  border: 2px solid #000000;
-  border-radius: var(--radius);
+  border: 2px solid #000000 !important;
+  border-radius: 0px !important;
   background: #FFFFFF;
   transition: none;
   font-family: var(--font-ui);
@@ -133,9 +140,9 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 3px solid var(--info);
+  outline: 3px solid var(--info) !important;
   outline-offset: 2px;
-  border-color: #000000;
+  border-color: #000000 !important;
 }
 
 /* Visual Hierarchy */

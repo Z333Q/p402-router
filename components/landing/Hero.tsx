@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { RoutingSimulation } from './RoutingSimulation'
 import { Github, Zap } from 'lucide-react'
+import { Badge } from '@/app/dashboard/_components/ui'
 
 export function Hero() {
     return (
@@ -13,7 +14,7 @@ export function Hero() {
                 {/* 1. Aggressive Hook */}
                 <div className="mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
                     <div className="flex justify-center mb-6">
-                        <div className="badge badge-success py-1">AI COST ANALYTICS</div>
+                        <Badge variant="primary" className="!py-1 tracking-[0.2em]">AI COST ANALYTICS</Badge>
                     </div>
 
                     <h1 className="text-6xl md:text-8xl font-black uppercase leading-[0.85] mb-8 tracking-tighter text-black">
@@ -33,31 +34,23 @@ export function Hero() {
                                 const url = (e.target as any).repoUrl.value;
                                 if (url) window.location.href = `/dashboard/audit?url=${encodeURIComponent(url)}`;
                             }}
-                            className="flex flex-col md:flex-row gap-4 p-3 border-[6px] border-black bg-white shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] transition-all"
+                            className="flex flex-col md:flex-row gap-0 border-2 border-black bg-white"
                         >
-                            <div className="flex-1 relative">
-                                <Zap className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B6FF2E] h-6 w-6 fill-current" />
+                            <div className="flex-1 relative border-b-2 md:border-b-0 md:border-r-2 border-black">
                                 <input
                                     name="repoUrl"
                                     placeholder="Enter GitHub Repo URL..."
-                                    className="w-full h-16 pl-12 pr-4 font-mono text-lg font-black uppercase placeholder-neutral-300 focus:outline-none"
+                                    className="w-full h-16 px-6 font-mono text-lg font-black uppercase placeholder-neutral-300 focus:outline-none border-none"
                                     required
                                 />
                             </div>
-                            <button type="submit" className="bg-[#B6FF2E] hover:bg-black hover:text-white text-black font-black px-10 h-16 text-xl uppercase tracking-tighter flex items-center justify-center gap-3 transition-all border-l-0 md:border-l-4 border-black">
+                            <button type="submit" className="bg-[#B6FF2E] hover:bg-black hover:text-white text-black font-black px-12 h-16 text-xl uppercase tracking-tighter transition-all">
                                 Deep Cost Audit
                             </button>
                         </form>
-                        <div className="mt-6 flex justify-center gap-8 text-[10px] font-black uppercase tracking-widest text-neutral-400">
-                            <span>Ground Truth Analysis</span>
-                            <span>•</span>
-                            <span>Requires Code Access</span>
-                            <span>•</span>
-                            <span>Privacy Guaranteed</span>
-                        </div>
                         <div className="mt-8 flex justify-center">
                             <a href="https://www.producthunt.com/products/p402-io?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-p402-io" target="_blank" rel="noopener noreferrer">
-                                <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1060148&theme=light&t=1767960638366" alt="P402.io - Route, verify, and settle paid API calls with clear traces | Product Hunt" style={{ width: '250px', height: '54px' }} width="250" height="54" />
+                                <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1060148&theme=light&t=1767960638366" alt="P402.io - Route, verify, and settle paid API calls with clear traces | Product Hunt" style={{ width: '250px', height: '54px' }} width="250" height="54" className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all border-2 border-black" />
                             </a>
                         </div>
                     </div>

@@ -14,6 +14,8 @@ Full implementation of Google's A2A Protocol for autonomous agent discovery and 
 - **JSON-RPC Messaging**: Standardized message exchange with context management.
 - **Streaming Responses**: Real-time SSE support for low-latency agent interactions.
 - **Task Lifecycle**: Traceable task states from `pending` to `completed`.
+- **Orchestration**: Autonomous delegation of sub-tasks to other agents based on capability matching.
+- **Bazaar Marketplace**: Global discovery of paid agent services and listings.
 
 ### 💳 AP2 Payment Mandates
 Secure, policy-driven authorization for agent spending.

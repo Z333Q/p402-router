@@ -263,3 +263,77 @@ CREATE TABLE IF NOT EXISTS session_transactions (
 
 CREATE INDEX IF NOT EXISTS idx_session_transactions_session ON session_transactions(session_id);
 CREATE INDEX IF NOT EXISTS idx_session_transactions_tx_hash ON session_transactions(tx_hash);
+
+-- A2A Contexts: Grouping of tasks
+CREATE TABLE IF NOT EXISTS a2a_contexts (
+    id VARCHAR(100) PRIMARY KEY,
+    tenant_id UUID REFERENCES tenants(id),
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- A2A Tasks: Units of work
+CREATE TABLE IF NOT EXISTS a2a_tasks (
+    id VARCHAR(100) PRIMARY KEY,
+    tenant_id UUID REFERENCES tenants(id),
+    context_id VARCHAR(100) REFERENCES a2a_contexts(id),
+    mandate_id VARCHAR(100), -- Link to optional payment mandate
+    request_message JSONB NOT NULL,
+    result_message JSONB,
+    configuration JSONB DEFAULT '{}',
+    state VARCHAR(20) DEFAULT 'pending', -- 'pending', 'processing', 'completed', 'failed', 'cancelled'
+    error_message TEXT,
+    cost_usd NUMERIC(18, 8) DEFAULT 0.0,
+    latency_ms INTEGER,
+    provider_id VARCHAR(100),
+    model_id VARCHAR(100),
+    completed_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- A2A Task States: Detailed state transition history
+CREATE TABLE IF NOT EXISTS a2a_task_states (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    task_id VARCHAR(100) REFERENCES a2a_tasks(id),
+    state VARCHAR(20) NOT NULL,
+    reason TEXT,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- AP2 Mandates: Pre-authorized payment limits
+CREATE TABLE IF NOT EXISTS ap2_mandates (
+    id VARCHAR(100) PRIMARY KEY,
+    tenant_id UUID REFERENCES tenants(id),
+    type VARCHAR(20) NOT NULL, -- 'intent', 'cart', 'payment'
+    user_did VARCHAR(255) NOT NULL,
+    agent_did VARCHAR(255) NOT NULL,
+    constraints JSONB NOT NULL,
+    amount_spent_usd NUMERIC(18, 8) DEFAULT 0.0,
+    status VARCHAR(20) DEFAULT 'active', -- 'active', 'exhausted', 'expired', 'revoked'
+    signature TEXT,
+    public_key TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- A2A Push Configurations: Webhook subscriptions
+CREATE TABLE IF NOT EXISTS a2a_push_configs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID REFERENCES tenants(id) NOT NULL,
+    webhook_url TEXT NOT NULL,
+    auth_type VARCHAR(20) DEFAULT 'none', -- 'bearer', 'basic', 'api_key', 'none'
+    auth_token TEXT,
+    event_types TEXT[] NOT NULL, -- e.g. {'task.completed', 'mandate.used'}
+    context_filter VARCHAR(100), -- Optional: only for a specific context
+    max_retries INTEGER DEFAULT 3,
+    retry_delay_ms INTEGER DEFAULT 1000,
+    consecutive_failures INTEGER DEFAULT 0,
+    enabled BOOLEAN DEFAULT true,
+    last_delivery_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_push_configs_tenant ON a2a_push_configs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_push_configs_enabled ON a2a_push_configs(enabled) WHERE enabled = true;
