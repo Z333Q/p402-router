@@ -283,6 +283,9 @@ export interface AIProviderAdapter {
     /** Check provider health */
     checkHealth(): Promise<ProviderHealth>;
 
+    /** Check if provider is configured with necessary API keys */
+    isAvailable(): boolean;
+
     /** Get current rate limit status */
     getRateLimitStatus?(): Promise<RateLimitInfo>;
 

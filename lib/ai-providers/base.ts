@@ -112,8 +112,12 @@ export abstract class BaseProviderAdapter implements AIProviderAdapter {
 
         const inputCost = (inputTokens / 1000) * model.inputCostPer1k;
         const outputCost = (outputTokens / 1000) * model.outputCostPer1k;
+        const baseCost = inputCost + outputCost;
 
-        return Math.round((inputCost + outputCost) * 1000000) / 1000000; // Round to 6 decimal places
+        // Add 1% P402 platform fee
+        const finalCost = baseCost * 1.01;
+
+        return Math.round(finalCost * 1000000) / 1000000; // Round to 6 decimal places
     }
 
     // =========================================================================
@@ -315,6 +319,10 @@ export abstract class BaseProviderAdapter implements AIProviderAdapter {
 
         this.lastHealthCheckTime = now;
         return this.lastHealthCheck;
+    }
+
+    isAvailable(): boolean {
+        return !!this.config.apiKey;
     }
 
     protected async performHealthCheck(): Promise<void> {

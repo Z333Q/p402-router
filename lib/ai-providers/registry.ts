@@ -152,6 +152,9 @@ export class ProviderRegistry {
     // =========================================================================
 
     async route(request: CompletionRequest, options: RoutingOptions = { mode: 'balanced' }): Promise<RoutingDecision> {
+        // Resolve target model if specified
+        let targetModelId = request.model;
+
         const weights = typeof options.mode === 'string'
             ? ROUTING_PRESETS[options.mode]
             : options.mode;
@@ -161,6 +164,22 @@ export class ProviderRegistry {
 
         // Apply filters
         candidates = this.applyFilters(candidates, options);
+
+        // If a specific model was requested, filter to find it (or its OpenRouter alias)
+        if (targetModelId) {
+            const specificCandidates = candidates.filter(c =>
+                c.model.id === targetModelId ||
+                (c.provider === 'openrouter' && (
+                    c.model.id === `openai/${targetModelId}` ||
+                    c.model.id === `anthropic/${targetModelId}` ||
+                    c.model.id === `google/${targetModelId}` ||
+                    c.model.id === `meta-llama/${targetModelId}`
+                ))
+            );
+            if (specificCandidates.length > 0) {
+                candidates = specificCandidates;
+            }
+        }
 
         // Score and rank
         const scored = await this.scoreModels(candidates, weights, request);
@@ -207,6 +226,24 @@ export class ProviderRegistry {
         options: RoutingOptions
     ): Array<{ provider: string; model: ModelInfo }> {
         let filtered = candidates;
+
+        // NEW: Filter by provider availability (must have API key)
+        const openrouter = this.providers.get('openrouter');
+        const hasOpenRouter = openrouter?.isAvailable();
+
+        filtered = filtered.filter(({ provider, model }) => {
+            const p = this.providers.get(provider)!;
+            const isAvailable = p.isAvailable();
+
+            // If provider is available, it's a candidate
+            if (isAvailable) return true;
+
+            // If provider is NOT available, but we have OpenRouter, 
+            // and this is an OpenRouter-native candidate, keep it.
+            if (hasOpenRouter && provider === 'openrouter') return true;
+
+            return false;
+        });
 
         // Filter by required capabilities
         if (options.requiredCapabilities && options.requiredCapabilities.length > 0) {
@@ -363,7 +400,7 @@ export class ProviderRegistry {
                 // Execute request
                 const response = await decision.provider.complete({
                     ...request,
-                    model: request.model || decision.model.id
+                    model: decision.model.id
                 });
 
                 return response;
@@ -395,7 +432,7 @@ export class ProviderRegistry {
         // Execute stream
         const generator = decision.provider.stream({
             ...request,
-            model: request.model || decision.model.id
+            model: decision.model.id
         });
 
         for await (const chunk of generator) {
