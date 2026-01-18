@@ -214,12 +214,22 @@ npm install @p402/sdk
 ```typescript
 import { P402Client } from '@p402/sdk';
 
-const client = new P402Client('https://p402.io');
-
-await client.checkout({ amount: "10.00", asset: "USDC" }, async (to, data, value) => {
-    // Connect your wallet provider here (wagmi, ethers, etc)
-    return await wallet.sendTransaction({ to, data, value });
+const client = new P402Client({
+    routerUrl: 'https://p402.io',
+    debug: true
 });
+
+await client.checkout(
+    { 
+        amount: "10.00", 
+        network: "eip155:8453" 
+    }, 
+    async (to, data, value) => {
+        // Connect your wallet provider here (wagmi, ethers, etc)
+        const hash = await wallet.sendTransaction({ to, data, value });
+        return hash;
+    }
+);
 ```
 
 See the full [SDK README](sdk/README.md) for details.

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { TopNav } from "@/components/TopNav";
+import { Footer } from "@/components/Footer";
 import { Badge, CodeBlock, TabGroup } from '../../dashboard/_components/ui';
 
 // =============================================================================
@@ -124,6 +126,61 @@ res = requests.post(
                 ]
             }
         }
+    },
+    {
+        id: 'x402-payment-submitted',
+        method: 'POST',
+        path: '/api/a2a',
+        title: 'Submit x402 Payment',
+        description: 'Submit cryptographic proof of payment (EIP-3009 signature or transaction hash) for an A2A task. Mandatory step in the A2A x402 Extension 3-message flow.',
+        params: [
+            { name: 'payment_id', type: 'string', required: true, desc: 'The unique payment identifier provided in the payment-required message.' },
+            { name: 'scheme', type: 'string', required: true, desc: 'The payment scheme used: "exact", "onchain", or "receipt".' },
+            { name: 'signature', type: 'string', required: false, desc: 'The EIP-3009 permit signature (required for "exact" scheme).' },
+            { name: 'tx_hash', type: 'string', required: false, desc: 'The blockchain transaction hash (required for "onchain" scheme).' }
+        ],
+        examples: {
+            curl: `curl https://p402.io/api/a2a \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "x402/payment-submitted",
+    "params": {
+      "payment_id": "pay_123",
+      "scheme": "exact",
+      "signature": "0x..."
+    },
+    "id": 1
+  }'`,
+            javascript: `const res = await fetch('https://p402.io/api/a2a', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'x402/payment-submitted',
+    params: { payment_id: 'pay_123', scheme: 'exact', signature: '0x...' },
+    id: 1
+  })
+});`,
+            python: `res = requests.post(
+    "https://p402.io/api/a2a",
+    json={
+        "jsonrpc": "2.0",
+        "method": "x402/payment-submitted",
+        "params": {"payment_id": "pay_123", "scheme": "exact", "signature": "0x..."},
+        "id": 1
+    }
+)`,
+            response: {
+                jsonrpc: "2.0",
+                result: {
+                    payment_id: "pay_123",
+                    status: "completed",
+                    receipt: { receipt_id: "rec_456", signature: "0x..." }
+                },
+                id: 1
+            }
+        }
     }
 ];
 
@@ -143,8 +200,26 @@ export default function ApiDocsPage() {
                 <aside className="border-r-2 border-black overflow-y-auto p-6 bg-neutral-50">
                     <div className="mb-8">
                         <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Introduction</h3>
-                        <a href="#welcome" className="block text-sm font-bold mb-2 hover:text-[#22D3EE] transition-colors">Overview</a>
-                        <a href="#auth" className="block text-sm font-bold mb-2 hover:text-[#22D3EE] transition-colors">Authentication</a>
+                        <a
+                            href="#welcome"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                document.getElementById('welcome')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className="block text-sm font-bold mb-2 hover:text-[#22D3EE] transition-colors"
+                        >
+                            Overview
+                        </a>
+                        <a
+                            href="#auth"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                document.getElementById('auth')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className="block text-sm font-bold mb-2 hover:text-[#22D3EE] transition-colors"
+                        >
+                            Authentication
+                        </a>
                     </div>
 
                     <div>
@@ -153,7 +228,11 @@ export default function ApiDocsPage() {
                             <a
                                 key={ep.id}
                                 href={`#${ep.id}`}
-                                onClick={() => setActiveSection(ep.id)}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setActiveSection(ep.id);
+                                    document.getElementById(ep.id)?.scrollIntoView({ behavior: 'smooth' });
+                                }}
                                 className={`block text-xs font-bold mb-3 uppercase tracking-tight transition-colors ${activeSection === ep.id ? 'text-[#22D3EE]' : 'text-black hover:text-[#22D3EE]'
                                     }`}
                             >
@@ -181,6 +260,30 @@ export default function ApiDocsPage() {
                                 Welcome to the P402 V2 API. Our platform provides a payment-aware orchestration layer,
                                 allowing you to route AI requests based on cost, quality, and reliability with zero code changes.
                             </p>
+                        </section>
+
+                        {/* Authentication Section */}
+                        <section id="auth" className="p-12 border-b-2 border-black/5">
+                            <h2 className="text-3xl font-black mb-6 uppercase">Authentication</h2>
+                            <p className="text-neutral-600 mb-8 leading-relaxed max-w-2xl">
+                                All API requests must be authenticated using your P402 API Key.
+                                You can manage your keys in the <Link href="/dashboard" className="text-primary font-bold">Dashboard</Link>.
+                                Pass the key in the <code>Authorization</code> header for every request.
+                            </p>
+
+                            <div className="bg-neutral-50 p-6 border-2 border-black font-mono text-sm mb-8">
+                                <div className="text-neutral-400 mb-2"># Example Authorization Header</div>
+                                <div className="text-black">Authorization: Bearer p402_live_your_key_here</div>
+                            </div>
+
+                            <div className="flex items-start gap-4 p-4 border-2 border-[#F59E0B] bg-[#F59E0B]/5 rounded-none">
+                                <span className="text-xl">⚠️</span>
+                                <p className="text-xs text-neutral-600 leading-relaxed">
+                                    <span className="font-bold text-black uppercase block mb-1">Security Best Practice</span>
+                                    Never expose your API key in client-side code (browsers, mobile apps).
+                                    Always route requests through a secure backend service to keep your credentials safe.
+                                </p>
+                            </div>
                         </section>
 
                         {/* Endpoints Loop */}
@@ -249,7 +352,13 @@ export default function ApiDocsPage() {
                         {/* Legacy V1 Section */}
                         <section id="legacy" className="p-12 bg-neutral-100 italic text-neutral-400">
                             <h2 className="text-xl font-black mb-4">Looking for V1?</h2>
-                            <p className="text-sm">The legacy x402 payment endpoints are still available at /api/v1/router/*. Please refer to the V1 documentation for details.</p>
+                            <p className="text-sm mb-4">The legacy x402 payment endpoints are still available at /api/v1/router/*. Please refer to the V1 documentation for details.</p>
+                            <div id="v1-plan" className="mb-4">
+                                <code className="text-xs">POST /api/v1/router/plan</code>
+                            </div>
+                            <div id="v1-settle">
+                                <code className="text-xs">POST /api/v1/router/settle</code>
+                            </div>
                         </section>
                     </div>
                 </main>
@@ -260,6 +369,7 @@ export default function ApiDocsPage() {
                 html { scroll-behavior: smooth; }
                 .scroll-smooth { scroll-behavior: smooth; }
             `}</style>
+            <Footer />
         </div>
     );
 }

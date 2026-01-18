@@ -2,6 +2,23 @@ import { AP2Mandate, MandateConstraints } from './a2a-types';
 import { query } from './db';
 import { pushNotificationService } from './push-service';
 
+export interface AP2PolicyContext {
+    tenant_id: string;
+    category?: string;
+    requested_amount_usd: number;
+    metadata?: any;
+}
+
+export interface AP2PolicyResult {
+    allowed: boolean;
+    mandate_id?: string;
+    error?: {
+        code: string;
+        message: string;
+        data?: any;
+    };
+}
+
 // Minimal in-memory or DB-based policy engine for Mandates
 // In a real implementation, this would verify signatures (EIP-712).
 // For now, we simulate constraint checking.
@@ -109,4 +126,59 @@ export class AP2PolicyEngine {
             }
         }
     }
+}
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+export async function validateMandate(mandateId: string, requestedAmountUsd: number, category?: string) {
+    return AP2PolicyEngine.verifyMandate(mandateId, requestedAmountUsd, category);
+}
+
+export async function findActiveMandate(tenantId: string, agentDid: string, category?: string) {
+    const res = await query(
+        `SELECT * FROM ap2_mandates 
+         WHERE tenant_id = $1 
+           AND agent_did = $2 
+           AND status = 'active'
+         ORDER BY created_at DESC LIMIT 1`,
+        [tenantId, agentDid]
+    );
+    return res.rows[0] || null;
+}
+
+export async function recordMandateUsage(mandateId: string, amountUsd: number) {
+    return AP2PolicyEngine.recordUsage(mandateId, amountUsd);
+}
+
+export async function getMandateBudgetStatus(mandateId: string) {
+    const mandate = await AP2PolicyEngine.getMandate(mandateId);
+    if (!mandate) return null;
+    return {
+        total: mandate.constraints.max_amount_usd,
+        spent: mandate.amount_spent_usd,
+        remaining: mandate.constraints.max_amount_usd - mandate.amount_spent_usd
+    };
+}
+
+export async function enforceAP2Policy(context: AP2PolicyContext): Promise<AP2PolicyResult> {
+    const mandate = await findActiveMandate(context.tenant_id, context.metadata?.agent_did, context.category);
+    if (!mandate) {
+        return { allowed: false, error: { code: 'NO_ACTIVE_MANDATE', message: 'No active mandate found for this agent' } };
+    }
+
+    const validation = await validateMandate(mandate.id, context.requested_amount_usd, context.category);
+    if (!validation.valid) {
+        return { allowed: false, mandate_id: mandate.id, error: validation.error };
+    }
+
+    return { allowed: true, mandate_id: mandate.id };
+}
+
+export function createAP2PolicyMiddleware() {
+    // Standard middleware wrapper if needed
+    return async (context: AP2PolicyContext) => {
+        return enforceAP2Policy(context);
+    };
 }

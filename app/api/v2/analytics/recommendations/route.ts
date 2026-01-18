@@ -349,13 +349,13 @@ function getGenericRecommendations(registry: ReturnType<typeof getProviderRegist
             description: 'For basic tasks like classification or simple Q&A, budget-tier models perform nearly as well at 10x lower cost.',
             current: {},
             recommended: {
-                model: registry.getCheapestModel()?.model || 'gpt-3.5-turbo',
+                model: registry.getCheapestModel()?.model || 'gemini-3.0-flash',
                 action: 'Use budget-tier models'
             },
             potential_savings_usd: 0,
             potential_savings_percent: 70,
             confidence: 0.85,
-            implementation: "Set prefer_tier: 'budget' for simple tasks, or explicitly use budget models like gpt-3.5-turbo or claude-haiku."
+            implementation: "Set prefer_tier: 'budget' for simple tasks, or explicitly use budget models like gemini-3.0-flash or claude-haiku-4.5."
         }
     ];
 }

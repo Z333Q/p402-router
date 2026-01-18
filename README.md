@@ -30,10 +30,15 @@ Intelligent routing engine for LLM requests.
 - **Failover & Retries**: Automatic fallback to alternative providers if the primary fails.
 - **Semantic Cache**: Embedding-based caching to reduce costs and latency for repetitive queries.
 
-### 🌐 x402 Compliance
-Built on the HTTP 402 Payment Required standard.
-- **Standardized Headers**: Uses `Authorization: Payment <token>` for seamless integration.
-- **Settlement**: Supports USDC/USDT on Base (Coinbase L2) and Ethereum Mainnet.
+### 🌐 A2A x402 Extension (Google Spec)
+Official support for the A2A x402 Extension for cryptographic payment negotiation.
+- **Pay-Per-Task**: Direct settlement for individual agent requests.
+- **Three-Message Flow**: Implements the official `payment-required`, `payment-submitted`, and `payment-completed` lifecycle.
+- **Payment Schemes**: 
+  - `exact`: EIP-3009 (Permitted Transfer) for gasless USDC/USDT settlement.
+  - `onchain`: Direct transaction verification on Base/Ethereum.
+  - `receipt`: Reuse of prior payments for bundled or prepaid services.
+- **Extension URI**: `tag:x402.org,2025:x402-payment`
 
 ---
 

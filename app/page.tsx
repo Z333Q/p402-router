@@ -17,7 +17,7 @@ export default async function Page() {
                 <HeroAuditor />
 
                 {/* Protocol Deep Dive / Features */}
-                <section className="py-24 bg-white border-t-2 border-black">
+                <section id="product" className="py-24 bg-white border-t-2 border-black">
                     <div className="container mx-auto px-6 max-w-7xl">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                             <div className="card p-10 border-2 border-black bg-white">

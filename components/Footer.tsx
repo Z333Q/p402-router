@@ -42,6 +42,7 @@ export function Footer() {
                         { label: 'MCP', href: '/docs/mcp' },
                     ]} />
                     <FooterCol title="Company" links={[
+                        { label: 'Whitepaper', href: '/whitepaper.pdf' },
                         { label: 'Privacy', href: '/privacy' },
                         { label: 'Terms', href: '/terms' },
                         { label: 'Get Access', href: '/get-access' },

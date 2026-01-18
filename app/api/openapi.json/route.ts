@@ -10,7 +10,7 @@ export async function GET() {
         },
         "servers": [
             {
-                "url": "https://www.p402.io/api"
+                "url": "https://p402.io/api"
             }
         ],
         "paths": {

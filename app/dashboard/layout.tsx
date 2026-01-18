@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Menu, X } from 'lucide-react'
+import { Footer } from '@/components/Footer'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const { status } = useSession()
@@ -67,6 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         {children}
                     </div>
                 </div>
+                <Footer />
             </main>
         </div>
     )

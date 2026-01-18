@@ -7,35 +7,35 @@ export default function SDKDocs() {
       <TopNav />
 
       <main className="max-w-4xl mx-auto py-24 px-6">
-        <div className="inline-block bg-black text-primary px-3 py-1 text-sm font-black uppercase mb-6 border-2 border-black">
-          SDK REFERENCE
+        <div className="mb-12 border-b-4 border-black pb-8">
+          <h1 className="text-6xl font-black uppercase italic tracking-tighter mb-4">P402 SDKs</h1>
+          <p className="text-xl font-bold text-neutral-600 uppercase tracking-tight">
+            Accelerate your agent development with official libraries.
+          </p>
         </div>
-        <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-6 text-black">P402 SDKs</h1>
-        <p className="text-xl font-bold mb-12 text-neutral-600 border-l-4 border-black pl-6">
-          Accelerate your agent development with our official libraries.
-        </p>
 
         <section className="mb-16">
-          <h2 className="text-2xl font-black uppercase tracking-tight text-black mb-6">Installation</h2>
-          <div className="bg-black p-6 border-2 border-black font-mono text-sm text-primary">
-            npm install @p402/sdk @p402/a2a-sdk
+          <h2 className="text-3xl font-black uppercase italic mb-8">Installation</h2>
+          <div className="bg-black p-8 border-4 border-black font-mono text-sm text-primary shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            npm install @p402/sdk
           </div>
         </section>
 
         <section className="mb-16">
-          <h2 className="text-2xl font-black uppercase tracking-tight text-black mb-6">A2A Client</h2>
-          <p className="font-medium mb-6">Interact with any A2A-compliant agent or router.</p>
+          <h2 className="text-3xl font-black uppercase italic mb-8">A2A Client</h2>
+          <p className="font-bold text-neutral-600 mb-8 uppercase tracking-tight">Interact with any A2A-compliant agent or router.</p>
 
-          <div className="bg-neutral-900 p-6 border-2 border-black text-sm overflow-x-auto text-zinc-300">
-            <pre><code className="language-typescript">{`import { A2AClient } from '@p402/a2a-sdk';
+          <div className="bg-neutral-900 p-8 border-4 border-black text-xs overflow-x-auto text-zinc-300 shadow-[12px_12px_0px_0px_rgba(182,255,46,1)]">
+            <pre><code>{`import { P402A2AClient } from '@p402/sdk';
 
-const client = new A2AClient({
+const client = new P402A2AClient({
   baseUrl: 'https://p402.io',
-  tenantId: 'your-tenant-id' // Optional
+  tenantId: 'your-tenant-id', // Optional
+  apiKey: 'your-api-key'      // Optional
 });
 
-// 1. Send a Message
-const response = await client.sendMessage({
+// 1. Send a Message (Google A2A Protocol)
+const { task } = await client.sendMessage({
   message: {
     role: 'user',
     parts: [{ type: 'text', text: 'Analyze market trends for Q3' }]
@@ -43,37 +43,49 @@ const response = await client.sendMessage({
   configuration: { mode: 'quality' }
 });
 
-console.log(response.task.status.message.parts[0].text);
+console.log(task.status.state);
 
-// 2. Stream a Response
-for await (const event of client.streamMessage({
-  message: { role: 'user', parts: [{ type: 'text', text: 'Write a poem' }] }
-})) {
-  if (event.type === 'message.delta') {
-    process.stdout.write(event.data.delta.text);
-  }
-}`}</code></pre>
+// 2. Submit Payment (x402 Extension)
+const receipt = await client.submitPayment({
+  payment_id: 'pay_123...',
+  scheme: 'onchain',
+  tx_hash: '0x...'
+});
+
+console.log('Payment Status:', receipt.status);`}</code></pre>
           </div>
         </section>
 
-        <section className="mb-16">
-          <h2 className="text-2xl font-black uppercase tracking-tight text-black mb-6">x402 Payment Client</h2>
-          <p className="font-medium mb-6">Handle payment negotiation and settlement on the client side.</p>
+        <section className="mb-24">
+          <h2 className="text-3xl font-black uppercase italic mb-8">x402 Payment Client</h2>
+          <p className="font-bold text-neutral-600 mb-8 uppercase tracking-tight">Unified SDK for simple on-chain payments and protocol coordination.</p>
 
-          <div className="bg-neutral-900 p-6 border-2 border-black text-sm overflow-x-auto text-zinc-300">
-            <pre><code className="language-typescript">{`import { P402Client } from '@p402/sdk';
+          <div className="bg-neutral-900 p-8 border-4 border-black text-xs overflow-x-auto text-zinc-300 shadow-[12px_12px_0px_0px_rgba(34,211,238,1)]">
+            <pre><code>{`import { P402Client } from '@p402/sdk';
 
-const client = new P402Client('https://p402.io');
+const client = new P402Client({
+  routerUrl: 'https://p402.io',
+  debug: true
+});
 
-// Checkout with wallet (EIP-1193)
-const receipt = await client.checkout({
-  amount: "5.00",
-  asset: "USDC",
-  network: "base", // Chain ID 8453
-  recipient: "0x..." 
-}, window.ethereum);
+// Complete flow: Plan -> Sign -> Settle
+const result = await client.checkout(
+  {
+    amount: "10.00",
+    network: "eip155:8453" // Base Mainnet
+  },
+  // Wallet bridging
+  async (to, data, value) => {
+    const hash = await wallet.sendTransaction({ to, data, value });
+    return hash;
+  }
+);
 
-console.log('Payment Successful:', receipt.txHash);`}</code></pre>
+if (result.success) {
+  console.log('Receipt:', result.receipt);
+} else {
+  console.error('Error:', result.error.message);
+}`}</code></pre>
           </div>
         </section>
       </main>

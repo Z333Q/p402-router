@@ -2,7 +2,7 @@
  * P402 Google Gemini Provider Adapter
  * ====================================
  * Full implementation of Google's Gemini API.
- * Supports Gemini 2.0, 1.5 Pro, 1.5 Flash, and embedding models.
+ * Supports Gemini 3.0, 2.0, and embedding models.
  */
 
 import { BaseProviderAdapter, ProviderConfig } from './base';
@@ -76,7 +76,7 @@ export class GoogleAdapter extends BaseProviderAdapter {
     }
 
     async complete(request: CompletionRequest): Promise<CompletionResponse> {
-        const model = request.model || 'gemini-1.5-flash';
+        const model = request.model || 'gemini-3.0-flash';
         const start = Date.now();
 
         const { systemInstruction, contents } = this.convertMessages(request.messages);
@@ -115,7 +115,7 @@ export class GoogleAdapter extends BaseProviderAdapter {
     }
 
     async *stream(request: CompletionRequest): AsyncGenerator<StreamChunk> {
-        const model = request.model || 'gemini-1.5-flash';
+        const model = request.model || 'gemini-3.0-flash';
         const { systemInstruction, contents } = this.convertMessages(request.messages);
 
         const body: any = {

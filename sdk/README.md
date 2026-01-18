@@ -14,7 +14,10 @@ npm install @p402/sdk viem
 ```typescript
 import { P402Client } from '@p402/sdk';
 
-const client = new P402Client('https://p402.io');
+const client = new P402Client({
+  routerUrl: 'https://p402.io',
+  debug: true
+});
 ```
 
 ### 2. Perform Checkout
@@ -29,7 +32,6 @@ const { sendTransactionAsync } = useSendTransaction();
 const result = await client.checkout(
   {
     amount: "10.00",
-    asset: "USDC",
     network: "eip155:8453" // Base Mainnet
   },
   // The SDK calls this function when it's time to sign

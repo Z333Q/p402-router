@@ -46,14 +46,14 @@ export const HeroAuditor = () => {
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4">
-                        <Link href="/docs/router">
+                        <Link href="/bazaar">
                             <button className="h-12 px-8 bg-black text-white font-mono font-bold uppercase tracking-wider hover:-translate-y-1 transition-transform border-2 border-black shadow-[4px_4px_0px_0px_#B6FF2E] w-full sm:w-auto">
-                                Read Whitepaper
+                                Join Bazaar Waitlist
                             </button>
                         </Link>
-                        <Link href="/docs/api">
+                        <Link href="/docs">
                             <button className="h-12 px-8 bg-white text-black font-mono font-bold uppercase tracking-wider hover:-translate-y-1 transition-transform border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 group w-full sm:w-auto">
-                                View Documentation
+                                Read Documentation
                                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </button>
                         </Link>

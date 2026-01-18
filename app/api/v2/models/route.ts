@@ -129,8 +129,8 @@ function normalizeModels(rawModels: OpenRouterModel[]): NormalizedModel[] {
                 context_window: m.context_length || 0,
                 max_output_tokens: m.top_provider?.max_completion_tokens || 4096,
                 pricing: {
-                    input_per_1k: parseFloat(m.pricing.prompt) * 1000,
-                    output_per_1k: parseFloat(m.pricing.completion) * 1000
+                    input_per_1k: parseFloat(m.pricing.prompt) * 1000 * 1.01,
+                    output_per_1k: parseFloat(m.pricing.completion) * 1000 * 1.01
                 },
                 capabilities: extractCapabilities(m)
             };

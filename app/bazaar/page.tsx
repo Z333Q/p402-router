@@ -41,7 +41,7 @@ export default async function PublicBazaarPage() {
                     </span>
                 </Link>
                 <div className="flex items-center gap-4">
-                    <Link href="/docs/api#bazaar" className="text-sm font-bold text-neutral-600 hover:text-black transition-colors underline decoration-2">
+                    <Link href="/docs/bazaar" className="text-sm font-bold text-neutral-600 hover:text-black transition-colors underline decoration-2">
                         API Spec
                     </Link>
                     {user ? (
