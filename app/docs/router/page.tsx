@@ -39,6 +39,24 @@ export default function RouterDocs() {
             </section>
 
             <section className="mb-12">
+                <h2 className="text-2xl font-bold text-white mb-6">OpenRouter Meta-Provider</h2>
+                <p className="text-zinc-400 mb-6">
+                    P402 integrates natively with OpenRouter as a primary meta-provider. This enables instant access to over
+                    <strong className="text-white"> 300+ specialized models</strong> through a single orchestration layer.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl">
+                        <h3 className="text-lime-400 font-bold mb-2 uppercase text-xs tracking-widest">Latest Frontier Models</h3>
+                        <p className="text-sm">Access GPT-5.2, Claude 4.5, and Gemini 3.0 the moment they drop, with zero manual adapter updates required.</p>
+                    </div>
+                    <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl">
+                        <h3 className="text-lime-400 font-bold mb-2 uppercase text-xs tracking-widest">Unified Settlement</h3>
+                        <p className="text-sm">Use a single <code className="text-zinc-300">OPENROUTER_API_KEY</code> to settle requests across hundreds of models while maintaining 1% platform fee transparency.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section className="mb-12">
                 <h2 className="text-2xl font-bold text-white mb-6">Configuration</h2>
                 <p className="mb-4">Control routing behavior per-request via the <code className="text-lime-400">configuration</code> object.</p>
                 <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 text-sm overflow-x-auto">

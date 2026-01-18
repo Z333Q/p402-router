@@ -21,8 +21,18 @@ export type BazaarResource = {
     total_calls?: number;
 };
 
+export type BazaarModel = {
+    id: string;
+    name: string;
+    context_window: number;
+    pricing: { prompt: string; completion: string };
+    capabilities: string[];
+    provider: string;
+};
+
 export function useBazaar() {
     const [resources, setResources] = useState<BazaarResource[]>([]);
+    const [models, setModels] = useState<BazaarModel[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [syncing, setSyncing] = useState(false);
@@ -34,10 +44,18 @@ export function useBazaar() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch('/api/v1/bazaar');
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            setResources(data.resources || []);
+            // Fetch Resources (x402)
+            const resBazaar = await fetch('/api/v1/bazaar');
+            if (!resBazaar.ok) throw new Error(`HTTP ${resBazaar.status}`);
+            const dataBazaar = await resBazaar.json();
+            setResources(dataBazaar.resources || []);
+
+            // Fetch Models (OpenRouter)
+            const resModels = await fetch('/api/v2/models');
+            if (resModels.ok) {
+                const dataModels = await resModels.json();
+                setModels(dataModels.data || []);
+            }
         } catch (err: any) {
             setError(err.message || 'Failed to load registry');
         } finally {
@@ -83,10 +101,20 @@ export function useBazaar() {
             const matchesSearch = r.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 r.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 tags.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()));
-            const matchesTag = !selectedTag || tags.includes(selectedTag);
+            const matchesTag = !selectedTag || selectedTag === 'LLM MODELS' || tags.includes(selectedTag);
             return matchesSearch && matchesTag;
         });
     }, [resources, searchTerm, selectedTag]);
+
+    const filteredModels = useMemo(() => {
+        if (selectedTag && selectedTag !== 'LLM MODELS') return [];
+        return models.filter(m => {
+            const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                m.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                m.provider.toLowerCase().includes(searchTerm.toLowerCase());
+            return matchesSearch;
+        });
+    }, [models, searchTerm, selectedTag]);
 
     const allTags = useMemo(() => {
         const tags = new Set<string>();
@@ -95,7 +123,9 @@ export function useBazaar() {
                 r.tags.forEach(t => tags.add(t));
             }
         });
-        return Array.from(tags).sort();
+        const tagsArray = Array.from(tags).sort();
+        // Add a special virtual tag for models
+        return ['LLM MODELS', ...tagsArray];
     }, [resources]);
 
     useEffect(() => {
@@ -104,7 +134,9 @@ export function useBazaar() {
 
     return {
         resources: filteredResources,
+        models: filteredModels,
         allResources: resources,
+        allModels: models,
         loading,
         error,
         syncing,

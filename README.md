@@ -101,7 +101,7 @@ curl -X POST https://p402.io/api/a2a/mandates -d '{
 | **Perplexity** | Sonar Online | Real-time web search |
 | **Mistral** | Large 3, Codestral | Open-weight mastery |
 
-And many more including Together AI, Fireworks, Cohere, and OpenRouter.
+And over **300+ frontier models** via the **OpenRouter Meta-Provider**, ensuring instant access to the latest state-of-the-art AI without individual API key overhead.
 
 ---
 

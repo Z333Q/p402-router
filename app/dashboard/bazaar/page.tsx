@@ -22,7 +22,8 @@ export default function BazaarIndexPage() {
         refresh,
         performSync,
         importRoute,
-        requestSimulation
+        requestSimulation,
+        models
     } = useBazaar()
 
     const [simulationResult, setSimulationResult] = useState<any>(null)
@@ -161,7 +162,7 @@ export default function BazaarIndexPage() {
                         Array.from({ length: 6 }).map((_, i) => (
                             <div key={i} className="h-64 bg-neutral-100 border-2 border-dashed border-black/10 animate-pulse" />
                         ))
-                    ) : resources.length === 0 ? (
+                    ) : resources.length === 0 && models.length === 0 ? (
                         <div className="col-span-full py-20">
                             <EmptyState
                                 title="Bazaar is empty"
@@ -170,15 +171,23 @@ export default function BazaarIndexPage() {
                             />
                         </div>
                     ) : (
-                        resources.map(r => (
-                            <BazaarCard
-                                key={r.resource_id}
-                                r={r}
-                                onImport={handleImport}
-                                onSimulate={handleSimulate}
-                                isImporting={importing === r.resource_id}
-                            />
-                        ))
+                        <>
+                            {resources.map(r => (
+                                <BazaarCard
+                                    key={r.resource_id}
+                                    r={r}
+                                    onImport={handleImport}
+                                    onSimulate={handleSimulate}
+                                    isImporting={importing === r.resource_id}
+                                />
+                            ))}
+                            {models.map(m => (
+                                <ModelCard
+                                    key={m.id}
+                                    m={m}
+                                />
+                            ))}
+                        </>
                     )}
                 </div>
 
@@ -323,6 +332,48 @@ function BazaarCard({ r, onImport, onSimulate, isImporting }: { r: BazaarResourc
                 >
                     {isImporting ? '...' : 'DEPLOY'}
                 </Button>
+            </div>
+        </Card>
+    )
+}
+
+function ModelCard({ m }: { m: any }) {
+    return (
+        <Card title={m.name} body={`Model ID: ${m.id}`} className="flex flex-col h-96 bg-white group hover:-translate-y-1 transition-all duration-300 relative overflow-hidden cursor-default hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-primary/20">
+            <div className="absolute inset-0 bg-primary/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+            <div className="flex justify-between items-center mb-6 relative z-10">
+                <div className="flex flex-wrap gap-2">
+                    <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px] uppercase font-black tracking-widest">AI MODEL</Badge>
+                    <Badge className="bg-neutral-50 text-[9px] border-neutral-200">{m.provider?.toUpperCase() || 'GENERIC'}</Badge>
+                </div>
+                <Badge tone="ok">ACTIVE</Badge>
+            </div>
+
+            <div className="space-y-4 flex-1 mb-6 relative z-10">
+                <div className="p-3 bg-neutral-900 text-primary border-2 border-black space-y-1">
+                    <div className="text-[9px] font-black uppercase text-neutral-500 tracking-widest">Context Window</div>
+                    <div className="font-mono text-[10px]">{m.context_window?.toLocaleString() || '---'} Tokens</div>
+                </div>
+
+                <div className="flex items-end justify-between px-1">
+                    <div className="space-y-0.5">
+                        <div className="text-[9px] font-black uppercase text-neutral-400 tracking-widest italic">Input Cost (1M)</div>
+                        <div className="text-2xl font-black text-black tracking-tighter">${(Number(m.pricing?.prompt) * 1000).toFixed(4)}</div>
+                    </div>
+                    <div className="space-y-0.5 text-right">
+                        <div className="text-[9px] font-black uppercase text-neutral-400 tracking-widest italic">Output Cost (1M)</div>
+                        <div className="text-2xl font-black text-black tracking-tighter">${(Number(m.pricing?.completion) * 1000).toFixed(4)}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="pt-6 border-t-2 border-black/5 flex flex-wrap gap-1 relative z-10 h-16 overflow-hidden">
+                {m.capabilities?.slice(0, 5).map((c: string) => (
+                    <span key={c} className="text-[8px] font-bold text-neutral-400 border border-neutral-200 px-1.5 py-0.5 uppercase tracking-tighter">
+                        {c.replace('_', ' ')}
+                    </span>
+                ))}
             </div>
         </Card>
     )

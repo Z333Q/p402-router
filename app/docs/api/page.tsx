@@ -85,19 +85,25 @@ res = requests.post(
         }
     },
     {
-        id: 'list-providers',
+        id: 'list-models',
         method: 'GET',
-        path: '/api/v2/providers',
-        title: 'List Providers',
-        description: 'Retrieve a list of all supported AI providers and their available models, capabilities, and real-time health status.',
+        path: '/api/v2/models',
+        title: 'List Models',
+        description: 'Dynamically retrieve all 300+ models accessible via the OpenRouter Meta-Provider, including real-time pricing, context windows, and model capabilities.',
         examples: {
-            curl: `curl https://p402.io/api/v2/providers`,
-            javascript: `const res = await fetch('https://p402.io/api/v2/providers');`,
-            python: `res = requests.get("https://p402.io/api/v2/providers")`,
+            curl: `curl https://p402.io/api/v2/models`,
+            javascript: `const res = await fetch('https://p402.io/api/v2/models');`,
+            python: `res = requests.get("https://p402.io/api/v2/models")`,
             response: {
-                providers: [
-                    { id: "openai", name: "OpenAI", status: "healthy", models: [] },
-                    { id: "anthropic", name: "Anthropic", status: "healthy", models: [] }
+                object: "list",
+                total: 339,
+                data: [
+                    {
+                        id: "openai/gpt-4o",
+                        name: "GPT-4o",
+                        context_window: 128000,
+                        pricing: { prompt: "0.000005", completion: "0.000015" }
+                    }
                 ]
             }
         }
