@@ -1,8 +1,7 @@
 
 import { TopNav } from "@/components/TopNav"
 import { Footer } from "@/components/Footer"
-import { Hero } from "@/components/landing/Hero"
-import { AuditorSection } from "@/components/landing/AuditorSection"
+import { HeroAuditor } from "@/components/landing/HeroAuditor"
 import { BazaarLoop } from "@/components/landing/BazaarLoop"
 import { Testimonials } from "@/components/landing/Testimonials"
 import { RequestInspector } from "@/components/landing/RequestInspector"
@@ -15,8 +14,7 @@ export default async function Page() {
         <div className="min-h-screen bg-white text-black font-sans selection:bg-primary selection:text-black">
             <TopNav />
             <main>
-                <Hero />
-                <AuditorSection />
+                <HeroAuditor />
 
                 {/* Protocol Deep Dive / Features */}
                 <section className="py-24 bg-white border-t-2 border-black">
