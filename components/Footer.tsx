@@ -71,6 +71,9 @@ export function Footer() {
                             <div className="font-black text-xs uppercase tracking-tighter">Base L2</div>
                             <div className="font-black text-xs uppercase tracking-tighter">Chainlink</div>
                             <div className="font-black text-xs uppercase tracking-tighter">Coinbase</div>
+                            <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer" className="font-black text-xs uppercase tracking-tighter hover:opacity-100 transition-opacity">
+                                OpenRouter
+                            </a>
                         </div>
                     </div>
                 </div>
