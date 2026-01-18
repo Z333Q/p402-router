@@ -2,7 +2,7 @@
 /**
  * Live test for OpenRouter model fetching
  */
-import { OpenRouterAdapter } from './lib/ai-providers/openrouter';
+import { OpenRouterAdapter } from '../lib/ai-providers/openrouter';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
