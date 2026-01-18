@@ -62,7 +62,7 @@ export default function AuditPage() {
                         Security & Cost <span className="text-primary NOT-italic">Auditor</span>
                     </h1>
                     <p className="text-neutral-500 font-bold uppercase text-xs tracking-widest max-w-md">
-                        Powered by Gemini 1.5 Pro • Real-time Threat detection • Infrastructure optimization
+                        Powered by Gemini 3 • Real-time Threat detection • Infrastructure optimization
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -146,7 +146,7 @@ export default function AuditPage() {
                                 <Cpu size={12} />
                                 <span>Analysis Node</span>
                             </div>
-                            <div className="text-xl font-black uppercase tracking-tight">Gemini 1.5 Pro</div>
+                            <div className="text-xl font-black uppercase tracking-tight">Gemini 3</div>
                         </div>
                         <div className="flex-1 min-w-[200px] border-2 border-black p-4 bg-white space-y-2">
                             <div className="flex items-center gap-2 text-[10px] font-black uppercase text-neutral-400">

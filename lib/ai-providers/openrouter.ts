@@ -22,32 +22,43 @@ export class OpenRouterAdapter extends BaseProviderAdapter {
     models: ModelInfo[] = [
         // OpenAI via OpenRouter
         {
-            id: 'openai/gpt-4o',
-            name: 'GPT-4o (via OpenRouter)',
+            id: 'openai/gpt-5.2',
+            name: 'GPT-5.2 (via OpenRouter)',
             tier: 'premium',
-            contextWindow: 128000,
-            inputCostPer1k: 0.005,
-            outputCostPer1k: 0.015,
-            capabilities: ['chat', 'vision', 'function_calling', 'json_mode', 'streaming'],
+            contextWindow: 256000,
+            inputCostPer1k: 0.004,
+            outputCostPer1k: 0.012,
+            capabilities: ['chat', 'vision', 'function_calling', 'json_mode', 'streaming', 'reasoning'],
             supportsStreaming: true,
-            maxOutputTokens: 16384
+            maxOutputTokens: 32768
         },
         {
-            id: 'openai/gpt-4o-mini',
-            name: 'GPT-4o Mini (via OpenRouter)',
-            tier: 'budget',
+            id: 'openai/gpt-4o',
+            name: 'GPT-4o (via OpenRouter)',
+            tier: 'mid',
             contextWindow: 128000,
-            inputCostPer1k: 0.00015,
-            outputCostPer1k: 0.0006,
+            inputCostPer1k: 0.002,
+            outputCostPer1k: 0.006,
             capabilities: ['chat', 'vision', 'function_calling', 'json_mode', 'streaming'],
             supportsStreaming: true,
             maxOutputTokens: 16384
         },
         // Anthropic via OpenRouter
         {
+            id: 'anthropic/claude-4.5-opus',
+            name: 'Claude 4.5 Opus (via OpenRouter)',
+            tier: 'premium',
+            contextWindow: 400000,
+            inputCostPer1k: 0.008,
+            outputCostPer1k: 0.024,
+            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning'],
+            supportsStreaming: true,
+            maxOutputTokens: 16384
+        },
+        {
             id: 'anthropic/claude-3.5-sonnet',
             name: 'Claude 3.5 Sonnet (via OpenRouter)',
-            tier: 'premium',
+            tier: 'mid',
             contextWindow: 200000,
             inputCostPer1k: 0.003,
             outputCostPer1k: 0.015,
@@ -55,36 +66,25 @@ export class OpenRouterAdapter extends BaseProviderAdapter {
             supportsStreaming: true,
             maxOutputTokens: 8192
         },
-        {
-            id: 'anthropic/claude-3-haiku',
-            name: 'Claude 3 Haiku (via OpenRouter)',
-            tier: 'budget',
-            contextWindow: 200000,
-            inputCostPer1k: 0.00025,
-            outputCostPer1k: 0.00125,
-            capabilities: ['chat', 'vision', 'streaming'],
-            supportsStreaming: true,
-            maxOutputTokens: 4096
-        },
         // Google via OpenRouter
         {
-            id: 'google/gemini-pro-1.5',
-            name: 'Gemini 1.5 Pro (via OpenRouter)',
+            id: 'google/gemini-3-pro',
+            name: 'Gemini 3 Pro (via OpenRouter)',
             tier: 'premium',
-            contextWindow: 2097152,
-            inputCostPer1k: 0.00125,
-            outputCostPer1k: 0.005,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'long_context'],
+            contextWindow: 5000000,
+            inputCostPer1k: 0.001,
+            outputCostPer1k: 0.004,
+            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'long_context', 'video', 'audio'],
             supportsStreaming: true,
-            maxOutputTokens: 8192
+            maxOutputTokens: 16384
         },
         {
-            id: 'google/gemini-flash-1.5',
-            name: 'Gemini 1.5 Flash (via OpenRouter)',
+            id: 'google/gemini-3-flash',
+            name: 'Gemini 3 Flash (via OpenRouter)',
             tier: 'budget',
-            contextWindow: 1048576,
-            inputCostPer1k: 0.000075,
-            outputCostPer1k: 0.0003,
+            contextWindow: 2000000,
+            inputCostPer1k: 0.00005,
+            outputCostPer1k: 0.0002,
             capabilities: ['chat', 'vision', 'streaming', 'long_context'],
             supportsStreaming: true,
             maxOutputTokens: 8192

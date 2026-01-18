@@ -123,7 +123,7 @@ export const HeroAuditor = () => {
                             </button>
 
                             <div className="text-center">
-                                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">Powered by Gemini 1.5 Pro</span>
+                                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">Powered by Gemini 3</span>
                             </div>
                         </div>
                     </div>
