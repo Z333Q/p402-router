@@ -22,12 +22,6 @@ export function middleware(request: NextRequest) {
     const origin = request.headers.get('origin');
     const host = request.headers.get('host');
 
-    // Domain normalization: Redirect www to naked domain for session consistency
-    if (host?.startsWith('www.p402.io')) {
-        const nakedUrl = new URL(request.nextUrl.toString());
-        nakedUrl.host = 'p402.io';
-        return NextResponse.redirect(nakedUrl, 301);
-    }
 
     // Handle CORS preflight for API routes
     if (request.method === 'OPTIONS' && pathname.startsWith('/api/')) {
