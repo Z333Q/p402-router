@@ -14,11 +14,20 @@ const PROTECTED_API_PATHS = [
     '/api/v2/chat',
     '/api/v2/sessions/fund',
     '/api/v2/analytics',
+    '/api/v1/events',
 ];
 
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const origin = request.headers.get('origin');
+    const host = request.headers.get('host');
+
+    // Domain normalization: Redirect www to naked domain for session consistency
+    if (host?.startsWith('www.p402.io')) {
+        const nakedUrl = new URL(request.nextUrl.toString());
+        nakedUrl.host = 'p402.io';
+        return NextResponse.redirect(nakedUrl, 301);
+    }
 
     // Handle CORS preflight for API routes
     if (request.method === 'OPTIONS' && pathname.startsWith('/api/')) {
@@ -44,9 +53,9 @@ export function middleware(request: NextRequest) {
         const sessionToken = request.cookies.get('next-auth.session-token') ||
             request.cookies.get('__Secure-next-auth.session-token');
 
-        // Allow if it's an analytics path and we have a session token (internal dashboard)
-        const isAnalyticsPath = pathname.startsWith('/api/v2/analytics');
-        if (isAnalyticsPath && sessionToken) {
+        // Allow if it's an internal dashboard path and we have a session token
+        const isInternalApiPath = pathname.startsWith('/api/v2/analytics') || pathname.startsWith('/api/v1/events');
+        if (isInternalApiPath && sessionToken) {
             return NextResponse.next();
         }
 

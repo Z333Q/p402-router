@@ -64,9 +64,22 @@ export const authOptions: NextAuthOptions = {
                     const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase());
                     token.isAdmin = adminEmails.includes(user.email?.toLowerCase() || "");
                 } catch (e) {
-                    console.error("JWT tenant fetch failed", e)
+                    console.error("JWT initial fetch failed", e)
                 }
             }
+
+            // Fallback: If tenantId is missing but we have an email, try to fetch it
+            if (!token.tenantId && token.email) {
+                try {
+                    const res = await pool.query("SELECT id FROM tenants WHERE owner_email = $1", [token.email])
+                    if (res.rows[0]) {
+                        token.tenantId = res.rows[0].id
+                    }
+                } catch (e) {
+                    console.error("JWT fallback fetch failed", e)
+                }
+            }
+
             return token
         },
         async session({ session, token }) {
