@@ -92,7 +92,7 @@ async function runPoll() {
             await client.query(`
                 INSERT INTO facilitator_health (tenant_id, facilitator_id, status, p95_verify_ms, p95_settle_ms, success_rate, last_checked_at)
                 VALUES ($1, $2, $3, $4, $4, $5, NOW())
-                ON CONFLICT (tenant_id, facilitator_id) DO UPDATE SET
+                ON CONFLICT (facilitator_id) DO UPDATE SET
                     status = EXCLUDED.status,
                     p95_verify_ms = EXCLUDED.p95_verify_ms,
                     p95_settle_ms = EXCLUDED.p95_settle_ms,

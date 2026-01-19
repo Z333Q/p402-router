@@ -24,7 +24,6 @@ export default function V2SpecPage() {
                         </p>
                         <div className="text-neutral-500 text-sm font-bold uppercase tracking-widest text-right">
                             Released January 2026 <br />
-                            Codename: "Antigravity" <br />
                             <a href="/whitepaper.pdf" target="_blank" className="inline-block mt-4 px-4 py-2 bg-neutral-100 text-black border-2 border-black hover:bg-black hover:text-white transition-all text-[10px] tracking-widest">
                                 ↓ Download PDF
                             </a>
