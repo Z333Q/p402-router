@@ -61,7 +61,7 @@ describe('SemanticCache', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.stubEnv('OPENAI_API_KEY', 'test-key');
+        vi.stubEnv('OPENROUTER_API_KEY', 'test-key');
         cache = new SemanticCache({ namespace: 'test' });
 
         // Mock embedding API
@@ -141,7 +141,7 @@ describe('SemanticCache', () => {
 
         it('should handle embedding generation errors gracefully', async () => {
             vi.mocked(pool.query).mockResolvedValueOnce({ rows: [] }); // No exact match
-            mockFetch.mockRejectedValueOnce(new Error('OpenAI API error'));
+            mockFetch.mockRejectedValueOnce(new Error('OpenRouter API error'));
 
             const result = await cache.get(mockRequest);
 

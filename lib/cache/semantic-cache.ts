@@ -51,21 +51,24 @@ export interface CacheResult {
  * Can be swapped for any embedding model
  */
 async function generateEmbedding(text: string): Promise<number[]> {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-        throw new Error('OPENAI_API_KEY required for semantic cache embeddings');
+        throw new Error('OPENROUTER_API_KEY required for semantic cache embeddings');
     }
 
-    const response = await fetch('https://api.openai.com/v1/embeddings', {
+    // OpenRouter provides an OpenAI-compatible embeddings endpoint
+    const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://p402.io', // Required by OpenRouter
+            'X-Title': 'P402 Router'
         },
         body: JSON.stringify({
-            model: 'text-embedding-3-small',
+            model: 'openai/text-embedding-3-small', // Route via OpenRouter
             input: text,
-            dimensions: 512 // Smaller dimension for faster similarity
+            dimensions: 512
         })
     });
 
