@@ -4,6 +4,8 @@
 
 P402 (Payment 402) is the infrastructure layer for the Agentic Web. It combines enterprise-grade AI orchestration with crypto-native settlement, enabling autonomous agents to discover services, negotiate tasks, and pay for resources in real-time using the **x402** and **A2A** protocols.
 
+> **📘 Architectural Guide:** See [P402 V2 System Integration & Handoff PRD](./P402_V2_HANDOFF_PRD.md) for a comprehensive deep dive.
+
 ---
 
 ## 🚀 Key Features
