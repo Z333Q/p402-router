@@ -4,29 +4,32 @@ import { verifyTransfer } from "@/lib/viem";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { txHash, amount, recipient } = body;
+        const { txHash, amount, recipient, network } = body;
 
         // If a txHash is provided, we attempt to verify it.
-        // For domestic/local demo, we allow it to pass if no hash is provided, 
-        // but if a hash IS provided, we MUST verify it.
         if (txHash) {
             const isValid = await verifyTransfer(txHash, amount, recipient);
             if (!isValid) {
-                return NextResponse.json({ ok: false, error: "On-chain verification failed" }, { status: 400 });
+                return NextResponse.json({ success: false, error: "On-chain verification failed" }, { status: 400 });
             }
+        } else if (process.env.NODE_ENV === 'production') {
+            // In production, a txHash is REQUIRED for settlement.
+            return NextResponse.json({ success: false, error: "Transaction hash required for production settlement" }, { status: 400 });
         }
 
         return NextResponse.json({
-            ok: true,
+            success: true,
+            transaction: txHash || `set_local_${Date.now()}`,
+            network: network || "eip155:8453",
             settlement_id: txHash || `set_local_${Date.now()}`,
             status: "settled",
             details: {
-                message: txHash ? "On-chain settlement verified" : "P402 Local Facilitator settlement confirmed (demo mode)",
+                message: txHash ? "On-chain settlement verified" : "P402 Settlement confirmed",
                 txHash: txHash || null,
                 timestamp: new Date().toISOString()
             }
         });
     } catch (error) {
-        return NextResponse.json({ ok: false, error: "Invalid request payload or verification error" }, { status: 400 });
+        return NextResponse.json({ success: false, error: "Invalid request payload or verification error" }, { status: 400 });
     }
 }
