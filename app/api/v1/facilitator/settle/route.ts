@@ -1,35 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyTransfer } from "@/lib/viem";
+import { SettlementService } from "@/lib/services/settlement-service";
+import { ApiError } from "@/lib/errors";
 
 export async function POST(req: NextRequest) {
+    const requestId = crypto.randomUUID();
+
     try {
         const body = await req.json();
-        const { txHash, amount, recipient, network } = body;
+        const { txHash, amount, asset, network, tenantId, decisionId } = body;
 
-        // If a txHash is provided, we attempt to verify it.
-        if (txHash) {
-            const isValid = await verifyTransfer(txHash, amount, recipient);
-            if (!isValid) {
-                return NextResponse.json({ success: false, error: "On-chain verification failed" }, { status: 400 });
-            }
-        } else if (process.env.NODE_ENV === 'production') {
-            // In production, a txHash is REQUIRED for settlement.
-            return NextResponse.json({ success: false, error: "Transaction hash required for production settlement" }, { status: 400 });
+        // txHash is REQUIRED for settlement
+        if (!txHash) {
+            return NextResponse.json({
+                success: false,
+                error: "Transaction hash (txHash) is required for settlement"
+            }, { status: 400 });
         }
 
+        if (!amount) {
+            return NextResponse.json({
+                success: false,
+                error: "Amount is required for settlement"
+            }, { status: 400 });
+        }
+
+        // Use full SettlementService with on-chain verification
+        const result = await SettlementService.settle(requestId, {
+            txHash,
+            amount,
+            asset: asset || "USDC",
+            tenantId,
+            decisionId
+        });
+
+        // x402-compliant response
         return NextResponse.json({
-            success: true,
-            transaction: txHash || `set_local_${Date.now()}`,
+            success: result.settled,
+            transaction: result.receipt.txHash,
             network: network || "eip155:8453",
-            settlement_id: txHash || `set_local_${Date.now()}`,
-            status: "settled",
-            details: {
-                message: txHash ? "On-chain settlement verified" : "P402 Settlement confirmed",
-                txHash: txHash || null,
-                timestamp: new Date().toISOString()
+            facilitatorId: result.facilitatorId,
+            receipt: {
+                txHash: result.receipt.txHash,
+                amount: result.receipt.verifiedAmount,
+                asset: result.receipt.asset,
+                timestamp: result.receipt.timestamp
             }
         });
     } catch (error) {
-        return NextResponse.json({ success: false, error: "Invalid request payload or verification error" }, { status: 400 });
+        if (error instanceof ApiError) {
+            return NextResponse.json({
+                success: false,
+                error: error.message,
+                code: error.code
+            }, { status: error.status });
+        }
+
+        console.error("Settlement error:", error);
+        return NextResponse.json({
+            success: false,
+            error: "Settlement verification failed"
+        }, { status: 500 });
     }
 }
