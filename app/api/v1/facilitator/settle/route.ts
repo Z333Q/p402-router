@@ -7,30 +7,32 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { txHash, amount, asset, network, tenantId, decisionId } = body;
+        const { txHash, amount, asset, network, tenantId, decisionId, authorization } = body;
 
-        // txHash is REQUIRED for settlement
-        if (!txHash) {
+        // txHash or authorization is REQUIRED for settlement
+        if (!txHash && !authorization) {
             return NextResponse.json({
                 success: false,
-                error: "Transaction hash (txHash) is required for settlement"
+                error: "Either Transaction hash (txHash) or Authorization (authorization) is required"
             }, { status: 400 });
         }
 
-        if (!amount) {
+        if (!amount && !authorization) {
             return NextResponse.json({
                 success: false,
                 error: "Amount is required for settlement"
             }, { status: 400 });
         }
 
-        // Use full SettlementService with on-chain verification
+        // Use full SettlementService
         const result = await SettlementService.settle(requestId, {
-            txHash,
-            amount,
+            txHash,     // Optional in new mode
+            amount,     // Optional in new mode (derived from auth if missing)
             asset: asset || "USDC",
             tenantId,
-            decisionId
+            decisionId,
+            authorization, // New EIP-3009 payload
+            network
         });
 
         // x402-compliant response

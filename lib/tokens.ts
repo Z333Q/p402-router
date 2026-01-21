@@ -5,6 +5,9 @@ export interface TokenConfig {
     decimals: number;
     chainId: number;
     logo?: string;
+    supportsEIP3009: boolean;
+    domainName?: string;     // EIP-712 Domain Name (e.g. "USD Coin")
+    domainVersion?: string;  // EIP-712 Version (e.g. "2")
 }
 
 export const SUPPORTED_TOKENS: Record<string, TokenConfig> = {
@@ -15,7 +18,10 @@ export const SUPPORTED_TOKENS: Record<string, TokenConfig> = {
         address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Base
         decimals: 6,
         chainId: 8453,
-        logo: '/tokens/usdc.svg'
+        logo: '/tokens/usdc.svg',
+        supportsEIP3009: true,
+        domainName: 'USD Coin',
+        domainVersion: '2'
     }
 };
 
@@ -46,7 +52,10 @@ const USDC_CONFIG: TokenConfig = {
     address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
     decimals: 6,
     chainId: 8453,
-    logo: '/tokens/usdc.svg'
+    logo: '/tokens/usdc.svg',
+    supportsEIP3009: true,
+    domainName: 'USD Coin',
+    domainVersion: '2'
 };
 
 export const DEFAULT_TOKEN: TokenConfig = SUPPORTED_TOKENS['USDC'] ?? USDC_CONFIG;

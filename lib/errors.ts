@@ -1,10 +1,19 @@
 export type ApiErrorCode =
     | 'INVALID_INPUT'
+    | 'INVALID_REQUEST'
     | 'UNSUPPORTED_ASSET'
+    | 'UNSUPPORTED_FEATURE'
     | 'REPLAY_DETECTED'
     | 'VERIFICATION_FAILED'
     | 'NO_TREASURY'
     | 'INTERNAL_ERROR'
+    | 'INVALID_RECIPIENT'
+    | 'AUTHORIZATION_NOT_YET_VALID'
+    | 'AUTHORIZATION_EXPIRED'
+    | 'INVALID_SIGNATURE'
+    | 'GAS_PRICE_TOO_HIGH'
+    | 'INVALID_AUTHORIZATION'
+    | 'AUTHORIZATION_USED'
 
 export class ApiError extends Error {
     public readonly code: ApiErrorCode
