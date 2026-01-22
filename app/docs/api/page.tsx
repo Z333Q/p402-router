@@ -367,8 +367,8 @@ res = requests.post(
         id: 'intelligence-audit',
         method: 'POST',
         path: '/api/v1/intelligence/audit',
-        title: 'Forensic Optimization Audit',
-        description: 'P402 Protocol Economist (Gemini 3 Pro) forensic audit. Analyzes historical ledger data to identify cost inefficiencies and executes autonomous optimizations.',
+        title: 'Autonomous Policy Audit',
+        description: 'Audits A2A traffic flows to identify cost optimizations and budget compliance. Powered by Gemini 3 Pro.',
         params: [
             { name: 'days', type: 'number', required: false, desc: 'History window to analyze (default: 7).' },
             { name: 'execute', type: 'boolean', required: false, desc: 'Actually execute the recommended optimizations (Autonomous mode).' }
@@ -394,8 +394,8 @@ res = requests.post(
         id: 'code-audit',
         method: 'POST',
         path: '/api/v1/intelligence/code-audit',
-        title: 'Public Code Audit',
-        description: 'Security & Optimization audit for agentic code snippets. Analyzes for financial death loops, PII leaks, and includes automatic API key redaction.',
+        title: 'Security & Privacy Audit',
+        description: 'Performs a deep audit of agent infrastructure for security vulnerabilities and privacy leaks.',
         params: [
             { name: 'code', type: 'string', required: true, desc: 'The agent/application code to audit.' }
         ],
@@ -418,8 +418,8 @@ res = requests.post(
         id: 'intelligence-status',
         method: 'GET',
         path: '/api/v1/intelligence/status',
-        title: 'Agent Core Status',
-        description: 'Retrieve real-time status of the Intelligence Quadplex, including recent optimization events and total protocol yield.',
+        title: 'Governance Status',
+        description: 'Retrieves the current status of the protocol governance layer and active policy enforcement.',
         examples: {
             curl: `curl https://p402.io/api/v1/intelligence/status`,
             javascript: `const res = await fetch('https://p402.io/api/v1/intelligence/status');`,
@@ -501,7 +501,7 @@ export default function ApiDocsPage() {
                     </div>
 
                     <div>
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Intelligence (v3)</h3>
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Protocol Governance</h3>
                         {ENDPOINTS.filter(ep => ep.path.includes('/intelligence/')).map(ep => (
                             <a
                                 key={ep.id}

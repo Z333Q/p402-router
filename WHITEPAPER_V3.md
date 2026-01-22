@@ -14,74 +14,48 @@ As the internet undergoes its most significant transformation since the browserâ
 
 ---
 
-## 2. The P402 Intelligence Quadplex
+## 2. Core Architecture: Intelligent A2A Infrastructure
 
-P402 v3.0 moves beyond a simple proxy into a self-optimizing organism. We categorize our technical architecture into four interdependent pillars: **The Brain, The Memory, The Hands, and The Senses.**
+P402 provides a unified layer for **Agent-to-Agent (A2A)** and **Agent-to-Passenger (A2P)** commerce. Our infrastructure replaces fragile, manual API management with a secure, intelligent governor that handles three critical functions: **Security, Optimization, and Settlement.**
 
-### 2.1 The Brain (Gemini 3 Intelligence)
-At the core of P402 is a dual-model intelligence system that separates *commodity inference* from *protocol reasoning*:
-*   **Gemini 3 Pro (The Economist)**: Runs high-thinking analysis over 1M+ tokens of transaction context to identify macro-savings and optimization strategies.
-*   **Gemini 3 Flash (The Sentinel)**: Performs real-time, low-latency monitoring of every request, detecting anomalies and adversarial prompt injections before they reach downstream providers.
+### 2.1 Real-Time Security & Policy Enforcement
+Every request passing through the P402 Router is analyzed by a dedicated security layer powered by **Gemini 3**. 
+*   **Anomaly Detection**: Identifies adversarial prompts and high-risk fiscal patterns in milliseconds.
+*   **Privacy Shield**: Automatically redacts sensitive credentials and ensures PII (Personally Identifiable Information) does not leak to downstream providers.
 
-### 2.2 The Memory (Semantic Vector Cache)
-Utilizing `text-embedding-004`, P402 maintains an "Infinite Memory" of agent interactions:
-*   **Cost-Intercept**: Before a request hits a provider like OpenAI or Anthropic, P402 performs a vector similarity search (cosine similarity > 0.92). 
-*   **Efficiency**: If a match is found, the response is served from the cache, resulting in **zero cost** and sub-50ms latency.
+### 2.2 Intelligent Cost Optimization
+P402 uses advanced reasoning to manage agent budgets autonomously:
+*   **Semantic Interception**: Our system recognizes redundant requests and serves them from a secure cache, reducing costs to zero for repeated queries.
+*   **Dynamic Routing**: The protocol automatically selects the most cost-effective model parity for any given task, ensuring agents never overpay for commodity inference.
 
-### 2.3 The Hands (Autonomous Tool Execution)
-P402 doesn't just suggest optimizations; it executes them. The Economist is equipped with a suite of **Fiscal Hands** to modify the router's behavior in real-time:
-*   **`configure_model_substitution`**: Automatically redirects expensive model calls to cheaper, parity-performing alternatives.
-*   **`set_model_rate_limit`**: Caps throughput on specific models to stay within tenant budgets.
-*   **`configure_failover_chain`**: Dynamically adjusts fallback paths when providers experience latency spikes.
-
-### 2.4 The Senses (Real-Time SSE Thinking Trace)
-To prevent the "Black Box" problem, P402 provides full observability. 
-*   **Thinking Trace**: A real-time Server-Sent Events (SSE) feed that streams the AI's reasoning process.
-*   **Governance Modes**: Tenants can set their agents to **Autonomous** (Full Hands) or **Approval** (Human-in-the-loop for fiscal changes).
+### 2.3 Autonomous Settlement (x402)
+We implement the **x402 Payment Required** standard to enable friction-less commerce:
+*   **Gasless Transactions**: Using EIP-3009, agents can settle payments without holding native gas tokens. P402 facilitates the transfer on Base L2.
+*   **Verifiable Receipts**: Every transaction generates a cryptographic proof that service was successfully rendered, creating a trustless audit trail for both parties.
 
 ---
 
-## 3. High-Level System Architecture
+## 3. High-Level Flow: The A2A Life Cycle
 
 ```mermaid
-graph TD
-    subgraph "External Ecosystem"
-        OR[OpenRouter / 300+ Models]
-        BASE[Base L2 / USDC]
-        GPROTO[Google A2A Protocol]
-    end
+sequenceDiagram
+    participant A1 as Payer Agent
+    participant P4 as P402 Router
+    participant A2 as Service Agent
+    participant H as Passenger (Human)
 
-    subgraph "P402 Intelligence Layer (The Brain)"
-        G3P[Gemini 3 Pro: Protocol Economist]
-        G3F[Gemini 3 Flash: Sentinel Monitor]
-    end
-
-    subgraph "P402 Core Router"
-        SEM[Semantic Vector Memory]
-        FIS[Fiscal Hands: Tool Execution]
-        SSE[Senses: Real-time Thinking Trace]
-    end
-
-    Agent[Autonomous Agent] -->|Request| G3F
-    G3F -->|Clean| SEM
-    SEM -->|Hit| Agent
-    SEM -->|Miss| OR
-    OR -->|Response| Agent
+    A1->>P4: Service Request
+    Note over P4: Gemini 3 Audit: Security & Budget
+    P4->>P4: Check Semantic Cache
     
-    OR -.->|Ledger Data| G3P
-    G3P -->|Thinking Trace| SSE
-    G3P -->|Optimization Actions| FIS
-    FIS -->|Update Logic| SEM
-    FIS -->|Update Logic| OR
+    ALT Case: High-Value Transaction
+        P4->>H: A22 (Agent-to-Passenger) Approval Request
+        H-->>P4: Biometric Signature
+    END
 
-    subgraph "Settlement"
-        X402[x402 Payment Protocol]
-        AP2[AP2 Mandates: EIP-712]
-    end
-
-    Agent -.->|Payment Proof| OR
-    OR -.->|Reconciliation| X402
-    X402 -.->|Settlement| BASE
+    P4->>A2: Authorized Request + x402 Payment
+    A2-->>P4: Encrypted Response
+    P4-->>A1: Final Output + Settlement Receipt
 ```
 
 ---

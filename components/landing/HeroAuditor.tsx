@@ -32,18 +32,18 @@ export const HeroAuditor = () => {
 
                 {/* LEFT COLUMN: BRANDING */}
                 <div className="col-span-1 lg:col-span-7 p-8 lg:p-12 flex flex-col justify-center border-b-2 lg:border-b-0 lg:border-r-2 border-black bg-white">
-                    <div className="inline-flex items-center gap-2 mb-6 border-2 border-black px-3 py-1 bg-[#A855F7] text-white w-fit shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    <div className="inline-flex items-center gap-2 mb-6 border-2 border-black px-3 py-1 bg-black text-white w-fit shadow-[4px_4px_0px_0px_#A855F7]">
                         <Terminal className="w-4 h-4" />
-                        <span className="font-mono text-xs font-bold uppercase tracking-wider">v3.0 Production</span>
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider">v3.0 Production Ready</span>
                     </div>
 
                     <h1 className="text-5xl lg:text-7xl font-extrabold uppercase leading-[0.9] tracking-tighter mb-6 italic">
-                        Intelligence<br />Native<br /><span className="bg-[#B6FF2E] px-2 NOT-italic text-black">Orchestration</span>
+                        Payment<br />Aware<br /><span className="bg-[#B6FF2E] px-2 NOT-italic text-black">Orchestration</span>
                     </h1>
 
-                    <p className="text-lg lg:text-xl font-medium text-neutral-600 max-w-lg mb-10 leading-relaxed border-l-4 border-[#A855F7] pl-6 font-bold uppercase tracking-tight">
-                        Powered by the **Protocol Economist**. <br />
-                        Analyze, Intercept, and Settle in milliseconds.
+                    <p className="text-lg lg:text-xl font-medium text-neutral-600 max-w-lg mb-10 leading-relaxed border-l-4 border-black pl-6 font-bold uppercase tracking-tight">
+                        Infrastructure for A2A and A2P Commerce. <br />
+                        Secure, Intelligent, and Settlement-Ready.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4">
