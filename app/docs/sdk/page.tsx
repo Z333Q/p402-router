@@ -88,6 +88,37 @@ if (result.success) {
 }`}</code></pre>
           </div>
         </section>
+
+        <section className="mb-24">
+          <h2 className="text-3xl font-black uppercase italic mb-8">Intelligence SDK (v3)</h2>
+          <p className="font-bold text-neutral-600 mb-8 uppercase tracking-tight">Access the Protocol Economist and Sentinel for autonomous optimization.</p>
+
+          <div className="bg-neutral-900 p-8 border-4 border-black text-xs overflow-x-auto text-zinc-300 shadow-[12px_12px_0px_0px_rgba(168,85,247,1)]">
+            <pre><code>{`import { P402Intelligence } from '@p402/sdk';
+
+const intellect = new P402Intelligence({ apiKey: 'your-api-key' });
+
+// 1. Run Autonomous Optimization Audit
+const audit = await intellect.runAudit({ 
+  days: 7, 
+  execute: true // Enabling autonomous 'Hands'
+});
+
+console.log('Total Saved:', audit.totalSavings);
+
+// 2. Stream Real-time Thinking Trace
+intellect.streamTrace((step) => {
+  console.log('[AGENT THINK]:', step.content);
+});
+
+// 3. Security Code Audit
+const report = await intellect.auditCode(\`
+  function runLoop() {
+    while(true) { fetch('openai.com'); }
+  }
+\`);`}</code></pre>
+          </div>
+        </section>
       </main>
 
       <Footer />

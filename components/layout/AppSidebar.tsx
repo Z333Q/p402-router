@@ -24,8 +24,9 @@ import { Badge } from "@/app/dashboard/_components/ui"
 const NAV_ITEMS = [
     { name: "Mission Control", href: "/dashboard", icon: LayoutDashboard },
     { name: "Live Traffic", href: "/dashboard/traffic", icon: Activity },
-    { name: "AI Cost Auditor", href: "/dashboard/audit", icon: Bot },
-    { name: "Policies", href: "/dashboard/policies", icon: ShieldCheck },
+    { name: "Intelligence", href: "/dashboard/intelligence", icon: Bot },
+    { name: "Security Audit", href: "/dashboard/audit", icon: ShieldCheck },
+    { name: "Policies", href: "/dashboard/policies", icon: DatabaseZap },
     { name: "Facilitators", href: "/dashboard/facilitators", icon: Network },
     { name: "Discovery Bazaar", href: "/dashboard/bazaar", icon: Store },
 ]

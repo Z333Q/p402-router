@@ -34,6 +34,104 @@ interface Endpoint {
 
 const ENDPOINTS: Endpoint[] = [
     {
+        id: 'settle-eip3009',
+        method: 'POST',
+        path: '/api/v1/facilitator/settle',
+        title: 'Execute Settlement (EIP-3009)',
+        description: 'Execute a gasless settlement on Base Mainnet by submitting a signed EIP-3009 authorization. P402 acts as the facilitator, paying the gas fees to settle the transaction on-chain.',
+        params: [
+            { name: 'tenantId', type: 'string', required: true, desc: 'The ID of the tenant receiving the funds.' },
+            { name: 'decisionId', type: 'string', required: true, desc: 'Trace ID for the decision/mandate being settled.' },
+            { name: 'asset', type: 'string', required: false, desc: 'The asset symbol (default: "USDC").' },
+            { name: 'authorization', type: 'object', required: true, desc: 'The signed EIP-3009 authorization object containing { from, to, value, validAfter, validBefore, nonce, v, r, s }.' }
+        ],
+        examples: {
+            curl: `curl https://p402.io/api/v1/facilitator/settle \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "tenantId": "...",
+    "decisionId": "trace_123",
+    "asset": "USDC",
+    "authorization": {
+        "from": "0xUserAddress...",
+        "to": "0xTreasuryAddress...",
+        "value": "1000000",
+        "validAfter": 0,
+        "validBefore": 1735689600,
+        "nonce": "0x...",
+        "v": 27,
+        "r": "0x...",
+        "s": "0x..."
+    }
+  }'`,
+            javascript: `// Using Viem or Ethers to sign first...
+const response = await fetch('https://p402.io/api/v1/facilitator/settle', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    tenantId: '...',
+    decisionId: 'trace_123',
+    asset: 'USDC',
+    authorization: signedAuthObject // EIP-3009 compatible
+  })
+});`,
+            python: `# Prepare signed data off-chain using web3.py
+import requests
+res = requests.post(
+    "https://p402.io/api/v1/facilitator/settle",
+    json={
+        "tenantId": "...",
+        "decisionId": "trace_123",
+        "asset": "USDC",
+        "authorization": { ... }
+    }
+)`,
+            response: {
+                settled: true,
+                facilitatorId: "chain_base",
+                receipt: {
+                    txHash: "0x88df01e...",
+                    verifiedAmount: "1.0",
+                    asset: "USDC",
+                    timestamp: "2026-01-21T12:00:00Z"
+                }
+            }
+        }
+    },
+    {
+        id: 'verify-settlement',
+        method: 'POST',
+        path: '/api/v1/facilitator/verify',
+        title: 'Verify Settlement',
+        description: 'Verify an existing on-chain transaction was successful and matches the expected amount and recipient. Useful for client-initiated (non-gasless) settlements.',
+        params: [
+            { name: 'txHash', type: 'string', required: true, desc: 'The transaction hash to verify.' },
+            { name: 'amount', type: 'string', required: true, desc: 'Expected amount (decimal string).' },
+            { name: 'recipient', type: 'string', required: true, desc: 'Expected recipient address (tenant treasury).' },
+            { name: 'network', type: 'string', required: false, desc: 'Chain ID (default: eip155:8453).' }
+        ],
+        examples: {
+            curl: `curl https://p402.io/api/v1/facilitator/verify \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "txHash": "0x...",
+    "amount": "1.0",
+    "recipient": "0xTreasury..."
+  }'`,
+            javascript: `const res = await fetch('https://p402.io/api/v1/facilitator/verify', {
+  method: 'POST',
+  body: JSON.stringify({ txHash: '0x...', amount: '1.0', recipient: '0x...' })
+});`,
+            python: `requests.post("https://p402.io/api/v1/facilitator/verify", json={...})`,
+            response: {
+                success: true,
+                transaction: "0x...",
+                network: "eip155:8453",
+                settlement_id: "set_..."
+            }
+        }
+    },
+    {
         id: 'chat-completions',
         method: 'POST',
         path: '/api/v2/chat/completions',
@@ -181,6 +279,160 @@ res = requests.post(
                 id: 1
             }
         }
+    },
+    {
+        id: 'plan-v1',
+        method: 'POST',
+        path: '/api/v1/router/plan',
+        title: 'Plan Route (Legacy)',
+        description: 'V1 Endpoint. Calculates the optimal routing path for a resource request without executing it. Returns payment requirements and facilitator selection.',
+        params: [
+            { name: 'routeId', type: 'string', required: true, desc: 'The target resource identifier.' },
+            { name: 'payment', type: 'object', required: true, desc: 'Payment preferences { network, scheme, amount, asset }.' },
+            { name: 'policyId', type: 'string', required: false, desc: 'Optional policy ID to enforce during planning.' }
+        ],
+        examples: {
+            curl: `curl https://p402.io/api/v1/router/plan \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "routeId": "MODEL_GPT4",
+    "payment": {
+        "network": "eip155:8453",
+        "scheme": "eip3009",
+        "amount": "0.50",
+        "asset": "USDC"
+    }
+  }'`,
+            javascript: `const res = await fetch('https://p402.io/api/v1/router/plan', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    routeId: 'MODEL_GPT4',
+    payment: { network: 'eip155:8453', scheme: 'eip3009', amount: '0.50', asset: 'USDC' }
+  })
+});`,
+            python: `requests.post("https://p402.io/api/v1/router/plan", json={...})`,
+            response: {
+                decision_id: "trace_abc123",
+                route: {
+                    id: "route_xyz",
+                    facilitator_url: "https://...",
+                    cost: 0.50
+                },
+                payment_headers: {
+                    "X-Payment-Required": "true"
+                }
+            }
+        }
+    },
+    {
+        id: 'settle-v1',
+        method: 'POST',
+        path: '/api/v1/router/settle',
+        title: 'Settle Payment (Legacy)',
+        description: 'V1 Endpoint. Records an on-chain settlement for a planned route. Use this to finalize a transaction after the user has paid.',
+        params: [
+            { name: 'txHash', type: 'string', required: true, desc: 'The verified transaction hash.' },
+            { name: 'amount', type: 'string', required: true, desc: 'Amount settled.' },
+            { name: 'asset', type: 'string', required: true, desc: 'Asset symbol (e.g. USDC).' },
+            { name: 'decisionId', type: 'string', required: false, desc: 'The decision ID from the /plan response.' }
+        ],
+        examples: {
+            curl: `curl https://p402.io/api/v1/router/settle \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "txHash": "0x...",
+    "amount": "0.50",
+    "asset": "USDC",
+    "decisionId": "trace_abc123"
+  }'`,
+            javascript: `const res = await fetch('https://p402.io/api/v1/router/settle', {
+  method: 'POST',
+  body: JSON.stringify({
+    txHash: '0x...',
+    amount: '0.50',
+    asset: 'USDC',
+    decisionId: 'trace_abc123'
+  })
+});`,
+            python: `requests.post("https://p402.io/api/v1/router/settle", json={...})`,
+            response: {
+                success: true,
+                settlement_id: "set_789",
+                status: "confirmed"
+            }
+        }
+    },
+    {
+        id: 'intelligence-audit',
+        method: 'POST',
+        path: '/api/v1/intelligence/audit',
+        title: 'Forensic Optimization Audit',
+        description: 'P402 Protocol Economist (Gemini 3 Pro) forensic audit. Analyzes historical ledger data to identify cost inefficiencies and executes autonomous optimizations.',
+        params: [
+            { name: 'days', type: 'number', required: false, desc: 'History window to analyze (default: 7).' },
+            { name: 'execute', type: 'boolean', required: false, desc: 'Actually execute the recommended optimizations (Autonomous mode).' }
+        ],
+        examples: {
+            curl: `curl -X POST https://p402.io/api/v1/intelligence/audit \\
+  -H "Content-Type: application/json" \\
+  -d '{"days": 7, "execute": true}'`,
+            javascript: `const res = await fetch('https://p402.io/api/v1/intelligence/audit', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ days: 30, execute: true })
+});`,
+            python: `requests.post("https://p402.io/api/v1/intelligence/audit", json={"days": 7, "execute": True})`,
+            response: {
+                audit_id: "audit_123",
+                thinking_trace: ["Analyzing 5,432 decisions...", "Detected GPT-4 overkill on simple tasks.", "Executing model_substitution..."],
+                total_savings: 42.50
+            }
+        }
+    },
+    {
+        id: 'code-audit',
+        method: 'POST',
+        path: '/api/v1/intelligence/code-audit',
+        title: 'Public Code Audit',
+        description: 'Security & Optimization audit for agentic code snippets. Analyzes for financial death loops, PII leaks, and includes automatic API key redaction.',
+        params: [
+            { name: 'code', type: 'string', required: true, desc: 'The agent/application code to audit.' }
+        ],
+        examples: {
+            curl: `curl -X POST https://p402.io/api/v1/intelligence/code-audit \\
+  -H "Content-Type: application/json" \\
+  -d '{"code": "import openai\\nclient = openai.OpenAI(...)"}'`,
+            javascript: `const res = await fetch('https://p402.io/api/v1/intelligence/code-audit', {
+  method: 'POST',
+  body: JSON.stringify({ code: myCodeString })
+});`,
+            python: `requests.post("https://p402.io/api/v1/intelligence/code-audit", json={"code": code})`,
+            response: {
+                report: "# Audit Report\n\nRISK SCORE: 8/10\n- Dangerous loop detected...",
+                metrics: { riskScore: 8, costPerHour: 15.00 }
+            }
+        }
+    },
+    {
+        id: 'intelligence-status',
+        method: 'GET',
+        path: '/api/v1/intelligence/status',
+        title: 'Agent Core Status',
+        description: 'Retrieve real-time status of the Intelligence Quadplex, including recent optimization events and total protocol yield.',
+        examples: {
+            curl: `curl https://p402.io/api/v1/intelligence/status`,
+            javascript: `const res = await fetch('https://p402.io/api/v1/intelligence/status');`,
+            python: `res = requests.get("https://p402.io/api/v1/intelligence/status")`,
+            response: {
+                agents: {
+                    economist: "online",
+                    sentinel: "active",
+                    memory: "92% hit rate"
+                },
+                total_savings: 12450.80
+            }
+        }
     }
 ];
 
@@ -222,9 +474,53 @@ export default function ApiDocsPage() {
                         </a>
                     </div>
 
+                    <div className="mb-8">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Facilitator (x402)</h3>
+                        <a
+                            href="#settle-eip3009"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setActiveSection('settle-eip3009');
+                                document.getElementById('settle-eip3009')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className={`block text-xs font-bold mb-3 uppercase tracking-tight transition-colors ${activeSection === 'settle-eip3009' ? 'text-[#22D3EE]' : 'text-black hover:text-[#22D3EE]'}`}
+                        >
+                            Execute Settlement
+                        </a>
+                        <a
+                            href="#verify-settlement"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setActiveSection('verify-settlement');
+                                document.getElementById('verify-settlement')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className={`block text-xs font-bold mb-3 uppercase tracking-tight transition-colors ${activeSection === 'verify-settlement' ? 'text-[#22D3EE]' : 'text-black hover:text-[#22D3EE]'}`}
+                        >
+                            Verify Settlement
+                        </a>
+                    </div>
+
                     <div>
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Intelligence (v3)</h3>
+                        {ENDPOINTS.filter(ep => ep.path.includes('/intelligence/')).map(ep => (
+                            <a
+                                key={ep.id}
+                                href={`#${ep.id}`}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setActiveSection(ep.id);
+                                    document.getElementById(ep.id)?.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                                className={`block text-xs font-bold mb-3 uppercase tracking-tight transition-colors ${activeSection === ep.id ? 'text-[#22D3EE]' : 'text-black hover:text-[#22D3EE]'}`}
+                            >
+                                {ep.title}
+                            </a>
+                        ))}
+                    </div>
+
+                    <div className="mt-8">
                         <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Orchestration (V2)</h3>
-                        {ENDPOINTS.map(ep => (
+                        {ENDPOINTS.filter(ep => !ep.path.includes('/api/v1/router') && !ep.path.includes('/facilitator/') && !ep.path.includes('/intelligence/')).map(ep => (
                             <a
                                 key={ep.id}
                                 href={`#${ep.id}`}
@@ -243,8 +539,20 @@ export default function ApiDocsPage() {
 
                     <div className="mt-8 pt-8 border-t-2 border-black/5">
                         <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Legacy (V1)</h3>
-                        <a href="#v1-plan" className="block text-xs font-bold mb-3 uppercase text-neutral-400 hover:text-black transition-colors">POST /plan</a>
-                        <a href="#v1-settle" className="block text-xs font-bold mb-3 uppercase text-neutral-400 hover:text-black transition-colors">POST /settle</a>
+                        {ENDPOINTS.filter(ep => ep.path.includes('/api/v1/router')).map(ep => (
+                            <a
+                                key={ep.id}
+                                href={`#${ep.id}`}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setActiveSection(ep.id);
+                                    document.getElementById(ep.id)?.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                                className={`block text-xs font-bold mb-3 uppercase tracking-tight transition-colors ${activeSection === ep.id ? 'text-[#22D3EE]' : 'text-neutral-400 hover:text-[#22D3EE]'}`}
+                            >
+                                {ep.method} {ep.path.split('/').pop()}
+                            </a>
+                        ))}
                     </div>
                 </aside>
 
@@ -349,17 +657,7 @@ export default function ApiDocsPage() {
                             </section>
                         ))}
 
-                        {/* Legacy V1 Section */}
-                        <section id="legacy" className="p-12 bg-neutral-100 italic text-neutral-400">
-                            <h2 className="text-xl font-black mb-4">Looking for V1?</h2>
-                            <p className="text-sm mb-4">The legacy x402 payment endpoints are still available at /api/v1/router/*. Please refer to the V1 documentation for details.</p>
-                            <div id="v1-plan" className="mb-4">
-                                <code className="text-xs">POST /api/v1/router/plan</code>
-                            </div>
-                            <div id="v1-settle">
-                                <code className="text-xs">POST /api/v1/router/settle</code>
-                            </div>
-                        </section>
+
                     </div>
                 </main>
             </div>

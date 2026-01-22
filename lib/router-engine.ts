@@ -5,6 +5,7 @@ import { CoinbaseCDPAdapter } from './facilitator-adapters/cdp'
 import { GenericAdapter } from './facilitator-adapters/generic'
 import { CCIPBridgeAdapter } from './facilitator-adapters/ccip'
 import { SmartContractAdapter } from './facilitator-adapters/smart-contract'
+import { GeminiOptimizer } from './intelligence/gemini-optimizer'
 
 export type RoutingMode = 'cost' | 'quality' | 'speed' | 'balanced';
 
@@ -80,6 +81,74 @@ export class RoutingEngine {
                 };
             }
         }
+
+        // 2. Intelligence Overrides (Autonomous Optimization)
+        if (tenantId) {
+            const overridesRes = await pool.query(`
+                SELECT substitute_model, task_pattern, original_model 
+                FROM intelligence_model_overrides 
+                WHERE tenant_id = $1 AND enabled = TRUE
+            `, [tenantId]);
+
+            for (const row of overridesRes.rows) {
+                let match = true;
+                if (row.task_pattern && options?.task && !new RegExp(row.task_pattern, 'i').test(options.task)) {
+                    match = false;
+                }
+
+                if (match && row.substitute_model) {
+                    // Intelligence Interception
+                    if (options?.requestId) {
+                        await pool.query(`
+                            INSERT INTO router_decisions (
+                                request_id, tenant_id, task, requested_mode, 
+                                selected_provider_id, reason, success, cost_usd
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                        `, [
+                            options.requestId, tenantId, options.task || 'inference',
+                            mode, row.substitute_model, 'intelligence_override', true, 0
+                        ]);
+                    }
+
+                    return {
+                        candidates: [{
+                            facilitatorId: row.substitute_model,
+                            name: `AI Optimized: ${row.substitute_model}`,
+                            score: 100,
+                            supported: true,
+                            health: { status: 'healthy', p95VerifyMs: 0, p95SettleMs: 0, successRate: 1.0, lastCheckedAt: new Date().toISOString() }
+                        }],
+                        selectedId: row.substitute_model
+                    };
+                }
+            }
+        }
+
+        // 3. Sentinel Proactive Anomaly Detection (Hot-Path protection)
+        let activeMode = mode;
+        if (tenantId && prompt && process.env.GOOGLE_API_KEY) {
+            const optimizer = new GeminiOptimizer(process.env.GOOGLE_API_KEY, tenantId);
+            const scan = await optimizer.scanRequest({
+                prompt,
+                task: options?.task,
+                tenantId,
+                routeId: routeContext.routeId
+            });
+
+            if (scan.anomaly) {
+                console.log(`[Sentinel] Anomaly detected: ${scan.issues.join(', ')} (Severity: ${scan.severity})`);
+
+                if (scan.severity === 'high') {
+                    // BLOCK: Potential exploit or extreme risk
+                    throw new Error(`SECURITY_BLOCK: Sentinel detected high severity anomaly: ${scan.issues[0]}`);
+                }
+
+                if (scan.severity === 'medium' && scan.suggestedMode) {
+                    // DEGRADE/RECOVER: Switch to a more cautious mode
+                    activeMode = scan.suggestedMode;
+                }
+            }
+        }
         const adapters: FacilitatorAdapter[] = [
             new CCIPBridgeAdapter(),
             new CoinbaseCDPAdapter(),
@@ -119,6 +188,19 @@ export class RoutingEngine {
             console.error("[RoutingEngine] DB fetch failed, falling back to static adapters:", e);
         }
 
+        // Fetch Intelligence Weights
+        let weights = { cost: 0.33, speed: 0.33, quality: 0.34 };
+        if (tenantId) {
+            const weightsRes = await pool.query('SELECT cost_weight, speed_weight, quality_weight FROM intelligence_routing_weights WHERE tenant_id = $1', [tenantId]);
+            if (weightsRes.rows.length > 0) {
+                weights = {
+                    cost: parseFloat(weightsRes.rows[0].cost_weight),
+                    speed: parseFloat(weightsRes.rows[0].speed_weight),
+                    quality: parseFloat(weightsRes.rows[0].quality_weight)
+                };
+            }
+        }
+
         // Scoring Loop
         for (const adapter of adapters) {
             const isSupported = adapter.supports({
@@ -147,25 +229,30 @@ export class RoutingEngine {
 
                 // V2 Mode Logic
                 // ---------------------------------------------------------
-                if (mode === 'cost') {
+                if (activeMode === 'cost') {
                     // For cost optimization, we penalize high latency less, favor on-chain direct (low fee)
                     // Assumption: Direct on-chain is cheaper than bridge/intermediary
                     if (adapter.id.includes('direct')) score += 20;
                     if (adapter.id.includes('bridge')) score -= 10; // Bridges have fees
-                } else if (mode === 'speed') {
+                } else if (activeMode === 'speed') {
                     // Latency is king
                     if (p95 > 2000) score -= 80;
                     else if (p95 > 1000) score -= 40;
                     else if (p95 > 500) score -= 10;
                     else if (p95 < 200) score += 20;
-                } else if (mode === 'quality') {
+                } else if (activeMode === 'quality') {
                     // Reputation is king
                     score += (reputation - 100); // Direct impact
                     if (successRate < 0.99) score -= 50; // Strict reliability
-                } else if (mode === 'balanced') {
-                    // Mixed weights
-                    if (p95 > 1500) score -= 20;
-                    score += (reputation - 100) / 4;
+                } else if (activeMode === 'balanced') {
+                    // Mixed weights (Intelligence Driven)
+                    const costPenalty = p95 > 1500 ? 20 : 0;
+                    const reputationBonus = (reputation - 100) / 4;
+
+                    // Simple weighted linear combination of preferences
+                    score += (weights.quality * reputationBonus * 2);
+                    score -= (weights.speed * (p95 / 100));
+                    score += (weights.cost * 20); // Base bonus for being in scoring loop
                 }
 
                 // Reliability Base Penalty

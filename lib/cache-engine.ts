@@ -1,6 +1,9 @@
-
 import pool from './db';
 import crypto from 'crypto';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+const embeddingModel = genAI.getGenerativeModel({ model: 'text-embedding-004' });
 
 export type CacheHit = {
     found: boolean;
@@ -14,6 +17,16 @@ export class SemanticCache {
      */
     static generateHash(prompt: string): string {
         return crypto.createHash('sha256').update(prompt).digest('hex');
+    }
+
+    static async generateEmbedding(text: string): Promise<number[]> {
+        try {
+            const result = await embeddingModel.embedContent(text);
+            return result.embedding.values;
+        } catch (e) {
+            console.error('[Cache] Embedding failed:', e);
+            return [];
+        }
     }
 
     /**
@@ -40,10 +53,27 @@ export class SemanticCache {
                 return { found: true, response: exactRes.rows[0].response, score: 1.0 };
             }
 
-            // 2. Semantic Match Check (Future / Requires pgvector + Embeddings)
-            // For MVP, we stick to exact match unless embeddings are provided.
-            // If we had the vector, we'd do:
-            // SELECT response, 1 - (request_embedding <=> $1) as score FROM semantic_cache ...
+            // 2. Semantic Match Check (Fuzzy Search)
+            const embedding = await this.generateEmbedding(prompt);
+            if (embedding.length > 0) {
+                // Fetch similarity threshold from config or default 0.85
+                const configRes = await pool.query('SELECT similarity_threshold FROM intelligence_cache_config WHERE tenant_id = $1', [tenantId]);
+                const threshold = configRes.rows[0]?.similarity_threshold || 0.85;
+
+                const semanticRes = await pool.query(`
+                    SELECT response, 1 - (request_embedding <=> $1) as score 
+                    FROM semantic_cache 
+                    WHERE tenant_id = $2 
+                      AND (1 - (request_embedding <=> $1)) > $3
+                    ORDER BY score DESC 
+                    LIMIT 1
+                `, [JSON.stringify(embedding), tenantId, threshold]);
+
+                if (semanticRes.rows.length > 0) {
+                    const hit = semanticRes.rows[0];
+                    return { found: true, response: hit.response, score: parseFloat(hit.score) };
+                }
+            }
 
             return { found: false };
         } catch (e) {
@@ -57,16 +87,23 @@ export class SemanticCache {
      */
     static async store(prompt: string, response: any, tenantId: string, model?: string) {
         const hash = this.generateHash(prompt);
+        const embedding = await this.generateEmbedding(prompt);
 
         try {
-            // We use ON CONFLICT to avoid duplicate hashes for same tenant
             await pool.query(`
                 INSERT INTO semantic_cache (
-                    tenant_id, request_hash, prompt, response, model, created_at
-                ) VALUES ($1, $2, $3, $4, $5, NOW())
+                    tenant_id, request_hash, prompt, response, model, request_embedding, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
                 ON CONFLICT (request_hash, tenant_id) 
-                DO UPDATE SET usage_count = semantic_cache.usage_count + 1, last_accessed_at = NOW()
-            `, [tenantId, hash, prompt, JSON.stringify(response), model]);
+                DO UPDATE SET 
+                    usage_count = semantic_cache.usage_count + 1, 
+                    last_accessed_at = NOW(),
+                    request_embedding = EXCLUDED.request_embedding
+            `, [
+                tenantId, hash, prompt,
+                JSON.stringify(response), model,
+                embedding.length > 0 ? JSON.stringify(embedding) : null
+            ]);
         } catch (e) {
             console.error('[Cache] Store failed:', e);
         }

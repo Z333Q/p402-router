@@ -21,9 +21,9 @@ export default async function Page() {
                     <div className="container mx-auto px-6 max-w-7xl">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                             <div className="card p-10 border-2 border-black bg-white">
-                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">A2A Standard</h3>
+                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Execution Mode</h3>
                                 <p className="text-sm font-bold leading-relaxed text-neutral-600">
-                                    Full implementation of Agent-to-Agent communication protocols. Standardized JSON-RPC context discovery and task negotiation.
+                                    Gasless settlement via EIP-3009. Agents sign authorizations, P402 executes the on-chain transfer and pays the gas.
                                 </p>
                             </div>
                             <div className="card p-10 border-2 border-black bg-white">

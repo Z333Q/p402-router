@@ -47,9 +47,21 @@ export default function DocsIndex() {
                             <h2 className="text-2xl font-black uppercase italic group-hover:text-black">AI Router</h2>
                         </div>
                         <p className="text-sm font-bold text-neutral-600 mb-8 min-h-[48px] uppercase tracking-tight">
-                            Route LLM requests by cost, speed, or quality. Semantic caching and auto-failover built-in.
+                            Route LLM requests by cost, speed, or quality. Semantic caching and auto-failover built-in. Enhanced by **Protocol Economist**.
                         </p>
                         <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Explore Logic &rarr;</span>
+                    </Link>
+
+                    {/* Intelligence Quadplex */}
+                    <Link href="/docs/api#intelligence-status" className="group block p-10 border-4 border-black bg-neutral-900 hover:bg-purple-600 transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(168,85,247,1)]">
+                        <div className="flex items-center gap-4 mb-6">
+                            <span className="text-4xl text-white">⚡</span>
+                            <h2 className="text-2xl font-black uppercase italic text-white group-hover:text-white">Intelligence Layer</h2>
+                        </div>
+                        <p className="text-sm font-bold text-purple-200 mb-8 min-h-[48px] uppercase tracking-tight">
+                            v3.0 Autonomous Governance. Protocol Economist, Sentinel Monitor, and Semantic Shield powered by **Gemini 3**.
+                        </p>
+                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-white text-white inline-block">View Quadplex &rarr;</span>
                     </Link>
 
                     {/* SDK & Tools */}

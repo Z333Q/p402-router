@@ -1,132 +1,149 @@
-# P402.io - The Payment-Aware AI Orchestration Layer
+# P402.io: The Operating System for the Agentic Economy
+
+[![Gemini 3 Hackathon](https://img.shields.io/badge/Gemini%203%20Hackathon-Submission-blueviolet?style=for-the-badge&logo=google-gemini)](https://gemini3.devpost.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 **Route, Verify, and Settle Intelligent Agent Interactions.**
 
-P402 (Payment 402) is the infrastructure layer for the Agentic Web. It combines enterprise-grade AI orchestration with crypto-native settlement, enabling autonomous agents to discover services, negotiate tasks, and pay for resources in real-time using the **x402** and **A2A** protocols.
+P402 (Payment 402) is the unified infrastructure layer for the Agentic Web. It merges high-performance AI orchestration with crypto-native settlement (x402) and an autonomous **Intelligence Layer** powered by **Gemini 3**. It enables autonomous agents to discover peers, negotiate tasks, and settle payments with zero human friction.
 
-> **📘 Architectural Guide:** See [P402 V2 System Integration & Handoff PRD](./P402_V2_HANDOFF_PRD.md) for a comprehensive deep dive.
+---
+
+## 🧠 The Intelligence Quadplex (Gemini 3 Powered)
+
+P402 v3.0 introduces the **Protocol Economist**, an autonomous oversight engine that acts as the "Brain" of the router.
+
+*   **The Brain (Gemini 3 Pro)**: Performs deep forensic analysis on transaction ledgers to identify macro-savings and optimize routing weights.
+*   **The Sentinel (Gemini 3 Flash)**: Real-time, sub-second monitoring of every prompt to detect cost anomalies and adversarial prompt injections.
+*   **The Memory (Semantic Vector Cache)**: Utilizing `text-embedding-004`, P402 intercepts repetitive queries with >92% similarity, serving responses at **zero cost** and sub-50ms latency.
+*   **The Hands (Autonomous Tools)**: The AI doesn't just suggest; it executes. It dynamically adjusts model substitutions, rate limits, and failover chains.
+*   **The Senses (Thinking Trace)**: Real-time observability through a live SSE "Thinking Trace" feed, showing exactly *why* the AI made a fiscal decision.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    subgraph "External Ecosystem"
+        OR[OpenRouter / 300+ Models]
+        BASE[Base L2 / USDC]
+        GPROTO[Google A2A Protocol]
+    end
+
+    subgraph "P402 Intelligence Layer (The Brain)"
+        G3P[Gemini 3 Pro: Protocol Economist]
+        G3F[Gemini 3 Flash: Sentinel Monitor]
+    end
+
+    subgraph "P402 Core Router"
+        SEM[Semantic Vector Memory]
+        FIS[Fiscal Hands: Tool Execution]
+        SSE[Senses: Real-time Thinking Trace]
+    end
+
+    Agent[Autonomous Agent] -->|Request| G3F
+    G3F -->|Clean| SEM
+    SEM -->|Hit| Agent
+    SEM -->|Miss| OR
+    OR -->|Response| Agent
+    
+    OR -.->|Ledger Data| G3P
+    G3P -->|Thinking Trace| SSE
+    G3P -->|Optimization Actions| FIS
+    FIS -->|Update Logic| SEM
+    FIS -->|Update Logic| OR
+
+    subgraph "Settlement"
+        X402[x402 Payment Protocol]
+        AP2[AP2 Mandates: EIP-712]
+    end
+
+    Agent -.->|Payment Proof| OR
+    OR -.->|Reconciliation| X402
+    X402 -.->|Settlement| BASE
+```
 
 ---
 
 ## 🚀 Key Features
 
-### 🤖 Agent-to-Agent (A2A) Protocol
-Full implementation of Google's A2A Protocol for autonomous agent discovery and communication.
-- **Agent Discovery**: `/.well-known/agent.json` broadcasts capabilities and skills.
-- **JSON-RPC Messaging**: Standardized message exchange with context management.
-- **Streaming Responses**: Real-time SSE support for low-latency agent interactions.
-- **Task Lifecycle**: Traceable task states from `pending` to `completed`.
-- **Orchestration**: Autonomous delegation of sub-tasks to other agents based on capability matching.
-- **Bazaar Marketplace**: Global discovery of paid agent services and listings.
+### 💳 x402 & AP2 Payment Protocol
+Secure, policy-driven settlement for agentic commerce.
+- **EIP-3009 Gasless Settlement**: Modern, signature-based transfers where P402 acts as a refueler.
+- **AP2 Mandates**: Cryptographically signed "debit cards" with strict budget constraints (e.g., "Max $5.00 for inference").
+- **Facilitator Verification**: Real-time on-chain verification of transaction receipts on Base Mainnet.
 
-### 💳 AP2 Payment Mandates
-Secure, policy-driven authorization for agent spending.
-- **Intent Mandates**: Users pre-authorize agents with specific constraints (e.g., "max $5.00 for AI inference").
-- **Policy Engine**: Enforces budgets, categories, and expiration times on-chain or off-chain.
-- **Cryptographic Verification**: EIP-712 signature support for tamper-proof mandates.
+### 🤖 Agent-to-Agent (A2A) Discovery
+Full implementation of the A2A Protocol for autonomous discovery.
+- **Discovery**: `/.well-known/agent.json` broadcasts capabilities and pricing.
+- **The Bazaar**: A decentralized marketplace where agents find peers and negotiate terms via JSON-RPC 2.0.
 
-### 🧠 AI Orchestration Router
-Intelligent routing engine for LLM requests.
-- **Smart Routing**: Dynamically routes requests to the best provider based on `mode` (cost, speed, quality, or balanced).
-- **Cost Intelligence**: Real-time cost calculation and "cheapest model" recommendations.
-- **Failover & Retries**: Automatic fallback to alternative providers if the primary fails.
-- **Semantic Cache**: Embedding-based caching to reduce costs and latency for repetitive queries.
-
-### 🌐 A2A x402 Extension (Google Spec)
-Official support for the A2A x402 Extension for cryptographic payment negotiation.
-- **Pay-Per-Task**: Direct settlement for individual agent requests.
-- **Three-Message Flow**: Implements the official `payment-required`, `payment-submitted`, and `payment-completed` lifecycle.
-- **Payment Schemes**: 
-  - `exact`: EIP-3009 (Permitted Transfer) for gasless USDC/USDT settlement.
-  - `onchain`: Direct transaction verification on Base/Ethereum.
-  - `receipt`: Reuse of prior payments for bundled or prepaid services.
-- **Extension URI**: `tag:x402.org,2025:x402-payment`
+### 🛡️ Public Code Auditor
+Integrated AI-powered security scanner for agentic code.
+- **Risk Scoring**: Simulates burn rates and identifies "Financial Death Loops."
+- **Privacy Scrubbing**: Automatically redacts sensitive API keys (`sk-...`) from public logs.
+- **Jailbreak Defense**: Sentinel-level blocking of malicious prompt patterns.
 
 ---
 
-## 🤝 Trusted By Industry Leaders
-
-P402 implements the **Agent-to-Agent (A2A) Protocol**, a standard supported by industry giants including:
-- **Google Cloud**
-- **Salesforce**
-- **Atlassian**
-- **Cognizant**
-- and many others defining the Agentic Web.
-
----
-
-## 🛠️ Integration Guide
+## 🛠️ Quick Start
 
 ### 1. Agent Discovery
-Point your agent to any P402-enabled node to discover its capabilities:
-
 ```bash
 curl https://p402.io/.well-known/agent.json
 ```
 
-### 2. A2A Messaging
-Send a standardized JSON-RPC message to the router:
-
+### 2. Intelligent Routing (with Semantic Cache)
 ```bash
-curl -X POST https://p402.io/api/a2a \
+curl -X POST https://p402.io/api/v1/a2a \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
     "method": "message/send",
     "params": {
-      "message": { "role": "user", "parts": [{ "type": "text", "text": "Hello Agent" }] },
+      "message": { "role": "user", "parts": [{ "type": "text", "text": "Analyze ledger anomalies." }] },
       "configuration": { "mode": "cost" }
     },
     "id": 1
   }'
 ```
 
-### 3. Payment Mandates
-Create a mandate to authorize agent spending:
-
+### 3. Settlement (EIP-3009 Gasless)
 ```bash
-curl -X POST https://p402.io/api/a2a/mandates -d '{
-  "mandate": {
-    "user_did": "did:key:user123",
-    "agent_did": "did:key:agent456",
-    "constraints": { "max_amount_usd": 10.00 }
-  }
-}'
+curl -X POST https://p402.io/api/v1/facilitator/settle \
+  -d '{
+    "authorization": {
+      "from": "0x...",
+      "to": "0x...",
+      "value": "1000000",
+      "nonce": "0x...",
+      "signature": "0x..."
+    }
+  }'
 ```
 
 ---
 
-## 📚 Supported Providers
+## 📊 Business Logic Comparison
 
-| Provider | Models | Capabilities |
-|----------|--------|--------------|
-| **OpenAI** | GPT-5.2, o3-high, GPT-5.2 Turbo | Reasoning+, Vision, Agents |
-| **Anthropic** | Claude 4.5 Opus, Sonnet 4.5 | Long Context, Coding, Reasoning |
-| **Google** | Gemini 3.0 Ultra/Pro/Flash | Multimodal, 10M+ Context |
-| **Groq** | Llama 4, Mixtral 8x22B | Ultra-low latency (LPU) |
-| **DeepSeek** | DeepSeek R1/V3 | Cost-effective reasoning |
-| **Perplexity** | Sonar Online | Real-time web search |
-| **Mistral** | Large 3, Codestral | Open-weight mastery |
-
-And over **300+ frontier models** via the **OpenRouter Meta-Provider**, ensuring instant access to the latest state-of-the-art AI without individual API key overhead.
+| Feature | Standard Proxy | P402 v3.0 |
+| :--- | :---: | :---: |
+| **Gross Margin** | 0% | **95% - 99.9%** (Cache Hits) |
+| **Cost Control** | Manual Labels | **Autonomous Governor (G3)** |
+| **Failover** | Static List | **Real-time Latency Switching** |
+| **Settlement** | Monthly Credit | **Per-Inference JSON-RPC** |
+| **Governance** | API Keys | **Signed EIP-712 Mandates** |
 
 ---
 
-## 🛡️ Security & Privacy
+## 📚 Resources
 
-- **Non-Custodial**: You control your keys and settlement.
-- **Privacy-First**: No data training on your requests.
-- **Verifiable**: All decisions and payments are traceable.
-
----
-
-## 🔗 Resources
-
+- [**Full Whitepaper v3.0**](./WHITEPAPER_V3.md)
 - [P402 Documentation](https://p402.io/docs)
-- [SDK Reference](https://p402.io/docs/sdk)
 - [A2A Protocol Spec](https://github.com/google/a2a-protocol)
-- [AP2 Mandates Guide](https://p402.io/docs/mandates)
+- [Hackathon Submission Guide](./.hackathon/p402-gemini-intelligence/HACKATHON_SUBMISSION.md)
 
 ---
 
-**Built by the P402 Team** | [GitHub](https://github.com/Z333Q/p402-router) | [Twitter](https://twitter.com/p402_io)
+**Built with 💜 for the Agentic Web** | [p402.io](https://p402.io) | [Twitter](https://twitter.com/p402_io)

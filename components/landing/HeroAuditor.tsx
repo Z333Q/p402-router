@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Terminal, Copy, ExternalLink, AlertTriangle, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { CodeAuditTerminal } from '@/components/intelligence/CodeAuditTerminal';
 
 export const HeroAuditor = () => {
     const [codeSnippet, setCodeSnippet] = useState('');
@@ -67,66 +68,7 @@ export const HeroAuditor = () => {
                         style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
                     </div>
 
-                    {/* The "Terminal" Window */}
-                    <div className="relative z-10 w-full bg-[#141414] border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-
-                        {/* Terminal Header */}
-                        <div className="bg-[#B6FF2E] border-b-2 border-black p-3 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 bg-black border border-black"></div>
-                                <div className="w-3 h-3 bg-white border border-black"></div>
-                                <span className="font-mono text-xs font-bold ml-2 uppercase">P402_SAFETY_AUDIT.EXE</span>
-                            </div>
-                            <div className="flex gap-1">
-                                {[1, 2, 3].map(i => <div key={i} className="w-1 h-4 bg-black/20"></div>)}
-                            </div>
-                        </div>
-
-                        {/* Terminal Body */}
-                        <div className="p-4 space-y-4">
-                            <div className="font-mono text-xs text-[#22D3EE] mb-2">
-                                root@p402:~# initialize_audit_sequence
-                            </div>
-
-                            <textarea
-                                className="w-full h-32 bg-[#1A1A1A] border-2 border-[#333] text-gray-300 font-mono text-sm p-3 focus:outline-none focus:border-[#B6FF2E] focus:text-white resize-none placeholder:text-gray-600"
-                                placeholder="// Paste your Python agent code or GitHub URL here..."
-                                value={codeSnippet}
-                                onChange={(e) => setCodeSnippet(e.target.value)}
-                            />
-
-                            {/* Pro Tip Badge */}
-                            <div className="flex items-start gap-2 bg-[#222] border border-[#333] p-2">
-                                <AlertTriangle className="w-4 h-4 text-[#B6FF2E] shrink-0 mt-0.5" />
-                                <p className="text-[10px] text-gray-400 font-mono leading-tight">
-                                    <span className="text-[#B6FF2E] font-bold">PRO TIP:</span> For private repos, use <span className="text-white underline decoration-dashed">GitIngest.com</span> to flatten your repo before pasting.
-                                </p>
-                            </div>
-
-                            {/* Action Button */}
-                            <button
-                                onClick={handleAudit}
-                                disabled={!codeSnippet.trim()}
-                                className="w-full group h-12 bg-[#B6FF2E] border-2 border-black flex items-center justify-center gap-3 hover:bg-[#A0E626] active:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isCopied ? (
-                                    <>
-                                        <Copy className="w-4 h-4" />
-                                        <span className="font-mono font-bold uppercase text-black">COPIED TO CLIPBOARD!</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="font-mono font-bold uppercase text-black">RUN DEEP AUDIT</span>
-                                        <ExternalLink className="w-4 h-4 text-black group-hover:rotate-45 transition-transform" />
-                                    </>
-                                )}
-                            </button>
-
-                            <div className="text-center">
-                                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">Powered by Gemini 3</span>
-                            </div>
-                        </div>
-                    </div>
+                    <CodeAuditTerminal variant="compact" className="relative z-10" />
 
                     {/* Decorative Elements */}
                     <div className="absolute bottom-4 right-4 font-mono text-6xl font-black text-black/5 select-none pointer-events-none">

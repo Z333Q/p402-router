@@ -5,8 +5,14 @@ import { WalletRequired } from '../_components/WalletRequired';
 import { ProTip } from '../_components/ProTip'
 import { useBazaar, BazaarResource } from '@/hooks/useBazaar'
 import { clsx } from 'clsx'
+import { useSession } from 'next-auth/react'
+import { SettlementModal } from './_components/SettlementModal'
 
 export default function BazaarIndexPage() {
+    const { data: session } = useSession();
+    // Safe cast for tenantId which we extended in auth options
+    const tenantId = (session?.user as any)?.tenantId;
+
     const {
         resources,
         allResources,
@@ -27,6 +33,7 @@ export default function BazaarIndexPage() {
     } = useBazaar()
 
     const [simulationResult, setSimulationResult] = useState<any>(null)
+    const [settlementResource, setSettlementResource] = useState<BazaarResource | null>(null)
 
     // Calculate real market stats
     const avgHealth = allResources.length > 0
@@ -59,6 +66,10 @@ export default function BazaarIndexPage() {
         } catch (err: any) {
             alert(err.message)
         }
+    }
+
+    const handleSettle = (r: BazaarResource) => {
+        setSettlementResource(r)
     }
 
     return (
@@ -178,6 +189,7 @@ export default function BazaarIndexPage() {
                                     r={r}
                                     onImport={handleImport}
                                     onSimulate={handleSimulate}
+                                    onSettle={handleSettle}
                                     isImporting={importing === r.resource_id}
                                 />
                             ))}
@@ -262,11 +274,20 @@ export default function BazaarIndexPage() {
                     </div>
                 )}
             </div>
+
+            {settlementResource && tenantId && (
+                <SettlementModal
+                    isOpen={!!settlementResource}
+                    onClose={() => setSettlementResource(null)}
+                    resource={settlementResource}
+                    tenantId={tenantId}
+                />
+            )}
         </WalletRequired>
     )
 }
 
-function BazaarCard({ r, onImport, onSimulate, isImporting }: { r: BazaarResource, onImport: (id: string) => void, onSimulate: (id: string) => void, isImporting: boolean }) {
+function BazaarCard({ r, onImport, onSimulate, onSettle, isImporting }: { r: BazaarResource, onImport: (id: string) => void, onSimulate: (id: string) => void, onSettle?: (r: BazaarResource) => void, isImporting: boolean }) {
     const health = r.health_status || 'unknown'
     const priceUsd = r.pricing?.min_amount ? (r.pricing.min_amount / 1000000).toFixed(4) : '0.0000'
 
@@ -324,14 +345,24 @@ function BazaarCard({ r, onImport, onSimulate, isImporting }: { r: BazaarResourc
                 >
                     DEBUG
                 </Button>
-                <Button
-                    variant="dark"
-                    onClick={() => onImport(r.resource_id)}
-                    className="flex-1 text-[10px] font-black group-hover:bg-primary group-hover:text-black group-hover:border-primary transition-all"
-                    disabled={isImporting}
-                >
-                    {isImporting ? '...' : 'DEPLOY'}
-                </Button>
+                {r.pricing?.min_amount && r.pricing.min_amount > 0 ? (
+                    <Button
+                        variant="dark"
+                        onClick={() => onSettle?.(r)}
+                        className="flex-1 text-[10px] font-black group-hover:bg-primary group-hover:text-black group-hover:border-primary transition-all bg-neutral-900"
+                    >
+                        SETTLE
+                    </Button>
+                ) : (
+                    <Button
+                        variant="dark"
+                        onClick={() => onImport(r.resource_id)}
+                        className="flex-1 text-[10px] font-black group-hover:bg-primary group-hover:text-black group-hover:border-primary transition-all"
+                        disabled={isImporting}
+                    >
+                        {isImporting ? '...' : 'DEPLOY'}
+                    </Button>
+                )}
             </div>
         </Card>
     )

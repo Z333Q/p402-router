@@ -17,7 +17,7 @@ export default function PrivacyPage() {
 
             <main style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px' }}>
                 <h1 className="title-1" style={{ marginBottom: 8 }}>Privacy Policy</h1>
-                <p className="mono-id" style={{ marginBottom: 48 }}>Last updated: December 2024</p>
+                <p className="mono-id" style={{ marginBottom: 48 }}>Last updated: January 21, 2026</p>
 
                 <section style={{ marginBottom: 32 }}>
                     <h2 className="title-2">1. Information We Collect</h2>

@@ -61,7 +61,8 @@ describe('SemanticCache', () => {
                     expect.any(String), // hash
                     'prompt',
                     JSON.stringify(response),
-                    'gpt-4o'
+                    'gpt-4o',
+                    null // embedding (fails in test because mock generateEmbedding returns [])
                 ]
             );
         });
