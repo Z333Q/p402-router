@@ -96,6 +96,8 @@ export default function GetAccessPage() {
                                     onChange={e => setFormData({ ...formData, useCase: e.target.value })}
                                 >
                                     <option>MCP Server Monetization</option>
+                                    <option>Protocol Economics Optimization</option>
+                                    <option>Forensic Cost Audit</option>
                                     <option>Agent Spend Controls</option>
                                     <option>Internal Chargeback</option>
                                     <option>Other</option>

@@ -13,13 +13,13 @@ export function LandingGuide() {
                     <div className="absolute inset-0 bg-primary/3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
                     <div className="flex-1 space-y-4 relative z-10">
-                        <div className="badge badge-info bg-[#22D3EE] text-black border-2 border-black font-black uppercase text-[10px] tracking-widest">Technical Guide</div>
-                        <h2 className="text-4xl font-black uppercase tracking-tighter text-black">
-                            UNDERSTAND THE P402 PROTOCOL IN 60 SECONDS
+                        <div className="badge badge-info bg-[#A855F7] text-white border-2 border-black font-black uppercase text-[10px] tracking-widest px-3">Protocol v3.0 Onboarding</div>
+                        <h2 className="text-4xl font-black uppercase tracking-tighter text-black italic">
+                            THE INTELLIGENCE QUADPLEX IN 60 SECONDS
                         </h2>
                         <p className="text-neutral-600 font-medium text-lg leading-relaxed max-w-2xl">
-                            First time here? Walk through our interactive guide to see how we handle request matching,
-                            402 challenges, and trustless settlement on Base L2.
+                            New to P402? Walk through our interactive mission briefing to see how we leverage **Gemini 3** for autonomous
+                            cost governance, semantic interception, and atomic x402 settlement.
                         </p>
                     </div>
 

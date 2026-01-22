@@ -1,10 +1,10 @@
-
 import { TopNav } from "@/components/TopNav"
 import { Footer } from "@/components/Footer"
 import { HeroAuditor } from "@/components/landing/HeroAuditor"
 import { BazaarLoop } from "@/components/landing/BazaarLoop"
 import { Testimonials } from "@/components/landing/Testimonials"
 import { RequestInspector } from "@/components/landing/RequestInspector"
+import { LandingGuide } from "@/components/landing/LandingGuide"
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic';
@@ -16,26 +16,34 @@ export default async function Page() {
             <main>
                 <HeroAuditor />
 
+                <LandingGuide />
+
                 {/* Protocol Deep Dive / Features */}
                 <section id="product" className="py-24 bg-white border-t-2 border-black">
                     <div className="container mx-auto px-6 max-w-7xl">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-                            <div className="card p-10 border-2 border-black bg-white">
-                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Execution Mode</h3>
+                            <div className="card p-10 border-2 border-black bg-white shadow-[8px_8px_0px_#000]">
+                                <div className="text-[10px] font-black text-primary mb-2 uppercase">v3.0 Execution</div>
+                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Protocol Economist</h3>
                                 <p className="text-sm font-bold leading-relaxed text-neutral-600">
-                                    Gasless settlement via EIP-3009. Agents sign authorizations, P402 executes the on-chain transfer and pays the gas.
+                                    Autonomous optimization powered by Gemini 3. Forensic analysis of ledgers to execute
+                                    model substitutions and cost-saving failovers with zero human oversight.
                                 </p>
                             </div>
-                            <div className="card p-10 border-2 border-black bg-white">
-                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">AP2 Mandates</h3>
+                            <div className="card p-10 border-2 border-black bg-white shadow-[8px_8px_0px_#000]">
+                                <div className="text-[10px] font-black text-[#B6FF2E] mb-2 uppercase">v3.0 Memory</div>
+                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Semantic Shield</h3>
                                 <p className="text-sm font-bold leading-relaxed text-neutral-600">
-                                    Enforce spend policies with EIP-712 cryptographic mandates. No private key sharing—just verifiable budget allowances.
+                                    Vector-based interception using text-embedding-004. Shield your budget by serving cached
+                                    responses to similar intents before they ever leave your infrastructure.
                                 </p>
                             </div>
-                            <div className="card p-10 border-2 border-black bg-white">
-                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Decision Trace</h3>
+                            <div className="card p-10 border-2 border-black bg-white shadow-[8px_8px_0px_#000]">
+                                <div className="text-[10px] font-black text-[#A855F7] mb-2 uppercase">v3.0 Observability</div>
+                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Thinking Trace</h3>
                                 <p className="text-sm font-bold leading-relaxed text-neutral-600">
-                                    Audit every token spent. Real-time observability into facilitator scoring, policy checks, and settlement proofs.
+                                    Full cryptographic auditability. Real-time observability into the AI's internal reasoning chain,
+                                    policy checks, and x402 settlement proofs.
                                 </p>
                             </div>
                         </div>
