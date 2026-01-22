@@ -3,16 +3,20 @@ import './globals.css'
 import GoogleAnalytics from './components/GoogleAnalytics'
 
 export const metadata: Metadata = {
-    title: 'P402 Router | x402 Payment Infrastructure',
+    title: 'P402 | The Agentic Economy Operating System',
     description:
-        'The Payment-Aware AI Orchestration Layer. Route LLM requests, enable Agent-to-Agent (A2A) communication, and settle x402 payments with AP2 Mandates on Base.',
+        'P402 is the sovereign routing and payment layer for Agent-to-Agent (A2A) and Agent-to-Passenger (A2P) commerce. Powered by Gemini 3 for autonomous policy governance and x402 settlement.',
     metadataBase: new URL('https://p402.io'),
-    keywords: ['AI Agents', 'A2A Protocol', 'x402', 'Payment Mandates', 'LLM Routing', 'Agentic Web', 'USDC', 'Base blockchain'],
-    authors: [{ name: 'P402' }],
+    keywords: [
+        'AI Agents', 'A2A Protocol', 'A2P Commerce', 'x402 Payment Required',
+        'Agentic Web', 'Autonomous Agents', 'LLM Routing', 'Agent Payments',
+        'Base Blockchain', 'Google A2A', 'Agentic Economy', 'AI Governance'
+    ],
+    authors: [{ name: 'P402 Protocol Research' }],
     openGraph: {
-        title: 'P402 Router - x402 Payment Infrastructure',
+        title: 'P402 | Infrastructure for the Agentic Economy',
         description:
-            'Routing control plane for x402 payments. Policies, traces, and Bazaar overlays. Accept USDC/USDT on Base.',
+            'The sovereign routing and settlement layer for the Agentic Web. Secure, Intelligent, and A2A-Native.',
         url: 'https://p402.io',
         siteName: 'P402',
         type: 'website',
@@ -20,10 +24,20 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'P402 Router',
-        description: 'x402 payment routing infrastructure. USDC/USDT on Base.',
+        title: 'P402 Protocol',
+        description: 'The Agent-to-Agent (A2A) Commerce Infrastructure.',
     },
-    robots: { index: true, follow: true },
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            'max-video-preview': -1,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+        },
+    },
     alternates: {
         canonical: 'https://p402.io',
     },
@@ -33,25 +47,36 @@ export const metadata: Metadata = {
     }
 }
 
-// JSON-LD Structured Data for SEO
+// JSON-LD Structured Data for SEO & LLMs
 const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: 'P402 Router',
-    applicationCategory: 'FinanceApplication',
-    operatingSystem: 'Web',
-    description: 'Payment routing infrastructure for HTTP 402 protocol. Accept USDC and USDT stablecoin payments on Base blockchain.',
+    '@type': 'Organization',
+    name: 'P402',
     url: 'https://p402.io',
-    offers: {
-        '@type': 'Offer',
-        price: '0',
-        priceCurrency: 'USD',
-        description: '1% fee on settled transactions'
-    },
-    author: {
-        '@type': 'Organization',
-        name: 'P402',
-        url: 'https://p402.io'
+    logo: 'https://p402.io/favicon.png',
+    description: 'A sovereign infrastructure layer for Agent-to-Agent (A2A) commerce and autonomous policy governance.',
+    knowsAbout: ['AI Agents', 'Agentic Web', 'Blockchain Payments', 'A2A Protocol', 'HTTP 402'],
+    hasOfferCatalog: {
+        '@type': 'OfferCatalog',
+        name: 'P402 Services',
+        itemListElement: [
+            {
+                '@type': 'Offer',
+                itemOffered: {
+                    '@type': 'SoftwareApplication',
+                    name: 'P402 Router',
+                    description: 'Autonomous A2A payment routing and policy enforcement.'
+                }
+            },
+            {
+                '@type': 'Offer',
+                itemOffered: {
+                    '@type': 'SoftwareApplication',
+                    name: 'x402 Protocol',
+                    description: 'The standard for Agent-to-Agent payment requests.'
+                }
+            }
+        ]
     }
 }
 

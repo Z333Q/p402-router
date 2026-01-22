@@ -2,38 +2,50 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
     const agentCard = {
-        protocolVersion: "v1.0",
-        name: "P402 Payment Router",
-        description: "Payment-aware AI orchestration layer for the agentic web.",
+        protocolVersion: "v2.0",
+        name: "P402 Protocol Governor",
+        description: "Autonomous policy governance and settlement layer for A2A commerce.",
         url: "https://p402.io",
         iconUrl: "https://p402.io/favicon.png",
-        version: "1.0.0",
+        version: "3.0.0",
 
         capabilities: {
             streaming: true,
-            pushNotifications: true
+            pushNotifications: true,
+            autonomousSettlement: true,
+            policyEnforcement: true
         },
 
         skills: [
             {
-                id: "ai-completion",
-                name: "AI Completion",
-                description: "Route chat completion requests to optimal providers based on cost/performance."
+                id: "a2a-routing",
+                name: "Intelligent A2A Routing",
+                description: "Optimizes Agent-to-Agent requests based on fiscal mandates and security policies."
+            },
+            {
+                id: "forensic-audit",
+                name: "Forensic Policy Audit",
+                description: "Analyzes orchestration ledgers for budget compliance and cost inefficiencies."
+            },
+            {
+                id: "semantic-cache",
+                name: "Smart Semantic Interception",
+                description: "Intercepts redundant requests to reduce API overhead to zero."
             }
         ],
 
-        defaultInputModes: ["text/plain"],
-        defaultOutputModes: ["text/plain"],
+        defaultInputModes: ["text/plain", "application/json"],
+        defaultOutputModes: ["text/plain", "application/json"],
 
         extensions: [
             {
                 uri: "tag:x402.org,2025:x402-payment",
                 config: {
                     networks: [
-                        { chain: "eip155:8453", name: "Base Mainnet" },
-                        { chain: "eip155:1", name: "Ethereum Mainnet" }
+                        { chain: "eip155:8453", name: "Base Mainnet" }
                     ],
-                    tokens: ["USDC", "USDT", "ETH"]
+                    tokens: ["USDC", "EURC"],
+                    features: ["EIP-3009", "AP2-Mandates"]
                 }
             }
         ]

@@ -58,6 +58,7 @@ export function TopNav() {
                 {/* Desktop Nav */}
                 <nav className="hidden md:flex gap-8 text-[11px] font-black uppercase tracking-[0.15em]">
                     <Link href="/#product" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Product</Link>
+                    <Link href="/intelligence" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Intelligence</Link>
                     <Link href="/dashboard/bazaar" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Bazaar</Link>
                     <Link href="/docs/api" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Developers</Link>
                 </nav>
@@ -90,6 +91,7 @@ export function TopNav() {
                 <div className="absolute top-16 left-0 right-0 bg-white border-b-2 border-black p-6 flex flex-col gap-4 z-40">
                     <nav className="flex flex-col gap-4 text-base font-extrabold uppercase">
                         <Link href="/#product" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Product</Link>
+                        <Link href="/intelligence" onClick={() => setIsMenuOpen(false)} className="text-black no-underline text-primary">Intelligence</Link>
                         <Link href="/dashboard/bazaar" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Bazaar</Link>
                         <Link href="/docs/api" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Developers</Link>
                         <Link href="/docs/sdk" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">SDK</Link>

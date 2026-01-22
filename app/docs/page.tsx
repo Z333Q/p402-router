@@ -81,11 +81,11 @@ export default function DocsIndex() {
                     <div className="relative z-10">
                         <h3 className="text-2xl font-black uppercase italic mb-8">Resource Hub</h3>
                         <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <li><Link href="/docs/v2-spec" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">📄 V2 Protocol Spec (Web)</Link></li>
-                            <li><Link href="/whitepaper.pdf" target="_blank" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">📥 Download Whitepaper (PDF)</Link></li>
-                            <li><Link href="/docs/bazaar" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">🛒 Bazaar Marketplace</Link></li>
+                            <li><Link href="/intelligence" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2 text-primary">📊 Intelligence Hub (Research & Case Studies)</Link></li>
+                            <li><Link href="/docs/api#intelligence-status" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">🛡️ Governance Status API</Link></li>
+                            <li><Link href="/WHITEPAPER_V3.md" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">📄 V3 Protocol Whitepaper</Link></li>
                             <li><Link href="/docs/api" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">🔌 API Reference</Link></li>
-                            <li><Link href="https://github.com/google/a2a-protocol" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">📜 A2A Spec (External)</Link></li>
+                            <li><Link href="/docs/sdk" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">📦 SDK & Tools</Link></li>
                         </ul>
                     </div>
                     {/* Decorative Background Element */}
