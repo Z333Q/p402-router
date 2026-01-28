@@ -38,8 +38,10 @@ export async function POST(req: NextRequest) {
         // x402-compliant response
         return NextResponse.json({
             success: result.settled,
+            payer: result.payer ?? null,
             transaction: result.receipt.txHash,
             network: network || "eip155:8453",
+            // Legacy fields for backward compatibility
             facilitatorId: result.facilitatorId,
             receipt: {
                 txHash: result.receipt.txHash,
@@ -52,7 +54,7 @@ export async function POST(req: NextRequest) {
         if (error instanceof ApiError) {
             return NextResponse.json({
                 success: false,
-                error: error.message,
+                errorReason: error.message,  // x402 spec uses 'errorReason'
                 code: error.code
             }, { status: error.status });
         }
@@ -60,7 +62,7 @@ export async function POST(req: NextRequest) {
         console.error("Settlement error:", error);
         return NextResponse.json({
             success: false,
-            error: "Settlement verification failed"
+            errorReason: "Settlement verification failed"
         }, { status: 500 });
     }
 }

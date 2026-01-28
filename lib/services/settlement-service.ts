@@ -20,6 +20,7 @@ export interface SettleRequest {
 export interface SettleResponse {
     settled: boolean;
     facilitatorId: string;
+    payer?: string;  // x402 spec: address of the payer
     receipt: {
         txHash: string;
         verifiedAmount?: string;
@@ -154,6 +155,7 @@ export class SettlementService {
         return {
             settled: true,
             facilitatorId: 'chain_base',
+            payer: verification.payerAddress || undefined,
             receipt: {
                 txHash: txHash!,
                 verifiedAmount: verification.actualAmount,
@@ -292,6 +294,7 @@ export class SettlementService {
         return {
             settled: true,
             facilitatorId: 'p402-eip3009',
+            payer: authorization.from,
             receipt: {
                 txHash,
                 verifiedAmount: amountHuman,
