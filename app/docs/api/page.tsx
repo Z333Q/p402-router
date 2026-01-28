@@ -87,8 +87,10 @@ res = requests.post(
     }
 )`,
             response: {
-                settled: true,
-                facilitatorId: "chain_base",
+                success: true,
+                payer: "0xUserAddress...",
+                transaction: "0x88df01e...",
+                network: "eip155:8453",
                 receipt: {
                     txHash: "0x88df01e...",
                     verifiedAmount: "1.0",
