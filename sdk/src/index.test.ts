@@ -68,8 +68,13 @@ describe('P402Client', () => {
             vi.mocked(fetch).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
-                    settled: true,
-                    receipt: { status: 'confirmed' }
+                    success: true,
+                    receipt: {
+                        txHash: VALID_TX_HASH,
+                        verifiedAmount: '10.0',
+                        asset: 'USDC',
+                        timestamp: new Date().toISOString()
+                    }
                 })
             } as any);
 
@@ -77,7 +82,7 @@ describe('P402Client', () => {
 
             expect(result.success).toBe(true);
             expect(result.txHash).toBe(VALID_TX_HASH);
-            expect(result.receipt.status).toBe('confirmed');
+            expect(result.receipt?.txHash).toBe(VALID_TX_HASH);
         });
 
         it('should handle policy denial', async () => {
@@ -122,8 +127,8 @@ describe('P402Client', () => {
             vi.mocked(fetch).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
-                    settled: false,
-                    message: 'Invalid TX'
+                    success: false,
+                    errorReason: 'Invalid TX'
                 })
             } as any);
 

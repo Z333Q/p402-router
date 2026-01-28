@@ -6,6 +6,7 @@ import { Testimonials } from "@/components/landing/Testimonials"
 import { RequestInspector } from "@/components/landing/RequestInspector"
 import { LandingGuide } from "@/components/landing/LandingGuide"
 import Link from 'next/link'
+import { Badge } from "@/app/dashboard/_components/ui"
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +52,45 @@ export default async function Page() {
                 </section>
 
                 <RequestInspector />
+
+                {/* Intelligence Engine Feature */}
+                <section className="py-32 bg-black text-white border-y-2 border-white">
+                    <div className="container mx-auto px-6 max-w-7xl">
+                        <div className="flex flex-col lg:flex-row gap-16 items-start">
+                            <div className="lg:w-1/3">
+                                <Badge variant="primary" className="mb-6">Knowledge Base</Badge>
+                                <h2 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter leading-none mb-6">
+                                    Intelligence<br />Engine
+                                </h2>
+                                <p className="text-neutral-400 font-mono text-lg mb-8 leading-relaxed">
+                                    P402 is not just code; it is a new economic physics for the Agentic Web.
+                                    Explore our foundational research papers on flash settlement, circuit breakers, and machine governance.
+                                </p>
+                                <Link href="/intelligence" className="inline-block bg-[#B6FF2E] text-black font-bold uppercase px-8 py-4 border-2 border-transparent hover:border-white hover:bg-black hover:text-white transition-all text-sm tracking-widest">
+                                    Read the Research →
+                                </Link>
+                            </div>
+                            <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-px bg-white/20 border-2 border-white/20">
+                                {[
+                                    { title: "Protocol Economics", desc: "Atomic settlement & market design.", link: "/intelligence/protocol-economics" },
+                                    { title: "Machine Governance", desc: "Cryptographic AP2 mandates.", link: "/intelligence/machine-governance" },
+                                    { title: "Agentic Orchestration", desc: "QoS semantic routing logic.", link: "/intelligence/agentic-orchestration" },
+                                    { title: "The Sentinel Layer", desc: "Flash crash protection systems.", link: "/intelligence/sentinel-layer" },
+                                ].map((pillar, i) => (
+                                    <Link key={i} href={pillar.link} className="group bg-neutral-900 p-8 hover:bg-black transition-colors">
+                                        <h3 className="text-xl font-bold uppercase text-[#B6FF2E] mb-2 group-hover:underline decoration-2 underline-offset-4">
+                                            {pillar.title}
+                                        </h3>
+                                        <p className="text-neutral-400 font-mono text-sm leading-relaxed">
+                                            {pillar.desc}
+                                        </p>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <BazaarLoop />
                 <Testimonials />
 

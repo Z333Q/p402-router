@@ -1,17 +1,53 @@
 {
     "name": "@p402/sdk",
-    "version": "1.0.0",
-    "description": "Official TypeScript SDK for P402 Payment Router",
+    "version": "1.1.0",
+    "description": "Official TypeScript SDK for P402 Payment Router - x402 compliant AI commerce infrastructure",
+    "author": "P402 Protocol <dev@p402.io>",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Z333Q/p402-router.git",
+        "directory": "sdk"
+    },
+    "homepage": "https://p402.io",
+    "keywords": [
+        "p402",
+        "x402",
+        "payments",
+        "ai",
+        "agents",
+        "commerce",
+        "eip-3009",
+        "eip-712",
+        "usdc",
+        "base"
+    ],
     "main": "dist/index.js",
+    "module": "dist/index.mjs",
     "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
     "scripts": {
-        "build": "tsc"
+        "build": "tsc",
+        "prepublishOnly": "npm run build"
     },
     "peerDependencies": {
         "viem": "^2.0.0"
     },
     "devDependencies": {
         "typescript": "^5.0.0",
-        "viem": "^2.0.0"
+        "viem": "^2.42.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
     }
 }

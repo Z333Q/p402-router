@@ -56,7 +56,6 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({ alerts }, { status: 200 })
     } catch (e: any) {
-        const mapped = toApiErrorResponse(e, requestId)
-        return NextResponse.json(mapped.body, { status: mapped.status })
+        return toApiErrorResponse(e, requestId)
     }
 }

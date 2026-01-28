@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
         })
 
     } catch (e: any) {
-        const mapped = toApiErrorResponse(e, requestId)
-        return NextResponse.json(mapped.body, { status: mapped.status, headers: { 'x-request-id': requestId } })
+        return toApiErrorResponse(e, requestId)
     }
 }

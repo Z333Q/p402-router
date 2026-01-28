@@ -29,6 +29,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@p402/sdk": [
+        "./sdk/src/index.ts"
       ]
     },
     // Fix for "Cannot write file ... because it would overwrite input file"

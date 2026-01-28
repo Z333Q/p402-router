@@ -36,10 +36,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(response)
 
     } catch (e: any) {
-        const mapped = toApiErrorResponse(e, requestId)
-        // Ensure status 500 doesn't leak sensitive info (ApiError util should handle this, but adding safe log)
-        if (mapped.status === 500) console.error("Settle Critical Error:", e.message)
-
-        return NextResponse.json(mapped.body, { status: mapped.status, headers: { 'x-request-id': requestId } })
+        return toApiErrorResponse(e, requestId)
     }
 }

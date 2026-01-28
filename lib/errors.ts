@@ -1,3 +1,5 @@
+import { NextResponse } from 'next/server';
+
 export type ApiErrorCode =
     | 'INVALID_INPUT'
     | 'INVALID_REQUEST'
@@ -34,13 +36,20 @@ export function toApiErrorResponse(err: unknown, requestId: string) {
     console.error(`[API Error] ${requestId}:`, err)
 
     if (err instanceof ApiError) {
-        return {
-            status: err.status,
-            body: { code: err.code, message: err.message, requestId, details: err.details }
+        return NextResponse.json({
+            error: {
+                type: 'api_error',
+                code: err.code,
+                message: err.message,
+                details: err.details
+            }
+        }, { status: err.status });
+    }
+    return NextResponse.json({
+        error: {
+            type: 'internal_error',
+            code: 'INTERNAL_ERROR',
+            message: 'An internal error occurred.'
         }
-    }
-    return {
-        status: 500,
-        body: { code: 'INTERNAL_ERROR', message: 'An internal error occurred.', requestId }
-    }
+    }, { status: 500 });
 }

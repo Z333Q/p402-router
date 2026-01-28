@@ -596,6 +596,43 @@ export default function ApiDocsPage() {
                             </div>
                         </section>
 
+                        {/* Error Codes Section */}
+                        <section id="errors" className="p-12 border-b-2 border-black/5">
+                            <h2 className="text-3xl font-black mb-6 uppercase">Error Codes</h2>
+                            <p className="text-neutral-600 mb-8 leading-relaxed max-w-2xl">
+                                P402 uses a unified error format across all endpoints. Errors are returned with an appropriate HTTP status code
+                                and a JSON body containing an <code>error</code> object.
+                            </p>
+
+                            <div className="bg-neutral-50 p-6 border-2 border-black font-mono text-sm mb-8">
+                                <div className="text-neutral-400 mb-2"># Error Response Format</div>
+                                <pre className="text-black whitespace-pre">{`{
+  "error": {
+    "type": "invalid_request",  // Category
+    "code": "INVALID_INPUT",    // Specific machine-readable code
+    "message": "Amount must be greater than 0"
+  }
+}`}</pre>
+                            </div>
+
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-neutral-400 mb-4">Common Error Codes</h3>
+                                {[
+                                    { code: 'INVALID_INPUT', desc: 'Missing or malformed request parameters.' },
+                                    { code: 'UNAUTHORIZED', desc: 'Missing or invalid API key.' },
+                                    { code: 'POLICY_DENIED', desc: 'Request blocked by governance policy (budgets, allowed actions).' },
+                                    { code: 'SETTLEMENT_FAILED', desc: 'On-chain verification failed or transaction not found.' },
+                                    { code: 'RATE_LIMITED', desc: 'Too many requests. Please slow down.' },
+                                    { code: 'INTERNAL_ERROR', desc: 'Unexpected server-side error.' }
+                                ].map(err => (
+                                    <div key={err.code} className="grid grid-cols-[200px_1fr] gap-4 py-2 border-b border-black/5">
+                                        <code className="text-xs font-black text-[#EF4444]">{err.code}</code>
+                                        <p className="text-xs text-neutral-600">{err.desc}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
                         {/* Endpoints Loop */}
                         {ENDPOINTS.map(ep => (
                             <section

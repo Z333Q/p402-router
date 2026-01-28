@@ -1,11 +1,39 @@
-import { createPublicClient, http, encodeFunctionData, parseUnits, Hash } from 'viem';
+import { createPublicClient, http, encodeFunctionData, parseUnits, Hash, Address, Hex } from 'viem';
+import { base } from 'viem/chains';
 
-export type Network = 'eip155:8453' | 'eip155:84532' | 'eip155:1';
+// Re-export all types
+export * from './types';
+export * from './mandate';
+export type { Address, Hash, Hex } from 'viem';
 
-// --- Error Handling ---
+import type {
+    P402Config,
+    P402ErrorCode,
+    Network,
+    TokenConfig,
+    PaymentRequest,
+    PaymentResult,
+    PlanRequest,
+    PlanResponse,
+    SettleRequest,
+    SettleResponse,
+    ChatCompletionRequest,
+    ChatCompletionResponse,
+    Session,
+    Policy,
+    Mandate,
+    EIP3009Authorization,
+    EIP712Mandate,
+    SignedMandate
+} from './types';
+
+// =============================================================================
+// ERROR CLASS
+// =============================================================================
+
 export class P402Error extends Error {
     constructor(
-        public code: 'INVALID_INPUT' | 'POLICY_DENIED' | 'TRANSACTION_FAILED' | 'SETTLEMENT_FAILED' | 'NETWORK_ERROR',
+        public code: P402ErrorCode,
         message: string,
         public details?: any
     ) {
@@ -14,22 +42,9 @@ export class P402Error extends Error {
     }
 }
 
-// --- Configuration ---
-export interface P402Config {
-    routerUrl?: string; // Default: https://p402.io
-    debug?: boolean;    // Default: false
-}
-
-// --- Token Types ---
-export interface TokenConfig {
-    address: string;
-    decimals: number;
-    symbol: string;
-    eip712?: {
-        name: string;
-        version: string;
-    };
-}
+// =============================================================================
+// PRESET TOKENS
+// =============================================================================
 
 export const PRESET_TOKENS: Record<string, Record<Network, TokenConfig>> = {
     USDC: {
@@ -54,19 +69,6 @@ export const PRESET_TOKENS: Record<string, Record<Network, TokenConfig>> = {
     }
 };
 
-export interface PaymentRequest {
-    amount: string;
-    token?: TokenConfig;
-    network?: Network;
-}
-
-export interface PaymentResult {
-    success: boolean;
-    txHash?: string;
-    receipt?: any;
-    error?: P402Error;
-}
-
 const ERC20_ABI = [
     {
         name: 'transfer',
@@ -77,13 +79,21 @@ const ERC20_ABI = [
     }
 ] as const;
 
+// =============================================================================
+// P402 CLIENT
+// =============================================================================
+
 export class P402Client {
     private routerUrl: string;
     private debug: boolean;
+    private apiKey?: string;
+    private defaultNetwork: Network;
 
     constructor(config: P402Config = {}) {
         this.routerUrl = (config.routerUrl || 'https://p402.io').replace(/\/$/, '');
         this.debug = config.debug || false;
+        this.apiKey = config.apiKey;
+        this.defaultNetwork = config.network || 'eip155:8453';
     }
 
     private log(msg: string, data?: any) {
@@ -92,8 +102,60 @@ export class P402Client {
         }
     }
 
+    private headers(): HeadersInit {
+        const h: HeadersInit = { 'Content-Type': 'application/json' };
+        if (this.apiKey) h['Authorization'] = `Bearer ${this.apiKey}`;
+        return h;
+    }
+
+    // =========================================================================
+    // V1 API - PLAN & SETTLE
+    // =========================================================================
+
     /**
-     * Complete checkout flow: Plan -> Pay (Externally) -> Settle
+     * Request a payment plan from the router.
+     * This negotiates with the policy engine and returns available facilitators.
+     */
+    async plan(request: PlanRequest): Promise<PlanResponse> {
+        this.log('Requesting plan', request);
+
+        const res = await fetch(`${this.routerUrl}/api/v1/router/plan`, {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify(request)
+        });
+
+        if (!res.ok) {
+            throw new P402Error('NETWORK_ERROR', `Plan request failed: ${res.statusText}`);
+        }
+
+        return res.json();
+    }
+
+    /**
+     * Settle a payment after the transaction has been executed.
+     * Supports both txHash (on-chain) and EIP-3009 authorization (gasless).
+     */
+    async settle(request: SettleRequest): Promise<SettleResponse> {
+        this.log('Settling payment', request);
+
+        const res = await fetch(`${this.routerUrl}/api/v1/facilitator/settle`, {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify(request)
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+            throw new P402Error('SETTLEMENT_FAILED', data.errorReason || 'Settlement failed', data.error);
+        }
+
+        return data;
+    }
+
+    /**
+     * Complete checkout flow: Plan → Pay (Externally) → Settle
      */
     async checkout(
         request: PaymentRequest,
@@ -102,35 +164,26 @@ export class P402Client {
         try {
             this.log('Starting checkout', request);
 
-            const network = request.network || 'eip155:8453';
+            const network = request.network || this.defaultNetwork;
             if (Number(request.amount) <= 0) {
                 throw new P402Error('INVALID_INPUT', 'Amount must be greater than 0');
             }
 
-            // Get token config
             const usdc = PRESET_TOKENS.USDC;
             const token = request.token || (usdc ? usdc[network] : undefined);
 
             if (!token || !token.eip712) {
-                throw new P402Error('INVALID_INPUT', 'Token configuration missing or invalid (EIP-712 required)');
+                throw new P402Error('INVALID_INPUT', 'Token configuration missing or invalid');
             }
 
             // 1. PLAN
-            this.log('Requesting Router Plan...');
-            const planRes = await fetch(`${this.routerUrl}/api/v1/router/plan`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    payment: {
-                        amount: request.amount,
-                        asset: token.symbol,
-                        network: network
-                    }
-                })
+            const plan = await this.plan({
+                payment: {
+                    amount: request.amount,
+                    asset: token.symbol,
+                    network: network
+                }
             });
-
-            if (!planRes.ok) throw new P402Error('NETWORK_ERROR', `Router plan failed: ${planRes.statusText}`);
-            const plan = await planRes.json();
 
             if (!plan.allow) {
                 throw new P402Error('POLICY_DENIED', 'Router policy denied the transaction', plan.policy?.reasons);
@@ -143,9 +196,7 @@ export class P402Client {
             }
 
             // 2. CONSTRUCT & SIGN
-            this.log(`Facilitator Selected: ${candidate.name}, Treasury: ${treasury}`);
             const weiAmount = parseUnits(request.amount, token.decimals);
-
             const data = encodeFunctionData({
                 abi: ERC20_ABI,
                 functionName: 'transfer',
@@ -158,24 +209,14 @@ export class P402Client {
             this.log('Transaction sent', txHash);
 
             // 4. SETTLE
-            this.log('Verifying settlement...');
-            const settleRes = await fetch(`${this.routerUrl}/api/v1/router/settle`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    txHash,
-                    amount: request.amount,
-                    asset: token.symbol
-                })
+            const settleData = await this.settle({
+                txHash: txHash as Hash,
+                amount: request.amount,
+                asset: token.symbol
             });
 
-            const settleData = await settleRes.json();
-            if (!settleData.settled) {
-                throw new P402Error('SETTLEMENT_FAILED', settleData.message || 'Verification failed');
-            }
-
             this.log('Checkout complete!');
-            return { success: true, txHash, receipt: settleData.receipt };
+            return { success: true, txHash: txHash as Hash, receipt: settleData.receipt };
 
         } catch (e: any) {
             this.log('Checkout failed', e);
@@ -183,4 +224,216 @@ export class P402Client {
             return { success: false, error };
         }
     }
+
+    // =========================================================================
+    // V2 API - CHAT COMPLETIONS
+    // =========================================================================
+
+    /**
+     * Send a chat completion request through P402's multi-provider router.
+     * Automatically selects the best provider based on mode.
+     */
+    async chat(request: ChatCompletionRequest): Promise<ChatCompletionResponse> {
+        this.log('Chat completion request', request);
+
+        const res = await fetch(`${this.routerUrl}/api/v2/chat/completions`, {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify(request)
+        });
+
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({}));
+            throw new P402Error('NETWORK_ERROR', `Chat request failed: ${res.statusText}`, error);
+        }
+
+        return res.json();
+    }
+
+    // =========================================================================
+    // V2 API - SESSIONS
+    // =========================================================================
+
+    /**
+     * Create a new agent session with a pre-funded budget.
+     */
+    async createSession(params: {
+        agent_id?: string;
+        wallet_address?: string;
+        budget_usd: number;
+        expires_in_hours?: number;
+        policy?: Record<string, any>;
+    }): Promise<Session> {
+        const res = await fetch(`${this.routerUrl}/api/v2/sessions`, {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify(params)
+        });
+
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({}));
+            throw new P402Error('NETWORK_ERROR', 'Failed to create session', error);
+        }
+
+        return res.json();
+    }
+
+    /**
+     * Get session details by ID.
+     */
+    async getSession(sessionId: string): Promise<Session> {
+        const res = await fetch(`${this.routerUrl}/api/v2/sessions/${sessionId}`, {
+            headers: this.headers()
+        });
+
+        if (!res.ok) {
+            throw new P402Error('NETWORK_ERROR', `Session ${sessionId} not found`);
+        }
+
+        return res.json();
+    }
+
+    /**
+     * Fund an existing session with additional budget.
+     */
+    async fundSession(sessionId: string, amount: number, txHash?: string): Promise<Session> {
+        const res = await fetch(`${this.routerUrl}/api/v2/sessions/fund`, {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify({
+                session_id: sessionId,
+                amount,
+                tx_hash: txHash
+            })
+        });
+
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({}));
+            throw new P402Error('NETWORK_ERROR', 'Failed to fund session', error);
+        }
+
+        const data = await res.json();
+        return data.session;
+    }
+
+    // =========================================================================
+    // V2 API - GOVERNANCE
+    // =========================================================================
+
+    /**
+     * List all policies for the current tenant.
+     */
+    async listPolicies(): Promise<{ data: Policy[] }> {
+        const res = await fetch(`${this.routerUrl}/api/v2/governance/policies`, {
+            headers: this.headers()
+        });
+
+        if (!res.ok) {
+            throw new P402Error('NETWORK_ERROR', 'Failed to list policies');
+        }
+
+        return res.json();
+    }
+
+    /**
+     * Create a new governance policy.
+     */
+    async createPolicy(params: {
+        name: string;
+        rules: Record<string, any>;
+        version?: string;
+    }): Promise<Policy> {
+        const res = await fetch(`${this.routerUrl}/api/v2/governance/policies`, {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify(params)
+        });
+
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({}));
+            throw new P402Error('NETWORK_ERROR', 'Failed to create policy', error);
+        }
+
+        return res.json();
+    }
+
+    /**
+     * List all AP2 mandates for the current tenant.
+     */
+    async listMandates(status?: 'active' | 'exhausted' | 'revoked'): Promise<{ data: Mandate[] }> {
+        const url = status
+            ? `${this.routerUrl}/api/v2/governance/mandates?status=${status}`
+            : `${this.routerUrl}/api/v2/governance/mandates`;
+
+        const res = await fetch(url, { headers: this.headers() });
+
+        if (!res.ok) {
+            throw new P402Error('NETWORK_ERROR', 'Failed to list mandates');
+        }
+
+        return res.json();
+    }
+
+    /**
+     * Create a new AP2 mandate (requires EIP-712 signature from user).
+     */
+    async createMandate(params: {
+        user_did: string;
+        agent_did: string;
+        constraints: {
+            max_amount_usd?: number;
+            allowed_actions?: string[];
+            expires_at?: string;
+        };
+        signature?: string;
+        public_key?: string;
+    }): Promise<Mandate> {
+        const res = await fetch(`${this.routerUrl}/api/v2/governance/mandates`, {
+            method: 'POST',
+            headers: this.headers(),
+            body: JSON.stringify(params)
+        });
+
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({}));
+            throw new P402Error('NETWORK_ERROR', 'Failed to create mandate', error);
+        }
+
+        return res.json();
+    }
+
+    // =========================================================================
+    // UTILITY METHODS
+    // =========================================================================
+
+    /**
+     * Check if the router is healthy.
+     */
+    async health(): Promise<boolean> {
+        try {
+            const res = await fetch(`${this.routerUrl}/api/health`);
+            return res.ok;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Get supported facilitator capabilities.
+     */
+    async getSupported(): Promise<{
+        kinds: Array<{ x402Version: number; scheme: string; network: string }>;
+        extensions: string[];
+        networks: string[];
+        assets: string[];
+    }> {
+        const res = await fetch(`${this.routerUrl}/api/v1/facilitator/supported`);
+        if (!res.ok) {
+            throw new P402Error('NETWORK_ERROR', 'Failed to get supported capabilities');
+        }
+        return res.json();
+    }
 }
+
+// Default export
+export default P402Client;
