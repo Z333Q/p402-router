@@ -18,25 +18,29 @@ import pool from '@/lib/db';
 // =============================================================================
 
 export async function GET(req: NextRequest) {
-    const tenantId = req.headers.get('x-p402-tenant') || 'default';
+    let tenantId = req.headers.get('x-p402-tenant');
+    if (!tenantId || tenantId === 'default' || tenantId === 'anonymous') {
+        const tRes = await pool.query('SELECT id FROM tenants LIMIT 1');
+        tenantId = tRes.rows[0]?.id || '00000000-0000-0000-0000-000000000001';
+    }
     const searchParams = req.nextUrl.searchParams;
     const status = searchParams.get('status') || 'active';
 
     try {
         const query = `
             SELECT 
-                session_id,
+                id,
+                session_token,
                 tenant_id,
-                agent_identifier,
+                agent_id,
                 wallet_address,
-                budget_total,
-                budget_used,
-                budget_total - budget_used as budget_remaining,
-                policy_snapshot,
+                budget_total_usd,
+                budget_spent_usd,
+                budget_total_usd - budget_spent_usd as budget_remaining,
+                policies,
                 status,
                 created_at,
-                expires_at,
-                ended_at
+                expires_at
             FROM agent_sessions
             WHERE tenant_id = $1
             AND status = $2
@@ -49,20 +53,19 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
             object: 'list',
             data: result.rows.map(row => ({
-                id: row.session_id,
+                id: row.session_token,
                 tenant_id: row.tenant_id,
-                agent_identifier: row.agent_identifier,
+                agent_id: row.agent_id,
                 wallet_address: row.wallet_address,
                 budget: {
-                    total_usd: parseFloat(row.budget_total),
-                    used_usd: parseFloat(row.budget_used),
+                    total_usd: parseFloat(row.budget_total_usd),
+                    used_usd: parseFloat(row.budget_spent_usd),
                     remaining_usd: parseFloat(row.budget_remaining)
                 },
-                policy: row.policy_snapshot,
+                policy: row.policies,
                 status: row.status,
                 created_at: row.created_at,
-                expires_at: row.expires_at,
-                ended_at: row.ended_at
+                expires_at: row.expires_at
             }))
         });
 
@@ -76,12 +79,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const tenantId = req.headers.get('x-p402-tenant') || 'default';
+    let tenantId = req.headers.get('x-p402-tenant');
+
+    // Resolve valid UUID for tenant
+    if (!tenantId || tenantId === 'default' || tenantId === 'anonymous') {
+        const tRes = await pool.query('SELECT id FROM tenants LIMIT 1');
+        tenantId = tRes.rows[0]?.id || '00000000-0000-0000-0000-000000000001';
+    }
 
     try {
         const body = await req.json();
         const {
-            agent_identifier,
+            agent_id,
             wallet_address,
             budget_usd = 10.0,
             expires_in_hours = 24,
@@ -108,13 +117,13 @@ export async function POST(req: NextRequest) {
         // Create session
         const insertQuery = `
             INSERT INTO agent_sessions (
-                session_id,
+                session_token,
                 tenant_id,
-                agent_identifier,
+                agent_id,
                 wallet_address,
-                budget_total,
-                budget_used,
-                policy_snapshot,
+                budget_total_usd,
+                budget_spent_usd,
+                policies,
                 status,
                 created_at,
                 expires_at
@@ -125,7 +134,7 @@ export async function POST(req: NextRequest) {
         const result = await pool.query(insertQuery, [
             sessionId,
             tenantId,
-            agent_identifier || null,
+            agent_id || null,
             wallet_address || null,
             budget_usd,
             JSON.stringify(policy),
@@ -136,21 +145,21 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             object: 'session',
-            id: row.session_id,
+            id: row.session_token,
             tenant_id: row.tenant_id,
-            agent_identifier: row.agent_identifier,
+            agent_id: row.agent_id,
             wallet_address: row.wallet_address,
             budget: {
-                total_usd: parseFloat(row.budget_total),
+                total_usd: parseFloat(row.budget_total_usd),
                 used_usd: 0,
-                remaining_usd: parseFloat(row.budget_total)
+                remaining_usd: parseFloat(row.budget_total_usd)
             },
-            policy: row.policy_snapshot,
+            policy: row.policies,
             status: row.status,
             created_at: row.created_at,
             expires_at: row.expires_at,
             // Include session key for API authentication
-            session_key: sessionId
+            session_key: row.session_token
         }, { status: 201 });
 
     } catch (error: any) {

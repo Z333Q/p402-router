@@ -97,23 +97,14 @@ export class PushNotificationService {
         contextId?: string
     ): Promise<PushConfig[]> {
         let queryStr = `
-            SELECT id, tenant_id, webhook_url, auth_type, auth_token,
-                   event_types, context_filter, max_retries, retry_delay_ms, enabled
+            SELECT id, tenant_id, url as webhook_url, 'none' as auth_type, secret as auth_token,
+                   events as event_types, NULL as context_filter, 3 as max_retries, 1000 as retry_delay_ms, is_active as enabled
             FROM a2a_push_configs
             WHERE tenant_id = $1 
-              AND enabled = true
-              AND $2 = ANY(event_types)
+              AND is_active = true
+              AND $2 = ANY(events)
         `;
-        const values: any[] = [tenantId, eventType];
-
-        if (contextId) {
-            queryStr += ` AND (context_filter IS NULL OR context_filter = $3)`;
-            values.push(contextId);
-        } else {
-            queryStr += ` AND context_filter IS NULL`;
-        }
-
-        const result = await pool.query(queryStr, values);
+        const result = await pool.query(queryStr, [tenantId, eventType]);
 
         return result.rows.map(row => ({
             id: row.id,
@@ -122,7 +113,6 @@ export class PushNotificationService {
             authType: row.auth_type,
             authToken: row.auth_token,
             eventTypes: row.event_types,
-            contextFilter: row.context_filter,
             maxRetries: row.max_retries || this.maxRetries,
             retryDelayMs: row.retry_delay_ms || this.baseRetryDelay,
             enabled: row.enabled
@@ -254,7 +244,7 @@ export class PushNotificationService {
         // Disable if too many failures
         await pool.query(`
             UPDATE a2a_push_configs
-            SET enabled = false
+            SET is_active = false
             WHERE id = $1 AND consecutive_failures >= 10
         `, [configId]);
     }

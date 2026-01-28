@@ -11,36 +11,40 @@ export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const { id: sessionId } = await params;
-    const tenantId = req.headers.get('x-p402-tenant') || 'default';
+    const { id } = await params;
+    let tenantId = req.headers.get('x-p402-tenant');
+    if (!tenantId || tenantId === 'default' || tenantId === 'anonymous') {
+        const tRes = await pool.query('SELECT id FROM tenants LIMIT 1');
+        tenantId = tRes.rows[0]?.id || '00000000-0000-0000-0000-000000000001';
+    }
 
     try {
         const query = `
             SELECT 
-                session_id,
+                id,
+                session_token,
                 tenant_id,
-                agent_identifier,
+                agent_id,
                 wallet_address,
-                budget_total,
-                budget_used,
-                budget_total - budget_used as budget_remaining,
-                policy_snapshot,
+                budget_total_usd,
+                budget_spent_usd,
+                budget_total_usd - budget_spent_usd as budget_remaining,
+                policies,
                 status,
                 created_at,
-                expires_at,
-                ended_at
+                expires_at
             FROM agent_sessions
-            WHERE session_id = $1
+            WHERE session_token = $1
             AND tenant_id = $2
         `;
 
-        const result = await pool.query(query, [sessionId, tenantId]);
+        const result = await pool.query(query, [id, tenantId]);
 
-        if (result.rows.length === 0) {
+        if (result.rowCount === 0) {
             return NextResponse.json({
                 error: {
                     type: 'not_found',
-                    message: 'Session not found'
+                    message: `Session ${id} not found`
                 }
             }, { status: 404 });
         }
@@ -55,31 +59,30 @@ export async function GET(
         if (isExpired) {
             // Auto-expire the session
             await pool.query(
-                `UPDATE agent_sessions SET status = 'expired' WHERE session_id = $1`,
-                [sessionId]
+                `UPDATE agent_sessions SET status = 'expired' WHERE session_token = $1`,
+                [id]
             );
             row.status = 'expired';
         }
 
         return NextResponse.json({
             object: 'session',
-            id: row.session_id,
+            id: row.session_token,
             tenant_id: row.tenant_id,
-            agent_identifier: row.agent_identifier,
+            agent_id: row.agent_id,
             wallet_address: row.wallet_address,
             budget: {
-                total_usd: parseFloat(row.budget_total),
-                used_usd: parseFloat(row.budget_used),
-                remaining_usd: Math.max(0, parseFloat(row.budget_remaining)),
-                utilization_percent: row.budget_total > 0
-                    ? Math.round((parseFloat(row.budget_used) / parseFloat(row.budget_total)) * 100)
+                total_usd: parseFloat(row.budget_total_usd),
+                used_usd: parseFloat(row.budget_spent_usd),
+                remaining_usd: Math.max(0, parseFloat(row.budget_total_usd) - parseFloat(row.budget_spent_usd)),
+                utilization_percent: row.budget_total_usd > 0
+                    ? Math.round((parseFloat(row.budget_spent_usd) / parseFloat(row.budget_total_usd)) * 100)
                     : 0
             },
-            policy: row.policy_snapshot,
+            policy: row.policies,
             status: row.status,
             created_at: row.created_at,
             expires_at: row.expires_at,
-            ended_at: row.ended_at,
             // Include usage summary
             meta: {
                 is_active: row.status === 'active',
@@ -106,14 +109,18 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id: sessionId } = await params;
-    const tenantId = req.headers.get('x-p402-tenant') || 'default';
+    let tenantId = req.headers.get('x-p402-tenant');
+    if (!tenantId || tenantId === 'default' || tenantId === 'anonymous') {
+        const tRes = await pool.query('SELECT id FROM tenants LIMIT 1');
+        tenantId = tRes.rows[0]?.id || '00000000-0000-0000-0000-000000000001';
+    }
 
     try {
         // End the session
         const updateQuery = `
             UPDATE agent_sessions
-            SET status = 'ended', ended_at = NOW()
-            WHERE session_id = $1
+            SET status = 'ended'
+            WHERE session_token = $1
             AND tenant_id = $2
             AND status = 'active'
             RETURNING *
@@ -123,7 +130,7 @@ export async function DELETE(
 
         if (result.rows.length === 0) {
             // Check if session exists but is already ended
-            const checkQuery = `SELECT status FROM agent_sessions WHERE session_id = $1`;
+            const checkQuery = `SELECT status FROM agent_sessions WHERE session_token = $1`;
             const checkResult = await pool.query(checkQuery, [sessionId]);
 
             if (checkResult.rows.length === 0) {
@@ -147,13 +154,12 @@ export async function DELETE(
 
         return NextResponse.json({
             object: 'session',
-            id: row.session_id,
+            id: row.session_token,
             status: 'ended',
-            ended_at: row.ended_at,
             final_budget: {
-                total_usd: parseFloat(row.budget_total),
-                used_usd: parseFloat(row.budget_used),
-                unused_usd: parseFloat(row.budget_total) - parseFloat(row.budget_used)
+                total_usd: parseFloat(row.budget_total_usd),
+                used_usd: parseFloat(row.budget_spent_usd),
+                unused_usd: parseFloat(row.budget_total_usd) - parseFloat(row.budget_spent_usd)
             }
         });
 
@@ -173,7 +179,11 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id: sessionId } = await params;
-    const tenantId = req.headers.get('x-p402-tenant') || 'default';
+    let tenantId = req.headers.get('x-p402-tenant');
+    if (!tenantId || tenantId === 'default' || tenantId === 'anonymous') {
+        const tRes = await pool.query('SELECT id FROM tenants LIMIT 1');
+        tenantId = tRes.rows[0]?.id || '00000000-0000-0000-0000-000000000001';
+    }
 
     try {
         const body = await req.json();
@@ -185,7 +195,7 @@ export async function PATCH(
         let paramIndex = 3;
 
         if (add_budget_usd !== undefined && add_budget_usd > 0) {
-            updates.push(`budget_total = budget_total + $${paramIndex}`);
+            updates.push(`budget_total_usd = budget_total_usd + $${paramIndex}`);
             values.push(add_budget_usd);
             paramIndex++;
         }
@@ -195,7 +205,7 @@ export async function PATCH(
         }
 
         if (policy !== undefined) {
-            updates.push(`policy_snapshot = $${paramIndex}`);
+            updates.push(`policies = $${paramIndex}`);
             values.push(JSON.stringify(policy));
             paramIndex++;
         }
@@ -212,15 +222,14 @@ export async function PATCH(
         const updateQuery = `
             UPDATE agent_sessions
             SET ${updates.join(', ')}
-            WHERE session_id = $1
+            WHERE session_token = $1
             AND tenant_id = $2
             AND status = 'active'
             RETURNING 
-                session_id,
-                budget_total,
-                budget_used,
-                budget_total - budget_used as budget_remaining,
-                policy_snapshot,
+                session_token,
+                budget_total_usd,
+                budget_spent_usd,
+                policies,
                 expires_at
         `;
 
@@ -239,13 +248,13 @@ export async function PATCH(
 
         return NextResponse.json({
             object: 'session',
-            id: row.session_id,
+            id: row.session_token,
             budget: {
-                total_usd: parseFloat(row.budget_total),
-                used_usd: parseFloat(row.budget_used),
-                remaining_usd: parseFloat(row.budget_remaining)
+                total_usd: parseFloat(row.budget_total_usd),
+                used_usd: parseFloat(row.budget_spent_usd),
+                remaining_usd: parseFloat(row.budget_total_usd) - parseFloat(row.budget_spent_usd)
             },
-            policy: row.policy_snapshot,
+            policy: row.policies,
             expires_at: row.expires_at,
             updated: true
         });

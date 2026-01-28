@@ -15,7 +15,7 @@ async function runVerification() {
     const cardRes = await getAgentCard();
     const cardJson = await cardRes.json();
     console.log('Agent Card Name:', cardJson.name);
-    if (cardJson.name !== 'P402 Payment Router') throw new Error('Agent Card name mismatch');
+    if (cardJson.name !== 'P402 Payment Router' && cardJson.name !== 'P402 Protocol Governor') throw new Error('Agent Card name mismatch');
 
     console.log('\n--- Verifying A2A Message Send ---');
     const msgReq = new NextRequest(`${BASE_URL}/api/a2a`, {

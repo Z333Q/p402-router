@@ -109,7 +109,10 @@ async function main() {
             const txHash = '0x' + 'a'.repeat(64);
             const res = await fetch(`${BASE_URL}/api/v2/sessions/fund`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-P402-Session': sessionId || ''
+                },
                 body: JSON.stringify({
                     session_id: sessionId,
                     amount: 10.0,
@@ -127,7 +130,10 @@ async function main() {
             const txHash = '0x' + 'a'.repeat(64); // Same hash
             const res = await fetch(`${BASE_URL}/api/v2/sessions/fund`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-P402-Session': sessionId || ''
+                },
                 body: JSON.stringify({
                     session_id: sessionId,
                     amount: 10.0,
@@ -144,7 +150,9 @@ async function main() {
     // 4. ANALYTICS
     // ============================================
     await test('GET /api/v2/analytics/spend', async () => {
-        const res = await fetch(`${BASE_URL}/api/v2/analytics/spend`);
+        const res = await fetch(`${BASE_URL}/api/v2/analytics/spend`, {
+            headers: { 'X-P402-Session': sessionId || '' }
+        });
         // Might fail if no data, but status should be 200
         if (!res.ok) throw new Error(`Status: ${res.status}`);
         const data = await res.json();
