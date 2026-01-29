@@ -85,8 +85,8 @@ describe('SemanticCache', () => {
     describe('get()', () => {
         it('should return cache miss when no entries exist', async () => {
             vi.mocked(pool.query)
-                .mockResolvedValueOnce({ rows: [] }) // Exact match
-                .mockResolvedValueOnce({ rows: [] }); // Similarity search
+                .mockResolvedValueOnce({ rows: [] } as any) // Exact match
+                .mockResolvedValueOnce({ rows: [] } as any); // Similarity search
 
             const result = await cache.get(mockRequest);
 
@@ -107,14 +107,14 @@ describe('SemanticCache', () => {
             };
 
             vi.mocked(pool.query)
-                .mockResolvedValueOnce({ rows: [cachedEntry] }) // Exact match found
-                .mockResolvedValueOnce({ rowCount: 1 }); // Hit count increment
+                .mockResolvedValueOnce({ rows: [cachedEntry] } as any) // Exact match found
+                .mockResolvedValueOnce({ rowCount: 1 } as any); // Hit count increment
 
             const result = await cache.get(mockRequest);
 
             expect(result.hit).toBe(true);
             expect(result.similarity).toBe(1.0);
-            expect(result.entry?.response.choices[0].message.content).toBe('The capital of France is Paris.');
+            expect(result.entry!.response.choices[0]!.message.content).toBe('The capital of France is Paris.');
         });
 
         it('should find similar entries above threshold', async () => {
@@ -129,9 +129,9 @@ describe('SemanticCache', () => {
             };
 
             vi.mocked(pool.query)
-                .mockResolvedValueOnce({ rows: [] }) // No exact match
-                .mockResolvedValueOnce({ rows: [similarEntry] }) // Similar entry found
-                .mockResolvedValueOnce({ rowCount: 1 }); // Hit count increment
+                .mockResolvedValueOnce({ rows: [] } as any) // No exact match
+                .mockResolvedValueOnce({ rows: [similarEntry] } as any) // Similar entry found
+                .mockResolvedValueOnce({ rowCount: 1 } as any); // Hit count increment
 
             const result = await cache.get(mockRequest);
 
@@ -140,7 +140,7 @@ describe('SemanticCache', () => {
         });
 
         it('should handle embedding generation errors gracefully', async () => {
-            vi.mocked(pool.query).mockResolvedValueOnce({ rows: [] }); // No exact match
+            vi.mocked(pool.query).mockResolvedValueOnce({ rows: [] } as any); // No exact match
             mockFetch.mockRejectedValueOnce(new Error('OpenRouter API error'));
 
             const result = await cache.get(mockRequest);
@@ -155,7 +155,7 @@ describe('SemanticCache', () => {
 
     describe('set()', () => {
         it('should store response with embedding', async () => {
-            vi.mocked(pool.query).mockResolvedValueOnce({ rowCount: 1 });
+            vi.mocked(pool.query).mockResolvedValueOnce({ rowCount: 1 } as any);
 
             await cache.set(mockRequest, mockResponse);
 
@@ -173,7 +173,7 @@ describe('SemanticCache', () => {
         });
 
         it('should update existing entry on conflict', async () => {
-            vi.mocked(pool.query).mockResolvedValueOnce({ rowCount: 1 });
+            vi.mocked(pool.query).mockResolvedValueOnce({ rowCount: 1 } as any);
 
             await cache.set(mockRequest, mockResponse);
 
@@ -197,7 +197,7 @@ describe('SemanticCache', () => {
 
     describe('invalidate()', () => {
         it('should clear entire namespace when no pattern provided', async () => {
-            vi.mocked(pool.query).mockResolvedValueOnce({ rowCount: 10 });
+            vi.mocked(pool.query).mockResolvedValueOnce({ rowCount: 10 } as any);
 
             const count = await cache.invalidate();
 
@@ -209,7 +209,7 @@ describe('SemanticCache', () => {
         });
 
         it('should only clear matching entries when pattern provided', async () => {
-            vi.mocked(pool.query).mockResolvedValueOnce({ rowCount: 3 });
+            vi.mocked(pool.query).mockResolvedValueOnce({ rowCount: 3 } as any);
 
             const count = await cache.invalidate('france');
 
@@ -227,7 +227,7 @@ describe('SemanticCache', () => {
 
     describe('cleanup()', () => {
         it('should remove expired entries', async () => {
-            vi.mocked(pool.query).mockResolvedValueOnce({ rowCount: 5 });
+            vi.mocked(pool.query).mockResolvedValueOnce({ rowCount: 5 } as any);
 
             const count = await cache.cleanup();
 
@@ -252,10 +252,10 @@ describe('SemanticCache', () => {
                         avg_hits: '5.0',
                         oldest_entry: new Date('2026-01-01')
                     }]
-                })
+                } as any)
                 .mockResolvedValueOnce({
                     rows: [{ namespace: 'test' }, { namespace: 'prod' }]
-                });
+                } as any);
 
             const stats = await cache.getStats();
 
@@ -283,8 +283,8 @@ describe('SemanticCache', () => {
             };
 
             vi.mocked(pool.query)
-                .mockResolvedValueOnce({ rows: [cachedEntry] })
-                .mockResolvedValueOnce({ rowCount: 1 });
+                .mockResolvedValueOnce({ rows: [cachedEntry] } as any)
+                .mockResolvedValueOnce({ rowCount: 1 } as any);
 
             const execute = vi.fn();
             const result = await withCache(mockRequest, execute);
@@ -295,9 +295,9 @@ describe('SemanticCache', () => {
 
         it('should execute and cache on miss', async () => {
             vi.mocked(pool.query)
-                .mockResolvedValueOnce({ rows: [] }) // No exact match
-                .mockResolvedValueOnce({ rows: [] }) // No similar entry
-                .mockResolvedValueOnce({ rowCount: 1 }); // Cache set
+                .mockResolvedValueOnce({ rows: [] } as any) // No exact match
+                .mockResolvedValueOnce({ rows: [] } as any) // No similar entry
+                .mockResolvedValueOnce({ rowCount: 1 } as any); // Cache set
 
             const execute = vi.fn().mockResolvedValue(mockResponse);
             const result = await withCache(mockRequest, execute);
@@ -317,7 +317,7 @@ describe('SemanticCache', () => {
                 messages: [{ role: 'user', content: '' }]
             };
 
-            vi.mocked(pool.query).mockResolvedValue({ rows: [] });
+            vi.mocked(pool.query).mockResolvedValue({ rows: [] } as any);
 
             const result = await cache.get(emptyRequest);
             expect(result.hit).toBe(false);
@@ -329,7 +329,7 @@ describe('SemanticCache', () => {
                 messages: [{ role: 'user', content: longContent }]
             };
 
-            vi.mocked(pool.query).mockResolvedValue({ rows: [] });
+            vi.mocked(pool.query).mockResolvedValue({ rows: [] } as any);
 
             // Should not throw
             await expect(cache.get(longRequest)).resolves.toBeDefined();
@@ -355,7 +355,7 @@ describe('SemanticCache', () => {
                 }]
             };
 
-            vi.mocked(pool.query).mockResolvedValue({ rows: [] });
+            vi.mocked(pool.query).mockResolvedValue({ rows: [] } as any);
 
             await expect(cache.get(multimodalRequest)).resolves.toBeDefined();
         });
@@ -364,7 +364,7 @@ describe('SemanticCache', () => {
             const cache1 = new SemanticCache({ namespace: 'ns1' });
             const cache2 = new SemanticCache({ namespace: 'ns2' });
 
-            vi.mocked(pool.query).mockResolvedValue({ rows: [] });
+            vi.mocked(pool.query).mockResolvedValue({ rows: [] } as any);
 
             await cache1.get(mockRequest);
             await cache2.get(mockRequest);
@@ -381,7 +381,7 @@ describe('SemanticCache', () => {
         });
 
         it('should handle concurrent gets without race conditions', async () => {
-            vi.mocked(pool.query).mockResolvedValue({ rows: [] });
+            vi.mocked(pool.query).mockResolvedValue({ rows: [] } as any);
 
             const results = await Promise.all([
                 cache.get(mockRequest),

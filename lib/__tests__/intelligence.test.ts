@@ -55,9 +55,9 @@ describe('Intelligence Layer', () => {
 
             const recommendations = await OptimizationEngine.generateRecommendations('tenant-1');
             expect(recommendations.length).toBe(1);
-            expect(recommendations[0].type).toBe('MODEL_SWAP');
-            expect(recommendations[0].message).toContain('claude-3-opus');
-            expect(recommendations[0].details.suggestedModel).toBe('gpt-4o-mini');
+            expect(recommendations[0]!.type).toBe('MODEL_SWAP');
+            expect(recommendations[0]!.message).toContain('claude-3-opus');
+            expect(recommendations[0]!.details.suggestedModel).toBe('gpt-4o-mini');
         });
     });
 });
