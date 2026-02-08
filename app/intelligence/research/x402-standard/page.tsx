@@ -12,7 +12,7 @@ export default function X402StandardPage() {
         "@context": "https://schema.org",
         "@type": "ScholarlyArticle",
         "headline": "The x402 Standard: A Novel Protocol for Http-Native Settlement",
-        "author": { "@type": "Person", "name": "Dr. Aris V." },
+        "author": { "@type": "Organization", "name": "P402 Intelligence" },
         "publisher": { "@type": "Organization", "name": "P402 Protocol" },
         "description": "Defining the x402 standard for atomic resource negotiation in the Agentic Economy.",
         "keywords": "x402, HTTP Standard, Agentic Economy, Cloudflare, Coinbase"
@@ -23,7 +23,7 @@ export default function X402StandardPage() {
             title="The x402 Standard: A Novel Protocol for Http-Native Settlement"
             subtitle="PROTOCOL DEFINITION • P402 FOUNDATION • JAN 2026"
             meta={{
-                author: "Dr. Aris V.",
+                author: "P402 Intelligence",
                 date: "Jan 12, 2026",
                 type: "Foundational Paper"
             }}

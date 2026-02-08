@@ -1,6 +1,8 @@
 import { createPublicClient, http, parseAbiItem, formatUnits } from 'viem'
 import { base } from 'viem/chains'
 import { getTokenConfig, DEFAULT_TOKEN } from './tokens'
+import { EIP3009Verifier, TransferAuthorization, EIP3009Signature, VerificationResult } from './blockchain/eip3009'
+import { P402_CONFIG } from './constants'
 
 const publicClient = createPublicClient({
     chain: base,
@@ -8,6 +10,54 @@ const publicClient = createPublicClient({
 })
 
 export class BlockchainService {
+    private static eip3009Verifier?: EIP3009Verifier;
+
+    /**
+     * Get or create EIP3009Verifier instance
+     */
+    private static getEIP3009Verifier(): EIP3009Verifier {
+        if (!this.eip3009Verifier) {
+            // Use ethers provider for EIP-3009 (more mature for contract calls)
+            const { ethers } = require('ethers');
+            const provider = new ethers.providers.JsonRpcProvider(
+                process.env.BASE_RPC_URL || 'https://mainnet.base.org'
+            );
+            this.eip3009Verifier = new EIP3009Verifier(P402_CONFIG.USDC_ADDRESS, provider);
+        }
+        return this.eip3009Verifier;
+    }
+
+    /**
+     * Verify EIP-3009 "exact" payment scheme (gasless USDC transfer)
+     */
+    static async verifyExactPayment(
+        authorization: TransferAuthorization,
+        signature: EIP3009Signature,
+        expectedAmountUSD: number
+    ): Promise<VerificationResult> {
+        const verifier = this.getEIP3009Verifier();
+        return verifier.verifyExactPayment(authorization, signature, expectedAmountUSD);
+    }
+
+    /**
+     * Execute EIP-3009 gasless transfer (P402 pays gas)
+     */
+    static async executeEIP3009Transfer(
+        authorization: TransferAuthorization,
+        signature: EIP3009Signature,
+        facilitatorPrivateKey: string
+    ): Promise<{ txHash: string; success: boolean; error?: string }> {
+        const { ethers } = require('ethers');
+        const provider = new ethers.providers.JsonRpcProvider(
+            process.env.BASE_RPC_URL || 'https://mainnet.base.org'
+        );
+
+        const facilitatorSigner = new ethers.Wallet(facilitatorPrivateKey, provider);
+        const verifier = this.getEIP3009Verifier();
+
+        return verifier.executeTransfer(authorization, signature, facilitatorSigner);
+    }
+
     /**
      * Verifies payment with MEV/Reorg protection + Multi-Token Support.
      */

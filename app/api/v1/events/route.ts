@@ -17,15 +17,33 @@ export async function GET(req: NextRequest) {
         const offset = parseInt(searchParams.get('offset') || '0')
         const routeId = searchParams.get('routeId')
 
-        let query = 'SELECT * FROM events WHERE tenant_id = $1'
+        // Enhanced query to include model usage and settlement data
+        let query = `
+            SELECT
+                e.*,
+                mu.model,
+                mu.provider,
+                mu.input_tokens,
+                mu.output_tokens,
+                mu.cost_usd as usage_cost,
+                mu.latency_ms,
+                s.session_id,
+                pth.tx_hash,
+                pth.settlement_type
+            FROM events e
+            LEFT JOIN sessions s ON e.trace_id = s.id
+            LEFT JOIN model_usage mu ON s.id = mu.session_id
+            LEFT JOIN processed_tx_hashes pth ON e.trace_id = pth.request_id
+            WHERE e.tenant_id = $1
+        `
         const values: any[] = [tenantId]
 
         if (routeId) {
-            query += ` AND route_id = $${values.length + 1}`
+            query += ` AND e.route_id = $${values.length + 1}`
             values.push(routeId)
         }
 
-        query += ` ORDER BY created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`
+        query += ` ORDER BY e.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`
         values.push(limit, offset)
 
         const result = await pool.query(query, values)
@@ -40,6 +58,16 @@ export async function GET(req: NextRequest) {
             amount: row.amount,
             headers: (row.headers_meta || {}), // expose header presence for inspector
             denyCode: (row.raw_payload || {}).denyCode || (row.steps || []).find((s: any) => s.meta?.denyCode)?.meta?.denyCode,
+            // Enhanced data for traffic dashboard
+            model: row.model,
+            provider: row.provider,
+            input_tokens: row.input_tokens,
+            output_tokens: row.output_tokens,
+            cost_usd: row.usage_cost,
+            latency_ms: row.latency_ms,
+            session_id: row.session_id,
+            tx_hash: row.tx_hash,
+            settlement_type: row.settlement_type,
             // Return full DecisionTrace for inspector UI
             steps: row.steps || [],
             raw: row.raw_payload // Return raw for admin inspector view

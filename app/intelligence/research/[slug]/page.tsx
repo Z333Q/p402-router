@@ -15,7 +15,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             title={title}
             subtitle="A Foundational Paper on Agentic Economics"
             meta={{
-                author: "Dr. Aris V.",
+                author: "P402 Intelligence",
                 date: "Jan 2026",
                 type: "Research Paper"
             }}

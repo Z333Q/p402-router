@@ -34,27 +34,23 @@ interface Endpoint {
 
 const ENDPOINTS: Endpoint[] = [
     {
-        id: 'settle-eip3009',
+        id: 'facilitator-verify',
         method: 'POST',
-        path: '/api/v1/facilitator/settle',
-        title: 'Execute Settlement (EIP-3009)',
-        description: 'Execute a gasless settlement on Base Mainnet by submitting a signed EIP-3009 authorization. P402 acts as the facilitator, paying the gas fees to settle the transaction on-chain.',
+        path: 'https://facilitator.p402.io/verify',
+        title: 'Verify Payment Authorization',
+        description: 'Verify an EIP-3009 payment authorization without executing it. Checks signature validity, nonce state, and USDC balance to ensure the payment can be settled.',
         params: [
-            { name: 'tenantId', type: 'string', required: true, desc: 'The ID of the tenant receiving the funds.' },
-            { name: 'decisionId', type: 'string', required: true, desc: 'Trace ID for the decision/mandate being settled.' },
-            { name: 'asset', type: 'string', required: false, desc: 'The asset symbol (default: "USDC").' },
-            { name: 'authorization', type: 'object', required: true, desc: 'The signed EIP-3009 authorization object containing { from, to, value, validAfter, validBefore, nonce, v, r, s }.' }
+            { name: 'scheme', type: 'string', required: true, desc: 'Payment scheme: "exact", "onchain", or "receipt"' },
+            { name: 'payment', type: 'object', required: true, desc: 'Payment authorization containing EIP-3009 signature or transaction details' }
         ],
         examples: {
-            curl: `curl https://p402.io/api/v1/facilitator/settle \\
+            curl: `curl https://facilitator.p402.io/verify \\
   -H "Content-Type: application/json" \\
   -d '{
-    "tenantId": "...",
-    "decisionId": "trace_123",
-    "asset": "USDC",
-    "authorization": {
-        "from": "0xUserAddress...",
-        "to": "0xTreasuryAddress...",
+    "scheme": "exact",
+    "payment": {
+        "from": "0x...",
+        "to": "0xb23f146251e3816a011e800bcbae704baa5619ec",
         "value": "1000000",
         "validAfter": 0,
         "validBefore": 1735689600,
@@ -64,72 +60,162 @@ const ENDPOINTS: Endpoint[] = [
         "s": "0x..."
     }
   }'`,
-            javascript: `// Using Viem or Ethers to sign first...
-const response = await fetch('https://p402.io/api/v1/facilitator/settle', {
+            javascript: `const response = await fetch('https://facilitator.p402.io/verify', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    tenantId: '...',
-    decisionId: 'trace_123',
-    asset: 'USDC',
-    authorization: signedAuthObject // EIP-3009 compatible
+    scheme: 'exact',
+    payment: {
+      from: '0x...',
+      to: '0xb23f146251e3816a011e800bcbae704baa5619ec',
+      value: '1000000', // 1 USDC
+      validAfter: 0,
+      validBefore: Math.floor(Date.now() / 1000) + 3600,
+      nonce: '0x...',
+      v: 27,
+      r: '0x...',
+      s: '0x...'
+    }
   })
 });`,
-            python: `# Prepare signed data off-chain using web3.py
-import requests
+            python: `import requests
 res = requests.post(
-    "https://p402.io/api/v1/facilitator/settle",
+    "https://facilitator.p402.io/verify",
     json={
-        "tenantId": "...",
-        "decisionId": "trace_123",
-        "asset": "USDC",
-        "authorization": { ... }
+        "scheme": "exact",
+        "payment": {
+            "from": "0x...",
+            "to": "0xb23f146251e3816a011e800bcbae704baa5619ec",
+            "value": "1000000",
+            "validAfter": 0,
+            "validBefore": 1735689600,
+            "nonce": "0x...",
+            "v": 27,
+            "r": "0x...",
+            "s": "0x..."
+        }
     }
 )`,
             response: {
-                success: true,
-                payer: "0xUserAddress...",
-                transaction: "0x88df01e...",
-                network: "eip155:8453",
-                receipt: {
-                    txHash: "0x88df01e...",
-                    verifiedAmount: "1.0",
-                    asset: "USDC",
-                    timestamp: "2026-01-21T12:00:00Z"
-                }
+                verified: true,
+                scheme: "exact",
+                amount_usd: 1.0,
+                token: "USDC",
+                network: "base",
+                payer: "0x...",
+                expires_at: "2024-12-31T23:59:59Z"
             }
         }
     },
     {
-        id: 'verify-settlement',
+        id: 'facilitator-settle',
         method: 'POST',
-        path: '/api/v1/facilitator/verify',
-        title: 'Verify Settlement',
-        description: 'Verify an existing on-chain transaction was successful and matches the expected amount and recipient. Useful for client-initiated (non-gasless) settlements.',
+        path: 'https://facilitator.p402.io/settle',
+        title: 'Execute Gasless Settlement',
+        description: 'Execute a gasless USDC settlement using P402\'s facilitator network. Requires API authentication. The facilitator pays gas fees and executes the EIP-3009 transferWithAuthorization.',
         params: [
-            { name: 'txHash', type: 'string', required: true, desc: 'The transaction hash to verify.' },
-            { name: 'amount', type: 'string', required: true, desc: 'Expected amount (decimal string).' },
-            { name: 'recipient', type: 'string', required: true, desc: 'Expected recipient address (tenant treasury).' },
-            { name: 'network', type: 'string', required: false, desc: 'Chain ID (default: eip155:8453).' }
+            { name: 'scheme', type: 'string', required: true, desc: 'Payment scheme: must be "exact" for gasless settlement' },
+            { name: 'payment', type: 'object', required: true, desc: 'EIP-3009 authorization from verification step' }
         ],
         examples: {
-            curl: `curl https://p402.io/api/v1/facilitator/verify \\
+            curl: `curl https://facilitator.p402.io/settle \\
   -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer p402_live_..." \\
   -d '{
-    "txHash": "0x...",
-    "amount": "1.0",
-    "recipient": "0xTreasury..."
+    "scheme": "exact",
+    "payment": {
+        "from": "0x...",
+        "to": "0xb23f146251e3816a011e800bcbae704baa5619ec",
+        "value": "1000000",
+        "validAfter": 0,
+        "validBefore": 1735689600,
+        "nonce": "0x...",
+        "v": 27,
+        "r": "0x...",
+        "s": "0x..."
+    }
   }'`,
-            javascript: `const res = await fetch('https://p402.io/api/v1/facilitator/verify', {
+            javascript: `const response = await fetch('https://facilitator.p402.io/settle', {
   method: 'POST',
-  body: JSON.stringify({ txHash: '0x...', amount: '1.0', recipient: '0x...' })
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer p402_live_...'
+  },
+  body: JSON.stringify({
+    scheme: 'exact',
+    payment: verifiedAuthorization // From verify step
+  })
 });`,
-            python: `requests.post("https://p402.io/api/v1/facilitator/verify", json={...})`,
+            python: `import requests
+res = requests.post(
+    "https://facilitator.p402.io/settle",
+    headers={"Authorization": "Bearer p402_live_..."},
+    json={
+        "scheme": "exact",
+        "payment": verified_authorization
+    }
+)`,
             response: {
                 success: true,
-                transaction: "0x...",
-                network: "eip155:8453",
-                settlement_id: "set_..."
+                txHash: "0x88df01e...",
+                amount_usd: 1.0,
+                settlement_id: "settlement_123",
+                explorer_url: "https://basescan.org/tx/0x88df01e..."
+            }
+        }
+    },
+    {
+        id: 'receipts-create',
+        method: 'POST',
+        path: '/api/v1/receipts',
+        title: 'Create Payment Receipt',
+        description: 'Create a reusable payment receipt from a successful transaction. Receipts can be used for multiple AI sessions without additional signatures.',
+        params: [
+            { name: 'txHash', type: 'string', required: true, desc: 'Transaction hash from successful settlement' },
+            { name: 'sessionId', type: 'string', required: true, desc: 'Session identifier for tracking' },
+            { name: 'amount', type: 'number', required: true, desc: 'Amount in USD (decimal)' },
+            { name: 'metadata', type: 'object', required: false, desc: 'Optional metadata (payer, network, token)' }
+        ],
+        examples: {
+            curl: `curl https://p402.io/api/v1/receipts \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "txHash": "0x88df01e...",
+    "sessionId": "session_123",
+    "amount": 1.0,
+    "metadata": {
+      "payer": "0x...",
+      "network": "base",
+      "token": "USDC"
+    }
+  }'`,
+            javascript: `const res = await fetch('https://p402.io/api/v1/receipts', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    txHash: '0x88df01e...',
+    sessionId: 'session_123',
+    amount: 1.0,
+    metadata: { payer: '0x...', network: 'base', token: 'USDC' }
+  })
+});`,
+            python: `import requests
+res = requests.post(
+    "https://p402.io/api/v1/receipts",
+    json={
+        "txHash": "0x88df01e...",
+        "sessionId": "session_123",
+        "amount": 1.0,
+        "metadata": {"payer": "0x...", "network": "base", "token": "USDC"}
+    }
+)`,
+            response: {
+                success: true,
+                receiptId: "rcpt_456",
+                validUntil: "2024-12-31T23:59:59Z",
+                amount: 1.0,
+                network: "base",
+                token: "USDC"
             }
         }
     },
@@ -564,11 +650,11 @@ export default function ApiDocsPage() {
 
                         {/* Welcome Header */}
                         <section id="welcome" className="p-12 border-b-2 border-black/5">
-                            <Badge variant="primary" className="mb-4">Developer Reference</Badge>
+                            <Badge variant="primary" className="mb-4">Production API</Badge>
                             <h1 className="text-6xl font-black mb-6 tracking-tighter uppercase italic">API Reference</h1>
                             <p className="text-xl text-neutral-600 max-w-2xl leading-relaxed">
-                                Welcome to the P402 V2 API. Our platform provides a payment-aware orchestration layer,
-                                allowing you to route AI requests based on cost, quality, and reliability with zero code changes.
+                                Welcome to the P402 production API. Execute gasless USDC payments on Base L2 using EIP-3009
+                                transferWithAuthorization. Global facilitator network with sub-50ms verification times.
                             </p>
                         </section>
 

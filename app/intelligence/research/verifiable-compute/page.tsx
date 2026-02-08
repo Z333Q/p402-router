@@ -12,7 +12,7 @@ export default function VerifiableComputePage() {
         "@context": "https://schema.org",
         "@type": "ScholarlyArticle",
         "headline": "Verifiable Compute: The Trust Layer for Off-Chain Intelligence",
-        "author": { "@type": "Person", "name": "Dr. Aris V." },
+        "author": { "@type": "Organization", "name": "P402 Intelligence" },
         "publisher": { "@type": "Organization", "name": "P402 Protocol" },
         "description": "Utilizing zkML and TEEs for trustless AI model inference.",
         "keywords": "Verifiable Compute, zkML, Google Cloud TEE, Cloudflare Workers"
@@ -23,7 +23,7 @@ export default function VerifiableComputePage() {
             title="Verifiable Compute: The Trust Layer for Off-Chain Intelligence"
             subtitle="CRYPTOGRAPHY • TRUST SYSTEMS • MAY 2026"
             meta={{
-                author: "Dr. Aris V.",
+                author: "P402 Intelligence",
                 date: "May 10, 2026",
                 type: "Technical Standard"
             }}

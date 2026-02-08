@@ -1,3 +1,9 @@
+// DEPRECATED: This file is no longer used in production.
+// Dashboard now uses real database queries via lib/db/queries.ts
+// Kept for reference during migration.
+
+console.warn('⚠️ Simulation service is deprecated. Use lib/db/queries.ts for real data.');
+
 import { Route, Policy, EventTrace, Facilitator, Metric, EventStep } from '../types';
 import { MOCK_ROUTES, MOCK_POLICIES, MOCK_FACILITATORS, MOCK_EVENTS } from '../constants';
 
@@ -12,11 +18,11 @@ const STORAGE_KEYS = {
 class SimulatedBackend {
   private listeners: ((event: EventTrace) => void)[] = [];
   private trafficInterval: any = null;
-  private isGenerating = true;
+  private isGenerating = false; // DISABLED
 
   constructor() {
-    this.initializeData();
-    this.startTrafficGenerator();
+    // DEPRECATED: Don't initialize mock data in production
+    console.warn('SimulatedBackend is deprecated. Use real database queries.');
   }
 
   // --- Initialization ---

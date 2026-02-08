@@ -12,7 +12,7 @@ export default function AP2MandatesPage() {
         "@context": "https://schema.org",
         "@type": "ScholarlyArticle",
         "headline": "AP2 Mandates: Cryptographic Enforceability in Nondeterministic Systems",
-        "author": { "@type": "Person", "name": "Dr. Aris V." },
+        "author": { "@type": "Organization", "name": "P402 Intelligence" },
         "publisher": { "@type": "Organization", "name": "P402 Protocol" },
         "description": "Solving the Principal-Agent problem in AI using cryptographic mandates.",
         "keywords": "AP2, AI Alignment, Zero Trust, Google IAM, Coinbase Wallet"
@@ -23,7 +23,7 @@ export default function AP2MandatesPage() {
             title="AP2 Mandates: Cryptographic Enforceability in Nondeterministic Systems"
             subtitle="MACHINE GOVERNANCE • SECURITY RESEARCH • FEB 2026"
             meta={{
-                author: "Dr. Aris V.",
+                author: "P402 Intelligence",
                 date: "Feb 04, 2026",
                 type: "Security Standard"
             }}

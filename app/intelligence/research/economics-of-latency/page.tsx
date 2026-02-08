@@ -12,7 +12,7 @@ export default function EconomicsLatencyPage() {
         "@context": "https://schema.org",
         "@type": "ScholarlyArticle",
         "headline": "The Economics of Latency: Pricing Semantic Routing in Real-Time",
-        "author": { "@type": "Person", "name": "Dr. Aris V." },
+        "author": { "@type": "Organization", "name": "P402 Intelligence" },
         "publisher": { "@type": "Organization", "name": "P402 Protocol" },
         "description": "Analyzing arbitrage opportunities in real-time inference markets.",
         "keywords": "Inference Markets, Semantic Routing, Google Vertex, Cloudflare Workers AI"
@@ -23,7 +23,7 @@ export default function EconomicsLatencyPage() {
             title="The Economics of Latency: Pricing Semantic Routing in Real-Time"
             subtitle="PROTOCOL ECONOMICS • MARKET DESIGN • MAR 2026"
             meta={{
-                author: "Dr. Aris V.",
+                author: "P402 Intelligence",
                 date: "Mar 15, 2026",
                 type: "Economic Analysis"
             }}

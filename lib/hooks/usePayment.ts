@@ -1,30 +1,33 @@
 import { useState, useCallback } from 'react'
 import { useAccount, useSignTypedData } from 'wagmi'
 import { TokenConfig } from '@/lib/tokens'
+import { P402_CONFIG } from '@/lib/constants'
 
 interface PaymentOptions {
     token: TokenConfig
     amount: string
-    recipient: string
-    nonce: string
-    deadline: number
+    recipient?: string  // Optional - defaults to P402 treasury
+    validAfter?: number // Optional - defaults to now
+    validBefore?: number // Optional - defaults to 1 hour from now
+    sessionId?: string   // For tracking
 }
 
-// EIP-712 Domain for Base
-const EIP712_DOMAIN = {
-    name: 'P402 Payment',
+// EIP-712 Domain for USDC EIP-3009 on Base
+const USDC_DOMAIN = {
+    name: 'USD Coin',
     version: '2',
-    chainId: 8453,
-    verifyingContract: '0x0000000000000000000000000000000000000402' as `0x${string}`
+    chainId: P402_CONFIG.CHAIN_ID,
+    verifyingContract: P402_CONFIG.USDC_ADDRESS as `0x${string}`
 } as const
 
-const EIP712_TYPES = {
-    Payment: [
-        { name: 'token', type: 'address' },
-        { name: 'amount', type: 'uint256' },
-        { name: 'recipient', type: 'address' },
-        { name: 'nonce', type: 'uint256' },
-        { name: 'deadline', type: 'uint256' }
+const EIP3009_TYPES = {
+    TransferWithAuthorization: [
+        { name: 'from', type: 'address' },
+        { name: 'to', type: 'address' },
+        { name: 'value', type: 'uint256' },
+        { name: 'validAfter', type: 'uint256' },
+        { name: 'validBefore', type: 'uint256' },
+        { name: 'nonce', type: 'bytes32' }
     ]
 } as const
 
@@ -44,71 +47,61 @@ export function usePayment() {
         setError(null)
 
         try {
-            // 1. Sign EIP-712 message
-            // Note: In a real app we would check allowance here too
+            // 1. Prepare EIP-3009 authorization parameters
+            const now = Math.floor(Date.now() / 1000);
+            const recipient = options.recipient || P402_CONFIG.TREASURY_ADDRESS;
+            const validAfter = options.validAfter || now;
+            const validBefore = options.validBefore || (now + 3600); // 1 hour
+            const nonce = '0x' + crypto.randomUUID().replace(/-/g, '').padEnd(64, '0'); // Random bytes32
 
+            // Convert amount to wei (USDC has 6 decimals)
+            const amountWei = BigInt(parseFloat(options.amount) * 1e6);
+
+            // 2. Sign EIP-3009 transferWithAuthorization
             const signature = await signTypedDataAsync({
-                domain: EIP712_DOMAIN,
-                types: EIP712_TYPES,
-                primaryType: 'Payment',
+                domain: USDC_DOMAIN,
+                types: EIP3009_TYPES,
+                primaryType: 'TransferWithAuthorization',
                 message: {
-                    token: options.token.address as `0x${string}`,
-                    amount: BigInt(options.amount),
-                    recipient: options.recipient as `0x${string}`,
-                    nonce: BigInt(options.nonce),
-                    deadline: BigInt(options.deadline)
+                    from: address,
+                    to: recipient as `0x${string}`,
+                    value: amountWei,
+                    validAfter: BigInt(validAfter),
+                    validBefore: BigInt(validBefore),
+                    nonce: nonce as `0x${string}`
                 }
             })
 
-            // 2. Submit to Router Settle API
-            // Since we are checking this on the router, the router acts as the facilitator entry
+            // 3. Parse signature components
+            const sig = signature.slice(2); // Remove 0x
+            const v = parseInt(sig.slice(128, 130), 16);
+            const r = '0x' + sig.slice(0, 64);
+            const s = '0x' + sig.slice(64, 128);
+
+            // 4. Submit to unified Router Settle API
             const response = await fetch('/api/v1/router/settle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    // The API expects: { txHash, amount, asset } for blockchain verification
-                    // BUT if we are submitting a SIGNATURE for the *Router* to settle on our behalf (Gasless),
-                    // the settle endpoint needs to handle that flow.
-                    // 
-                    // Re-reading the Router V2 Code:
-                    // The current Router V2 `/api/v1/router/settle` calls BlockchainService.verifyPayment(txHash).
-                    // It expects the CLIENT to have already broadcast the tx.
-                    //
-                    // The User's "Part 4: Update Facilitator Settlement" implies the Facilitator (server) pays gas.
-                    //
-                    // If we want to support this "Gasless / Signature Based" flow, we need to update the Settle API
-                    // to accept `signature` instead of just `txHash`.
-                    //
-                    // However, for the IMMEDIATE frontend integration matching the current Router V2 (which verifies ON CHAIN TX),
-                    // this hook should probably Broadcast the TX itself if the API is "verify only".
-                    //
-                    // Let's assume for this step we are implementing the hook as requested, but we might need
-                    // to align the API if we want true "Relayer" functionality.
-                    //
-                    // Current API: Checks txHash.
-                    // Requested Hook: Signs Typed Data.
-                    //
-                    // I will implement the hook as requested. The integration point likely implies the Settle API
-                    // *should* change to support Relaying, OR the client calls a Facilitator Service directly.
-                    //
-                    // For now, I'll point it to `/api/v1/router/settle` but note that the current Settle API
-                    // expects { txHash }. This hook might need to change to perform the writeContract logic
-                    // client side if we don't have a relayer backend active.
-
+                    amount: options.amount,
+                    asset: 'USDC',
+                    decisionId: options.sessionId,
                     payment: {
-                        token: options.token.address,
-                        amount: options.amount,
-                        recipient: options.recipient,
-                        nonce: options.nonce,
-                        deadline: options.deadline
-                    },
-                    signature,
-                    payer: address
+                        scheme: 'exact',
+                        authorization: {
+                            from: address,
+                            to: recipient,
+                            value: amountWei.toString(),
+                            validAfter,
+                            validBefore,
+                            nonce,
+                            v,
+                            r,
+                            s
+                        }
+                    }
                 })
             })
-
-            // The current API might 400 because it expects `txHash`. 
-            // But I will output the file exactly as requested for the toolkit.
 
             const result = await response.json()
 
@@ -116,7 +109,11 @@ export function usePayment() {
                 throw new Error(result.message || result.error || 'Payment failed')
             }
 
-            return result
+            return {
+                ...result,
+                authorizationNonce: nonce,
+                signedAt: new Date().toISOString()
+            }
 
         } catch (err: any) {
             setError(err.message || 'Payment failed')

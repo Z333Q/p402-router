@@ -1,4 +1,5 @@
 import { hashTypedData, recoverAddress } from 'viem'
+import { P402_CONFIG } from './constants'
 
 /**
  * ServiceProof
@@ -19,8 +20,8 @@ export interface ServiceProofData {
 export const SERVICE_PROOF_DOMAIN = {
     name: 'P402 Service Proof',
     version: '1',
-    chainId: 8453, // Base
-    verifyingContract: '0x0000000000000000000000000000000000000000' // Stub
+    chainId: P402_CONFIG.CHAIN_ID,
+    verifyingContract: P402_CONFIG.TREASURY_ADDRESS // Use treasury as verifying contract
 } as const
 
 export const SERVICE_PROOF_TYPES = {

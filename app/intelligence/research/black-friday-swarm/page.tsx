@@ -11,7 +11,7 @@ export default function BlackFridayPage() {
         "@context": "https://schema.org",
         "@type": "ScholarlyArticle",
         "headline": "The Black Friday Swarm Incident (2027): A Post-Mortem",
-        "author": { "@type": "Person", "name": "Dr. Aris V." },
+        "author": { "@type": "Organization", "name": "P402 Intelligence" },
         "datePublished": "2027-11-28",
         "publisher": {
             "@type": "Organization",
@@ -27,7 +27,7 @@ export default function BlackFridayPage() {
             title="The Black Friday Swarm: When Agents Broke the Order Book"
             subtitle="CASE STUDY • FUTURE SCENARIO • NOV 2027"
             meta={{
-                author: "Dr. Aris V.",
+                author: "P402 Intelligence",
                 date: "Nov 28, 2027",
                 type: "Incident Report"
             }}

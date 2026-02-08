@@ -11,7 +11,7 @@ export default function SupplyChainPage() {
         "@context": "https://schema.org",
         "@type": "ScholarlyArticle",
         "headline": "The Supply Chain Optimization Miracle (2027)",
-        "author": { "@type": "Person", "name": "Dr. Aris V." },
+        "author": { "@type": "Organization", "name": "P402 Intelligence" },
         "datePublished": "2027-05-20",
         "publisher": {
             "@type": "Organization",
@@ -27,7 +27,7 @@ export default function SupplyChainPage() {
             title="The 400ms Supply Chain: A Logistics Miracle"
             subtitle="CASE STUDY • FUTURE SCENARIO • MAY 2027"
             meta={{
-                author: "Dr. Aris V.",
+                author: "P402 Intelligence",
                 date: "May 20, 2027",
                 type: "Logistics Report"
             }}

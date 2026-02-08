@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_20-87921c6d8c0eca04adca4a6fb03dbb0f617cef80",
+  "solcVersion": "0.8.20",
+  "solcLongVersion": "0.8.20+commit.a1b79de6",
+  "userSourceNameMap": {
+    "contracts/P402Settlement.sol": "project/contracts/P402Settlement.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "shanghai",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/P402Settlement.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\ninterface IERC20 {\n    function transfer(address to, uint256 amount) external returns (bool);\n    function transferFrom(address from, address to, uint256 amount) external returns (bool);\n    function balanceOf(address account) external view returns (uint256);\n}\n\n/**\n * @title P402 Settlement Contract\n * @notice Handles atomic settlement and fee collection for P402 marketplace transactions.\n * @dev Takes 101% from sender, sends 100% to recipient, keeps 1% as fee (configurable).\n */\ncontract P402Settlement {\n    address public owner;\n    address public treasury;\n    uint256 public feeBasisPoints = 100; // 100 bps = 1.00%\n    bool public paused = false;\n\n    event PaymentSettled(\n        address indexed sender,\n        address indexed recipient,\n        address indexed token,\n        uint256 netAmount,\n        uint256 feeAmount,\n        string referenceId\n    );\n\n    event FeeUpdated(uint256 oldFee, uint256 newFee);\n    event TreasuryUpdated(address oldTreasury, address newTreasury);\n\n    modifier onlyOwner() {\n        require(msg.sender == owner, \"Not owner\");\n        _;\n    }\n\n    constructor(address _treasury) {\n        owner = msg.sender;\n        treasury = _treasury;\n    }\n\n    /**\n     * @notice Settles a payment by transferring tokens from sender to recipient + fee.\n     * @param token The ERC20 token address (e.g. USDC).\n     * @param netAmount The amount the recipient should receive (100%).\n     * @param recipient The address of the service provider.\n     * @param referenceId External reference ID for linking to off-chain orders (e.g. \"evt_123\").\n     */\n    function pay(\n        address token,\n        uint256 netAmount,\n        address recipient,\n        string calldata referenceId\n    ) external {\n        require(!paused, \"Contract paused\");\n        require(recipient != address(0), \"Invalid recipient\");\n\n        // Calculate Fee (e.g. 10.00 USDC * 100 / 10000 = 0.10 USDC)\n        uint256 feeAmount = (netAmount * feeBasisPoints) / 10000;\n        uint256 totalAmount = netAmount + feeAmount;\n\n        // Transfer Total from Sender to Contract (Sender must approve this contract first)\n        require(\n            IERC20(token).transferFrom(msg.sender, address(this), totalAmount),\n            \"TransferFrom failed\"\n        );\n\n        // Transfer Net Amount to Recipient\n        require(\n            IERC20(token).transfer(recipient, netAmount),\n            \"Transfer to recipient failed\"\n        );\n\n        // Fee stays in contract (or could be auto-swept to treasury)\n        \n        emit PaymentSettled(msg.sender, recipient, token, netAmount, feeAmount, referenceId);\n    }\n\n    /**\n     * @notice Admin function to withdraw accumulated fees to the treasury.\n     * @param token The ERC20 token to withdraw.\n     */\n    function withdraw(address token) external {\n        // Anyone can trigger the sweep to the hardcoded treasury (security best practice)\n        uint256 balance = IERC20(token).balanceOf(address(this));\n        require(balance > 0, \"No fees to withdraw\");\n        require(IERC20(token).transfer(treasury, balance), \"Withdraw failed\");\n    }\n\n    // --- Admin Views & upkeep ---\n\n    function setFee(uint256 _bps) external onlyOwner {\n        require(_bps <= 1000, \"Fee cap exceeded (10%)\");\n        emit FeeUpdated(feeBasisPoints, _bps);\n        feeBasisPoints = _bps;\n    }\n\n    function setTreasury(address _treasury) external onlyOwner {\n        require(_treasury != address(0), \"Invalid address\");\n        emit TreasuryUpdated(treasury, _treasury);\n        treasury = _treasury;\n    }\n\n    function setPaused(bool _paused) external onlyOwner {\n        paused = _paused;\n    }\n}\n"
+      }
+    }
+  }
+}

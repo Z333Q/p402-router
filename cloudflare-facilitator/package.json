@@ -1,0 +1,38 @@
+{
+  "name": "p402-cloudflare-facilitator",
+  "version": "1.0.0",
+  "description": "Production x402 facilitator running on Cloudflare Workers",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "build": "echo 'Build step for wrangler'",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "x402",
+    "p402",
+    "facilitator",
+    "cloudflare",
+    "workers",
+    "payments",
+    "crypto",
+    "eip3009"
+  ],
+  "author": "P402.io",
+  "license": "MIT",
+  "dependencies": {
+    "itty-router": "^5.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240129.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "wrangler": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

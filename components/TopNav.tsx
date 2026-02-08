@@ -93,8 +93,9 @@ export function TopNav() {
                         <Link href="/#product" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Product</Link>
                         <Link href="/intelligence" onClick={() => setIsMenuOpen(false)} className="text-black no-underline text-primary">Intelligence</Link>
                         <Link href="/dashboard/bazaar" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Bazaar</Link>
-                        <Link href="/docs/api" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Developers</Link>
-                        <Link href="/docs/sdk" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">SDK</Link>
+                        <Link href="/docs/api" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">API Reference</Link>
+                        <Link href="/docs/sdk" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Developer Guide</Link>
+                        <Link href="/docs/facilitator" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Facilitator Network</Link>
                         <Link href="/docs/mcp" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">MCP</Link>
                     </nav>
                     <div className="border-t-2 border-black pt-4 flex flex-col gap-3">

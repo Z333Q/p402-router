@@ -4,6 +4,7 @@ import { A2AMessage, A2ATask, A2ATaskState, A2ATaskStatus } from '../../../lib/a
 import { query } from '../../../lib/db';
 import { A2A_ERRORS, A2AError } from '../../../lib/a2a-errors';
 import { pushNotificationService } from '../../../lib/push-service';
+import { SettlementService } from '../../../lib/services/settlement-service';
 
 export async function POST(req: NextRequest) {
     try {
@@ -159,40 +160,153 @@ async function handleX402PaymentSubmitted(params: any, id: string | number, tena
 
     const { payment_id, scheme, tx_hash, signature, receipt_id } = params;
 
+    // 1. Fetch payment record
+    const res = await query('SELECT * FROM x402_payments WHERE payment_id = $1', [payment_id]);
+    if (res.rowCount === 0) {
+        return NextResponse.json({
+            jsonrpc: '2.0',
+            error: { code: -32007, message: 'Payment record not found' },
+            id
+        });
+    }
+
+    const payment = res.rows[0];
+
+    if (payment.status === 'completed') {
+        return NextResponse.json({
+            jsonrpc: '2.0',
+            error: { code: -32008, message: 'Payment already settled' },
+            id
+        });
+    }
+
+    const effectiveScheme = scheme || 'onchain';
+
     try {
-        // 1. Fetch payment record
-        const res = await query('SELECT * FROM x402_payments WHERE payment_id = $1', [payment_id]);
-        if (res.rowCount === 0) {
+        let verificationResult: { verified: boolean; error?: string; txHash?: string };
+
+        switch (effectiveScheme) {
+            case 'onchain': {
+                if (!tx_hash) {
+                    return NextResponse.json({
+                        jsonrpc: '2.0',
+                        error: {
+                            code: -32602,
+                            message: 'tx_hash is required for onchain scheme',
+                            data: { scheme: 'onchain', required: ['tx_hash'] }
+                        },
+                        id
+                    });
+                }
+
+                if (!tx_hash.match(/^0x[a-fA-F0-9]{64}$/)) {
+                    return NextResponse.json({
+                        jsonrpc: '2.0',
+                        error: { code: -32602, message: 'Invalid tx_hash format' },
+                        id
+                    });
+                }
+
+                try {
+                    const settleResult = await SettlementService.settle(
+                        `a2a_${payment_id}`,
+                        {
+                            tenantId: payment.tenant_id,
+                            txHash: tx_hash,
+                            amount: payment.amount_usd?.toString() || '0',
+                            asset: payment.asset || 'USDC'
+                        }
+                    );
+
+                    verificationResult = {
+                        verified: settleResult.settled,
+                        txHash: tx_hash
+                    };
+                } catch (error: any) {
+                    if (error.code === 'REPLAY_DETECTED') {
+                        return NextResponse.json({
+                            jsonrpc: '2.0',
+                            error: {
+                                code: -32009,
+                                message: 'Transaction already processed (replay detected)',
+                                data: { tx_hash }
+                            },
+                            id
+                        });
+                    }
+                    if (error.code === 'VERIFICATION_FAILED') {
+                        verificationResult = { verified: false, error: error.message };
+                    } else {
+                        throw error;
+                    }
+                }
+                break;
+            }
+
+            // Future schemes (exact, receipt) can be added here
+            default: {
+                return NextResponse.json({
+                    jsonrpc: '2.0',
+                    error: {
+                        code: -32602,
+                        message: `Unknown scheme: ${effectiveScheme}`,
+                        data: { supported: ['onchain'] }
+                    },
+                    id
+                });
+            }
+        }
+
+        if (!verificationResult.verified) {
+            await query(
+                `UPDATE x402_payments 
+                 SET status = 'failed', error = $2, updated_at = NOW() 
+                 WHERE payment_id = $1`,
+                [payment_id, verificationResult.error || 'Verification failed']
+            );
+
             return NextResponse.json({
                 jsonrpc: '2.0',
-                error: { code: -32007, message: 'Payment record not found' },
+                error: {
+                    code: -32008,
+                    message: verificationResult.error || 'Payment verification failed',
+                    data: { payment_id }
+                },
                 id
             });
         }
 
-        const payment = res.rows[0];
+        // Success
+        const settled_at = new Date();
 
-        // 2. Verify payment (Mock implementation)
-        // In production, we would use blockchain.ts to verify the tx_hash or signature
-        let settled_at = new Date();
-        let status = 'completed';
-
-        // 3. Update payment record
         await query(
             `UPDATE x402_payments 
-             SET status = $2, tx_hash = $3, settled_at = $4, scheme = $5
+             SET status = 'completed', tx_hash = $2, settled_at = $3, scheme = $4, updated_at = NOW()
              WHERE payment_id = $1`,
-            [payment_id, status, tx_hash || null, settled_at, scheme]
+            [payment_id, tx_hash, settled_at, effectiveScheme]
         );
 
-        // 4. Generate Receipt (if completed)
+        // Generate receipt
         const newReceiptId = `rec_${uuidv4().substring(0, 8)}`;
+        // Placeholder signature for now
         const receiptSignature = `sig_${uuidv4()}`;
 
         await query(
-            `INSERT INTO x402_receipts (receipt_id, payment_id, tenant_id, signature, receipt_data, valid_until)
+            `INSERT INTO x402_receipts 
+             (receipt_id, payment_id, tenant_id, signature, receipt_data, valid_until)
              VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '30 days')`,
-            [newReceiptId, payment_id, payment.tenant_id, receiptSignature, JSON.stringify({ amount: payment.amount_usd })]
+            [
+                newReceiptId,
+                payment_id,
+                payment.tenant_id,
+                receiptSignature,
+                JSON.stringify({
+                    amount: payment.amount_usd,
+                    asset: payment.asset,
+                    tx_hash: tx_hash,
+                    settled_at: settled_at.toISOString()
+                })
+            ]
         );
 
         return NextResponse.json({
@@ -201,8 +315,10 @@ async function handleX402PaymentSubmitted(params: any, id: string | number, tena
                 payment_id,
                 status: 'completed',
                 settlement: {
-                    tx_hash: tx_hash || `mock_tx_${uuidv4()}`,
-                    amount_settled: payment.amount_raw || "0"
+                    tx_hash: tx_hash,
+                    scheme: effectiveScheme,
+                    amount_settled: payment.amount_raw || payment.amount_usd?.toString() || '0',
+                    verified_at: settled_at.toISOString()
                 },
                 receipt: {
                     receipt_id: newReceiptId,
@@ -213,7 +329,7 @@ async function handleX402PaymentSubmitted(params: any, id: string | number, tena
             id
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('X402 Settlement Error:', error);
         return NextResponse.json({
             jsonrpc: '2.0',

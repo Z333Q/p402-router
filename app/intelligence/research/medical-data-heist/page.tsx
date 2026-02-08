@@ -11,7 +11,7 @@ export default function MedicalDataPage() {
         "@context": "https://schema.org",
         "@type": "ScholarlyArticle",
         "headline": "The Medical Data Heist Attempt (2027)",
-        "author": { "@type": "Person", "name": "Dr. Aris V." },
+        "author": { "@type": "Organization", "name": "P402 Intelligence" },
         "datePublished": "2027-02-14",
         "publisher": {
             "@type": "Organization",
@@ -27,7 +27,7 @@ export default function MedicalDataPage() {
             title="The Medical Data Heist: Stopping Exfiltration at the Router"
             subtitle="CASE STUDY • FUTURE SCENARIO • FEB 2027"
             meta={{
-                author: "Dr. Aris V.",
+                author: "P402 Intelligence",
                 date: "Feb 14, 2027",
                 type: "Security Incident"
             }}

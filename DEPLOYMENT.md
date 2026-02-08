@@ -127,3 +127,52 @@ Once deployed:
 3.  Visit `/bazaar` to ensure the registry is loading (it might be empty until the first Sync job runs).
 
 **Launch Status: ** 🟢 READY
+
+---
+
+## 6. Smart Contract Deployment (P402Settlement)
+
+For production-grade payment processing, deploy the P402Settlement smart contract to Base mainnet.
+
+### Prerequisites
+- Deployer wallet with ETH for gas on Base
+- Treasury address configured (0xb23f146251e3816a011e800bcbae704baa5619ec)
+
+### Deployment Steps
+
+1. **Compile Contract**
+   ```bash
+   npx hardhat compile
+   ```
+
+2. **Test on Base Sepolia (Recommended)**
+   ```bash
+   npx tsx scripts/deploy-settlement.ts --network=base-sepolia
+   ```
+
+3. **Deploy to Base Mainnet**
+   ```bash
+   npx tsx scripts/deploy-settlement.ts --network=base
+   ```
+
+4. **Verify on Basescan**
+   ```bash
+   npx hardhat verify --network base <CONTRACT_ADDRESS> "0xb23f146251e3816a011e800bcbae704baa5619ec"
+   ```
+
+5. **Update Environment Variables**
+   ```env
+   P402_SETTLEMENT_ADDRESS=<deployed_contract_address>
+   ```
+
+### Security Checklist
+- [ ] Contract deployed with correct treasury address
+- [ ] Fee set to 1% (100 basis points)
+- [ ] Contract verified on Basescan
+- [ ] Test small payment ($1 USDC) before going live
+- [ ] Monitor contract for fee accumulation
+
+### Emergency Controls
+- Contract can be paused by owner if needed
+- Treasury address can be updated if compromised
+- Fees can be withdrawn by anyone (go to configured treasury)

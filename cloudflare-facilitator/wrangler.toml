@@ -1,0 +1,51 @@
+# P402 Cloudflare Facilitator Configuration
+
+name = "p402-facilitator"
+main = "src/index.ts"
+compatibility_date = "2024-01-15"
+workers_dev = false
+
+# Production routes
+routes = [
+  { pattern = "facilitator.p402.io/*", custom_domain = true }
+]
+
+# KV Namespaces for caching and receipts
+[[kv_namespaces]]
+binding = "RECEIPTS_KV"
+id = "receipts-prod"
+preview_id = "receipts-staging"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "ratelimit-prod"
+preview_id = "ratelimit-staging"
+
+# Environment variables (non-sensitive)
+[vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "info"
+
+# Production secrets (set via `wrangler secret put`)
+# wrangler secret put FACILITATOR_PRIVATE_KEY
+# wrangler secret put P402_TREASURY_ADDRESS
+# wrangler secret put BASE_RPC_URL
+
+# Build configuration
+[build]
+command = "npm run build"
+
+# Development configuration
+[env.staging]
+name = "p402-facilitator-staging"
+routes = [
+  { pattern = "staging-facilitator.p402.io/*", custom_domain = true }
+]
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+LOG_LEVEL = "debug"
+
+# Analytics and monitoring
+[analytics_engine_datasets]
+binding = "ANALYTICS"

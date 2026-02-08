@@ -12,7 +12,7 @@ export default function FlashCrashPage() {
         "@context": "https://schema.org",
         "@type": "ScholarlyArticle",
         "headline": "Flash Crash Protection in Autonomous Agent Swarms",
-        "author": { "@type": "Person", "name": "Dr. Aris V." },
+        "author": { "@type": "Organization", "name": "P402 Intelligence" },
         "publisher": { "@type": "Organization", "name": "P402 Protocol" },
         "description": "Mitigating recursive feedback loops in high-frequency agent economies.",
         "keywords": "Flash Crash, Agent Swarm, Circuit Breaker, Cloudflare, Coinbase"
@@ -23,7 +23,7 @@ export default function FlashCrashPage() {
             title="Flash Crash Protection in Autonomous Agent Swarms"
             subtitle="PROTOCOL SAFETY • RISK MANAGEMENT • APR 2026"
             meta={{
-                author: "Dr. Aris V.",
+                author: "P402 Intelligence",
                 date: "Apr 22, 2026",
                 type: "Risk Analysis"
             }}

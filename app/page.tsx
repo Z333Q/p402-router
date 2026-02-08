@@ -5,6 +5,7 @@ import { BazaarLoop } from "@/components/landing/BazaarLoop"
 import { Testimonials } from "@/components/landing/Testimonials"
 import { RequestInspector } from "@/components/landing/RequestInspector"
 import { LandingGuide } from "@/components/landing/LandingGuide"
+import { ProductionFeatures } from "@/components/landing/ProductionFeatures"
 import Link from 'next/link'
 import { Badge } from "@/app/dashboard/_components/ui"
 
@@ -24,27 +25,27 @@ export default async function Page() {
                     <div className="container mx-auto px-6 max-w-7xl">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                             <div className="card p-10 border-2 border-black bg-white shadow-[8px_8px_0px_#000]">
-                                <div className="text-[10px] font-black text-black mb-2 uppercase">A2A Infrastructure</div>
-                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Policy Governance</h3>
+                                <div className="text-[10px] font-black text-black mb-2 uppercase">EIP-3009 Settlement</div>
+                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Gasless Payments</h3>
                                 <p className="text-sm font-bold leading-relaxed text-neutral-600">
-                                    Intelligent budget management and security enforcement. Our protocol autonomously audits agent flows to
-                                    ensure compliance with your spending mandates and security policies.
+                                    Users pay zero gas fees. P402's facilitator network executes USDC transfers on Base L2 using
+                                    EIP-3009 transferWithAuthorization, eliminating wallet friction for AI payments.
                                 </p>
                             </div>
                             <div className="card p-10 border-2 border-black bg-white shadow-[8px_8px_0px_#000]">
-                                <div className="text-[10px] font-black text-black mb-2 uppercase">Cost Control</div>
-                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Smart Interception</h3>
+                                <div className="text-[10px] font-black text-black mb-2 uppercase">Global Edge Network</div>
+                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Sub-50ms Verification</h3>
                                 <p className="text-sm font-bold leading-relaxed text-neutral-600">
-                                    Reduce overhead with semantic caching. P402 identifies redundant A2A requests and serves high-fidelity
-                                    vetted responses, eliminating unnecessary downstream costs.
+                                    Production facilitator deployed across 15 global regions on Cloudflare Workers. Real-time payment
+                                    verification with P95 latency under 50ms worldwide.
                                 </p>
                             </div>
                             <div className="card p-10 border-2 border-black bg-white shadow-[8px_8px_0px_#000]">
-                                <div className="text-[10px] font-black text-black mb-2 uppercase">x402 Settlement</div>
-                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Auditable Payments</h3>
+                                <div className="text-[10px] font-black text-black mb-2 uppercase">Real-time Analytics</div>
+                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Cost Transparency</h3>
                                 <p className="text-sm font-bold leading-relaxed text-neutral-600">
-                                    Full cryptographic transparency. Every transaction features a verifiable audit trail of reasoning,
-                                    policy checks, and on-chain settlement proofs on Base L2.
+                                    Live cost tracking, transaction history, and savings analytics. Complete audit trail with
+                                    on-chain verification and multisig treasury security controls.
                                 </p>
                             </div>
                         </div>
@@ -52,6 +53,8 @@ export default async function Page() {
                 </section>
 
                 <RequestInspector />
+
+                <ProductionFeatures />
 
                 {/* Intelligence Engine Feature */}
                 <section className="py-32 bg-black text-white border-y-2 border-white">
@@ -98,11 +101,14 @@ export default async function Page() {
                 <section className="py-32 bg-primary text-center border-t-2 border-black">
                     <div className="container mx-auto px-6">
                         <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-8 leading-none italic">
-                            Ready to define<br />the future?
+                            Try real payments<br />in 60 seconds
                         </h2>
                         <div className="flex justify-center gap-6">
-                            <Link href="/docs" className="btn btn-dark text-2xl px-12 py-6 h-auto">
-                                Start Building
+                            <Link href="/demo/payment-flow" className="btn btn-dark text-2xl px-12 py-6 h-auto">
+                                Live Payment Demo
+                            </Link>
+                            <Link href="/docs" className="btn btn-outline text-2xl px-12 py-6 h-auto border-2 border-black bg-transparent text-black hover:bg-black hover:text-primary">
+                                Read Documentation
                             </Link>
                         </div>
                     </div>

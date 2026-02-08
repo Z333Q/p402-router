@@ -1,5 +1,6 @@
 import { FacilitatorAdapter, FacilitatorProbe } from './index'
 import { encodeFunctionData, parseAbi } from 'viem'
+import { P402_CONFIG } from '../constants'
 
 export class SmartContractAdapter implements FacilitatorAdapter {
     id = "fac_p402_settlement_v1"
@@ -9,10 +10,21 @@ export class SmartContractAdapter implements FacilitatorAdapter {
     private contractAddress: string;
 
     constructor() {
-        this.contractAddress = process.env.P402_SETTLEMENT_ADDRESS || "0x0000000000000000000000000000000000000000";
+        this.contractAddress = process.env.P402_SETTLEMENT_ADDRESS || "";
+
+        if (!this.contractAddress) {
+            console.warn('⚠️ P402_SETTLEMENT_ADDRESS not configured - smart contract settlement disabled');
+        } else if (this.contractAddress === "0x0000000000000000000000000000000000000000") {
+            throw new Error('P402 Settlement contract address cannot be null address');
+        }
     }
 
     supports(args: { network: string; scheme: string; asset: string }): boolean {
+        // Cannot support if contract address not configured
+        if (!this.contractAddress) {
+            return false;
+        }
+
         // Supports Base (8453) and Base Sepolia (84532) for USDC
         const supportedNetworks = ['eip155:8453', 'eip155:84532'];
         return supportedNetworks.includes(args.network) && args.asset === 'USDC';
