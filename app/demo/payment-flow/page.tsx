@@ -197,23 +197,23 @@ export default function PaymentFlowDemoPage() {
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   return (
-    <div className=\"max-w-4xl mx-auto space-y-8\">
+    <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className=\"text-4xl font-black uppercase tracking-tighter text-black\">
+        <h1 className="text-4xl font-black uppercase tracking-tighter text-black">
           End-to-End Payment Demo
         </h1>
-        <p className=\"text-neutral-600 font-medium mt-2\">
+        <p className="text-neutral-600 font-medium mt-2">
           Complete demonstration of P402 payment flow with real USDC on Base network
         </p>
       </div>
 
       {/* Demo Setup */}
-      <Card title=\"Demo Setup\" className=\"p-6\">
-        <div className=\"grid grid-cols-1 md:grid-cols-2 gap-6\">
+      <Card title="Demo Setup" className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h4 className=\"font-bold text-neutral-900 mb-2\">Network Requirements</h4>
-            <ul className=\"space-y-1 text-sm text-neutral-600\">
+            <h4 className="font-bold text-neutral-900 mb-2">Network Requirements</h4>
+            <ul className="space-y-1 text-sm text-neutral-600">
               <li>• Base mainnet (Chain ID: 8453)</li>
               <li>• USDC balance: minimum $1.00</li>
               <li>• MetaMask or compatible wallet</li>
@@ -222,8 +222,8 @@ export default function PaymentFlowDemoPage() {
           </div>
 
           <div>
-            <h4 className=\"font-bold text-neutral-900 mb-2\">Demo Parameters</h4>
-            <ul className=\"space-y-1 text-sm text-neutral-600\">
+            <h4 className="font-bold text-neutral-900 mb-2">Demo Parameters</h4>
+            <ul className="space-y-1 text-sm text-neutral-600">
               <li>• Payment amount: ${demoAmount} USDC</li>
               <li>• Treasury: {P402_CONFIG.TREASURY_ADDRESS.slice(0, 10)}...</li>
               <li>• Scheme: EIP-3009 exact</li>
@@ -232,17 +232,17 @@ export default function PaymentFlowDemoPage() {
           </div>
         </div>
 
-        <div className=\"mt-6 flex items-center gap-4\">
+        <div className="mt-6 flex items-center gap-4">
           {!isConnected ? (
             <Button onClick={connect} disabled={isLoading}>
               {isLoading ? 'Connecting...' : 'Connect Wallet'}
             </Button>
           ) : (
-            <div className=\"flex items-center gap-4\">
-              <div className=\"text-sm\">
-                <span className=\"text-green-600\">✓</span> Connected: {account?.slice(0, 6)}...{account?.slice(-4)}
+            <div className="flex items-center gap-4">
+              <div className="text-sm">
+                <span className="text-green-600">✓</span> Connected: {account?.slice(0, 6)}...{account?.slice(-4)}
               </div>
-              <div className=\"text-sm\">
+              <div className="text-sm">
                 Balance: {balance} USDC
               </div>
             </div>
@@ -251,7 +251,7 @@ export default function PaymentFlowDemoPage() {
           <Button
             onClick={runDemo}
             disabled={!isConnected || isRunning || (balance && balance < demoAmount)}
-            variant=\"primary\"
+            variant="primary"
           >
             {isRunning ? 'Running Demo...' : 'Start Payment Demo'}
           </Button>
@@ -259,47 +259,47 @@ export default function PaymentFlowDemoPage() {
       </Card>
 
       {/* Demo Steps */}
-      <Card title=\"Payment Flow Steps\" className=\"p-6\">
-        <div className=\"space-y-4\">
+      <Card title="Payment Flow Steps" className="p-6">
+        <div className="space-y-4">
           {steps.map((step, index) => (
             <div
               key={step.id}
               className={`
                 flex items-start gap-4 p-4 rounded-lg border-2 transition-all duration-300
-                \${step.status === 'active' ? 'border-blue-500 bg-blue-50' :
+                ${step.status === 'active' ? 'border-blue-500 bg-blue-50' :
                   step.status === 'completed' ? 'border-green-500 bg-green-50' :
                   step.status === 'error' ? 'border-red-500 bg-red-50' :
                   'border-neutral-200 bg-neutral-50'}
               `}
             >
-              <div className=\"flex-shrink-0 mt-1\">
+              <div className="flex-shrink-0 mt-1">
                 {step.status === 'completed' && (
-                  <div className=\"w-6 h-6 bg-green-500 rounded-full flex items-center justify-center\">
-                    <span className=\"text-white text-xs\">✓</span>
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">✓</span>
                   </div>
                 )}
                 {step.status === 'active' && (
-                  <div className=\"w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center animate-pulse\">
-                    <span className=\"text-white text-xs\">{step.id}</span>
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center animate-pulse">
+                    <span className="text-white text-xs">{step.id}</span>
                   </div>
                 )}
                 {step.status === 'error' && (
-                  <div className=\"w-6 h-6 bg-red-500 rounded-full flex items-center justify-center\">
-                    <span className=\"text-white text-xs\">!</span>
+                  <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">!</span>
                   </div>
                 )}
                 {step.status === 'pending' && (
-                  <div className=\"w-6 h-6 bg-neutral-300 rounded-full flex items-center justify-center\">
-                    <span className=\"text-neutral-600 text-xs\">{step.id}</span>
+                  <div className="w-6 h-6 bg-neutral-300 rounded-full flex items-center justify-center">
+                    <span className="text-neutral-600 text-xs">{step.id}</span>
                   </div>
                 )}
               </div>
 
-              <div className=\"flex-1\">
-                <h4 className=\"font-bold text-neutral-900\">{step.title}</h4>
-                <p className=\"text-sm text-neutral-600\">{step.description}</p>
+              <div className="flex-1">
+                <h4 className="font-bold text-neutral-900">{step.title}</h4>
+                <p className="text-sm text-neutral-600">{step.description}</p>
                 {step.details && (
-                  <p className=\"text-xs text-neutral-500 mt-1 font-mono\">{step.details}</p>
+                  <p className="text-xs text-neutral-500 mt-1 font-mono">{step.details}</p>
                 )}
               </div>
             </div>
@@ -309,19 +309,19 @@ export default function PaymentFlowDemoPage() {
 
       {/* Results */}
       {(transactionHash || receiptId) && (
-        <Card title=\"Demo Results\" className=\"p-6\">
-          <div className=\"space-y-4\">
+        <Card title="Demo Results" className="p-6">
+          <div className="space-y-4">
             {transactionHash && (
               <div>
-                <h4 className=\"font-bold text-neutral-900 mb-2\">Settlement Transaction</h4>
-                <div className=\"bg-neutral-100 p-4 rounded border font-mono text-sm break-all\">
+                <h4 className="font-bold text-neutral-900 mb-2">Settlement Transaction</h4>
+                <div className="bg-neutral-100 p-4 rounded border font-mono text-sm break-all">
                   {transactionHash}
                 </div>
                 <a
                   href={`https://basescan.org/tx/${transactionHash}`}
-                  target=\"_blank\"
-                  rel=\"noopener noreferrer\"
-                  className=\"text-blue-600 hover:underline text-sm\"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline text-sm"
                 >
                   View on Basescan →
                 </a>
@@ -330,11 +330,11 @@ export default function PaymentFlowDemoPage() {
 
             {receiptId && (
               <div>
-                <h4 className=\"font-bold text-neutral-900 mb-2\">Payment Receipt</h4>
-                <div className=\"bg-neutral-100 p-4 rounded border font-mono text-sm break-all\">
+                <h4 className="font-bold text-neutral-900 mb-2">Payment Receipt</h4>
+                <div className="bg-neutral-100 p-4 rounded border font-mono text-sm break-all">
                   {receiptId}
                 </div>
-                <p className=\"text-sm text-neutral-600 mt-2\">
+                <p className="text-sm text-neutral-600 mt-2">
                   This receipt can be reused for future payments without additional signatures.
                 </p>
               </div>
@@ -344,11 +344,11 @@ export default function PaymentFlowDemoPage() {
       )}
 
       {/* Integration Guide */}
-      <Card title=\"Integration Guide\" className=\"p-6\">
-        <div className=\"space-y-6\">
+      <Card title="Integration Guide" className="p-6">
+        <div className="space-y-6">
           <div>
-            <h4 className=\"font-bold text-neutral-900 mb-2\">Frontend Integration</h4>
-            <pre className=\"bg-neutral-100 p-4 rounded text-sm overflow-x-auto\">{`// 1. Install P402 SDK
+            <h4 className="font-bold text-neutral-900 mb-2">Frontend Integration</h4>
+            <pre className="bg-neutral-100 p-4 rounded text-sm overflow-x-auto">{`// 1. Install P402 SDK
 npm install @p402/sdk
 
 // 2. Initialize client
@@ -371,8 +371,8 @@ await payment.execute();`}</pre>
           </div>
 
           <div>
-            <h4 className=\"font-bold text-neutral-900 mb-2\">Backend Integration</h4>
-            <pre className=\"bg-neutral-100 p-4 rounded text-sm overflow-x-auto\">{`// Verify payment server-side
+            <h4 className="font-bold text-neutral-900 mb-2">Backend Integration</h4>
+            <pre className="bg-neutral-100 p-4 rounded text-sm overflow-x-auto">{`// Verify payment server-side
 const verification = await fetch('https://facilitator.p402.io/verify', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -390,8 +390,8 @@ if (result.verified) {
           </div>
 
           <div>
-            <h4 className=\"font-bold text-neutral-900 mb-2\">Key Benefits Demonstrated</h4>
-            <ul className=\"space-y-2 text-sm text-neutral-600\">
+            <h4 className="font-bold text-neutral-900 mb-2">Key Benefits Demonstrated</h4>
+            <ul className="space-y-2 text-sm text-neutral-600">
               <li>✓ <strong>Gasless payments:</strong> Users don't pay gas fees for USDC transfers</li>
               <li>✓ <strong>Instant verification:</strong> Sub-100ms payment verification</li>
               <li>✓ <strong>Global facilitator:</strong> Edge deployment for low latency worldwide</li>
@@ -403,4 +403,4 @@ if (result.verified) {
       </Card>
     </div>
   );
-}`}
+}
