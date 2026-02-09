@@ -2,6 +2,8 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { TopNav } from '@/components/TopNav'
+import { Footer } from '@/components/Footer'
 
 export default function GetAccessPage() {
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -41,7 +43,7 @@ export default function GetAccessPage() {
     if (status === 'success') {
         return (
             <div className="min-h-screen flex flex-col font-sans bg-neutral-100 text-black selection:bg-primary selection:text-black">
-                <Header />
+                <TopNav />
                 <main className="flex-1 flex items-center justify-center p-6">
                     <div className="bg-white border-2 border-black p-8 max-w-md w-full shadow-[8px_8px_0px_#000] text-center relative overflow-hidden">
                         <div className="text-4xl mb-6">🚀</div>
@@ -52,13 +54,14 @@ export default function GetAccessPage() {
                         <Link href="/" className="btn btn-primary w-full justify-center">Back to Home</Link>
                     </div>
                 </main>
+                <Footer />
             </div>
         )
     }
 
     return (
         <div className="min-h-screen flex flex-col font-sans bg-neutral-100 text-black selection:bg-primary selection:text-black">
-            <Header />
+            <TopNav />
             <main className="flex-1 flex items-center justify-center p-6">
                 <div className="bg-white border-2 border-black p-8 max-w-md w-full shadow-[8px_8px_0px_#000] relative">
                     <h1 className="text-2xl font-black uppercase mb-4 text-black border-b-2 border-black pb-2">Request Access</h1>
@@ -126,21 +129,7 @@ export default function GetAccessPage() {
                     </form>
                 </div>
             </main>
+            <Footer />
         </div>
-    )
-}
-
-function Header() {
-    return (
-        <header className="border-b-2 border-black px-6 h-16 flex items-center justify-between bg-white sticky top-0 z-50">
-            <Link href="/" className="no-underline text-inherit relative z-10 group flex items-center gap-3">
-                <div className="w-8 h-8 bg-primary border-2 border-black flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105">
-                    <img src="/favicon.png" alt="P402 Logo" className="w-6 h-6" />
-                </div>
-                <span className="text-xl font-black no-underline text-black uppercase hover:text-primary-dim transition-colors">
-                    P402
-                </span>
-            </Link>
-        </header>
     )
 }

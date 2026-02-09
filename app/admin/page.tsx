@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import { Badge, Button, Card, EmptyState } from '../dashboard/_components/ui'
 import Link from 'next/link'
+import { TopNav } from '@/components/TopNav'
+import { Footer } from '@/components/Footer'
 
 type Summary = {
     totalTenants: number
@@ -64,7 +66,9 @@ export default function AdminPage() {
 
     if (error) {
         return (
-            <div style={{ padding: 40 }}>
+            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+                <TopNav />
+                <div style={{ flex: 1, padding: 40 }}>
                 <Card title="Access Denied">
                     <p style={{ color: '#EF4444', fontWeight: 700 }}>{error}</p>
                     <div style={{ marginTop: 16 }}>
@@ -73,12 +77,16 @@ export default function AdminPage() {
                         </Link>
                     </div>
                 </Card>
+                </div>
+                <Footer />
             </div>
         )
     }
 
     return (
-        <div style={{ padding: '24px 40px' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <TopNav />
+        <div style={{ flex: 1, padding: '24px 40px' }}>
             <div style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 className="title-1">Platform Admin</h1>
@@ -155,6 +163,8 @@ export default function AdminPage() {
                     </div>
                 </>
             )}
+        </div>
+        <Footer />
         </div>
     )
 }

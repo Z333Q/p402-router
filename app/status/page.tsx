@@ -1,11 +1,10 @@
+import { TopNav } from '@/components/TopNav'
+import { Footer } from '@/components/Footer'
+
 export default function StatusPage() {
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-            <header style={{ borderBottom: '2px solid #000', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <a href="/" style={{ fontSize: '1.25rem', fontWeight: 800, textDecoration: 'none', color: '#000', textTransform: 'uppercase' }}>
-                    P402 Status
-                </a>
-            </header>
+            <TopNav />
             <main style={{ flex: 1, padding: 48, maxWidth: 800, margin: '0 auto', width: '100%' }}>
                 <div style={{ border: '2px solid #000', padding: 24, background: '#E9FFD0', marginBottom: 32, display: 'flex', alignItems: 'center', gap: 16 }}>
                     <div style={{ width: 16, height: 16, background: '#22C55E', borderRadius: '50%', border: '2px solid #000' }} />
@@ -19,6 +18,7 @@ export default function StatusPage() {
                     <StatusItem name="Dashboard" status="Operational" latency="-" />
                 </div>
             </main>
+            <Footer />
         </div>
     )
 }

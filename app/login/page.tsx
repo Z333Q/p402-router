@@ -2,6 +2,8 @@
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { TopNav } from '@/components/TopNav'
+import { Footer } from '@/components/Footer'
 
 // Lazy load the heavy wallet component
 const ConnectButton = dynamic(
@@ -16,7 +18,9 @@ const ConnectButton = dynamic(
 
 export default function LoginPage() {
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F5F5F5' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F5F5F5' }}>
+            <TopNav />
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div className="card" style={{ width: '100%', maxWidth: 400, padding: 32 }}>
                 <div style={{ textAlign: 'center', marginBottom: 32 }}>
                     <div style={{
@@ -59,6 +63,8 @@ export default function LoginPage() {
                     <Link href="/privacy" style={{ textDecoration: 'underline', color: '#7A7A7A' }}>Privacy Policy</Link>.
                 </div>
             </div>
+            </div>
+            <Footer />
         </div>
     )
 }

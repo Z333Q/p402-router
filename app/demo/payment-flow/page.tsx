@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Card, Button } from '@/app/dashboard/_components/ui';
 import { usePayment } from '@/lib/hooks/usePayment';
 import { P402_CONFIG } from '@/lib/constants';
+import { TopNav } from '@/components/TopNav';
+import { Footer } from '@/components/Footer';
 
 interface DemoStep {
   id: number;
@@ -197,7 +199,9 @@ export default function PaymentFlowDemoPage() {
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen flex flex-col bg-white">
+      <TopNav />
+      <main className="flex-1 max-w-4xl mx-auto w-full space-y-8 px-6 py-12">
       {/* Header */}
       <div>
         <h1 className="text-4xl font-black uppercase tracking-tighter text-black">
@@ -401,6 +405,8 @@ if (result.verified) {
           </div>
         </div>
       </Card>
+      </main>
+      <Footer />
     </div>
   );
 }

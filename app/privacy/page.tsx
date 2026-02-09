@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { TopNav } from '@/components/TopNav'
+import { Footer } from '@/components/Footer'
 
 export const metadata = {
     title: 'Privacy Policy | P402',
@@ -7,13 +9,8 @@ export const metadata = {
 
 export default function PrivacyPage() {
     return (
-        <div style={{ minHeight: '100vh' }}>
-            <header style={{ borderBottom: '2px solid #000', background: '#fff', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center' }}>
-                <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 800, textTransform: 'uppercase', textDecoration: 'none', color: '#000' }}>
-                    <div style={{ width: 16, height: 16, background: '#B6FF2E', border: '2px solid #000' }} />
-                    P402
-                </Link>
-            </header>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <TopNav />
 
             <main style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px' }}>
                 <h1 className="title-1" style={{ marginBottom: 8 }}>Privacy Policy</h1>
@@ -72,6 +69,7 @@ export default function PrivacyPage() {
                     </p>
                 </section>
             </main>
+            <Footer />
         </div>
     )
 }

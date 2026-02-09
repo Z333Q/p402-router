@@ -1,7 +1,11 @@
+import { TopNav } from '@/components/TopNav'
+import { Footer } from '@/components/Footer'
 
 export default function RouterDocs() {
     return (
-        <div className="max-w-4xl mx-auto py-12 px-6 font-sans text-zinc-300">
+        <div className="min-h-screen flex flex-col">
+        <TopNav />
+        <div className="flex-1 max-w-4xl mx-auto py-12 px-6 font-sans text-zinc-300">
             <h1 className="text-4xl font-bold text-white mb-6">AI Orchestration Router</h1>
             <p className="text-xl mb-12 text-zinc-400">
                 Optimize your AI infrastructure with intelligent, policy-driven routing.
@@ -68,6 +72,8 @@ export default function RouterDocs() {
 }`}</code></pre>
                 </div>
             </section>
+        </div>
+        <Footer />
         </div>
     );
 }

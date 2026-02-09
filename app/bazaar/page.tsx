@@ -3,6 +3,8 @@ import Link from 'next/link'
 import pool from '@/lib/db'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { TopNav } from '@/components/TopNav'
+import { Footer } from '@/components/Footer'
 
 export const metadata = {
     title: 'Bazaar | P402',
@@ -31,30 +33,7 @@ export default async function PublicBazaarPage() {
 
     return (
         <div className="min-h-screen flex flex-col font-sans selection:bg-primary selection:text-black">
-            <header className="border-b-2 border-black px-6 h-16 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-sm z-50">
-                <Link href="/" className="no-underline text-inherit relative z-10 group flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary border-2 border-black flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105">
-                        <img src="/favicon.png" alt="P402 Logo" className="w-6 h-6" />
-                    </div>
-                    <span className="text-xl font-black no-underline text-black uppercase hover:text-primary-dim transition-colors">
-                        P402 Bazaar
-                    </span>
-                </Link>
-                <div className="flex items-center gap-4">
-                    <Link href="/docs/bazaar" className="text-sm font-bold text-neutral-600 hover:text-black transition-colors underline decoration-2">
-                        API Spec
-                    </Link>
-                    {user ? (
-                        <Link href="/dashboard/bazaar" className="btn btn-primary">
-                            Dashboard
-                        </Link>
-                    ) : (
-                        <Link href="/login" className="btn btn-secondary">
-                            Sign In
-                        </Link>
-                    )}
-                </div>
-            </header>
+            <TopNav />
 
             <main className="flex-1 py-12 px-6">
                 <div className="max-w-[1280px] mx-auto">
@@ -91,9 +70,7 @@ export default async function PublicBazaarPage() {
                     )}
                 </div>
             </main>
-            <footer className="border-t-2 border-black p-12 text-center text-xs text-neutral-500 font-mono uppercase tracking-widest bg-white">
-                P402 Bazaar • The Global Registry for Agentic Services
-            </footer>
+            <Footer />
         </div>
     )
 }

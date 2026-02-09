@@ -1,7 +1,7 @@
 'use client'
 import { AppSidebar } from '@/components/layout/AppSidebar'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Menu, X } from 'lucide-react'
 import { Footer } from '@/components/Footer'
@@ -9,15 +9,29 @@ import { Footer } from '@/components/Footer'
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const { status } = useSession()
     const router = useRouter()
+    const pathname = usePathname()
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+    const [loadingTooLong, setLoadingTooLong] = useState(false)
+
+    // Allow public access to the Bazaar
+    const isPublicPage = pathname?.startsWith('/dashboard/bazaar')
 
     useEffect(() => {
-        if (status === 'unauthenticated') {
+        if (status === 'unauthenticated' && !isPublicPage) {
             router.push('/login')
         }
-    }, [status, router])
+    }, [status, router, isPublicPage])
 
-    if (status === 'loading') {
+    // Timeout: if session loading takes more than 8 seconds, show fallback
+    useEffect(() => {
+        if (status === 'loading' && !isPublicPage) {
+            const timer = setTimeout(() => setLoadingTooLong(true), 8000)
+            return () => clearTimeout(timer)
+        }
+        setLoadingTooLong(false)
+    }, [status, isPublicPage])
+
+    if (status === 'loading' && !isPublicPage) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-white">
                 <div className="flex flex-col items-center gap-4">
@@ -25,6 +39,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <div className="h-full w-full animate-loading-bar bg-primary origin-left" />
                     </div>
                     <span className="font-mono text-xs text-neutral-400 uppercase tracking-widest">Initializing System...</span>
+                    {loadingTooLong && (
+                        <div className="flex flex-col items-center gap-3 mt-4 animate-in fade-in duration-500">
+                            <span className="font-mono text-xs text-neutral-500">Session is taking longer than expected.</span>
+                            <button
+                                onClick={() => router.push('/login')}
+                                className="btn btn-secondary text-xs"
+                            >
+                                Go to Sign In
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         )
