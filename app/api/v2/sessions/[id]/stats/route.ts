@@ -3,15 +3,15 @@ import { getSessionAnalytics } from '@/lib/db/queries';
 import { z } from 'zod';
 
 const ParamsSchema = z.object({
-  sessionId: z.string().min(1)
+  id: z.string().min(1)
 });
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ sessionId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { sessionId } = ParamsSchema.parse(await params);
+    const { id: sessionId } = ParamsSchema.parse(await params);
 
     // Get real-time session analytics from database
     const analytics = await getSessionAnalytics(sessionId);

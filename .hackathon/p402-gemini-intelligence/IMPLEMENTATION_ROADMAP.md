@@ -9,6 +9,7 @@
 | Thinking Levels confused with Thought Signatures | Separated: `thinking_level` for depth, signatures for function call validation | `gemini-optimizer.ts` |
 | Risk of "baseline RAG" perception | Emphasized agentic tool execution (6 custom tools) | Throughout |
 | Missing Antigravity mention | Added to submission materials | `HACKATHON_SUBMISSION.md` |
+| Missing Blockchain Stack | Added Base (L2), Viem, RainbowKit details | `HACKATHON_SUBMISSION.md` |
 
 ---
 

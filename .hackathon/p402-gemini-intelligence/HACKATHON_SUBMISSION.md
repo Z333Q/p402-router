@@ -1,3 +1,4 @@
+
 # P402.io — Gemini 3 Hackathon Submission
 
 ## 📋 Quick Reference
@@ -8,6 +9,7 @@
 | **Track** | Marathon Agent + Vibe Engineering |
 | **Deadline** | February 9, 2026 @ 5:00 PM PST |
 | **Prize Target** | Grand Prize ($50,000) |
+| **Settlement** | Base L2 (Mainnet) |
 
 ---
 
@@ -45,7 +47,8 @@ P402 is an intelligence-native payment router for the Agentic Economy. It routes
 
 | Requirement | P402 Implementation | Evidence |
 |-------------|---------------------|----------|
-| Quality application development | Production-grade Next.js monolith with PostgreSQL, Redis, blockchain integration | Live at p402.io |
+| Quality application development | Production-grade Next.js monolith with PostgreSQL, Redis, **Base L2 (Viem/Wagmi)** | Live at p402.io |
+| **Wallet / Web3** | **RainbowKit** + **Wagmi** for seamless connection | Live at p402.io |
 | Leverages Gemini 3 | Uses gemini-3-pro-preview, gemini-3-flash-preview, text-embedding-004 | See `lib/intelligence/gemini-optimizer.ts` |
 | Code quality | TypeScript strict mode, comprehensive types, error handling | Public repository |
 | Functional | End-to-end working: routing → payment → intelligence → optimization | Demo video |
@@ -257,7 +260,7 @@ p402.io"
 │   └─────────────┘    └─────────────┘    └──────────────────────┘       │     │
 │                                                                         │     │
 ├─────────────────────────────────────────────────────────────────────────┤     │
-│                    x402 SETTLEMENT (Base L2)                            │     │
+│                    x402 SETTLEMENT (Base L2 • Viem • Wagmi)             │     │
 │                                                                         │     │
 │   USDC/USDT Micropayments │ 1% Platform Fee │ Treasury: 0xb23f...       │     │
 └─────────────────────────────────────────────────────────────────────────┘     │
@@ -298,6 +301,7 @@ Include these exact phrases in submission materials:
 7. "**Not baseline RAG** — we reason over routing patterns, not just retrieve data"
 8. "**Built with Google Antigravity**"
 9. "Gemini 3 optimizes HOW requests flow through OpenRouter, not the requests themselves"
+10. "Built on **Base L2** using modern **Viem/Wagmi** and **RainbowKit** stack"
 
 ---
 
