@@ -92,7 +92,7 @@ export const ProductionFeatures = () => {
                     {feature.title}
                   </h3>
                   <Badge
-                    variant={activeFeature === index ? "secondary" : "default"}
+                    variant={activeFeature === index ? "primary" : "default"}
                     className="text-xs"
                   >
                     {feature.status}
@@ -124,11 +124,11 @@ export const ProductionFeatures = () => {
           <div className="lg:sticky lg:top-8">
             <div className="p-8 bg-black text-white border-2 border-black shadow-[12px_12px_0px_#B6FF2E]">
               <h4 className="text-2xl font-black uppercase mb-4 text-primary">
-                {features[activeFeature].title}
+                {features[activeFeature]!.title}
               </h4>
 
               <p className="text-neutral-300 mb-6 leading-relaxed">
-                {features[activeFeature].description}
+                {features[activeFeature]!.description}
               </p>
 
               {/* Feature-specific content */}
@@ -181,7 +181,7 @@ export const ProductionFeatures = () => {
               )}
 
               <Link
-                href={features[activeFeature].demoPath}
+                href={features[activeFeature]!.demoPath}
                 className="inline-block mt-6 px-6 py-3 bg-primary text-black font-bold uppercase tracking-wider border-2 border-white hover:bg-white hover:text-black transition-colors"
               >
                 {activeFeature === 1 ? 'Check Health' :

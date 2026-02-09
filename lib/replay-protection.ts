@@ -46,7 +46,7 @@ export class ReplayProtection {
         // Validate format
         if (!normalizedHash.match(/^0x[a-f0-9]{64}$/)) {
             throw new ApiError({
-                code: 'INVALID_TX_HASH',
+                code: 'INVALID_INPUT',
                 status: 400,
                 message: 'Invalid transaction hash format',
                 requestId
@@ -117,7 +117,7 @@ export class ReplayProtection {
             'SELECT 1 FROM processed_tx_hashes WHERE tx_hash = $1',
             [txHash.toLowerCase()]
         );
-        return result.rowCount > 0;
+        return (result.rowCount ?? 0) > 0;
     }
 
     /**

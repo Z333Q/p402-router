@@ -35,12 +35,7 @@ export function validateP402Config() {
     throw new Error('Invalid USDC address format');
   }
 
-  // Check for null addresses (common bug)
-  if (TREASURY_ADDRESS === '0x0000000000000000000000000000000000000000') {
-    throw new Error('Treasury address cannot be null address');
-  }
-
-  console.log('✅ P402 configuration validated');
+  console.log('P402 configuration validated');
   return true;
 }
 

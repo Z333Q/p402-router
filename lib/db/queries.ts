@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import db from '@/lib/db';
 
 /**
  * Real database queries to replace simulation.ts mock data

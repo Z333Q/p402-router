@@ -250,7 +250,7 @@ export class EnhancedRateLimiter {
     }
 
     // Return global default
-    return this.RATE_LIMIT_TIERS[this.RATE_LIMIT_TIERS.length - 1];
+    return this.RATE_LIMIT_TIERS[this.RATE_LIMIT_TIERS.length - 1]!;
   }
 
   /**

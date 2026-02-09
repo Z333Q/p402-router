@@ -48,7 +48,7 @@ export default function CostDemoPage() {
                 type="text"
                 placeholder="Enter session ID..."
                 value={customSessionId}
-                onChange={(e) => setCustomSessionId(e.target.value)}
+                onChange={(value) => setCustomSessionId(value)}
                 className="flex-1"
               />
               <Button onClick={handleSetCustomSession} variant="primary">

@@ -3,17 +3,17 @@
  * Provides configured clients for interacting with various blockchain networks
  */
 
-import { createPublicClient, createWalletClient, http, PublicClient } from 'viem';
+import { createPublicClient, createWalletClient, http } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
 
 // Create public client for Base mainnet
-export const basePublicClient: PublicClient = createPublicClient({
+export const basePublicClient = createPublicClient({
   chain: base,
   transport: http()
 });
 
 // Create public client for Base Sepolia testnet
-export const baseSepoliaPublicClient: PublicClient = createPublicClient({
+export const baseSepoliaPublicClient = createPublicClient({
   chain: baseSepolia,
   transport: http()
 });
@@ -21,7 +21,7 @@ export const baseSepoliaPublicClient: PublicClient = createPublicClient({
 /**
  * Get the appropriate client based on environment
  */
-export function getClient(network: 'base' | 'base-sepolia' = 'base'): PublicClient {
+export function getClient(network: 'base' | 'base-sepolia' = 'base') {
   switch (network) {
     case 'base':
       return basePublicClient;

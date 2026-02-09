@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { SettlementService } from '@/lib/services/settlement-service'
 import { toApiErrorResponse, ApiError } from '@/lib/errors'
+import type { EIP3009Authorization } from '@/lib/x402/eip3009'
 
 // Payment Scheme Schemas
 const OnchainPaymentSchema = z.object({
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
                     decisionId,
                     amount,
                     asset,
-                    authorization: payment.authorization
+                    authorization: payment.authorization as unknown as EIP3009Authorization
                 });
                 break;
 
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
 
             default:
                 throw new ApiError({
-                    code: 'UNSUPPORTED_SCHEME',
+                    code: 'UNSUPPORTED_FEATURE',
                     status: 400,
                     message: `Payment scheme '${(payment as any).scheme}' is not supported`,
                     requestId
@@ -109,7 +110,6 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({
-            settled: true,
             scheme: payment.scheme,
             ...response
         });

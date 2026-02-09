@@ -1,11 +1,13 @@
 import { useState, useCallback } from 'react'
-import { useAccount, useSignTypedData } from 'wagmi'
+import { useAccount, useConnect, useBalance, useSignTypedData } from 'wagmi'
 import { TokenConfig } from '@/lib/tokens'
 import { P402_CONFIG } from '@/lib/constants'
 
-interface PaymentOptions {
-    token: TokenConfig
-    amount: string
+export interface PaymentOptions {
+    token?: TokenConfig
+    amount?: string
+    to?: string
+    value?: string
     recipient?: string  // Optional - defaults to P402 treasury
     validAfter?: number // Optional - defaults to now
     validBefore?: number // Optional - defaults to 1 hour from now
@@ -32,10 +34,31 @@ const EIP3009_TYPES = {
 } as const
 
 export function usePayment() {
-    const { address } = useAccount()
+    const { address, isConnected } = useAccount()
+    const { connectAsync, connectors } = useConnect()
+    const { data: balanceData } = useBalance({
+        address,
+        token: P402_CONFIG.USDC_ADDRESS as `0x${string}`,
+    })
     const { signTypedDataAsync } = useSignTypedData()
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    const balance = balanceData ? parseFloat(balanceData.formatted) : 0
+
+    const connect = useCallback(async () => {
+        setIsLoading(true)
+        try {
+            const connector = connectors[0]
+            if (connector) {
+                await connectAsync({ connector })
+            }
+        } catch (err: any) {
+            setError(err.message || 'Failed to connect wallet')
+        } finally {
+            setIsLoading(false)
+        }
+    }, [connectAsync, connectors])
 
     const pay = useCallback(async (options: PaymentOptions) => {
         if (!address) {
@@ -55,7 +78,7 @@ export function usePayment() {
             const nonce = '0x' + crypto.randomUUID().replace(/-/g, '').padEnd(64, '0'); // Random bytes32
 
             // Convert amount to wei (USDC has 6 decimals)
-            const amountWei = BigInt(parseFloat(options.amount) * 1e6);
+            const amountWei = BigInt(parseFloat(options.amount || '0') * 1e6);
 
             // 2. Sign EIP-3009 transferWithAuthorization
             const signature = await signTypedDataAsync({
@@ -123,5 +146,42 @@ export function usePayment() {
         }
     }, [address, signTypedDataAsync])
 
-    return { pay, isLoading, error }
+    const signPayment = useCallback(async (opts: { to: string; value: string; validAfter: number; validBefore: number }) => {
+        if (!address) throw new Error('Wallet not connected')
+
+        const nonce = '0x' + crypto.randomUUID().replace(/-/g, '').padEnd(64, '0') as `0x${string}`
+
+        const signature = await signTypedDataAsync({
+            domain: USDC_DOMAIN,
+            types: EIP3009_TYPES,
+            primaryType: 'TransferWithAuthorization',
+            message: {
+                from: address,
+                to: opts.to as `0x${string}`,
+                value: BigInt(opts.value),
+                validAfter: BigInt(opts.validAfter),
+                validBefore: BigInt(opts.validBefore),
+                nonce
+            }
+        })
+
+        const sig = signature.slice(2)
+        const v = parseInt(sig.slice(128, 130), 16)
+        const r = '0x' + sig.slice(0, 64)
+        const s = '0x' + sig.slice(64, 128)
+
+        return {
+            from: address,
+            to: opts.to,
+            value: opts.value,
+            validAfter: opts.validAfter,
+            validBefore: opts.validBefore,
+            nonce,
+            v,
+            r,
+            s
+        }
+    }, [address, signTypedDataAsync])
+
+    return { pay, signPayment, isLoading, error, account: address, isConnected, balance, connect }
 }

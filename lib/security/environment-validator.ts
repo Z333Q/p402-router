@@ -275,10 +275,11 @@ export class EnvironmentValidator {
 
       // Validate network configuration
       const rpcUrl = process.env.BASE_RPC_URL;
+      const chainId: number = P402_CONFIG.CHAIN_ID;
       if (rpcUrl) {
-        if (rpcUrl.includes('sepolia') && P402_CONFIG.CHAIN_ID !== 84532) {
+        if (rpcUrl.includes('sepolia') && chainId !== 84532) {
           errors.push('RPC URL indicates testnet but chain ID is for mainnet');
-        } else if (!rpcUrl.includes('sepolia') && P402_CONFIG.CHAIN_ID !== 8453) {
+        } else if (!rpcUrl.includes('sepolia') && chainId !== 8453) {
           errors.push('RPC URL indicates mainnet but chain ID is for testnet');
         }
       }

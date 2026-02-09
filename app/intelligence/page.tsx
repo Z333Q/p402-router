@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Badge } from '@/app/dashboard/_components/ui';
+import { TopNav } from '@/components/TopNav';
+import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
     title: 'P402 Intelligence | The Agentic Economy Research',
@@ -37,6 +39,7 @@ const PILLARS = [
 export default function IntelligencePage() {
     return (
         <div className="min-h-screen bg-black text-white font-sans selection:bg-[#B6FF2E] selection:text-black">
+            <TopNav />
             {/* Header */}
             <header className="border-b-2 border-neutral-800 p-8 lg:p-12">
                 <div className="max-w-7xl mx-auto">
@@ -143,6 +146,7 @@ export default function IntelligencePage() {
                     </div>
                 </section>
             </main>
+            <Footer />
         </div>
     );
 }

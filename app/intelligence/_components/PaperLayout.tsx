@@ -3,6 +3,8 @@
 import React from 'react';
 import { cn } from '@/lib/utils'; // Assuming standard shadcn util exists, or we replace
 import { DESIGN } from '../design';
+import { TopNav } from '@/components/TopNav';
+import { Footer } from '@/components/Footer';
 
 interface PaperLayoutProps {
     children: React.ReactNode;
@@ -20,6 +22,7 @@ interface PaperLayoutProps {
 export function PaperLayout({ children, title, subtitle, meta, toc, schema }: PaperLayoutProps) {
     return (
         <div className="min-h-screen bg-white text-black font-sans selection:bg-[#B6FF2E] selection:text-black">
+            <TopNav />
             {/* SEO Schema */}
             {schema && (
                 <script
@@ -129,6 +132,7 @@ export function PaperLayout({ children, title, subtitle, meta, toc, schema }: Pa
                 </aside>
 
             </div>
+            <Footer />
         </div>
     );
 }

@@ -38,10 +38,10 @@ export interface VerificationResult {
  * 3. USDC moves directly from user to treasury
  */
 export class EIP3009Verifier {
-  private provider: ethers.providers.Provider;
+  private provider: ethers.Provider;
   private usdcContract: ethers.Contract;
 
-  constructor(usdcAddress: string, provider: ethers.providers.Provider) {
+  constructor(usdcAddress: string, provider: ethers.Provider) {
     // USDC on Base supports EIP-3009 transferWithAuthorization
     const abi = [
       'function transferWithAuthorization(address from, address to, uint256 value, uint256 validAfter, uint256 validBefore, bytes32 nonce, uint8 v, bytes32 r, bytes32 s) external',
@@ -64,17 +64,18 @@ export class EIP3009Verifier {
   ): Promise<{ valid: boolean; error?: string }> {
     try {
       // Get USDC domain separator
-      const domainSeparator = await this.usdcContract.DOMAIN_SEPARATOR();
+      const domainSeparator = await this.usdcContract.getFunction('DOMAIN_SEPARATOR')();
 
       // Reconstruct EIP-712 typed data hash
-      const typeHash = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(
+      const typeHash = ethers.keccak256(
+        ethers.toUtf8Bytes(
           'TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)'
         )
       );
 
-      const structHash = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(
+      const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+      const structHash = ethers.keccak256(
+        abiCoder.encode(
           ['bytes32', 'address', 'address', 'uint256', 'uint256', 'uint256', 'bytes32'],
           [
             typeHash,
@@ -88,15 +89,15 @@ export class EIP3009Verifier {
         )
       );
 
-      const digest = ethers.utils.keccak256(
-        ethers.utils.solidityPack(
+      const digest = ethers.keccak256(
+        ethers.solidityPacked(
           ['string', 'bytes32', 'bytes32'],
           ['\x19\x01', domainSeparator, structHash]
         )
       );
 
       // Recover signer
-      const recoveredAddress = ethers.utils.recoverAddress(digest, {
+      const recoveredAddress = ethers.recoverAddress(digest, {
         v: signature.v,
         r: signature.r,
         s: signature.s
@@ -107,7 +108,7 @@ export class EIP3009Verifier {
       }
 
       // Check if authorization is still unused
-      const isUsed = await this.usdcContract.authorizationState(
+      const isUsed = await this.usdcContract.getFunction('authorizationState')(
         authorization.from,
         authorization.nonce
       );
@@ -126,8 +127,8 @@ export class EIP3009Verifier {
       }
 
       // Check balance
-      const balance = await this.usdcContract.balanceOf(authorization.from);
-      if (balance.lt(authorization.value)) {
+      const balance: bigint = await this.usdcContract.getFunction('balanceOf')(authorization.from);
+      if (balance < BigInt(authorization.value)) {
         return { valid: false, error: 'Insufficient USDC balance' };
       }
 
@@ -153,9 +154,9 @@ export class EIP3009Verifier {
       }
 
       // Execute transferWithAuthorization (facilitator pays gas)
-      const contractWithSigner = this.usdcContract.connect(facilitatorSigner);
+      const contractWithSigner = this.usdcContract.connect(facilitatorSigner) as ethers.Contract;
 
-      const tx = await contractWithSigner.transferWithAuthorization(
+      const tx = await contractWithSigner.getFunction('transferWithAuthorization')(
         authorization.from,
         authorization.to,
         authorization.value,
@@ -249,8 +250,7 @@ export class EIP3009Verifier {
       }
 
       // 3. Convert amount to USD (USDC has 6 decimals)
-      const amountUSDC = ethers.BigNumber.from(authorization.value);
-      const amountUSD = parseFloat(ethers.utils.formatUnits(amountUSDC, 6));
+      const amountUSD = parseFloat(ethers.formatUnits(authorization.value, 6));
 
       // 4. Verify amount meets minimum
       if (amountUSD < expectedAmountUSD * 0.99) { // Allow 1% tolerance
@@ -266,8 +266,9 @@ export class EIP3009Verifier {
       }
 
       // 5. Generate unique payment hash for replay protection
-      const paymentHash = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(
+      const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+      const paymentHash = ethers.keccak256(
+        abiCoder.encode(
           ['address', 'bytes32', 'uint256'],
           [authorization.from, authorization.nonce, authorization.value]
         )
@@ -302,7 +303,7 @@ export class EIP3009Verifier {
  * Factory function to create EIP3009Verifier for P402
  */
 export function createEIP3009Verifier(): EIP3009Verifier {
-  const provider = new ethers.providers.JsonRpcProvider(
+  const provider = new ethers.JsonRpcProvider(
     process.env.BASE_RPC_URL || 'https://mainnet.base.org'
   );
 

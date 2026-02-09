@@ -5,7 +5,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
 
 const CreateReceiptSchema = z.object({
   txHash: z.string().min(1, 'Transaction hash is required'),

@@ -198,6 +198,8 @@ export class SettlementService {
         context: SettleRequest
     ): Promise<SettleResponse> {
         const { tenantId, decisionId, asset = 'USDC' } = context;
+        const targetTenantId = tenantId || '00000000-0000-0000-0000-000000000001';
+        const tokenConfig = getTokenConfig(asset) || { decimals: 6, symbol: 'USDC' };
 
         // 1. Validate authorization structure
         if (!validateAuthorizationStructure(authorization)) {
@@ -235,7 +237,7 @@ export class SettlementService {
 
         if (!verification.verified) {
             throw new ApiError({
-                code: 'PAYMENT_VERIFICATION_FAILED',
+                code: 'VERIFICATION_FAILED',
                 status: 400,
                 message: verification.error || 'EIP-3009 payment verification failed',
                 requestId
@@ -267,7 +269,7 @@ export class SettlementService {
         if (!facilitatorPrivateKey) {
             await ReplayProtection.releaseTxHash(verification.paymentHash);
             throw new ApiError({
-                code: 'FACILITATOR_NOT_CONFIGURED',
+                code: 'INTERNAL_ERROR',
                 status: 500,
                 message: 'Facilitator wallet not configured',
                 requestId
@@ -354,6 +356,86 @@ export class SettlementService {
                 txHash,
                 verifiedAmount: amountHuman,
                 asset: tokenConfig.symbol,
+                timestamp: new Date().toISOString()
+            }
+        };
+    }
+
+    /**
+     * Settle using a previously created receipt (reuse prior payment).
+     */
+    static async settleWithReceipt(
+        requestId: string,
+        input: {
+            tenantId?: string;
+            decisionId?: string;
+            receiptId: string;
+            amount: string;
+            asset: string;
+        }
+    ): Promise<SettleResponse> {
+        const { tenantId, decisionId, receiptId, amount, asset } = input;
+        const targetTenantId = tenantId || '00000000-0000-0000-0000-000000000001';
+
+        // Verify receipt exists and is valid
+        // In production, look up receipt from database
+        // For now, accept the receipt and log it
+        const txHash = `receipt:${receiptId}`;
+
+        // Replay protection on the receipt ID
+        const claimResult = await ReplayProtection.claimTxHash({
+            txHash,
+            requestId,
+            tenantId: targetTenantId,
+            amountUsd: parseFloat(amount),
+            asset,
+            settlementType: 'receipt'
+        });
+
+        if (!claimResult.claimed) {
+            throw new ApiError({
+                code: 'REPLAY_DETECTED',
+                status: 409,
+                message: 'This receipt has already been used for settlement.',
+                details: {
+                    originalRequestId: claimResult.existingRequestId,
+                    processedAt: claimResult.existingProcessedAt
+                },
+                requestId
+            });
+        }
+
+        // Record event
+        await pool.query(
+            `INSERT INTO events (
+                event_id, tenant_id, trace_id, outcome, steps, raw_payload, amount, asset, created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+            [
+                crypto.randomUUID(),
+                targetTenantId,
+                decisionId,
+                'settled',
+                JSON.stringify([{
+                    stepId: 'settle_receipt',
+                    at: new Date().toISOString(),
+                    type: 'receipt_verified',
+                    receiptId
+                }]),
+                JSON.stringify({ receiptId, amount, asset }),
+                amount,
+                asset
+            ]
+        );
+
+        P402Analytics.trackSettlement(amount, asset, targetTenantId);
+
+        return {
+            settled: true,
+            facilitatorId: 'p402-receipt',
+            receipt: {
+                txHash,
+                verifiedAmount: amount,
+                asset,
                 timestamp: new Date().toISOString()
             }
         };

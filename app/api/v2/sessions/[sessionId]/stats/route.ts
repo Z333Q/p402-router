@@ -8,10 +8,10 @@ const ParamsSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
-    const { sessionId } = ParamsSchema.parse(params);
+    const { sessionId } = ParamsSchema.parse(await params);
 
     // Get real-time session analytics from database
     const analytics = await getSessionAnalytics(sessionId);

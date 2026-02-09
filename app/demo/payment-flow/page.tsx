@@ -250,7 +250,7 @@ export default function PaymentFlowDemoPage() {
 
           <Button
             onClick={runDemo}
-            disabled={!isConnected || isRunning || (balance && balance < demoAmount)}
+            disabled={!isConnected || isRunning || (balance != null && balance < demoAmount)}
             variant="primary"
           >
             {isRunning ? 'Running Demo...' : 'Start Payment Demo'}
