@@ -47,6 +47,15 @@ export async function GET() {
                     tokens: ["USDC", "EURC"],
                     features: ["EIP-3009", "AP2-Mandates"]
                 }
+            },
+            {
+                uri: "tag:erc8004.org,2025:trustless-agents",
+                config: {
+                    agentId: process.env.ERC8004_AGENT_ID || null,
+                    registry: "eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+                    registrationFile: "https://p402.io/.well-known/erc8004.json",
+                    supportedTrust: ["reputation"]
+                }
             }
         ]
     };

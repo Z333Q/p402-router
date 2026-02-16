@@ -16,6 +16,10 @@ export type ApiErrorCode =
     | 'GAS_PRICE_TOO_HIGH'
     | 'INVALID_AUTHORIZATION'
     | 'AUTHORIZATION_USED'
+    | 'ERC8004_REGISTRATION_FAILED'
+    | 'ERC8004_IDENTITY_NOT_FOUND'
+    | 'ERC8004_REPUTATION_UNAVAILABLE'
+    | 'ERC8004_VALIDATION_FAILED'
 
 export class ApiError extends Error {
     public readonly code: ApiErrorCode

@@ -23,7 +23,7 @@ export default async function Page() {
                 {/* Protocol Deep Dive / Features */}
                 <section id="product" className="py-24 bg-white border-t-2 border-black">
                     <div className="container mx-auto px-6 max-w-7xl">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                             <div className="card p-10 border-2 border-black bg-white shadow-[8px_8px_0px_#000]">
                                 <div className="text-[10px] font-black text-black mb-2 uppercase">EIP-3009 Settlement</div>
                                 <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Gasless Payments</h3>
@@ -46,6 +46,14 @@ export default async function Page() {
                                 <p className="text-sm font-bold leading-relaxed text-neutral-600">
                                     Live cost tracking, transaction history, and savings analytics. Complete audit trail with
                                     on-chain verification and multisig treasury security controls.
+                                </p>
+                            </div>
+                            <div className="card p-10 border-2 border-black bg-emerald-50 shadow-[8px_8px_0px_#000]">
+                                <div className="text-[10px] font-black text-black mb-2 uppercase">ERC-8004 Trustless Agents</div>
+                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">On-Chain Trust</h3>
+                                <p className="text-sm font-bold leading-relaxed text-neutral-600">
+                                    Every facilitator carries a verifiable on-chain identity and reputation score. Payment-backed
+                                    feedback ensures only real users build trust. No centralized reputation — just math.
                                 </p>
                             </div>
                         </div>
@@ -73,12 +81,14 @@ export default async function Page() {
                                     Read the Research →
                                 </Link>
                             </div>
-                            <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-px bg-white/20 border-2 border-white/20">
+                            <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-3 gap-px bg-white/20 border-2 border-white/20">
                                 {[
                                     { title: "Protocol Economics", desc: "Atomic settlement & market design.", link: "/intelligence/protocol-economics" },
                                     { title: "Machine Governance", desc: "Cryptographic AP2 mandates.", link: "/intelligence/machine-governance" },
                                     { title: "Agentic Orchestration", desc: "QoS semantic routing logic.", link: "/intelligence/agentic-orchestration" },
                                     { title: "The Sentinel Layer", desc: "Flash crash protection systems.", link: "/intelligence/sentinel-layer" },
+                                    { title: "Trustless Agents", desc: "ERC-8004 on-chain identity & reputation.", link: "/docs/erc8004" },
+                                    { title: "Validation Registry", desc: "High-value transaction verification.", link: "/docs/erc8004" },
                                 ].map((pillar, i) => (
                                     <Link key={i} href={pillar.link} className="group bg-neutral-900 p-8 hover:bg-black transition-colors">
                                         <h3 className="text-xl font-bold uppercase text-[#B6FF2E] mb-2 group-hover:underline decoration-2 underline-offset-4">

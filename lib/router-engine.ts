@@ -21,6 +21,11 @@ export type FacilitatorCandidate = {
         abi?: any
         recommendedFeeBps?: number
     }
+    erc8004?: {
+        agentId: string | null
+        verified: boolean
+        reputationScore: number | null
+    }
 }
 
 // DB Row Interface
@@ -37,6 +42,10 @@ interface FacilitatorDbRow {
     auth_config: any;
     capabilities: any; // Task-specific capabilities JSONB
     last_checked_at: string | null;
+    // ERC-8004 Trustless Agents
+    erc8004_agent_id: string | null;
+    erc8004_verified: boolean | null;
+    erc8004_reputation_cached: number | null;
 }
 
 export class RoutingEngine {
@@ -163,7 +172,8 @@ export class RoutingEngine {
         try {
             // Join with health table to get cached stats for fast planning
             const res = await pool.query(`
-                SELECT f.*, fh.status as health_status, fh.p95_settle_ms, fh.success_rate 
+                SELECT f.*, fh.status as health_status, fh.p95_settle_ms, fh.success_rate,
+                       f.erc8004_agent_id, f.erc8004_verified, f.erc8004_reputation_cached
                 FROM facilitators f
                 LEFT JOIN facilitator_health fh ON f.facilitator_id = fh.facilitator_id
                 WHERE f.status IN ('active', 'inactive')
@@ -284,6 +294,23 @@ export class RoutingEngine {
                         score -= 300; // Heavy penalty since they can't cross-chain
                     }
                 }
+
+                // ERC-8004 ON-CHAIN REPUTATION (Phase 2)
+                if (process.env.ERC8004_ENABLE_REPUTATION === 'true' && dbRow) {
+                    const erc8004Verified = dbRow.erc8004_verified === true;
+                    const erc8004Score = dbRow.erc8004_reputation_cached;
+
+                    // Verified identity bonus
+                    if (erc8004Verified) {
+                        score += 25;
+                    }
+
+                    // On-chain reputation modifier (-25 to +25)
+                    if (erc8004Score !== null && erc8004Score !== undefined) {
+                        const reputationDelta = (Number(erc8004Score) - 50) / 2;
+                        score += Math.round(reputationDelta);
+                    }
+                }
             }
 
             candidates.push({
@@ -298,7 +325,14 @@ export class RoutingEngine {
                     successRate: successRate,
                     lastCheckedAt: (dbRow && dbRow.last_checked_at) || new Date().toISOString()
                 },
-                payment: (adapter && typeof adapter.getPaymentConfig === 'function') ? adapter.getPaymentConfig() : undefined
+                payment: (adapter && typeof adapter.getPaymentConfig === 'function') ? adapter.getPaymentConfig() : undefined,
+                erc8004: dbRow ? {
+                    agentId: dbRow.erc8004_agent_id ?? null,
+                    verified: dbRow.erc8004_verified === true,
+                    reputationScore: dbRow.erc8004_reputation_cached !== null && dbRow.erc8004_reputation_cached !== undefined
+                        ? Number(dbRow.erc8004_reputation_cached)
+                        : null,
+                } : undefined,
             });
         }
 

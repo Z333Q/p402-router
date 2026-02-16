@@ -17,6 +17,7 @@ export function OnboardingChecklist() {
 
     const [dismissed, setDismissed] = useState(false);
     const [hasCheckedBazaar, setHasCheckedBazaar] = useState(false);
+    const [hasTrustEnabled, setHasTrustEnabled] = useState(false);
 
     // Check local storage for dismissal
     useEffect(() => {
@@ -31,6 +32,24 @@ export function OnboardingChecklist() {
         }
         const b = localStorage.getItem('bazaar_visited');
         if (b) setHasCheckedBazaar(true);
+    }, []);
+
+    // Check trust layer status
+    useEffect(() => {
+        const cached = localStorage.getItem('trust_layer_checked');
+        if (cached) {
+            setHasTrustEnabled(true);
+            return;
+        }
+        fetch('/api/v1/erc8004/reputation')
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (data?.facilitators?.some((f: { erc8004_verified: boolean }) => f.erc8004_verified)) {
+                    localStorage.setItem('trust_layer_checked', 'true');
+                    setHasTrustEnabled(true);
+                }
+            })
+            .catch(() => {});
     }, []);
 
 
@@ -52,6 +71,12 @@ export function OnboardingChecklist() {
             label: 'Explore Bazaar',
             description: 'Find a service to route.',
             completed: hasCheckedBazaar
+        },
+        {
+            id: 'trust',
+            label: 'Verify Trust Layer',
+            description: 'Check agent identity status.',
+            completed: hasTrustEnabled
         }
     ];
 
@@ -125,6 +150,15 @@ export function OnboardingChecklist() {
                                         </a>
                                     </div>
                                 )}
+                                {step.id === 'trust' && (
+                                    <div className="relative z-10">
+                                        <a href="/dashboard/trust">
+                                            <Button variant="secondary" className="text-[10px] py-1 px-3 border-2 border-black hover:bg-neutral-100">
+                                                Inspect
+                                            </Button>
+                                        </a>
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>
@@ -133,7 +167,7 @@ export function OnboardingChecklist() {
 
             {allCompleted && (
                 <div className="p-4 bg-black text-primary text-center font-black uppercase text-[11px] tracking-[0.2em]">
-                    Intelligence Layer Ready
+                    Intelligence & Trust Layer Ready
                 </div>
             )}
         </Card>

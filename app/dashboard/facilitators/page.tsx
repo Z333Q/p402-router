@@ -1,6 +1,7 @@
 'use client'
 import React, { useState } from 'react'
-import { Card, Button, Input, Badge, EmptyState, ErrorState } from '../_components/ui'
+import { Card, Button, Input, Badge, EmptyState, ErrorState, ProgressBar } from '../_components/ui'
+import { TrustBadge } from '../_components/TrustBadge'
 import { WalletRequired } from '../_components/WalletRequired';
 import { useFacilitators, Facilitator } from '@/hooks/useFacilitators'
 import { clsx } from 'clsx'
@@ -106,9 +107,14 @@ function FacilitatorCard({ f }: { f: Facilitator }) {
         <Card title={f.name} className="flex flex-col h-full bg-white relative overflow-hidden">
             {/* Status indicators */}
             <div className="flex justify-between items-center mb-6">
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                     <Badge tone={f.type === 'Global' ? 'info' : 'neutral'}>{f.type}</Badge>
                     {f.status === 'inactive' && <Badge tone="warn">Needs Config</Badge>}
+                    {f.erc8004Verified && (
+                        <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[9px]">
+                            ERC-8004
+                        </Badge>
+                    )}
                 </div>
                 <Badge tone={
                     healthStatus === 'healthy' ? 'ok' :
@@ -141,6 +147,13 @@ function FacilitatorCard({ f }: { f: Facilitator }) {
                         </div>
                     </div>
                 </div>
+
+                {/* ERC-8004 Trust Layer */}
+                <TrustBadge
+                    verified={f.erc8004Verified}
+                    score={f.erc8004ReputationCached}
+                    agentId={f.erc8004AgentId}
+                />
             </div>
 
             {f.health.lastChecked && (

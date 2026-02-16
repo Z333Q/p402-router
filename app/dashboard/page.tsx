@@ -13,6 +13,8 @@ import { OptimizationAlerts } from './_components/OptimizationAlerts';
 import { CacheAnalytics, CacheMini } from './_components/CacheAnalytics';
 import { ProviderStatus, ProviderMini } from './_components/ProviderStatus';
 import { CostComparison } from './_components/CostComparison';
+import { TrustMini } from './_components/TrustMini';
+import { TrustOverview } from './_components/TrustOverview';
 
 import { useSWRConfig } from 'swr';
 import { useEffect } from 'react';
@@ -46,6 +48,7 @@ export default function DashboardPage() {
                     <SpendMini />
                     <CacheMini />
                     <ProviderMini />
+                    <TrustMini />
                 </div>
             </div>
 
@@ -63,8 +66,13 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* Bottom: Provider Status (full width) */}
-            <ProviderStatus />
+            {/* Bottom Row: Provider Status + Trust Overview */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                    <ProviderStatus />
+                </div>
+                <TrustOverview />
+            </div>
         </div>
     );
 }

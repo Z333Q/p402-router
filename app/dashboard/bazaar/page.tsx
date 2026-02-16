@@ -1,6 +1,7 @@
 'use client'
 import React, { useState } from 'react'
 import { Card, Button, Badge, EmptyState, ErrorState, MetricBox } from '../_components/ui'
+import { TrustBadge } from '../_components/TrustBadge'
 import { WalletRequired } from '../_components/WalletRequired';
 import { ProTip } from '../_components/ProTip'
 import { useBazaar, BazaarResource } from '@/hooks/useBazaar'
@@ -24,6 +25,8 @@ export default function BazaarIndexPage() {
         setSearchTerm,
         selectedTag,
         setSelectedTag,
+        trustedOnly,
+        setTrustedOnly,
         allTags,
         refresh,
         performSync,
@@ -128,6 +131,15 @@ export default function BazaarIndexPage() {
                         />
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar w-full md:w-auto">
+                        <button
+                            onClick={() => setTrustedOnly(!trustedOnly)}
+                            className={clsx(
+                                "px-4 h-12 text-[10px] font-black uppercase tracking-widest transition-all border-2 whitespace-nowrap",
+                                trustedOnly ? "bg-emerald-500 text-white border-emerald-500" : "bg-neutral-800 text-neutral-400 border-transparent hover:text-emerald-400 hover:bg-neutral-700"
+                            )}
+                        >
+                            TRUSTED ONLY
+                        </button>
                         <button
                             onClick={() => setSelectedTag(null)}
                             className={clsx(
@@ -299,6 +311,9 @@ function BazaarCard({ r, onImport, onSimulate, onSettle, isImporting }: { r: Baz
             <div className="flex justify-between items-center mb-6 relative z-10">
                 <div className="flex flex-wrap gap-2">
                     {r.tags?.slice(0, 2).map(t => <Badge key={t} className="bg-neutral-50 text-[9px] border-neutral-200">{t}</Badge>)}
+                    {r.erc8004_verified && (
+                        <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[9px]">TRUSTLESS</Badge>
+                    )}
                 </div>
                 <Badge tone={health === 'healthy' ? 'ok' : health === 'down' ? 'bad' : 'neutral'} className="animate-pulse">
                     {health}
@@ -329,6 +344,11 @@ function BazaarCard({ r, onImport, onSimulate, onSettle, isImporting }: { r: Baz
                                     : '--- ms'}
                             </div>
                         </div>
+                        {r.erc8004_reputation != null && (
+                            <div className="text-[8px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 border border-emerald-200 uppercase tracking-tighter">
+                                <TrustBadge verified={r.erc8004_verified} score={r.erc8004_reputation} compact />
+                            </div>
+                        )}
                         <div className="text-[8px] font-bold text-neutral-400 uppercase tracking-tighter">
                             {r.total_calls && r.total_calls > 0 ? `${r.total_calls} CALLS` : 'DISCOVERY PENDING'}
                         </div>

@@ -19,6 +19,8 @@ export type BazaarResource = {
     success_rate_ledger?: number;
     p95_latency_ledger?: number;
     total_calls?: number;
+    erc8004_verified?: boolean;
+    erc8004_reputation?: number | null;
 };
 
 export type BazaarModel = {
@@ -39,6 +41,7 @@ export function useBazaar() {
     const [importing, setImporting] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
+    const [trustedOnly, setTrustedOnly] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -102,9 +105,10 @@ export function useBazaar() {
                 r.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 tags.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()));
             const matchesTag = !selectedTag || selectedTag === 'LLM MODELS' || tags.includes(selectedTag);
-            return matchesSearch && matchesTag;
+            const matchesTrust = !trustedOnly || r.erc8004_verified === true;
+            return matchesSearch && matchesTag && matchesTrust;
         });
-    }, [resources, searchTerm, selectedTag]);
+    }, [resources, searchTerm, selectedTag, trustedOnly]);
 
     const filteredModels = useMemo(() => {
         if (selectedTag && selectedTag !== 'LLM MODELS') return [];
@@ -145,6 +149,8 @@ export function useBazaar() {
         setSearchTerm,
         selectedTag,
         setSelectedTag,
+        trustedOnly,
+        setTrustedOnly,
         allTags,
         refresh: load,
         performSync,

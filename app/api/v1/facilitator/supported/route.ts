@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server";
+import { privateKeyToAccount } from "viem/accounts";
+
+function getSignerAddress(): string {
+    if (process.env.P402_SIGNER_ADDRESS) {
+        return process.env.P402_SIGNER_ADDRESS;
+    }
+    const pk = process.env.P402_FACILITATOR_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY;
+    if (pk) {
+        const prefixed = pk.startsWith('0x') ? pk : `0x${pk}`;
+        return privateKeyToAccount(prefixed as `0x${string}`).address;
+    }
+    return '0x0000000000000000000000000000000000000000';
+}
 
 export async function GET() {
+    const signerAddress = getSignerAddress();
+
     // x402-compliant fields
     const kinds = [
         { x402Version: 1, scheme: 'exact', network: 'eip155:8453' },
@@ -8,7 +23,7 @@ export async function GET() {
     ];
     const extensions = ['bazaar'];
     const signers = {
-        'eip155:*': [process.env.P402_SIGNER_ADDRESS ?? '0x0000000000000000000000000000000000000000']
+        'eip155:*': [signerAddress]
     };
 
     return NextResponse.json({

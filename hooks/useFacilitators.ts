@@ -16,6 +16,9 @@ export type Facilitator = {
         successRate: number;
         lastChecked: string | null;
     };
+    erc8004AgentId?: string | null;
+    erc8004Verified?: boolean;
+    erc8004ReputationCached?: number | null;
 };
 
 export function useFacilitators() {

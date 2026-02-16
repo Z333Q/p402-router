@@ -15,7 +15,8 @@ import {
     LogOut,
     Unplug,
     Activity,
-    X
+    X,
+    Shield
 } from "lucide-react"
 import { useSession, signOut } from "next-auth/react"
 import { useDisconnect } from 'wagmi'
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
     { name: "Security Audit", href: "/dashboard/audit", icon: ShieldCheck },
     { name: "Policies", href: "/dashboard/policies", icon: DatabaseZap },
     { name: "Facilitators", href: "/dashboard/facilitators", icon: Network },
+    { name: "Trust Layer", href: "/dashboard/trust", icon: Shield },
     { name: "Discovery Bazaar", href: "/dashboard/bazaar", icon: Store },
 ]
 

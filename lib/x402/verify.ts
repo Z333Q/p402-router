@@ -20,6 +20,7 @@ export interface X402PaymentHeader {
     version: string;
     network: number;
     token: Hex;
+    tokenSymbol?: string;
     txHash?: Hex;
     signature?: string;
     receiptId?: string;
@@ -34,13 +35,31 @@ export interface VerificationResult {
 }
 
 // =============================================================================
-// USDC CONTRACT CONFIG
+// TOKEN CONTRACT CONFIG
 // =============================================================================
 
-const USDC_ADDRESSES: Record<number, Hex> = {
-    8453: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Base Mainnet
-    84532: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // Base Sepolia
+const TOKEN_ADDRESSES: Record<number, Record<string, Hex>> = {
+    8453: {
+        USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Base Mainnet
+        USDT: '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2', // Base Mainnet (Bridged)
+    },
+    84532: {
+        USDC: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // Base Sepolia
+    },
 };
+
+/**
+ * Reverse-lookup: given a chain ID and contract address, find the token symbol.
+ */
+function resolveTokenSymbol(chainId: number, address: string): string | undefined {
+    const tokens = TOKEN_ADDRESSES[chainId];
+    if (!tokens) return undefined;
+    const lowerAddress = address.toLowerCase();
+    for (const [symbol, addr] of Object.entries(tokens)) {
+        if (addr.toLowerCase() === lowerAddress) return symbol;
+    }
+    return undefined;
+}
 
 const ERC20_ABI = [
     {
@@ -60,15 +79,18 @@ const ERC20_ABI = [
 
 export function parseX402Header(header: string): X402PaymentHeader | null {
     try {
-        // Format: x402-v1;network=8453;token=0x833...;tx=0xabc...
+        // Format: x402-v1;network=8453;token=0x833...;tok=USDC;tx=0xabc...
         const parts = header.split(';');
         const result: Partial<X402PaymentHeader> = {};
+        let tokSymbol: string | undefined;
 
         for (const part of parts) {
             if (part.startsWith('x402-')) {
                 result.version = part.replace('x402-', '');
             } else if (part.startsWith('network=')) {
                 result.network = parseInt(part.split('=')[1] ?? '0');
+            } else if (part.startsWith('tok=')) {
+                tokSymbol = part.split('=')[1];
             } else if (part.startsWith('token=')) {
                 result.token = (part.split('=')[1] ?? '') as Hex;
             } else if (part.startsWith('tx=')) {
@@ -80,6 +102,11 @@ export function parseX402Header(header: string): X402PaymentHeader | null {
             } else if (part.startsWith('amount=')) {
                 result.amount = part.split('=')[1] ?? '';
             }
+        }
+
+        // Store the token symbol for downstream use
+        if (tokSymbol) {
+            result.tokenSymbol = tokSymbol;
         }
 
         if (!result.version || !result.network) {
@@ -100,7 +127,8 @@ export async function verifyTransaction(
     txHash: Hex,
     expectedRecipient: Hex,
     minAmount: bigint,
-    chainId: number = 8453
+    chainId: number = 8453,
+    token: string = 'USDC'
 ): Promise<VerificationResult> {
     try {
         const rpcUrl = chainId === 8453
@@ -120,18 +148,18 @@ export async function verifyTransaction(
         }
 
         // Find Transfer event to treasury
-        const usdcAddress = USDC_ADDRESSES[chainId];
-        if (!usdcAddress) {
-            return { valid: false, error: `Unsupported chain: ${chainId}` };
+        const tokenAddress = TOKEN_ADDRESSES[chainId]?.[token];
+        if (!tokenAddress) {
+            return { valid: false, error: `Unsupported chain/token: ${chainId}/${token}` };
         }
 
         const transferLog = receipt.logs.find(log =>
-            log.address.toLowerCase() === usdcAddress.toLowerCase() &&
+            log.address.toLowerCase() === tokenAddress.toLowerCase() &&
             log.topics[2]?.toLowerCase() === `0x000000000000000000000000${expectedRecipient.slice(2).toLowerCase()}`
         );
 
         if (!transferLog) {
-            return { valid: false, error: 'No transfer to expected recipient found' };
+            return { valid: false, error: `No ${token} transfer to expected recipient found` };
         }
 
         // Decode amount
@@ -170,12 +198,21 @@ export async function verifyX402Payment(
         return { valid: false, error: 'Invalid X-402-Payment format' };
     }
 
-    // Convert USD to USDC (6 decimals)
+    // Resolve token symbol: prefer explicit tok= field, then reverse-lookup from token= address
+    let tokenSymbol = parsed.tokenSymbol;
+    if (!tokenSymbol && parsed.token) {
+        tokenSymbol = resolveTokenSymbol(parsed.network, parsed.token);
+    }
+    if (!tokenSymbol) {
+        tokenSymbol = 'USDC'; // Default for backwards compatibility
+    }
+
+    // Both USDC and USDT use 6 decimals
     const minAmount = parseUnits(minAmountUsd.toString(), 6);
 
     // Verify based on payment type
     if (parsed.txHash) {
-        return verifyTransaction(parsed.txHash, expectedRecipient, minAmount, parsed.network);
+        return verifyTransaction(parsed.txHash, expectedRecipient, minAmount, parsed.network, tokenSymbol);
     }
 
     if (parsed.receiptId) {

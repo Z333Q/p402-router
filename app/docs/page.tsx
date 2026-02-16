@@ -75,6 +75,18 @@ export default function DocsIndex() {
                         </p>
                         <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Get Started &rarr;</span>
                     </Link>
+
+                    {/* ERC-8004 Trustless Agents */}
+                    <Link href="/docs/erc8004" className="group block p-10 border-4 border-black bg-neutral-900 hover:bg-emerald-600 transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(16,185,129,1)]">
+                        <div className="flex items-center gap-4 mb-6">
+                            <span className="text-4xl text-white">🛡️</span>
+                            <h2 className="text-2xl font-black uppercase italic text-white group-hover:text-white">Trustless Agents</h2>
+                        </div>
+                        <p className="text-sm font-bold text-emerald-200 mb-8 min-h-[48px] uppercase tracking-tight">
+                            ERC-8004 on-chain identity, reputation, and validation. The trust layer for the agentic economy.
+                        </p>
+                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-white text-white inline-block">Explore Trust &rarr;</span>
+                    </Link>
                 </div>
 
                 <div className="mt-24 p-12 border-4 border-black bg-neutral-50 relative overflow-hidden">
@@ -86,6 +98,7 @@ export default function DocsIndex() {
                             <li><Link href="/WHITEPAPER_V3.md" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">📄 V3 Protocol Whitepaper</Link></li>
                             <li><Link href="/docs/api" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">🔌 API Reference</Link></li>
                             <li><Link href="/docs/sdk" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">📦 SDK & Tools</Link></li>
+                            <li><Link href="/docs/erc8004" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2 text-emerald-600">🛡️ ERC-8004 Trustless Agents Guide</Link></li>
                         </ul>
                     </div>
                     {/* Decorative Background Element */}

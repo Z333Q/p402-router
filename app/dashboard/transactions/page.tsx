@@ -4,6 +4,7 @@ import { getCurrentTenantId, getSettlements } from '@/lib/db/queries';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { P402_CONFIG } from '@/lib/constants';
+import { FeedbackIndicator } from '../_components/FeedbackIndicator';
 
 interface TransactionRowProps {
   settlement: {
@@ -90,6 +91,10 @@ function TransactionRow({ settlement }: TransactionRowProps) {
           </span>
         )}
       </td>
+
+      <td className="px-6 py-4">
+        <FeedbackIndicator settlementId={settlement.id} />
+      </td>
     </tr>
   );
 }
@@ -116,6 +121,9 @@ function TransactionsTableSkeleton() {
           </td>
           <td className="px-6 py-4">
             <div className="h-4 bg-neutral-200 rounded w-28"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-neutral-200 rounded w-16"></div>
           </td>
         </tr>
       ))}
@@ -176,6 +184,9 @@ async function TransactionsTable() {
             </th>
             <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">
               Transaction
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">
+              Trust
             </th>
           </tr>
         </thead>
@@ -251,6 +262,7 @@ export default async function TransactionsPage() {
                 <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase">Session</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase">Payer</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase">Transaction</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase">Trust</th>
               </tr>
             </thead>
             <tbody>
@@ -269,6 +281,7 @@ export default async function TransactionsPage() {
           <li>• <strong>EIP-3009 Gasless:</strong> User signs authorization, P402 pays gas</li>
           <li>• <strong>On-Chain Verification:</strong> User broadcasts transaction, P402 verifies</li>
           <li>• <strong>Receipt Reuse:</strong> Previous payment applied to new request</li>
+          <li>• <strong>Trust:</strong> ERC-8004 reputation feedback submitted after settlement</li>
           <li>• All transactions are cryptographically verified on Base L2</li>
         </ul>
       </div>

@@ -7,6 +7,7 @@ import { EIP3009Authorization, validateAuthorizationStructure } from '@/lib/x402
 import { TransferAuthorization, EIP3009Signature } from '@/lib/blockchain/eip3009'
 import { ReplayProtection } from '@/lib/replay-protection'
 import { P402_CONFIG } from '@/lib/constants'
+import { queueFeedback as queueERC8004Feedback } from '@/lib/erc8004/feedback-service'
 
 export interface SettleRequest {
     tenantId?: string;
@@ -168,6 +169,14 @@ export class SettlementService {
                 targetTenantId
             );
 
+            // ERC-8004 Reputation Feedback (async, non-blocking)
+            if (process.env.ERC8004_ENABLE_REPUTATION === 'true') {
+                queueERC8004Feedback({
+                    settled: true,
+                    facilitatorId: 'chain_base',
+                }).catch(err => console.error('[ERC8004] Feedback queue failed:', err));
+            }
+
             return {
                 settled: true,
                 facilitatorId: 'chain_base',
@@ -265,7 +274,7 @@ export class SettlementService {
         }
 
         // 5. Execute gasless transfer (P402 pays gas)
-        const facilitatorPrivateKey = process.env.FACILITATOR_PRIVATE_KEY;
+        const facilitatorPrivateKey = process.env.P402_FACILITATOR_PRIVATE_KEY;
         if (!facilitatorPrivateKey) {
             await ReplayProtection.releaseTxHash(verification.paymentHash);
             throw new ApiError({
@@ -348,6 +357,14 @@ export class SettlementService {
             targetTenantId
         );
 
+        // ERC-8004 Reputation Feedback (async, non-blocking)
+        if (process.env.ERC8004_ENABLE_REPUTATION === 'true') {
+            queueERC8004Feedback({
+                settled: true,
+                facilitatorId: 'p402-eip3009',
+            }).catch(err => console.error('[ERC8004] Feedback queue failed:', err));
+        }
+
         return {
             settled: true,
             facilitatorId: 'p402-eip3009',
@@ -428,6 +445,14 @@ export class SettlementService {
         );
 
         P402Analytics.trackSettlement(amount, asset, targetTenantId);
+
+        // ERC-8004 Reputation Feedback (async, non-blocking)
+        if (process.env.ERC8004_ENABLE_REPUTATION === 'true') {
+            queueERC8004Feedback({
+                settled: true,
+                facilitatorId: 'p402-receipt',
+            }).catch(err => console.error('[ERC8004] Feedback queue failed:', err));
+        }
 
         return {
             settled: true,
