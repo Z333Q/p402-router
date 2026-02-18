@@ -1,5 +1,6 @@
 import { TopNav } from '@/components/TopNav';
 import { Footer } from '@/components/Footer';
+import { CommandPaletteBar } from '../_components/CommandPaletteBar';
 
 const opsChecklist = [
   'Minimize stored payment metadata; never persist raw private keys or seed material.',
@@ -24,13 +25,15 @@ export default function WdkSecurityOpsPage() {
     <div className="min-h-screen bg-white text-black">
       <TopNav />
       <main className="max-w-5xl mx-auto py-16 px-6">
-        <div className="border-b-4 border-black pb-6 mb-10">
+        <div className="border-b-2 border-black pb-6 mb-8">
           <p className="text-xs font-black uppercase tracking-widest text-neutral-500">WDK Docs</p>
           <h1 className="text-5xl font-black uppercase italic tracking-tighter">Privacy & Security Operations</h1>
           <p className="mt-3 font-semibold text-neutral-700">
             Public-facing operational guidance for running WDK + USDT0 integrations safely in production.
           </p>
         </div>
+
+        <CommandPaletteBar />
 
         <section className="border-2 border-black p-5 mb-8">
           <h2 className="text-2xl font-black uppercase tracking-tight">Security Operations Baseline</h2>

@@ -1,84 +1,61 @@
 import Link from 'next/link';
 import { TopNav } from '@/components/TopNav';
 import { Footer } from '@/components/Footer';
+import { CommandPaletteBar } from '../_components/CommandPaletteBar';
+import { CopyBlock } from '../_components/CopyBlock';
 
-const steps = [
-  {
-    title: '1. Request a route quote',
-    body: 'Call POST /api/v1/liquidity/quote with invoice details and source assets (USDT0 preferred).'
-  },
-  {
-    title: '2. Prepare + sign intent',
-    body: 'Use your WDK signer adapter to sign token-aware typed data returned by P402.'
-  },
-  {
-    title: '3. Submit settlement',
-    body: 'POST signed payload to /api/v1/router/settle with quoteId/routeId for deterministic settlement.'
-  },
-  {
-    title: '4. Read receipt + route metadata',
-    body: 'Use response receipt to confirm source/destination chain, route class, and final tx hash.'
-  }
-];
+const curlExample = `curl -X POST https://p402.io/api/v1/router/settle \\
+  -H "Content-Type: application/json" \\
+  -d '{"quoteId":"q_123","routeId":"r_fast","authType":"eip3009","asset":"USDT0","amount":"1.00","payment":{...}}'`;
+
+const fetchExample = `await fetch('/api/v1/router/settle', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ quoteId: 'q_123', routeId: 'r_fast', authType: 'eip3009', asset: 'USDT0', amount: '1.00', payment: {...} })
+});`;
 
 export default function WdkQuickstartPage() {
   return (
     <div className="min-h-screen bg-white text-black">
       <TopNav />
-      <main className="max-w-4xl mx-auto py-16 px-6">
-        <div className="border-b-4 border-black pb-6 mb-10">
+      <main className="max-w-5xl mx-auto py-16 px-6">
+        <div className="border-b-2 border-black pb-6 mb-8">
           <p className="text-xs font-black uppercase tracking-widest text-neutral-500">WDK Docs</p>
           <h1 className="text-5xl font-black italic uppercase tracking-tighter">Quickstart</h1>
-          <p className="mt-3 font-semibold text-neutral-700">
-            Integrate WDK + USDT0 settlement with P402 in a production-safe flow.
-          </p>
+          <p className="mt-3 font-semibold text-neutral-700">Integrate WDK + USDT0 settlement with P402 in a production-safe flow.</p>
         </div>
 
-        <section className="space-y-4 mb-10">
-          {steps.map((step) => (
-            <article key={step.title} className="border-2 border-black p-5">
-              <h2 className="text-xl font-black uppercase tracking-tight">{step.title}</h2>
-              <p className="text-sm font-semibold text-neutral-700 mt-2">{step.body}</p>
-            </article>
-          ))}
+        <CommandPaletteBar />
+
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+          <div className="border-2 border-black p-4">
+            <h2 className="text-lg font-black uppercase border-b-2 border-black pb-2">Request Builder</h2>
+            <ul className="mt-3 text-sm font-semibold text-neutral-700 space-y-2">
+              <li>1) Quote route (`/liquidity/quote`)</li>
+              <li>2) Sign intent (WDK adapter)</li>
+              <li>3) Submit signed payload (`/router/settle`)</li>
+              <li>4) Read receipt and settlement metadata</li>
+            </ul>
+          </div>
+          <div className="border-2 border-black p-4 bg-neutral-100">
+            <h2 className="text-lg font-black uppercase border-b-2 border-black pb-2">Inspector</h2>
+            <p className="mt-3 text-sm font-semibold">Raw exchange: <span className="font-mono">402 header -> payment signature -> facilitator response</span>.</p>
+            <p className="mt-2 text-xs font-black uppercase text-cyan-600">Tabs (mobile): Request / 402 / Payment / Response / Logs</p>
+          </div>
         </section>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-black uppercase italic">TypeScript starter (SDK)</h2>
-          <pre className="bg-neutral-950 text-neutral-100 p-4 overflow-x-auto text-xs leading-6 border-4 border-black"><code>{`import { P402Client } from '@p402/sdk';
+        <CopyBlock title="Settlement request" code={curlExample} secondaryTitle="Copy fetch" secondaryCode={fetchExample} />
 
-const client = new P402Client({ apiKey: process.env.P402_API_KEY! });
-
-const quote = await client.quotePayment({
-  invoiceId: 'inv_123',
-  walletAddress: '0xabc...',
-  sourceAssets: ['USDT0', 'USDT', 'USDC'],
-  constraints: { maxFeeBps: 75, maxLatencyMs: 12000 }
-});
-
-const intent = await client.prepareIntent({
-  quoteId: quote.quoteId,
-  signer: wdkAdapter
-});
-
-const signedIntent = await client.signIntent(intent);
-const settled = await client.submitIntent(signedIntent);
-
-console.log('Receipt', settled.receipt);`}</code></pre>
-        </section>
-
-        <section className="mt-10 p-5 border-2 border-black bg-yellow-50">
-          <h3 className="text-lg font-black uppercase">Production notes</h3>
-          <ul className="list-disc pl-6 mt-2 text-sm font-semibold text-neutral-800 space-y-1">
-            <li>Always expire quotes aggressively (30-120s) when cross-chain routes are involved.</li>
-            <li>Persist quoteId + routeId + nonce for deterministic retries.</li>
-            <li>Map SDK errors to user-safe recovery prompts from /docs/wdk/errors.</li>
+        <section className="mt-8 p-4 border-2 border-black bg-yellow-50">
+          <h3 className="text-lg font-black uppercase">Keyboard shortcuts</h3>
+          <ul className="mt-2 text-sm font-semibold space-y-1 list-disc pl-6">
+            <li><span className="font-mono">⌘K</span> Open docs command nav</li>
+            <li><span className="font-mono">g a</span> Jump to API reference</li>
+            <li><span className="font-mono">g e</span> Jump to error codes</li>
           </ul>
         </section>
 
-
-
-        <section className="mt-10 p-5 border-2 border-black bg-emerald-50">
+        <section className="mt-8 p-4 border-2 border-black bg-emerald-50">
           <h3 className="text-lg font-black uppercase">Upstream WDK source-alignment checklist (pre-GA)</h3>
           <ul className="list-disc pl-6 mt-2 text-sm font-semibold text-neutral-800 space-y-1">
             <li>Confirm WDK signer API names and typed-data payload format against official docs and repo examples.</li>
@@ -88,9 +65,9 @@ console.log('Receipt', settled.receipt);`}</code></pre>
           </ul>
         </section>
 
-        <div className="mt-10 flex gap-4 text-sm font-black uppercase">
-          <Link href="/docs/wdk/api-reference" className="border-b-2 border-black">API Reference &rarr;</Link>
-          <Link href="/docs/wdk/errors" className="border-b-2 border-black">Error Codes &rarr;</Link>
+        <div className="mt-8 flex gap-4 text-sm font-black uppercase">
+          <Link href="/docs/wdk/api-reference" className="border-b-2 border-cyan-500 text-cyan-700">API Reference &rarr;</Link>
+          <Link href="/docs/wdk/errors" className="border-b-2 border-cyan-500 text-cyan-700">Error Codes &rarr;</Link>
         </div>
       </main>
       <Footer />

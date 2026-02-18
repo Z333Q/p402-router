@@ -1,5 +1,6 @@
 import { TopNav } from '@/components/TopNav';
 import { Footer } from '@/components/Footer';
+import { CommandPaletteBar } from '../_components/CommandPaletteBar';
 
 const phases = [
   {
@@ -37,13 +38,15 @@ export default function WdkMigrationGuidePage() {
     <div className="min-h-screen bg-white text-black">
       <TopNav />
       <main className="max-w-4xl mx-auto py-16 px-6">
-        <div className="border-b-4 border-black pb-6 mb-10">
+        <div className="border-b-2 border-black pb-6 mb-8">
           <p className="text-xs font-black uppercase tracking-widest text-neutral-500">WDK Docs</p>
           <h1 className="text-5xl font-black uppercase italic tracking-tighter">Migration Guide</h1>
           <p className="mt-3 font-semibold text-neutral-700">
             Migrate from USDC-only EIP-3009 integration to WDK + USDT0 routing with zero downtime.
           </p>
         </div>
+
+        <CommandPaletteBar />
 
         <div className="space-y-6">
           {phases.map((phase) => (
@@ -57,8 +60,6 @@ export default function WdkMigrationGuidePage() {
             </section>
           ))}
         </div>
-
-
 
         <section className="mt-8 border-2 border-black p-5 bg-emerald-50">
           <h2 className="text-lg font-black uppercase">Upstream lock checklist (release blocker)</h2>

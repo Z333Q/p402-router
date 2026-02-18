@@ -1,5 +1,6 @@
 import { TopNav } from '@/components/TopNav';
 import { Footer } from '@/components/Footer';
+import { CommandPaletteBar } from '../_components/CommandPaletteBar';
 
 const errors = [
   ['P402_QUOTE_EXPIRED', 'Quote TTL elapsed before signing', 'Re-request quote and prompt user to sign immediately'],
@@ -17,7 +18,7 @@ export default function WdkErrorCodesPage() {
     <div className="min-h-screen bg-white text-black">
       <TopNav />
       <main className="max-w-5xl mx-auto py-16 px-6">
-        <div className="border-b-4 border-black pb-6 mb-10">
+        <div className="border-b-2 border-black pb-6 mb-8">
           <p className="text-xs font-black uppercase tracking-widest text-neutral-500">WDK Docs</p>
           <h1 className="text-5xl font-black uppercase italic tracking-tighter">Error Code Reference</h1>
           <p className="mt-3 font-semibold text-neutral-700">
@@ -25,7 +26,9 @@ export default function WdkErrorCodesPage() {
           </p>
         </div>
 
-        <div className="overflow-x-auto border-4 border-black">
+        <CommandPaletteBar />
+
+        <div className="overflow-x-auto border-2 border-black">
           <table className="min-w-full text-left">
             <thead className="bg-black text-white text-xs uppercase tracking-widest">
               <tr>
