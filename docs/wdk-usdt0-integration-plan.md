@@ -410,3 +410,58 @@ To keep implementation and public docs aligned, track the following documentatio
 7. **`docs/wdk-usdt0-integration-plan.md` and `docs/wdk-usdt0-full-repo-audit.md` (internal planning)**
    - Internal source of truth for architecture decisions and direct/indirect implementation scope.
    - Public docs changes should link back to these when making non-trivial behavior changes.
+
+
+## 15) API v2 alignment plan (avoid duplicate surface area)
+
+To avoid fragmenting payment surfaces, WDK + USDT0 work should align with existing `/api/v2` patterns where practical and keep `/api/v1` as backward-compatibility path during migration.
+
+### A. Current v2 endpoints relevant to WDK
+
+- `app/api/v2/sessions/route.ts` and `app/api/v2/sessions/[id]/route.ts`
+  - Session lifecycle and tenant-bound context already exist in v2.
+- `app/api/v2/sessions/fund/route.ts`
+  - Existing funding path should become the canonical post-settlement crediting mechanism for WDK flows.
+- `app/api/v2/chat/completions/route.ts`
+  - Can consume funded sessions and should remain payment-method agnostic.
+- `app/api/v2/governance/mandates/route.ts`
+  - Policy/mandate controls can be extended for route constraints (fees, chain allowlists, bridge policy).
+
+### B. Proposed v2 additions/extensions
+
+1. **Quote endpoint (v2-native)**
+   - Add `POST /api/v2/payments/quote` as v2 canonical preflight route endpoint.
+   - Keep `POST /api/v1/liquidity/quote` as compatibility alias until migration window closes.
+
+2. **Settlement endpoint (v2-native)**
+   - Add `POST /api/v2/payments/settle` for signed intent settlement with `quoteId`, `routeId`, `client`, and `authType` metadata.
+   - Keep `/api/v1/router/settle` for legacy clients.
+
+3. **Receipt/status endpoint**
+   - Add `GET /api/v2/payments/{settlementId}` and/or `GET /api/v2/receipts/{receiptId}`
+   - Include route metadata (`sourceAsset`, `sourceChain`, `destinationChain`, `routeClass`, `totalFeeBps`).
+
+4. **Capabilities endpoint alignment**
+   - Expose dynamic payment capabilities in a v2 endpoint (or preserve `/api/v1/facilitator/supported` and document as source of truth).
+
+### C. Migration contract between v1 and v2
+
+- v1 remains stable while v2 endpoints are introduced.
+- v2 docs become primary once parity is reached.
+- Responses should expose common error codes (see error taxonomy) so SDK logic is shared across versions.
+- Add explicit deprecation milestones for v1 payment endpoints only after v2 GA readiness.
+
+### D. Documentation updates required for v2 alignment
+
+- `app/docs/wdk/api-reference/page.tsx`
+  - Add side-by-side v1 compatibility vs v2 canonical endpoint mapping.
+- `app/docs/wdk/quickstart/page.tsx`
+  - Default examples to v2 once implemented; keep v1 fallback note.
+- `app/docs/wdk/migration/page.tsx`
+  - Add “v1 -> v2 endpoint map” checklist.
+
+### E. SDK implications
+
+- SDK should prefer v2 endpoints when feature-detected.
+- SDK should auto-fallback to v1 if v2 payment endpoints are unavailable.
+- Maintain one unified SDK error surface independent of API version.
