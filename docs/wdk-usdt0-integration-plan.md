@@ -407,7 +407,11 @@ To keep implementation and public docs aligned, track the following documentatio
    - Canonical migration path from USDC-only to WDK + USDT0 flows.
    - Must track deprecation windows and compatibility guarantees.
 
-7. **`docs/wdk-usdt0-integration-plan.md` and `docs/wdk-usdt0-full-repo-audit.md` (internal planning)**
+7. **`app/docs/wdk/security/page.tsx`**
+   - Canonical public baseline for WDK privacy/security operations and release gates.
+   - Must remain aligned with upstream security guidance and internal conformance checklists.
+
+8. **`docs/wdk-usdt0-integration-plan.md` and `docs/wdk-usdt0-full-repo-audit.md` (internal planning)**
    - Internal source of truth for architecture decisions and direct/indirect implementation scope.
    - Public docs changes should link back to these when making non-trivial behavior changes.
 

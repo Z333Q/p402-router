@@ -26,6 +26,12 @@ const sections = [
     emoji: '🔁',
     title: 'Migration Guide',
     desc: 'Move from USDC-only EIP-3009 to WDK + USDT0 routing with minimal breakage.'
+  },
+  {
+    href: '/docs/wdk/security',
+    emoji: '🛡️',
+    title: 'Privacy & Security Ops',
+    desc: 'Operational privacy and security baselines for production WDK integrations.'
   }
 ];
 
