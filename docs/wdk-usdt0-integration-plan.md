@@ -537,3 +537,40 @@ Rules:
 - Owner: Integration Engineering + Docs owner + Security owner.
 - Cadence: validate upstream monthly (or per upstream WDK release), whichever comes first.
 - Metadata fields to include in docs: `validated_at`, `validated_by`, `upstream_refs`.
+
+
+## 17) Token rail constraints: legacy USDT vs USDT0 (x402 EVM implications)
+
+### A. Core constraint
+
+On EVM, treat x402-style exact settlement as **EIP-3009 gated** at token-contract level.
+- If token exposes `transferWithAuthorization/receiveWithAuthorization`, use EIP-3009 rail.
+- If token does not expose EIP-3009 surface, do not route through EIP-3009 path.
+
+### B. Operational policy for P402 routing
+
+1. **USDT0 (where deployed with required surface)**
+   - Prefer `authType = eip3009` for x402 exact flow.
+   - Validate per-chain contract interface before enabling by default.
+
+2. **Legacy USDT**
+   - Do **not** assume EIP-3009 support.
+   - Route via:
+     - `permit + transferFrom` (if supported), or
+     - direct transfer verification path, or
+     - bridge-to-USDT0 then settle with EIP-3009.
+
+3. **USDC baseline**
+   - Keep existing EIP-3009 path as known-safe reference behavior.
+
+### C. API behavior requirements
+
+- Quote response should return token-specific `authType` recommendations (`eip3009`, `permit`, `transfer`).
+- Settle should reject incompatible token/auth combinations with deterministic error code (e.g., `P402_AUTH_INVALID` / `P402_ROUTE_UNAVAILABLE`).
+- Capability endpoints should report auth support per asset+network pair, not globally.
+
+### D. Docs behavior requirements
+
+- Quickstart must explicitly warn that legacy USDT may not support EIP-3009.
+- API docs must include asset/auth capability matrix.
+- Version matrix must include per-asset auth support notes by chain.
