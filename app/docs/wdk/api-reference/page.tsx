@@ -57,6 +57,44 @@ export default function WdkApiReferencePage() {
           ))}
         </div>
 
+
+
+        <section className="mt-8 border-2 border-black p-4 bg-yellow-50">
+          <h2 className="text-lg font-black uppercase">Asset/Auth capability matrix (EVM)</h2>
+          <div className="overflow-x-auto mt-3 border-2 border-black">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-black text-white text-xs uppercase tracking-widest">
+                <tr>
+                  <th className="px-3 py-2">Asset Class</th>
+                  <th className="px-3 py-2">EIP-3009 Path</th>
+                  <th className="px-3 py-2">Recommended x402 Handling</th>
+                  <th className="px-3 py-2">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-t-2 border-black">
+                  <td className="px-3 py-2 font-mono">USDT0 (supported deployments)</td>
+                  <td className="px-3 py-2">Yes</td>
+                  <td className="px-3 py-2">Prefer <span className="font-mono">authType=eip3009</span></td>
+                  <td className="px-3 py-2">Validate exact contract surface per chain/version.</td>
+                </tr>
+                <tr className="border-t-2 border-black">
+                  <td className="px-3 py-2 font-mono">Legacy USDT</td>
+                  <td className="px-3 py-2">No (generally)</td>
+                  <td className="px-3 py-2">Permit/transfer fallback or bridge to USDT0</td>
+                  <td className="px-3 py-2">Do not assume <span className="font-mono">transferWithAuthorization</span>.</td>
+                </tr>
+                <tr className="border-t-2 border-black">
+                  <td className="px-3 py-2 font-mono">USDC</td>
+                  <td className="px-3 py-2">Yes</td>
+                  <td className="px-3 py-2">Standard <span className="font-mono">eip3009</span> flow</td>
+                  <td className="px-3 py-2">Current baseline implementation in P402.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <section className="mt-8 border-2 border-black p-4 bg-emerald-50">
           <h2 className="text-lg font-black uppercase">Upstream validation gates (before GA)</h2>
           <ul className="list-disc pl-6 mt-2 text-sm font-semibold text-neutral-700 space-y-1">

@@ -55,6 +55,17 @@ export default function WdkQuickstartPage() {
           </ul>
         </section>
 
+
+
+        <section className="mt-8 p-4 border-2 border-black bg-blue-50">
+          <h3 className="text-lg font-black uppercase">Token rail rule (important)</h3>
+          <ul className="mt-2 text-sm font-semibold space-y-1 list-disc pl-6">
+            <li><span className="font-mono">USDT0</span>: use <span className="font-mono">eip3009</span> rail when chain/version supports it.</li>
+            <li><span className="font-mono">Legacy USDT</span>: do <strong>not</strong> assume <span className="font-mono">transferWithAuthorization</span>; use permit/transfer fallback or bridge to USDT0 first.</li>
+            <li>x402 EVM reference path should be treated as EIP-3009-gated at payment-token level.</li>
+          </ul>
+        </section>
+
         <section className="mt-8 p-4 border-2 border-black bg-emerald-50">
           <h3 className="text-lg font-black uppercase">Upstream WDK source-alignment checklist (pre-GA)</h3>
           <ul className="list-disc pl-6 mt-2 text-sm font-semibold text-neutral-800 space-y-1">
