@@ -109,6 +109,37 @@ export default function WdkApiReferencePage() {
           </ul>
         </section>
 
+
+
+        <section className="mt-10 border-2 border-black p-5 bg-blue-50">
+          <h2 className="text-lg font-black uppercase">WDK API conformance table (fill before GA)</h2>
+          <p className="text-sm font-semibold text-neutral-700 mt-2">
+            Maintain exact upstream-to-P402 API mapping for method names and types. Do not mark GA until this table is complete and reviewed.
+          </p>
+          <div className="overflow-x-auto mt-4 border-2 border-black">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-black text-white text-xs uppercase tracking-widest">
+                <tr>
+                  <th className="px-3 py-2">Upstream Surface</th>
+                  <th className="px-3 py-2">Exact Type Signature</th>
+                  <th className="px-3 py-2">P402 Wrapper</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Source Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-t-2 border-black">
+                  <td className="px-3 py-2 font-mono">&lt;methodName&gt;</td>
+                  <td className="px-3 py-2 font-mono">&lt;type signature&gt;</td>
+                  <td className="px-3 py-2 font-mono">&lt;adapter method&gt;</td>
+                  <td className="px-3 py-2">planned</td>
+                  <td className="px-3 py-2 font-mono">&lt;docs/ref&gt;</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
       </main>
       <Footer />
     </div>

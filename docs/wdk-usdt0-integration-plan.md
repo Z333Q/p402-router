@@ -465,3 +465,71 @@ To avoid fragmenting payment surfaces, WDK + USDT0 work should align with existi
 - SDK should prefer v2 endpoints when feature-detected.
 - SDK should auto-fallback to v1 if v2 payment endpoints are unavailable.
 - Maintain one unified SDK error surface independent of API version.
+
+
+## 16) WDK conformance plan (exact API names/types + runtime/security alignment)
+
+This section is the release-gating plan to ensure P402 uses **exact** upstream WDK API surfaces and documented runtime/security patterns.
+
+### A. Exact API surface conformance (names + types)
+
+Before implementation PR merge, produce and maintain a mapping table with exact upstream names/types:
+
+| Upstream surface | Upstream type signature | P402 wrapper surface | Status | Notes |
+|---|---|---|---|---|
+| `<upstream method>` | `<exact type>` | `<adapter method>` | `planned/implemented/verified` | `<link + rationale>` |
+
+Rules:
+1. No inferred/renamed adapter methods without explicit mapping rationale.
+2. Every adapter method in `sdk/src/types.ts` must reference upstream method/type source.
+3. CI check: fail docs PR if mapping table is missing required fields.
+
+### B. Build-with-AI runtime pattern alignment
+
+For agent runtime behavior, explicitly document conformance against official Build-with-AI guidance:
+- Agent runtime model assumptions (long-lived vs ephemeral agents).
+- Recommended wallet lifecycle (init, session scope, rotation, teardown).
+- Device/agent key handling boundaries (where keys live, who signs, who delegates).
+
+Release gate:
+- Add a conformance checklist item proving each runtime assumption has an upstream citation and an implementation owner.
+
+### C. Canonical terminology and claims policy
+
+To avoid ecosystem conflicts, enforce terminology guardrails:
+- Avoid superlatives like `first`, `native`, or `official` unless source-verifiable.
+- Prefer neutral language: `supported`, `compatible`, `integrated`, `beta`.
+- Maintain a claims ledger for public docs/deck copy with source link + reviewer signoff.
+
+Release gate:
+- Public docs + deck copy require claim review against upstream docs before publish.
+
+### D. Security guidance ingestion (from upstream docs)
+
+Capture and enforce upstream security recommendations in one checklist:
+- Key custody modes and threat boundaries.
+- Signing delegation boundaries and approval scope.
+- Nonce/expiry/replay protections for delegated signing.
+- Threat model assumptions for agent/device wallets.
+
+Release gate:
+- Security checklist must be attached to settlement strategy PRs and signed by implementation + security reviewers.
+
+### E. Version pinning matrix for developer docs
+
+Publish and maintain a version compatibility matrix:
+
+| WDK version | P402 SDK version | Chains supported | Auth modes | Known constraints | Last validated |
+|---|---|---|---|---|---|
+| `<wdk version>` | `<sdk version>` | `<chain list>` | `<eip3009/permit/...>` | `<limits>` | `<date>` |
+
+Rules:
+1. Quickstart must reference the same version matrix.
+2. API examples must include version context where behavior differs.
+3. Any breaking upstream change requires matrix update before release.
+
+### F. Operational ownership and cadence
+
+- Owner: Integration Engineering + Docs owner + Security owner.
+- Cadence: validate upstream monthly (or per upstream WDK release), whichever comes first.
+- Metadata fields to include in docs: `validated_at`, `validated_by`, `upstream_refs`.
