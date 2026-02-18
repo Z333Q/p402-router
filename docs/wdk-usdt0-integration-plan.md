@@ -377,3 +377,36 @@ Checklist:
 3. Confirm AI-agent runtime wording and avoid claims not explicitly supported by upstream docs.
 4. Publish a compatibility matrix (`WDK version -> P402 SDK version -> auth modes`).
 5. Stamp docs with `validated_at` and `validated_by` metadata for maintenance.
+
+
+## 14) Documentation surface mapping (app/docs linkage)
+
+To keep implementation and public docs aligned, track the following documentation surfaces as explicit deliverables:
+
+1. **`app/docs/page.tsx` (discoverability gateway)**
+   - Must include and maintain the `/docs/wdk` entry card.
+   - Copy should reflect current rollout stage (e.g., beta vs GA wording).
+
+2. **`app/docs/wdk/page.tsx` (WDK docs landing)**
+   - Must remain the canonical index for Quickstart, API reference, errors, and migration pages.
+   - Should include links only to pages that are actively maintained.
+
+3. **`app/docs/wdk/quickstart/page.tsx`**
+   - Canonical first-run integration path (`quote -> sign -> settle -> receipt`).
+   - Must include upstream-validation and production-readiness notes.
+
+4. **`app/docs/wdk/api-reference/page.tsx`**
+   - Canonical contract skeleton for quote/settle/capability endpoints.
+   - Must stay synchronized with real API payload schemas and versioning notes.
+
+5. **`app/docs/wdk/errors/page.tsx`**
+   - Canonical error code reference for backend/SDK/UI parity.
+   - Must be updated alongside any new error code introduction.
+
+6. **`app/docs/wdk/migration/page.tsx`**
+   - Canonical migration path from USDC-only to WDK + USDT0 flows.
+   - Must track deprecation windows and compatibility guarantees.
+
+7. **`docs/wdk-usdt0-integration-plan.md` and `docs/wdk-usdt0-full-repo-audit.md` (internal planning)**
+   - Internal source of truth for architecture decisions and direct/indirect implementation scope.
+   - Public docs changes should link back to these when making non-trivial behavior changes.
