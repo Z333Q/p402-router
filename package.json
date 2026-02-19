@@ -16,6 +16,10 @@
     "test:build": "vitest run __tests__/build-smoke.test.ts --testTimeout=120000",
     "test:routes": "vitest run __tests__/route-integrity.test.ts __tests__/api-exports.test.ts",
     "test:all": "vitest run && vitest run __tests__/build-smoke.test.ts --testTimeout=120000",
+    "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test tests/e2e/smoke.spec.ts",
+    "test:e2e:resilience": "playwright test tests/e2e/error-resilience.spec.ts",
+    "test:e2e:ui": "playwright test --ui",
     "prepare": "husky install"
   },
   "lint-staged": {
@@ -58,6 +62,7 @@
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
     "@testing-library/user-event": "^14.6.1",
