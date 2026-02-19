@@ -9,31 +9,47 @@ import pool from '@/lib/db';
  */
 export async function GET() {
     try {
-        const result = await pool.query(`
-          WITH metrics AS (
-            SELECT 
-                route_id,
-                COUNT(*) as total_calls,
-                CASE 
-                    WHEN COUNT(*) > 0 THEN (SUM(CASE WHEN success THEN 1 ELSE 0 END)::FLOAT / COUNT(*))
-                    ELSE 1.0 
-                END as real_success_rate,
-                PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms) as real_p95_latency
-            FROM router_decisions
-            GROUP BY route_id
-          )
-          SELECT 
-            r.*,
-            fh.status as health_status,
-            fh.last_checked_at as health_last_checked,
-            COALESCE(m.total_calls, 0) as total_calls,
-            COALESCE(m.real_success_rate, 1.0) as success_rate_ledger,
-            COALESCE(m.real_p95_latency, 0) as p95_latency_ledger
-          FROM bazaar_resources r
-          LEFT JOIN facilitator_health fh ON r.source_facilitator_id = fh.facilitator_id
-          LEFT JOIN metrics m ON m.route_id = 'route_' || r.canonical_route_id
-          ORDER BY r.rank_score DESC, r.updated_at DESC
-        `);
+        let result;
+        try {
+            result = await pool.query(`
+              WITH metrics AS (
+                SELECT
+                    route_id,
+                    COUNT(*) as total_calls,
+                    CASE
+                        WHEN COUNT(*) > 0 THEN (SUM(CASE WHEN success THEN 1 ELSE 0 END)::FLOAT / COUNT(*))
+                        ELSE 1.0
+                    END as real_success_rate,
+                    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms) as real_p95_latency
+                FROM router_decisions
+                GROUP BY route_id
+              )
+              SELECT
+                r.*,
+                fh.status as health_status,
+                fh.last_checked_at as health_last_checked,
+                COALESCE(m.total_calls, 0) as total_calls,
+                COALESCE(m.real_success_rate, 1.0) as success_rate_ledger,
+                COALESCE(m.real_p95_latency, 0) as p95_latency_ledger
+              FROM bazaar_resources r
+              LEFT JOIN facilitator_health fh ON r.source_facilitator_id = fh.facilitator_id
+              LEFT JOIN metrics m ON m.route_id = 'route_' || r.canonical_route_id
+              ORDER BY r.rank_score DESC, r.updated_at DESC
+            `);
+        } catch (innerErr: any) {
+            if (innerErr.code === '42P01') {
+                // router_decisions table doesn't exist yet — return resources without metrics
+                result = await pool.query(`
+                  SELECT r.*, fh.status as health_status, fh.last_checked_at as health_last_checked,
+                    0 as total_calls, 1.0 as success_rate_ledger, 0 as p95_latency_ledger
+                  FROM bazaar_resources r
+                  LEFT JOIN facilitator_health fh ON r.source_facilitator_id = fh.facilitator_id
+                  ORDER BY r.rank_score DESC, r.updated_at DESC
+                `);
+            } else {
+                throw innerErr;
+            }
+        }
 
         return NextResponse.json({
             resources: result.rows,

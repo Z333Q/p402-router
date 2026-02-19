@@ -90,7 +90,8 @@ export async function GET(req: Request) {
     try {
         const batchSize = 2;
         const cursorKey = "cron:fac_health:cursor";
-        const cursorRaw = await redis.get(cursorKey);
+        let cursorRaw: string | null = null;
+        try { cursorRaw = await redis.get(cursorKey); } catch { /* Redis unavailable — start from offset 0 */ }
         const offset = Number(cursorRaw || "0");
 
         // Fetch facilitators in batches
@@ -105,7 +106,7 @@ export async function GET(req: Request) {
 
         if (rows.length === 0 && offset > 0) {
             // Reset cursor if we've reached the end
-            await redis.set(cursorKey, "0");
+            try { await redis.set(cursorKey, "0"); } catch { /* Redis unavailable */ }
             return NextResponse.json({ ok: true, batch: [], message: "Cursor reset" });
         }
 
@@ -152,7 +153,7 @@ export async function GET(req: Request) {
 
         // Update cursor
         const nextOffset = offset + rows.length;
-        await redis.set(cursorKey, String(nextOffset));
+        try { await redis.set(cursorKey, String(nextOffset)); } catch { /* Redis unavailable */ }
 
         return NextResponse.json({ ok: true, batch: results, nextOffset });
     } catch (e: any) {

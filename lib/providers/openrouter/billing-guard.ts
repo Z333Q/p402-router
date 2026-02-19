@@ -76,18 +76,24 @@ export class BillingGuard {
     async checkRateLimit(ctx: BillingContext): Promise<void> {
         const key = `p402:ratelimit:${ctx.userId}`;
 
-        const count = await redis.incr(key);
-        if (count === 1) {
-            await redis.expire(key, CONFIG.RATE_LIMIT_WINDOW_SECONDS);
-        }
+        try {
+            const count = await redis.incr(key);
+            if (count === 1) {
+                await redis.expire(key, CONFIG.RATE_LIMIT_WINDOW_SECONDS);
+            }
 
-        if (count > CONFIG.RATE_LIMIT_REQUESTS) {
-            const ttl = await redis.ttl(key);
-            throw new BillingGuardError(
-                `Rate limit exceeded. Try again in ${ttl} seconds.`,
-                'RATE_LIMIT_EXCEEDED',
-                ttl * 1000
-            );
+            if (count > CONFIG.RATE_LIMIT_REQUESTS) {
+                const ttl = await redis.ttl(key);
+                throw new BillingGuardError(
+                    `Rate limit exceeded. Try again in ${ttl} seconds.`,
+                    'RATE_LIMIT_EXCEEDED',
+                    ttl * 1000
+                );
+            }
+        } catch (err) {
+            if (err instanceof BillingGuardError) throw err;
+            // Redis unavailable — degrade gracefully, allow request
+            console.warn('[BillingGuard] checkRateLimit: Redis unavailable, skipping', (err as Error).message);
         }
     }
 
@@ -99,17 +105,23 @@ export class BillingGuard {
         const today = new Date().toISOString().split('T')[0];
         const key = `p402:daily_spend:${ctx.userId}:${today}`;
 
-        const spentStr = await redis.get(key);
-        const spent = parseFloat(spentStr || '0');
+        try {
+            const spentStr = await redis.get(key);
+            const spent = parseFloat(spentStr || '0');
 
-        if (spent >= CONFIG.DAILY_SPEND_LIMIT_USD) {
-            throw new BillingGuardError(
-                `Daily spending limit of $${CONFIG.DAILY_SPEND_LIMIT_USD} reached.`,
-                'DAILY_LIMIT_EXCEEDED'
-            );
+            if (spent >= CONFIG.DAILY_SPEND_LIMIT_USD) {
+                throw new BillingGuardError(
+                    `Daily spending limit of $${CONFIG.DAILY_SPEND_LIMIT_USD} reached.`,
+                    'DAILY_LIMIT_EXCEEDED'
+                );
+            }
+
+            return spent;
+        } catch (err) {
+            if (err instanceof BillingGuardError) throw err;
+            console.warn('[BillingGuard] checkDailySpend: Redis unavailable, skipping', (err as Error).message);
+            return 0;
         }
-
-        return spent;
     }
 
     // -------------------------------------------------------------------------
@@ -118,16 +130,23 @@ export class BillingGuard {
 
     async checkConcurrentReservations(ctx: BillingContext): Promise<number> {
         const pattern = `p402:reservation:${ctx.userId}:*`;
-        const keys = await redis.keys(pattern);
 
-        if (keys.length >= CONFIG.MAX_CONCURRENT_RESERVATIONS) {
-            throw new BillingGuardError(
-                `Too many concurrent requests. Max ${CONFIG.MAX_CONCURRENT_RESERVATIONS} allowed.`,
-                'TOO_MANY_CONCURRENT'
-            );
+        try {
+            const keys = await redis.keys(pattern);
+
+            if (keys.length >= CONFIG.MAX_CONCURRENT_RESERVATIONS) {
+                throw new BillingGuardError(
+                    `Too many concurrent requests. Max ${CONFIG.MAX_CONCURRENT_RESERVATIONS} allowed.`,
+                    'TOO_MANY_CONCURRENT'
+                );
+            }
+
+            return keys.length;
+        } catch (err) {
+            if (err instanceof BillingGuardError) throw err;
+            console.warn('[BillingGuard] checkConcurrentReservations: Redis unavailable, skipping', (err as Error).message);
+            return 0;
         }
-
-        return keys.length;
     }
 
     // -------------------------------------------------------------------------
@@ -137,22 +156,25 @@ export class BillingGuard {
     async checkAnomaly(ctx: BillingContext, estimatedCost: number): Promise<void> {
         const key = `p402:cost_history:${ctx.userId}`;
 
-        // Get recent costs
-        const history = await redis.lrange(key, 0, 99);
-        if (history.length < 10) return; // Not enough data
+        try {
+            const history = await redis.lrange(key, 0, 99);
+            if (history.length < 10) return; // Not enough data
 
-        const costs = history.map(parseFloat);
-        const mean = costs.reduce((a, b) => a + b, 0) / costs.length;
-        const variance = costs.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / costs.length;
-        const stdDev = Math.sqrt(variance);
+            const costs = history.map(parseFloat);
+            const mean = costs.reduce((a, b) => a + b, 0) / costs.length;
+            const variance = costs.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / costs.length;
+            const stdDev = Math.sqrt(variance);
 
-        if (stdDev === 0) return;
+            if (stdDev === 0) return;
 
-        const zScore = (estimatedCost - mean) / stdDev;
+            const zScore = (estimatedCost - mean) / stdDev;
 
-        if (zScore > CONFIG.ANOMALY_ZSCORE_THRESHOLD) {
-            // Log anomaly but don't block (soft alert)
-            console.warn(`[BillingGuard] Anomaly detected for ${ctx.userId}: z-score=${zScore.toFixed(2)}, cost=$${estimatedCost}`);
+            if (zScore > CONFIG.ANOMALY_ZSCORE_THRESHOLD) {
+                console.warn(`[BillingGuard] Anomaly detected for ${ctx.userId}: z-score=${zScore.toFixed(2)}, cost=$${estimatedCost}`);
+            }
+        } catch (err) {
+            // Anomaly detection is a soft guard — never block a request due to Redis failure
+            console.warn('[BillingGuard] checkAnomaly: Redis unavailable, skipping', (err as Error).message);
         }
     }
 
@@ -177,8 +199,11 @@ export class BillingGuard {
         const reservationId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const key = `p402:reservation:${ctx.userId}:${reservationId}`;
 
-        // Atomically reserve
-        await redis.setex(key, CONFIG.RESERVATION_TTL_SECONDS, amount.toString());
+        try {
+            await redis.setex(key, CONFIG.RESERVATION_TTL_SECONDS, amount.toString());
+        } catch (err) {
+            console.warn('[BillingGuard] reserveBudget: Redis unavailable, proceeding without reservation', (err as Error).message);
+        }
 
         return {
             reservationId,
@@ -189,24 +214,29 @@ export class BillingGuard {
 
     async releaseReservation(ctx: BillingContext, reservationId: string): Promise<void> {
         const key = `p402:reservation:${ctx.userId}:${reservationId}`;
-        await redis.del(key);
+        try {
+            await redis.del(key);
+        } catch (err) {
+            console.warn('[BillingGuard] releaseReservation: Redis unavailable', (err as Error).message);
+        }
     }
 
     async finalizeSpend(ctx: BillingContext, reservationId: string, actualCost: number): Promise<void> {
-        // Release reservation
         await this.releaseReservation(ctx, reservationId);
 
-        // Record daily spend
-        const today = new Date().toISOString().split('T')[0];
-        const dailyKey = `p402:daily_spend:${ctx.userId}:${today}`;
-        await redis.incrbyfloat(dailyKey, actualCost);
-        await redis.expire(dailyKey, 86400 * 2); // Keep for 2 days
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const dailyKey = `p402:daily_spend:${ctx.userId}:${today}`;
+            await redis.incrbyfloat(dailyKey, actualCost);
+            await redis.expire(dailyKey, 86400 * 2);
 
-        // Update cost history
-        const historyKey = `p402:cost_history:${ctx.userId}`;
-        await redis.lpush(historyKey, actualCost.toString());
-        await redis.ltrim(historyKey, 0, 99);
-        await redis.expire(historyKey, 86400 * 30); // Keep for 30 days
+            const historyKey = `p402:cost_history:${ctx.userId}`;
+            await redis.lpush(historyKey, actualCost.toString());
+            await redis.ltrim(historyKey, 0, 99);
+            await redis.expire(historyKey, 86400 * 30);
+        } catch (err) {
+            console.warn('[BillingGuard] finalizeSpend: Redis unavailable, spend not recorded in cache', (err as Error).message);
+        }
     }
 
     // -------------------------------------------------------------------------
