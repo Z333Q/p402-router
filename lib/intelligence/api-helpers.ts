@@ -20,18 +20,23 @@ export async function checkRateLimit(
         return { allowed: true, remaining: limit.requests, resetAt: Date.now() + limit.windowMs };
     }
 
-    const current = await redis.incr(key);
-    if (current === 1) {
-        await redis.pexpire(key, limit.windowMs);
+    try {
+        const current = await redis.incr(key);
+        if (current === 1) {
+            await redis.pexpire(key, limit.windowMs);
+        }
+
+        const ttl = await redis.pttl(key);
+
+        return {
+            allowed: current <= limit.requests,
+            remaining: Math.max(0, limit.requests - current),
+            resetAt: Date.now() + ttl
+        };
+    } catch {
+        // Redis unavailable at runtime — degrade gracefully, don't crash the status endpoint
+        return { allowed: true, remaining: limit.requests, resetAt: Date.now() + limit.windowMs };
     }
-
-    const ttl = await redis.pttl(key);
-
-    return {
-        allowed: current <= limit.requests,
-        remaining: Math.max(0, limit.requests - current),
-        resetAt: Date.now() + ttl
-    };
 }
 
 export async function checkIPRateLimit(
@@ -45,18 +50,22 @@ export async function checkIPRateLimit(
         return { allowed: true, remaining: limit.requests, resetAt: Date.now() + limit.windowMs };
     }
 
-    const current = await redis.incr(key);
-    if (current === 1) {
-        await redis.pexpire(key, limit.windowMs);
+    try {
+        const current = await redis.incr(key);
+        if (current === 1) {
+            await redis.pexpire(key, limit.windowMs);
+        }
+
+        const ttl = await redis.pttl(key);
+
+        return {
+            allowed: current <= limit.requests,
+            remaining: Math.max(0, limit.requests - current),
+            resetAt: Date.now() + ttl
+        };
+    } catch {
+        return { allowed: true, remaining: limit.requests, resetAt: Date.now() + limit.windowMs };
     }
-
-    const ttl = await redis.pttl(key);
-
-    return {
-        allowed: current <= limit.requests,
-        remaining: Math.max(0, limit.requests - current),
-        resetAt: Date.now() + ttl
-    };
 }
 
 export async function getLedgerData(tenantId: string, days: number = 7): Promise<RouterDecision[]> {

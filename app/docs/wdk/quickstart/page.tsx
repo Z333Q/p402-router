@@ -39,7 +39,7 @@ export default function WdkQuickstartPage() {
           </div>
           <div className="border-2 border-black p-4 bg-neutral-100">
             <h2 className="text-lg font-black uppercase border-b-2 border-black pb-2">Inspector</h2>
-            <p className="mt-3 text-sm font-semibold">Raw exchange: <span className="font-mono">402 header -> payment signature -> facilitator response</span>.</p>
+            <p className="mt-3 text-sm font-semibold">Raw exchange: <span className="font-mono">402 header {'->'} payment signature {'->'} facilitator response</span>.</p>
             <p className="mt-2 text-xs font-black uppercase text-cyan-600">Tabs (mobile): Request / 402 / Payment / Response / Logs</p>
           </div>
         </section>

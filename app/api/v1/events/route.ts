@@ -46,7 +46,29 @@ export async function GET(req: NextRequest) {
         query += ` ORDER BY e.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`
         values.push(limit, offset)
 
-        const result = await pool.query(query, values)
+        // Try the enhanced JOIN query first; fall back to events-only if related tables are absent
+        let result;
+        try {
+            result = await pool.query(query, values);
+        } catch (joinErr: any) {
+            if (joinErr.code === '42P01') {
+                // 42P01 = undefined_table — one of the JOIN targets doesn't exist yet
+                const fallbackQuery = `
+                    SELECT e.*
+                    FROM events e
+                    WHERE e.tenant_id = $1
+                    ${routeId ? `AND e.route_id = $2` : ''}
+                    ORDER BY e.created_at DESC
+                    LIMIT ${routeId ? '$3' : '$2'} OFFSET ${routeId ? '$4' : '$3'}
+                `;
+                const fallbackValues = routeId
+                    ? [tenantId, routeId, limit, offset]
+                    : [tenantId, limit, offset];
+                result = await pool.query(fallbackQuery, fallbackValues);
+            } else {
+                throw joinErr;
+            }
+        }
 
         const events = result.rows.map(row => ({
             eventId: row.event_id,
@@ -56,21 +78,19 @@ export async function GET(req: NextRequest) {
             network: row.network,
             scheme: row.scheme,
             amount: row.amount,
-            headers: (row.headers_meta || {}), // expose header presence for inspector
+            headers: (row.headers_meta || {}),
             denyCode: (row.raw_payload || {}).denyCode || (row.steps || []).find((s: any) => s.meta?.denyCode)?.meta?.denyCode,
-            // Enhanced data for traffic dashboard
-            model: row.model,
-            provider: row.provider,
-            input_tokens: row.input_tokens,
-            output_tokens: row.output_tokens,
-            cost_usd: row.usage_cost,
-            latency_ms: row.latency_ms,
-            session_id: row.session_id,
-            tx_hash: row.tx_hash,
-            settlement_type: row.settlement_type,
-            // Return full DecisionTrace for inspector UI
+            model: row.model ?? null,
+            provider: row.provider ?? null,
+            input_tokens: row.input_tokens ?? null,
+            output_tokens: row.output_tokens ?? null,
+            cost_usd: row.usage_cost ?? null,
+            latency_ms: row.latency_ms ?? null,
+            session_id: row.session_id ?? null,
+            tx_hash: row.tx_hash ?? null,
+            settlement_type: row.settlement_type ?? null,
             steps: row.steps || [],
-            raw: row.raw_payload // Return raw for admin inspector view
+            raw: row.raw_payload
         }))
 
         return NextResponse.json({ events })

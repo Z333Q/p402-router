@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { syncFacilitatorStatus } from '@/lib/actions';
 
 export type Facilitator = {
     facilitatorId: string;
@@ -46,7 +45,11 @@ export function useFacilitators() {
         setSyncing(true);
         setError(null);
         try {
-            await syncFacilitatorStatus();
+            const res = await fetch('/api/v1/facilitators/sync', { method: 'POST' });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `Health check failed (HTTP ${res.status})`);
+            }
             await load();
             return true;
         } catch (err: any) {
