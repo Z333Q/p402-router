@@ -8,6 +8,7 @@ import { TransferAuthorization, EIP3009Signature } from '@/lib/blockchain/eip300
 import { ReplayProtection } from '@/lib/replay-protection'
 import { P402_CONFIG } from '@/lib/constants'
 import { queueFeedback as queueERC8004Feedback } from '@/lib/erc8004/feedback-service'
+import { AP2PolicyEngine } from '@/lib/ap2-policy-engine'
 
 export interface SettleRequest {
     tenantId?: string;
@@ -17,6 +18,7 @@ export interface SettleRequest {
     asset?: string;
     authorization?: EIP3009Authorization; // New field for EIP-3009
     network?: string;
+    mandateId?: string; // AP2 mandate ID for budget deduction
 }
 
 export interface SettleResponse {
@@ -168,6 +170,13 @@ export class SettlementService {
                 verification.asset || assetCode,
                 targetTenantId
             );
+
+            // 6. AP2 Mandate Budget Deduction
+            if (input.mandateId) {
+                const settlementAmountUsd = parseFloat(verification.actualAmount || amount || '0');
+                AP2PolicyEngine.recordUsage(input.mandateId, settlementAmountUsd)
+                    .catch(err => console.error('[AP2] Mandate usage recording failed:', err));
+            }
 
             // ERC-8004 Reputation Feedback (async, non-blocking)
             if (process.env.ERC8004_ENABLE_REPUTATION === 'true') {
@@ -356,6 +365,13 @@ export class SettlementService {
             tokenConfig.symbol,
             targetTenantId
         );
+
+        // 7. AP2 Mandate Budget Deduction
+        if (context.mandateId) {
+            const settlementAmountUsd = parseFloat(amountHuman);
+            AP2PolicyEngine.recordUsage(context.mandateId, settlementAmountUsd)
+                .catch(err => console.error('[AP2] Mandate usage recording failed:', err));
+        }
 
         // ERC-8004 Reputation Feedback (async, non-blocking)
         if (process.env.ERC8004_ENABLE_REPUTATION === 'true') {

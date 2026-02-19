@@ -18,10 +18,9 @@ export async function GET() {
 
     // x402-compliant fields
     const kinds = [
-        { x402Version: 1, scheme: 'exact', network: 'eip155:8453' },
-        { x402Version: 1, scheme: 'onchain', network: 'eip155:8453' }
+        { x402Version: 2, scheme: 'exact', network: 'eip155:8453' },
+        { x402Version: 2, scheme: 'onchain', network: 'eip155:8453' }
     ];
-    const extensions = ['bazaar'];
     const signers = {
         'eip155:*': [signerAddress]
     };
@@ -29,7 +28,7 @@ export async function GET() {
     return NextResponse.json({
         // x402 spec fields
         kinds,
-        extensions,
+        extensions: [],
         signers,
         // Legacy fields for backward compatibility
         success: true,

@@ -38,43 +38,69 @@ const ENDPOINTS: Endpoint[] = [
         method: 'POST',
         path: 'https://facilitator.p402.io/verify',
         title: 'Verify Payment Authorization',
-        description: 'Verify an EIP-3009 payment authorization without executing it. Checks signature validity, nonce state, and USDC balance to ensure the payment can be settled.',
+        description: 'Verify an EIP-3009 payment authorization without executing it. Uses the x402 wire format: paymentPayload (containing the signed authorization) and paymentRequirements (the terms being paid for). Returns { isValid, payer } on success.',
         params: [
-            { name: 'scheme', type: 'string', required: true, desc: 'Payment scheme: "exact", "onchain", or "receipt"' },
-            { name: 'payment', type: 'object', required: true, desc: 'Payment authorization containing EIP-3009 signature or transaction details' }
+            { name: 'paymentPayload', type: 'object', required: true, desc: 'x402 payment payload containing scheme, network, and the signed authorization + signature' },
+            { name: 'paymentRequirements', type: 'object', required: true, desc: 'The payment requirements: scheme, network, maxAmountRequired, payTo, asset, resource' }
         ],
         examples: {
             curl: `curl https://facilitator.p402.io/verify \\
   -H "Content-Type: application/json" \\
   -d '{
-    "scheme": "exact",
-    "payment": {
-        "from": "0x...",
-        "to": "0xb23f146251e3816a011e800bcbae704baa5619ec",
-        "value": "1000000",
-        "validAfter": 0,
-        "validBefore": 1735689600,
-        "nonce": "0x...",
-        "v": 27,
-        "r": "0x...",
-        "s": "0x..."
+    "paymentPayload": {
+      "x402Version": 2,
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "payload": {
+        "signature": "0x...",
+        "authorization": {
+          "from": "0x...",
+          "to": "0xb23f146251e3816a011e800bcbae704baa5619ec",
+          "value": "1000000",
+          "validAfter": "0",
+          "validBefore": "1735689600",
+          "nonce": "0x..."
+        }
+      }
+    },
+    "paymentRequirements": {
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "maxAmountRequired": "1000000",
+      "resource": "https://example.com/api",
+      "description": "AI inference",
+      "payTo": "0xb23f146251e3816a011e800bcbae704baa5619ec",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
     }
   }'`,
             javascript: `const response = await fetch('https://facilitator.p402.io/verify', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    scheme: 'exact',
-    payment: {
-      from: '0x...',
-      to: '0xb23f146251e3816a011e800bcbae704baa5619ec',
-      value: '1000000', // 1 USDC
-      validAfter: 0,
-      validBefore: Math.floor(Date.now() / 1000) + 3600,
-      nonce: '0x...',
-      v: 27,
-      r: '0x...',
-      s: '0x...'
+    paymentPayload: {
+      x402Version: 2,
+      scheme: 'exact',
+      network: 'eip155:8453',
+      payload: {
+        signature: '0x...', // 65-byte EIP-3009 signature
+        authorization: {
+          from: '0x...',
+          to: '0xb23f...', // Treasury
+          value: '1000000', // 1 USDC (6 decimals)
+          validAfter: '0',
+          validBefore: String(Math.floor(Date.now() / 1000) + 3600),
+          nonce: '0x...'
+        }
+      }
+    },
+    paymentRequirements: {
+      scheme: 'exact',
+      network: 'eip155:8453',
+      maxAmountRequired: '1000000',
+      resource: 'https://example.com/api',
+      description: 'AI inference',
+      payTo: '0xb23f...',
+      asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
     }
   })
 });`,
@@ -82,28 +108,36 @@ const ENDPOINTS: Endpoint[] = [
 res = requests.post(
     "https://facilitator.p402.io/verify",
     json={
-        "scheme": "exact",
-        "payment": {
-            "from": "0x...",
-            "to": "0xb23f146251e3816a011e800bcbae704baa5619ec",
-            "value": "1000000",
-            "validAfter": 0,
-            "validBefore": 1735689600,
-            "nonce": "0x...",
-            "v": 27,
-            "r": "0x...",
-            "s": "0x..."
+        "paymentPayload": {
+            "x402Version": 2,
+            "scheme": "exact",
+            "network": "eip155:8453",
+            "payload": {
+                "signature": "0x...",
+                "authorization": {
+                    "from": "0x...",
+                    "to": "0xb23f...",
+                    "value": "1000000",
+                    "validAfter": "0",
+                    "validBefore": "1735689600",
+                    "nonce": "0x..."
+                }
+            }
+        },
+        "paymentRequirements": {
+            "scheme": "exact",
+            "network": "eip155:8453",
+            "maxAmountRequired": "1000000",
+            "resource": "https://example.com/api",
+            "description": "AI inference",
+            "payTo": "0xb23f...",
+            "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
         }
     }
 )`,
             response: {
-                verified: true,
-                scheme: "exact",
-                amount_usd: 1.0,
-                token: "USDC",
-                network: "base",
-                payer: "0x...",
-                expires_at: "2024-12-31T23:59:59Z"
+                isValid: true,
+                payer: "0x..."
             }
         }
     },
@@ -112,55 +146,103 @@ res = requests.post(
         method: 'POST',
         path: 'https://facilitator.p402.io/settle',
         title: 'Execute Gasless Settlement',
-        description: 'Execute a gasless USDC settlement using P402\'s facilitator network. Requires API authentication. The facilitator pays gas fees and executes the EIP-3009 transferWithAuthorization.',
+        description: 'Execute a gasless USDC settlement using the x402 wire format. The facilitator pays gas fees and executes the EIP-3009 transferWithAuthorization. Returns a SettleResponse with { success, transaction, network, payer }.',
         params: [
-            { name: 'scheme', type: 'string', required: true, desc: 'Payment scheme: must be "exact" for gasless settlement' },
-            { name: 'payment', type: 'object', required: true, desc: 'EIP-3009 authorization from verification step' }
+            { name: 'paymentPayload', type: 'object', required: true, desc: 'x402 payment payload containing the signed authorization and 65-byte signature' },
+            { name: 'paymentRequirements', type: 'object', required: true, desc: 'The payment requirements: scheme, network, maxAmountRequired, payTo, asset' }
         ],
         examples: {
             curl: `curl https://facilitator.p402.io/settle \\
   -H "Content-Type: application/json" \\
-  -H "Authorization: Bearer p402_live_..." \\
   -d '{
-    "scheme": "exact",
-    "payment": {
-        "from": "0x...",
-        "to": "0xb23f146251e3816a011e800bcbae704baa5619ec",
-        "value": "1000000",
-        "validAfter": 0,
-        "validBefore": 1735689600,
-        "nonce": "0x...",
-        "v": 27,
-        "r": "0x...",
-        "s": "0x..."
+    "paymentPayload": {
+      "x402Version": 2,
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "payload": {
+        "signature": "0x...",
+        "authorization": {
+          "from": "0x...",
+          "to": "0xb23f146251e3816a011e800bcbae704baa5619ec",
+          "value": "1000000",
+          "validAfter": "0",
+          "validBefore": "1735689600",
+          "nonce": "0x..."
+        }
+      }
+    },
+    "paymentRequirements": {
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "maxAmountRequired": "1000000",
+      "resource": "https://example.com/api",
+      "description": "AI inference",
+      "payTo": "0xb23f146251e3816a011e800bcbae704baa5619ec",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
     }
   }'`,
             javascript: `const response = await fetch('https://facilitator.p402.io/settle', {
   method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer p402_live_...'
-  },
+  headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    scheme: 'exact',
-    payment: verifiedAuthorization // From verify step
+    paymentPayload: {
+      x402Version: 2,
+      scheme: 'exact',
+      network: 'eip155:8453',
+      payload: {
+        signature: '0x...', // 65-byte signature
+        authorization: {
+          from: '0x...', to: '0xb23f...',
+          value: '1000000',
+          validAfter: '0',
+          validBefore: String(Math.floor(Date.now() / 1000) + 3600),
+          nonce: '0x...'
+        }
+      }
+    },
+    paymentRequirements: {
+      scheme: 'exact', network: 'eip155:8453',
+      maxAmountRequired: '1000000',
+      resource: 'https://example.com/api',
+      description: 'AI inference',
+      payTo: '0xb23f...',
+      asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+    }
   })
 });`,
             python: `import requests
 res = requests.post(
     "https://facilitator.p402.io/settle",
-    headers={"Authorization": "Bearer p402_live_..."},
     json={
-        "scheme": "exact",
-        "payment": verified_authorization
+        "paymentPayload": {
+            "x402Version": 2,
+            "scheme": "exact",
+            "network": "eip155:8453",
+            "payload": {
+                "signature": "0x...",
+                "authorization": {
+                    "from": "0x...", "to": "0xb23f...",
+                    "value": "1000000",
+                    "validAfter": "0", "validBefore": "1735689600",
+                    "nonce": "0x..."
+                }
+            }
+        },
+        "paymentRequirements": {
+            "scheme": "exact", "network": "eip155:8453",
+            "maxAmountRequired": "1000000",
+            "resource": "https://example.com/api",
+            "description": "AI inference",
+            "payTo": "0xb23f...",
+            "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+        }
     }
 )`,
             response: {
                 success: true,
-                txHash: "0x88df01e...",
-                amount_usd: 1.0,
-                settlement_id: "settlement_123",
-                explorer_url: "https://basescan.org/tx/0x88df01e..."
+                transaction: "0x88df016a12fa890a...",
+                network: "eip155:8453",
+                payer: "0x..."
             }
         }
     },
@@ -185,7 +267,7 @@ res = requests.post(
     "amount": 1.0,
     "metadata": {
       "payer": "0x...",
-      "network": "base",
+      "network": "eip155:8453",
       "token": "USDC"
     }
   }'`,
@@ -196,7 +278,7 @@ res = requests.post(
     txHash: '0x88df01e...',
     sessionId: 'session_123',
     amount: 1.0,
-    metadata: { payer: '0x...', network: 'base', token: 'USDC' }
+    metadata: { payer: '0x...', network: 'eip155:8453', token: 'USDC' }
   })
 });`,
             python: `import requests
@@ -206,7 +288,7 @@ res = requests.post(
         "txHash": "0x88df01e...",
         "sessionId": "session_123",
         "amount": 1.0,
-        "metadata": {"payer": "0x...", "network": "base", "token": "USDC"}
+        "metadata": {"payer": "0x...", "network": "eip155:8453", "token": "USDC"}
     }
 )`,
             response: {
@@ -214,7 +296,7 @@ res = requests.post(
                 receiptId: "rcpt_456",
                 validUntil: "2024-12-31T23:59:59Z",
                 amount: 1.0,
-                network: "base",
+                network: "eip155:8453",
                 token: "USDC"
             }
         }
@@ -372,8 +454,8 @@ res = requests.post(
         id: 'plan-v1',
         method: 'POST',
         path: '/api/v1/router/plan',
-        title: 'Plan Route (Legacy)',
-        description: 'V1 Endpoint. Calculates the optimal routing path for a resource request without executing it. Returns payment requirements and facilitator selection.',
+        title: 'Plan Route',
+        description: 'Calculates the optimal routing path for a resource request without executing it. Returns payment requirements and facilitator selection.',
         params: [
             { name: 'routeId', type: 'string', required: true, desc: 'The target resource identifier.' },
             { name: 'payment', type: 'object', required: true, desc: 'Payment preferences { network, scheme, amount, asset }.' },
@@ -386,7 +468,7 @@ res = requests.post(
     "routeId": "MODEL_GPT4",
     "payment": {
         "network": "eip155:8453",
-        "scheme": "eip3009",
+        "scheme": "exact",
         "amount": "0.50",
         "asset": "USDC"
     }
@@ -396,7 +478,7 @@ res = requests.post(
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     routeId: 'MODEL_GPT4',
-    payment: { network: 'eip155:8453', scheme: 'eip3009', amount: '0.50', asset: 'USDC' }
+    payment: { network: 'eip155:8453', scheme: 'exact', amount: '0.50', asset: 'USDC' }
   })
 });`,
             python: `requests.post("https://p402.io/api/v1/router/plan", json={...})`,
@@ -417,8 +499,8 @@ res = requests.post(
         id: 'settle-v1',
         method: 'POST',
         path: '/api/v1/router/settle',
-        title: 'Settle Payment (Legacy)',
-        description: 'V1 Endpoint. Records an on-chain settlement for a planned route. Use this to finalize a transaction after the user has paid.',
+        title: 'Settle Payment',
+        description: 'Records an on-chain settlement for a planned route. Use this to finalize a transaction after the user has paid.',
         params: [
             { name: 'txHash', type: 'string', required: true, desc: 'The verified transaction hash.' },
             { name: 'amount', type: 'string', required: true, desc: 'Amount settled.' },
@@ -445,9 +527,15 @@ res = requests.post(
 });`,
             python: `requests.post("https://p402.io/api/v1/router/settle", json={...})`,
             response: {
-                success: true,
-                settlement_id: "set_789",
-                status: "confirmed"
+                scheme: "onchain",
+                settled: true,
+                facilitatorId: "chain_base",
+                receipt: {
+                    txHash: "0x...",
+                    verifiedAmount: "0.50",
+                    asset: "USDC",
+                    timestamp: "2026-01-15T12:00:00Z"
+                }
             }
         }
     },
@@ -626,7 +714,7 @@ export default function ApiDocsPage() {
                     </div>
 
                     <div className="mt-8 pt-8 border-t-2 border-black/5">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Legacy (V1)</h3>
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Payment Router (V1)</h3>
                         {ENDPOINTS.filter(ep => ep.path.includes('/api/v1/router')).map(ep => (
                             <a
                                 key={ep.id}
@@ -636,7 +724,7 @@ export default function ApiDocsPage() {
                                     setActiveSection(ep.id);
                                     document.getElementById(ep.id)?.scrollIntoView({ behavior: 'smooth' });
                                 }}
-                                className={`block text-xs font-bold mb-3 uppercase tracking-tight transition-colors ${activeSection === ep.id ? 'text-[#22D3EE]' : 'text-neutral-400 hover:text-[#22D3EE]'}`}
+                                className={`block text-xs font-bold mb-3 uppercase tracking-tight transition-colors ${activeSection === ep.id ? 'text-[#22D3EE]' : 'text-black hover:text-[#22D3EE]'}`}
                             >
                                 {ep.method} {ep.path.split('/').pop()}
                             </a>
@@ -656,6 +744,16 @@ export default function ApiDocsPage() {
                                 Welcome to the P402 production API. Execute gasless USDC payments on Base L2 using EIP-3009
                                 transferWithAuthorization. Global facilitator network with sub-50ms verification times.
                             </p>
+                            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+                                <div className="p-4 border-2 border-black/10 bg-neutral-50">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-1">V1 — Payment Layer</p>
+                                    <p className="text-sm text-neutral-600 leading-relaxed">x402 payment protocol: route planning, settlement, facilitator management, AP2 policy mandates, and protocol governance. The cryptographic foundation for agent payments.</p>
+                                </div>
+                                <div className="p-4 border-2 border-black/10 bg-neutral-50">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-1">V2 — Orchestration Layer</p>
+                                    <p className="text-sm text-neutral-600 leading-relaxed">OpenAI-compatible AI routing: multi-provider completions, semantic caching, session management, and real-time cost optimization. Drops into any OpenAI SDK.</p>
+                                </div>
+                            </div>
                         </section>
 
                         {/* Authentication Section */}

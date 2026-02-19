@@ -5,6 +5,8 @@ import { query } from '../../../lib/db';
 import { A2A_ERRORS, A2AError } from '../../../lib/a2a-errors';
 import { pushNotificationService } from '../../../lib/push-service';
 import { SettlementService } from '../../../lib/services/settlement-service';
+import { findActiveMandate } from '../../../lib/ap2-policy-engine';
+import { EIP3009Authorization } from '../../../lib/x402/eip3009';
 
 export async function POST(req: NextRequest) {
     try {
@@ -182,6 +184,19 @@ async function handleX402PaymentSubmitted(params: any, id: string | number, tena
 
     const effectiveScheme = scheme || 'onchain';
 
+    // 1.5 Look up active AP2 mandate for this payment's agent (if applicable)
+    let mandateId: string | undefined;
+    if (payment.tenant_id && params.agent_did) {
+        try {
+            const activeMandate = await findActiveMandate(payment.tenant_id, params.agent_did);
+            if (activeMandate) {
+                mandateId = activeMandate.id;
+            }
+        } catch (err) {
+            console.error('[A2A] Mandate lookup failed (non-blocking):', err);
+        }
+    }
+
     try {
         let verificationResult: { verified: boolean; error?: string; txHash?: string };
 
@@ -212,6 +227,7 @@ async function handleX402PaymentSubmitted(params: any, id: string | number, tena
                         `a2a_${payment_id}`,
                         {
                             tenantId: payment.tenant_id,
+                            mandateId,
                             txHash: tx_hash,
                             amount: payment.amount_usd?.toString() || '0',
                             asset: payment.asset || 'USDC'
@@ -243,14 +259,138 @@ async function handleX402PaymentSubmitted(params: any, id: string | number, tena
                 break;
             }
 
-            // Future schemes (exact, receipt) can be added here
+            case 'exact': {
+                const { authorization: authParams, signature } = params;
+
+                if (!authParams || !signature) {
+                    return NextResponse.json({
+                        jsonrpc: '2.0',
+                        error: {
+                            code: -32602,
+                            message: 'authorization and signature are required for exact scheme',
+                            data: { scheme: 'exact', required: ['authorization', 'signature'] }
+                        },
+                        id
+                    });
+                }
+
+                // Validate signature format (65-byte hex = '0x' + 130 hex chars)
+                if (!/^0x[a-fA-F0-9]{130}$/.test(signature)) {
+                    return NextResponse.json({
+                        jsonrpc: '2.0',
+                        error: { code: -32602, message: 'Invalid signature format (expected 65-byte hex string)' },
+                        id
+                    });
+                }
+
+                // Parse r/s/v from compact 65-byte signature (r+s+v byte order)
+                const r = `0x${signature.slice(2, 66)}` as `0x${string}`;
+                const s = `0x${signature.slice(66, 130)}` as `0x${string}`;
+                let v = parseInt(signature.slice(130, 132), 16);
+                // Normalize recovery ID: some wallets return 0/1, EIP-155 requires 27/28
+                if (v < 2) v += 27;
+
+                const authorization: EIP3009Authorization = {
+                    from: authParams.from,
+                    to: authParams.to,
+                    value: authParams.value,
+                    validAfter: authParams.validAfter,
+                    validBefore: authParams.validBefore,
+                    nonce: authParams.nonce,
+                    v,
+                    r,
+                    s
+                };
+
+                try {
+                    const settleResult = await SettlementService.settleWithAuthorization(
+                        `a2a_${payment_id}`,
+                        authorization,
+                        {
+                            tenantId: payment.tenant_id,
+                            mandateId,
+                            amount: payment.amount_usd?.toString() || '0',
+                            asset: payment.asset || 'USDC'
+                        }
+                    );
+
+                    verificationResult = {
+                        verified: settleResult.settled,
+                        txHash: settleResult.receipt.txHash
+                    };
+                } catch (error: any) {
+                    if (error.code === 'REPLAY_DETECTED') {
+                        return NextResponse.json({
+                            jsonrpc: '2.0',
+                            error: {
+                                code: -32009,
+                                message: 'Authorization already used (replay detected)',
+                                data: { payment_id }
+                            },
+                            id
+                        });
+                    }
+                    if (error.code === 'VERIFICATION_FAILED' || error.code === 'INVALID_AUTHORIZATION') {
+                        verificationResult = { verified: false, error: error.message };
+                    } else {
+                        throw error;
+                    }
+                }
+                break;
+            }
+
+            case 'receipt': {
+                if (!receipt_id) {
+                    return NextResponse.json({
+                        jsonrpc: '2.0',
+                        error: {
+                            code: -32602,
+                            message: 'receipt_id is required for receipt scheme',
+                            data: { scheme: 'receipt', required: ['receipt_id'] }
+                        },
+                        id
+                    });
+                }
+
+                try {
+                    const settleResult = await SettlementService.settleWithReceipt(
+                        `a2a_${payment_id}`,
+                        {
+                            tenantId: payment.tenant_id,
+                            receiptId: receipt_id,
+                            amount: payment.amount_usd?.toString() || '0',
+                            asset: payment.asset || 'USDC'
+                        }
+                    );
+
+                    verificationResult = {
+                        verified: settleResult.settled,
+                        txHash: settleResult.receipt.txHash
+                    };
+                } catch (error: any) {
+                    if (error.code === 'REPLAY_DETECTED') {
+                        return NextResponse.json({
+                            jsonrpc: '2.0',
+                            error: {
+                                code: -32009,
+                                message: 'Receipt already used (replay detected)',
+                                data: { receipt_id }
+                            },
+                            id
+                        });
+                    }
+                    verificationResult = { verified: false, error: error.message };
+                }
+                break;
+            }
+
             default: {
                 return NextResponse.json({
                     jsonrpc: '2.0',
                     error: {
                         code: -32602,
                         message: `Unknown scheme: ${effectiveScheme}`,
-                        data: { supported: ['onchain'] }
+                        data: { supported: ['onchain', 'exact', 'receipt'] }
                     },
                     id
                 });
@@ -278,12 +418,13 @@ async function handleX402PaymentSubmitted(params: any, id: string | number, tena
 
         // Success
         const settled_at = new Date();
+        const settledTxHash = verificationResult.txHash || tx_hash;
 
         await query(
-            `UPDATE x402_payments 
+            `UPDATE x402_payments
              SET status = 'completed', tx_hash = $2, settled_at = $3, scheme = $4, updated_at = NOW()
              WHERE payment_id = $1`,
-            [payment_id, tx_hash, settled_at, effectiveScheme]
+            [payment_id, settledTxHash, settled_at, effectiveScheme]
         );
 
         // Generate receipt
@@ -292,7 +433,7 @@ async function handleX402PaymentSubmitted(params: any, id: string | number, tena
         const receiptSignature = `sig_${uuidv4()}`;
 
         await query(
-            `INSERT INTO x402_receipts 
+            `INSERT INTO x402_receipts
              (receipt_id, payment_id, tenant_id, signature, receipt_data, valid_until)
              VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '30 days')`,
             [
@@ -303,7 +444,7 @@ async function handleX402PaymentSubmitted(params: any, id: string | number, tena
                 JSON.stringify({
                     amount: payment.amount_usd,
                     asset: payment.asset,
-                    tx_hash: tx_hash,
+                    tx_hash: settledTxHash,
                     settled_at: settled_at.toISOString()
                 })
             ]
@@ -315,7 +456,7 @@ async function handleX402PaymentSubmitted(params: any, id: string | number, tena
                 payment_id,
                 status: 'completed',
                 settlement: {
-                    tx_hash: tx_hash,
+                    tx_hash: settledTxHash,
                     scheme: effectiveScheme,
                     amount_settled: payment.amount_raw || payment.amount_usd?.toString() || '0',
                     verified_at: settled_at.toISOString()

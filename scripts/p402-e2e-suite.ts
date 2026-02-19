@@ -53,19 +53,42 @@ async function runE2E() {
     });
 
     await test('x402 /verify endpoint (Hardened)', async () => {
-        // This will likely fail if no real network access or invalid tx, 
-        // but for local testing we check if it handles the request
+        // Send x402-compliant verify request with a fake signature — expect 400 with isValid: false
         try {
             const res = await axios.post(`${BASE_URL}/api/v1/facilitator/verify`, {
-                txHash: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-                amount: "1.0",
-                tenantId: TEST_TENANT
+                paymentPayload: {
+                    x402Version: 2,
+                    scheme: "exact",
+                    network: "eip155:8453",
+                    payload: {
+                        signature: "0x" + "ab".repeat(65),
+                        authorization: {
+                            from: "0x" + "1".repeat(40),
+                            to: "0x" + "2".repeat(40),
+                            value: "1000000",
+                            validAfter: "0",
+                            validBefore: "1735689600",
+                            nonce: "0x" + "0".repeat(64)
+                        }
+                    }
+                },
+                paymentRequirements: {
+                    scheme: "exact",
+                    network: "eip155:8453",
+                    maxAmountRequired: "1000000",
+                    resource: "https://example.com",
+                    description: "Test",
+                    payTo: "0x" + "2".repeat(40),
+                    asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+                }
             });
-            // We expect a "failed" status because the hash is fake, but success: true in the API response structure
-            if (res.data.success !== false && res.data.status !== 'failed') {
-                // If it passes with a fake hash, something is wrong (unless mocked)
+            // With a fake signature, isValid should be false
+            if (res.data.isValid !== false) {
+                throw new Error('Should not have validated with mock signature');
             }
         } catch (e: any) {
+            // 400 is expected for invalid signature — verify response shape is x402-compliant
+            if (e.response?.status === 400 && typeof e.response.data?.isValid === 'boolean') return;
             if (e.response?.status !== 400 && e.response?.status !== 500) throw e;
         }
     });

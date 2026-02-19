@@ -34,8 +34,9 @@ export function middleware(request: NextRequest) {
         }
 
         preflightResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-        preflightResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-P402-Tenant, X-P402-Session, X-P402-Source');
+        preflightResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-P402-Tenant, X-P402-Session, X-P402-Source, PAYMENT-SIGNATURE');
         preflightResponse.headers.set('Access-Control-Max-Age', '86400');
+        preflightResponse.headers.set('Access-Control-Expose-Headers', 'PAYMENT-REQUIRED, PAYMENT-RESPONSE');
 
         return preflightResponse;
     }
@@ -84,7 +85,8 @@ export function middleware(request: NextRequest) {
             response.headers.set('Access-Control-Allow-Origin', '*');
         }
         response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-P402-Tenant, X-P402-Session, X-P402-Source');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-P402-Tenant, X-P402-Session, X-P402-Source, PAYMENT-SIGNATURE');
+        response.headers.set('Access-Control-Expose-Headers', 'PAYMENT-REQUIRED, PAYMENT-RESPONSE');
     }
 
     // 2. Security Headers (Top 1% Standards)

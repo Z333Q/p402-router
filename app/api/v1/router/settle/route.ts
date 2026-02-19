@@ -34,6 +34,7 @@ const ReceiptPaymentSchema = z.object({
 const SettleSchema = z.object({
     tenantId: z.string().uuid().optional(),
     decisionId: z.string().optional(),
+    mandateId: z.string().optional(), // AP2 mandate ID for budget deduction
     amount: z.string().regex(/^\d*\.?\d+$/, "Invalid amount format"),
     asset: z.string().min(2).max(10).default('USDC'),
     payment: z.discriminatedUnion('scheme', [
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
             })
         }
 
-        const { tenantId, decisionId, amount, asset, payment } = result.data;
+        const { tenantId, decisionId, mandateId, amount, asset, payment } = result.data;
 
         // 2. Route to appropriate settlement method based on scheme
         let response;
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
                 response = await SettlementService.settle(requestId, {
                     tenantId,
                     decisionId,
+                    mandateId,
                     amount,
                     asset,
                     authorization: payment.authorization as unknown as EIP3009Authorization
@@ -83,6 +85,7 @@ export async function POST(req: NextRequest) {
                 response = await SettlementService.settle(requestId, {
                     tenantId,
                     decisionId,
+                    mandateId,
                     txHash: payment.txHash,
                     amount,
                     asset

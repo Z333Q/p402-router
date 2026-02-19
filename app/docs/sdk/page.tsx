@@ -28,29 +28,42 @@ export default function SDKDocs() {
           <p className="font-bold text-neutral-600 mb-8 uppercase tracking-tight">Verify EIP-3009 gasless payment authorizations before settling.</p>
 
           <div className="bg-neutral-900 p-8 border-4 border-black text-xs overflow-x-auto text-zinc-300 shadow-[12px_12px_0px_0px_rgba(182,255,46,1)]">
-            <pre><code>{`// 1. Verify Payment Authorization (No Settlement)
+            <pre><code>{`// 1. Verify Payment Authorization (x402 Wire Format)
 const verification = await fetch('https://facilitator.p402.io/verify', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    scheme: 'exact',
-    payment: {
-      from: '0x...',        // User's wallet
-      to: '0x...',          // P402 treasury
-      value: '1000000',     // 1 USDC (6 decimals)
-      validAfter: 0,
-      validBefore: 1735689600,
-      nonce: '0x...',
-      v: 27,
-      r: '0x...',
-      s: '0x...'
+    paymentPayload: {
+      x402Version: 2,
+      scheme: 'exact',
+      network: 'eip155:8453',
+      payload: {
+        signature: '0x...',   // 65-byte EIP-3009 signature
+        authorization: {
+          from: '0x...',      // User's wallet
+          to: '0xb23f...',    // P402 treasury
+          value: '1000000',   // 1 USDC (6 decimals)
+          validAfter: '0',
+          validBefore: '1735689600',
+          nonce: '0x...'
+        }
+      }
+    },
+    paymentRequirements: {
+      scheme: 'exact',
+      network: 'eip155:8453',
+      maxAmountRequired: '1000000',
+      resource: 'https://example.com/api',
+      description: 'AI inference',
+      payTo: '0xb23f...',
+      asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
     }
   })
 });
 
 const result = await verification.json();
-console.log('Verified:', result.verified);
-console.log('Amount:', result.amount_usd);`}</code></pre>
+console.log('Valid:', result.isValid);   // true
+console.log('Payer:', result.payer);     // "0x..."`}</code></pre>
           </div>
         </section>
 
@@ -59,26 +72,39 @@ console.log('Amount:', result.amount_usd);`}</code></pre>
           <p className="font-bold text-neutral-600 mb-8 uppercase tracking-tight">Execute gasless USDC transfers using P402's facilitator network.</p>
 
           <div className="bg-neutral-900 p-8 border-4 border-black text-xs overflow-x-auto text-zinc-300 shadow-[12px_12px_0px_0px_rgba(34,211,238,1)]">
-            <pre><code>{`// 2. Execute Gasless Settlement (Requires API Key)
+            <pre><code>{`// 2. Execute Gasless Settlement (x402 Wire Format)
 const settlement = await fetch('https://facilitator.p402.io/settle', {
   method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer p402_live_...'
-  },
+  headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    scheme: 'exact',
-    payment: signedAuthorization  // From step 1
+    paymentPayload: {
+      x402Version: 2,
+      scheme: 'exact',
+      network: 'eip155:8453',
+      payload: {
+        signature: '0x...',
+        authorization: signedAuthorization // From step 1
+      }
+    },
+    paymentRequirements: {
+      scheme: 'exact',
+      network: 'eip155:8453',
+      maxAmountRequired: '1000000',
+      resource: 'https://example.com/api',
+      description: 'AI inference',
+      payTo: '0xb23f...',
+      asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+    }
   })
 });
 
 const result = await settlement.json();
 if (result.success) {
-  console.log('Transaction Hash:', result.txHash);
-  console.log('Settlement ID:', result.settlement_id);
-  console.log('Explorer:', result.explorer_url);
+  console.log('Transaction:', result.transaction);  // "0x..."
+  console.log('Network:', result.network);           // "eip155:8453"
+  console.log('Payer:', result.payer);               // "0x..."
 } else {
-  console.error('Settlement Failed:', result.error);
+  console.error('Failed:', result.errorReason);
 }`}</code></pre>
           </div>
         </section>
@@ -98,7 +124,7 @@ const receiptResponse = await fetch('https://p402.io/api/v1/receipts', {
     amount: 1.0,
     metadata: {
       payer: '0x...',
-      network: 'base',
+      network: 'eip155:8453',
       token: 'USDC'
     }
   })

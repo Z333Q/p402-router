@@ -15,6 +15,7 @@ import { ProviderStatus, ProviderMini } from './_components/ProviderStatus';
 import { CostComparison } from './_components/CostComparison';
 import { TrustMini } from './_components/TrustMini';
 import { TrustOverview } from './_components/TrustOverview';
+import { SafetyOverview, SafetyMini } from './_components/SafetyOverview';
 
 import { useSWRConfig } from 'swr';
 import { useEffect } from 'react';
@@ -49,6 +50,7 @@ export default function DashboardPage() {
                     <CacheMini />
                     <ProviderMini />
                     <TrustMini />
+                    <SafetyMini />
                 </div>
             </div>
 
@@ -72,6 +74,11 @@ export default function DashboardPage() {
                     <ProviderStatus />
                 </div>
                 <TrustOverview />
+            </div>
+
+            {/* Safety Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <SafetyOverview />
             </div>
         </div>
     );

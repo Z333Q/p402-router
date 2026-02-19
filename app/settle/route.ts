@@ -108,14 +108,14 @@ export async function POST(request: Request) {
         const result = await SettlementService.settleWithAuthorization(requestId, auth, {
             amount: amountHuman,
             asset: 'USDC',
-            network: 'base',
+            network: 'eip155:8453',
         });
 
         return NextResponse.json({
             success: result.settled,
             transaction: result.receipt.txHash,
-            network: 'base',
-            payer: result.payer,
+            network: 'eip155:8453',
+            payer: result.payer ?? null,
         });
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Settlement failed';

@@ -353,43 +353,61 @@ export default function PaymentFlowDemoPage() {
           <div>
             <h4 className="font-bold text-neutral-900 mb-2">Frontend Integration</h4>
             <pre className="bg-neutral-100 p-4 rounded text-sm overflow-x-auto">{`// 1. Install P402 SDK
-npm install @p402/sdk
+npm install @p402/sdk viem
 
 // 2. Initialize client
 import { P402Client } from '@p402/sdk';
 
 const p402 = new P402Client({
-  network: 'base',
-  facilitator: 'https://facilitator.p402.io'
+  routerUrl: 'https://p402.io',
+  apiKey: 'your-api-key'
 });
 
-// 3. Process payment
-const payment = await p402.createPayment({
-  amount: 1.0,
-  token: 'USDC',
-  scheme: 'exact'
+// 3. Settle via x402 wire format
+const result = await fetch('https://facilitator.p402.io/settle', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    paymentPayload: {
+      x402Version: 2, scheme: 'exact', network: 'eip155:8453',
+      payload: { signature, authorization }
+    },
+    paymentRequirements: {
+      scheme: 'exact', network: 'eip155:8453',
+      maxAmountRequired: '1000000',
+      payTo: '0xb23f...', asset: '0x8335...',
+      resource: '/api', description: 'Payment'
+    }
+  })
 });
-
-await payment.sign();
-await payment.execute();`}</pre>
+const data = await result.json();
+console.log(data.transaction); // "0x..."`}</pre>
           </div>
 
           <div>
             <h4 className="font-bold text-neutral-900 mb-2">Backend Integration</h4>
-            <pre className="bg-neutral-100 p-4 rounded text-sm overflow-x-auto">{`// Verify payment server-side
+            <pre className="bg-neutral-100 p-4 rounded text-sm overflow-x-auto">{`// Verify payment server-side (x402 wire format)
 const verification = await fetch('https://facilitator.p402.io/verify', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    scheme: 'exact',
-    payment: signedAuthorization
+    paymentPayload: {
+      x402Version: 2, scheme: 'exact', network: 'eip155:8453',
+      payload: { signature, authorization: signedAuthorization }
+    },
+    paymentRequirements: {
+      scheme: 'exact', network: 'eip155:8453',
+      maxAmountRequired: '1000000',
+      payTo: '0xb23f...', asset: '0x8335...',
+      resource: '/api', description: 'Payment'
+    }
   })
 });
 
 const result = await verification.json();
-if (result.verified) {
-  // Payment is valid, proceed with service
-  await provideAIService(sessionId, result.amount_usd);
+if (result.isValid) {
+  console.log('Payer:', result.payer); // "0x..."
+  await provideAIService(sessionId);
 }`}</pre>
           </div>
 

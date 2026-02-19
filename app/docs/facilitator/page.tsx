@@ -49,7 +49,7 @@ console.log('Fee Structure:', capabilities.fee_structure);
 
   "payment_schemes": ["exact", "onchain", "receipt"],
   "supported_tokens": ["USDC"],
-  "networks": ["base"],
+  "networks": ["eip155:8453"],
 
   "fee_structure": {
     "percentage": 1.0,
@@ -180,34 +180,50 @@ if (healthStatus.status !== 'healthy') {
   throw new Error('Facilitator is not healthy');
 }
 
-// 4. Verify payment
+// 4. Verify payment (x402 wire format)
 const verification = await fetch('https://facilitator.p402.io/verify', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    scheme: 'exact',
-    payment: eip3009Authorization
+    paymentPayload: {
+      x402Version: 2, scheme: 'exact', network: 'eip155:8453',
+      payload: { signature: '0x...', authorization: eip3009Authorization }
+    },
+    paymentRequirements: {
+      scheme: 'exact', network: 'eip155:8453',
+      maxAmountRequired: '1000000',
+      resource: 'https://example.com/api',
+      description: 'AI inference',
+      payTo: '0xb23f...', asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+    }
   })
 });
 
 const verifyResult = await verification.json();
 
 // 5. Execute settlement if verified
-if (verifyResult.verified) {
+if (verifyResult.isValid) {
   const settlement = await fetch('https://facilitator.p402.io/settle', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer p402_live_...'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      scheme: 'exact',
-      payment: eip3009Authorization
+      paymentPayload: {
+        x402Version: 2, scheme: 'exact', network: 'eip155:8453',
+        payload: { signature: '0x...', authorization: eip3009Authorization }
+      },
+      paymentRequirements: {
+        scheme: 'exact', network: 'eip155:8453',
+        maxAmountRequired: '1000000',
+        resource: 'https://example.com/api',
+        description: 'AI inference',
+        payTo: '0xb23f...', asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+      }
     })
   });
 
   const settleResult = await settlement.json();
-  console.log('Settlement successful:', settleResult.txHash);
+  console.log('Transaction:', settleResult.transaction); // "0x..."
+  console.log('Network:', settleResult.network);          // "eip155:8453"
 }
 
 // 6. Create receipt for reuse

@@ -127,19 +127,38 @@ curl -X POST https://p402.io/api/a2a \
   }'
 ```
 
-### 3. Settlement (EIP-3009 Gasless)
+### 3. Settlement (x402 Wire Format)
 ```bash
 curl -X POST https://p402.io/api/v1/facilitator/settle \
   -H "Content-Type: application/json" \
   -d '{
-    "authorization": {
-      "from": "0x...",
-      "to": "0x...",
-      "value": "1000000",
-      "nonce": "0x...",
-      "signature": "0x..."
+    "paymentPayload": {
+      "x402Version": 2,
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "payload": {
+        "signature": "0x...",
+        "authorization": {
+          "from": "0x...",
+          "to": "0xb23f146251e3816a011e800bcbae704baa5619ec",
+          "value": "1000000",
+          "validAfter": "0",
+          "validBefore": "1735689600",
+          "nonce": "0x..."
+        }
+      }
+    },
+    "paymentRequirements": {
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "maxAmountRequired": "1000000",
+      "resource": "https://example.com/api",
+      "description": "AI inference",
+      "payTo": "0xb23f146251e3816a011e800bcbae704baa5619ec",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
     }
   }'
+# Response: { "success": true, "transaction": "0x...", "network": "eip155:8453", "payer": "0x..." }
 ```
 
 ---

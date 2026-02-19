@@ -6,20 +6,53 @@ P402 implements the x402 compliant facilitator protocol for on-chain settlement.
 1. **Verification Mode (Legacy)**: Client executes tx, P402 verifies.
 2. **Execution Mode (EIP-3009)**: Client signs authorization, P402 executes tx and pays gas.
 
-## Execution Mode (Recommended)
+Both modes use the **x402 wire format** (`paymentPayload` + `paymentRequirements`) as the primary interface.
 
-This mode allows for a "gasless" experience for the payer, as the facilitator pays the gas fees for the settlement transaction.
+## Wire Format
 
-### Prerequisites
+All facilitator endpoints accept the x402 wire format:
+
+```typescript
+interface X402Request {
+  paymentPayload: {
+    x402Version: 2;
+    scheme: "exact";         // EIP-3009 gasless
+    network: "eip155:8453";  // CAIP-2 Base Mainnet
+    payload: {
+      signature: string;     // 65-byte hex signature
+      authorization: {
+        from: string;        // Payer address
+        to: string;          // Treasury address
+        value: string;       // Amount in atomic units (USDC = 6 decimals)
+        validAfter: string;
+        validBefore: string;
+        nonce: string;       // bytes32
+      };
+    };
+  };
+  paymentRequirements: {
+    scheme: "exact";
+    network: "eip155:8453";
+    maxAmountRequired: string;
+    resource: string;
+    description: string;
+    payTo: string;
+    asset: string;           // USDC contract address
+  };
+}
+```
+
+## Prerequisites
 
 - **Token**: USDC on Base (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`)
-- **Network**: Base Mainnet (Chain ID: 8453)
+- **Network**: Base Mainnet (Chain ID: 8453, CAIP-2: `eip155:8453`)
+- **Treasury**: `0xb23f146251e3816a011e800bcbae704baa5619ec`
 
-### 1. Create Authorization
+## 1. Create Authorization
 
 The client must sign an EIP-712 typed data message conforming to EIP-3009 `TransferWithAuthorization`.
 
-#### Data Structure
+### Data Structure
 ```typescript
 const domain = {
   name: 'USD Coin',
@@ -41,32 +74,100 @@ const types = {
 
 const message = {
   from: userAddress,
-  to: facilitatorTreasuryAddress, // Obtained from 402 Payment Required header
+  to: '0xb23f146251e3816a011e800bcbae704baa5619ec',
   value: amountInWei,
   validAfter: 0,
-  validBefore: Math.floor(Date.now() / 1000) + 3600, // 1 hour validity
+  validBefore: Math.floor(Date.now() / 1000) + 3600,
   nonce: randomBytes(32)
 };
 ```
 
-### 2. Submit to P402
+## 2. Verify Authorization
 
-Send the signed authorization to the settlement endpoint.
+**Endpoint**: `POST /verify`
 
-**Endpoint**: `POST https://p402.io/api/v1/facilitator/settle`
+```bash
+curl https://facilitator.p402.io/verify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "paymentPayload": {
+      "x402Version": 2,
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "payload": {
+        "signature": "0x...",
+        "authorization": {
+          "from": "0x...",
+          "to": "0xb23f146251e3816a011e800bcbae704baa5619ec",
+          "value": "1000000",
+          "validAfter": "0",
+          "validBefore": "1735689600",
+          "nonce": "0x..."
+        }
+      }
+    },
+    "paymentRequirements": {
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "maxAmountRequired": "1000000",
+      "resource": "https://example.com/api",
+      "description": "AI inference",
+      "payTo": "0xb23f146251e3816a011e800bcbae704baa5619ec",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+    }
+  }'
+```
 
-**Request Body**:
+**Response** (VerifyResponse):
+```json
+{ "isValid": true, "payer": "0x..." }
+```
+
+On failure:
+```json
+{ "isValid": false, "invalidReason": "Insufficient amount" }
+```
+
+## 3. Execute Settlement
+
+**Endpoint**: `POST /settle`
+
+Same request format as verify. The facilitator executes the on-chain transfer.
+
+**Response** (SettleResponse):
 ```json
 {
-  "tenantId": "...",
-  "decisionId": "...",
+  "success": true,
+  "transaction": "0x88df016a...",
+  "network": "eip155:8453",
+  "payer": "0x..."
+}
+```
+
+On failure:
+```json
+{
+  "success": false,
+  "transaction": "",
+  "network": "eip155:8453",
+  "payer": null,
+  "errorReason": "EIP-3009 payment verification failed"
+}
+```
+
+## 4. Legacy Format (Backward Compatible)
+
+The `/api/v1/facilitator/settle` endpoint also accepts the legacy format:
+
+```json
+{
+  "txHash": "0x...",
+  "amount": "1.0",
   "asset": "USDC",
   "authorization": {
     "from": "0x...",
     "to": "0x...",
     "value": "1000000",
-    "validAfter": 0,
-    "validBefore": 1735689600,
     "nonce": "0x...",
     "v": 27,
     "r": "0x...",
@@ -75,26 +176,19 @@ Send the signed authorization to the settlement endpoint.
 }
 ```
 
-### 3. Response
+Legacy responses include additional `facilitatorId` and `receipt` fields for backward compatibility.
 
-P402 will execute the transaction and return the transaction hash.
+## CORS Headers
 
-**Response Body**:
-```json
-{
-  "settled": true,
-  "facilitatorId": "p402-eip3009",
-  "receipt": {
-    "txHash": "0x...",
-    "verifiedAmount": "1.0",
-    "asset": "USDC",
-    "timestamp": "2026-01-21T12:00:00Z"
-  }
-}
-```
+The facilitator exposes these headers for browser clients:
+- `Access-Control-Allow-Headers`: includes `PAYMENT-SIGNATURE`
+- `Access-Control-Expose-Headers`: `PAYMENT-REQUIRED, PAYMENT-RESPONSE`
+
+Note: The `PAYMENT-RESPONSE` header is set by **resource servers**, not by the facilitator.
 
 ## Security Limits
 
 - **Gas Limit**: P402 will reject settlements if gas prices on Base exceed configured limits (default 50 gwei).
 - **Expiry**: Authorizations must be valid at the time of submission.
 - **Micro-payments**: Minimum settlement amount is $0.01 USDC.
+- **Replay Protection**: Each authorization nonce can only be used once.

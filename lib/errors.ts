@@ -20,6 +20,14 @@ export type ApiErrorCode =
     | 'ERC8004_IDENTITY_NOT_FOUND'
     | 'ERC8004_REPUTATION_UNAVAILABLE'
     | 'ERC8004_VALIDATION_FAILED'
+    | 'MANDATE_NOT_FOUND'
+    | 'MANDATE_INACTIVE'
+    | 'MANDATE_EXPIRED'
+    | 'MANDATE_BUDGET_EXCEEDED'
+    | 'MANDATE_CATEGORY_DENIED'
+    | 'MANDATE_SIGNATURE_INVALID'
+    | 'SAFETY_SCAN_REJECTED'
+    | 'SAFETY_IDENTITY_REQUIRED'
 
 export class ApiError extends Error {
     public readonly code: ApiErrorCode
