@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import db from '@/lib/db';
 import { stripe } from '@/lib/stripe';
+import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,13 +47,7 @@ export async function POST(req: Request) {
         }
 
         // 3. Create Checkout Session
-        const priceId = process.env.STRIPE_PRO_PRICE_ID;
-        if (!priceId) {
-            return NextResponse.json(
-                { error: 'Stripe Price ID is not configured. Please contact the administrator.' },
-                { status: 500 }
-            );
-        }
+        const priceId = env.STRIPE_PRO_PRICE_ID;
 
         const checkoutSession = await stripe.checkout.sessions.create({
             customer: customerId,

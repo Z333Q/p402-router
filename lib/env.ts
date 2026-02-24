@@ -11,10 +11,10 @@ const envSchema = z.object({
     NEXT_PUBLIC_APP_URL: z.string().url().optional().default('http://localhost:3000'),
     POLL_SECRET: z.string().optional(),
     CRON_SECRET: z.string().optional(),
-    // Stripe
-    STRIPE_SECRET_KEY: z.string().optional(),
-    STRIPE_WEBHOOK_SECRET: z.string().optional(),
-    STRIPE_PRO_PRICE_ID: z.string().optional(),
+    // Stripe — required for billing to function
+    STRIPE_SECRET_KEY: z.string().min(1),
+    STRIPE_WEBHOOK_SECRET: z.string().min(1),
+    STRIPE_PRO_PRICE_ID: z.string().min(1),
     // Facilitator — required for settlement to function
     P402_SIGNER_ADDRESS: z.string().min(1),
     P402_FACILITATOR_PRIVATE_KEY: z.string().min(1),
