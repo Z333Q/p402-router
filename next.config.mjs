@@ -16,6 +16,13 @@ const nextConfig = {
     unoptimized: true,
   },
 
+  // Include .claude/skills/ in the serverless bundle so /skill/[...path] can read files at runtime
+  experimental: {
+    outputFileTracingIncludes: {
+      '/skill': ['.claude/skills/p402/**'],
+    },
+  },
+
   async rewrites() {
     return [
       {

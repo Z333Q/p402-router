@@ -24,6 +24,11 @@ describe('RoutingEngine', () => {
 
     describe('plan()', () => {
         it('should return cache hit if found in SemanticCache', async () => {
+            // Mock both DB queries called by checkUsageLimit (billing enforcement):
+            // 1. SELECT plan FROM tenants
+            vi.mocked(pool.query).mockResolvedValueOnce({ rows: [{ plan: 'free' }] } as any);
+            // 2. SELECT SUM(cost_usd) usage aggregate
+            vi.mocked(pool.query).mockResolvedValueOnce({ rows: [{ total_spend: '0' }] } as any);
             vi.mocked(SemanticCache.lookup).mockResolvedValueOnce({ found: true });
 
             const result = await RoutingEngine.plan(
