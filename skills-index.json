@@ -1,0 +1,31 @@
+{
+  "name": "p402-skills",
+  "version": "1.0.0",
+  "description": "Skills for P402.io payment-aware AI orchestration platform",
+  "repository": "https://github.com/Z333Q/p402-router",
+  "skills": [
+    {
+      "name": "p402",
+      "path": ".claude/skills/p402",
+      "description": "Payment-aware AI orchestration with multi-provider routing (300+ models), x402 stablecoin micropayments, session-based budget management, A2A agent communication, and cost intelligence. Use for building cost-aware AI applications, adding spending limits to agents, integrating USDC settlement, or migrating from single-provider setups.",
+      "tags": [
+        "ai",
+        "payments",
+        "routing",
+        "x402",
+        "agents",
+        "micropayments",
+        "usdc",
+        "base",
+        "openai",
+        "anthropic",
+        "cost-optimization",
+        "a2a",
+        "orchestration"
+      ],
+      "version": "1.0.0",
+      "author": "P402 Team",
+      "license": "MIT"
+    }
+  ]
+}

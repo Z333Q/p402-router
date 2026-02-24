@@ -1,36 +1,49 @@
-# P402.io - The Payment-Aware AI Orchestration Layer
+# P402.io
 
-> P402 is the infrastructure for the Agentic Web, combining AI orchestration with x402 payments and A2A communication.
+> Payment-aware AI orchestration layer. Routes LLM requests across 300+ models with cost optimization and settles payments in USDC on Base via the x402 protocol.
 
-## 🚀 Key capabilities for Agents
+P402 sits between your application and AI providers the same way a payment network sits between merchants and banks. It handles routing, authorization, and settlement so your code just makes API calls. Traditional payment processors charge ~$0.30 per transaction, making micropayments for AI API calls ($0.001-$0.05) economically impossible. P402 uses stablecoin settlement on Base L2 where transaction costs are fractions of a cent.
 
-1. **A2A Messaging**: Standardized JSON-RPC for agent-to-agent communication.
-   - Endpoint: `https://p402.io/api/a2a`
-   - Discovery: `https://p402.io/.well-known/agent.json`
+## Docs
 
-2. **AP2 Mandates**: Secure, budget-capped spending authorization.
-   - Create Mandate: `POST /api/a2a/mandates`
-   - Use Mandate: `POST /api/a2a/mandates/:id/use`
+- [API Reference](https://p402.io/docs/api): Endpoints for chat completions, sessions, providers, analytics, cache
+- [A2A Protocol](https://p402.io/docs/a2a): Google A2A integration with x402 payment extension
+- [Router Guide](https://p402.io/docs/router): Routing modes (cost, speed, quality, balanced), scoring algorithm, failover, model tiers
+- [SDK Reference](https://p402.io/docs/sdk): TypeScript SDK, MCP server, CLI tools
+- [Full Documentation](https://p402.io/llms-full.txt): Complete technical reference in a single markdown file
 
-3. **AI Router**: Intelligent routing for LLM requests (Cost, Speed, Quality).
-   - Providers: OpenAI, Anthropic, Google, Groq, DeepSeek, and more.
-   - Routing Modes: `cost`, `speed`, `quality`, `balanced`.
+## Claude Skill
 
-## 📚 API References
+- [Download P402 Skill](https://p402.io/skill/p402.zip): Installable skill for Claude Code and Claude.ai
+- [SKILL.md](https://p402.io/skill/SKILL.md): Core skill with routing guide, billing guard reference, integration patterns
+- [API Reference](https://p402.io/skill/references/api-reference.md): TypeScript interfaces, request/response examples, error codes
+- [Routing Guide](https://p402.io/skill/references/routing-guide.md): Scoring algorithm, provider landscape, advanced configuration
+- [Payment Flows](https://p402.io/skill/references/payment-flows.md): x402 3-step flow, EIP-3009, onchain verification, USDC addresses
+- [A2A Protocol](https://p402.io/skill/references/a2a-protocol.md): JSON-RPC methods, AP2 mandates, Bazaar marketplace
 
-- **Spec**: https://github.com/google/a2a-protocol
-- **Docs**: https://docs.p402.io
-- **Swagger**: https://p402.io/openapi.yaml
+## Key Endpoints
 
-## 📦 SDK
+- `POST /api/v2/chat/completions`: OpenAI-compatible routing endpoint with P402 extensions
+- `POST /api/v2/sessions`: Create budget-capped sessions for autonomous agent spending
+- `GET /api/v2/sessions/:id`: Check session budget utilization and status
+- `POST /api/v2/providers/compare`: Compare model pricing across 300+ models
+- `GET /api/v2/analytics/recommendations`: Cost optimization suggestions
+- `POST /api/a2a`: Google A2A JSON-RPC messaging with x402 payment extension
+- `GET /.well-known/agent.json`: A2A agent discovery card
+
+## Agent Discovery
+
+- [Agent Card](https://p402.io/.well-known/agent.json): A2A-compliant agent discovery
+- [OpenAPI Spec](https://p402.io/openapi.yaml): Machine-readable API specification
+
+## Integration
 
 ```bash
-npm install @p402/a2a-sdk
 npm install @p402/sdk
+npm install @p402/a2a-sdk
 ```
 
-## 🔗 Alignments
+## Source
 
-- **x402**: HTTP 402 Payment Required standard implementation.
-- **Base**: Native settlement on Base (Coinbase L2) via USDC/USDT.
-- **EIP-712**: Secure signature verification for mandates.
+- [GitHub](https://github.com/Z333Q/p402-router)
+- [Twitter](https://twitter.com/p402_io)

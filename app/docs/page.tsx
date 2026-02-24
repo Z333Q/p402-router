@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
+import { ProTierBadge } from '../dashboard/_components/ui';
 
 export default function DocsIndex() {
     return (
@@ -54,9 +55,12 @@ export default function DocsIndex() {
 
                     {/* Intelligence Quadplex */}
                     <Link href="/docs/api#intelligence-status" className="group block p-10 border-4 border-black bg-neutral-900 hover:bg-purple-600 transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(168,85,247,1)]">
-                        <div className="flex items-center gap-4 mb-6">
-                            <span className="text-4xl text-white">⚡</span>
-                            <h2 className="text-2xl font-black uppercase italic text-white group-hover:text-white">Intelligence Layer</h2>
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-4">
+                                <span className="text-4xl text-white">⚡</span>
+                                <h2 className="text-2xl font-black uppercase italic text-white group-hover:text-white">Intelligence Layer</h2>
+                            </div>
+                            <ProTierBadge className="border-primary/40" />
                         </div>
                         <p className="text-sm font-bold text-purple-200 mb-8 min-h-[48px] uppercase tracking-tight">
                             v3.0 Autonomous Governance. Protocol Economist, Sentinel Monitor, and Semantic Shield powered by **Gemini 3**.
@@ -64,7 +68,7 @@ export default function DocsIndex() {
                         <span className="font-black text-xs uppercase tracking-widest border-b-2 border-white text-white inline-block">View Quadplex &rarr;</span>
                     </Link>
 
-                    
+
                     {/* WDK + USDT0 */}
                     <Link href="/docs/wdk" className="group block p-10 border-4 border-black bg-white hover:bg-primary transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
                         <div className="flex items-center gap-4 mb-6">
@@ -77,7 +81,7 @@ export default function DocsIndex() {
                         <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Read Integration Guides &rarr;</span>
                     </Link>
 
-{/* SDK & Tools */}
+                    {/* SDK & Tools */}
                     <Link href="/docs/sdk" className="group block p-10 border-4 border-black bg-white hover:bg-primary transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
                         <div className="flex items-center gap-4 mb-6">
                             <span className="text-4xl">📦</span>
@@ -89,11 +93,26 @@ export default function DocsIndex() {
                         <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Get Started &rarr;</span>
                     </Link>
 
+                    {/* Claude Skill */}
+                    <Link href="/docs/skill" className="group block p-10 border-4 border-black bg-white hover:bg-primary transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
+                        <div className="flex items-center gap-4 mb-6">
+                            <span className="text-4xl">🧩</span>
+                            <h2 className="text-2xl font-black uppercase italic group-hover:text-black">Claude Skill</h2>
+                        </div>
+                        <p className="text-sm font-bold text-neutral-600 mb-8 min-h-[48px] uppercase tracking-tight">
+                            Install P402 in Claude Code or Claude.ai. Get AI-assisted integration, routing guidance, and code generation.
+                        </p>
+                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Install Skill &rarr;</span>
+                    </Link>
+
                     {/* ERC-8004 Trustless Agents */}
                     <Link href="/docs/erc8004" className="group block p-10 border-4 border-black bg-neutral-900 hover:bg-emerald-600 transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(16,185,129,1)]">
-                        <div className="flex items-center gap-4 mb-6">
-                            <span className="text-4xl text-white">🛡️</span>
-                            <h2 className="text-2xl font-black uppercase italic text-white group-hover:text-white">Trustless Agents</h2>
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-4">
+                                <span className="text-4xl text-white">🛡️</span>
+                                <h2 className="text-2xl font-black uppercase italic text-white group-hover:text-white">Trustless Agents</h2>
+                            </div>
+                            <ProTierBadge className="border-primary/40" />
                         </div>
                         <p className="text-sm font-bold text-emerald-200 mb-8 min-h-[48px] uppercase tracking-tight">
                             ERC-8004 on-chain identity, reputation, and validation. The trust layer for the agentic economy.

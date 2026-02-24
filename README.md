@@ -163,6 +163,51 @@ curl -X POST https://p402.io/api/v1/facilitator/settle \
 
 ---
 
+## 🧩 Claude Skill
+
+P402 ships with a [Claude Skill](https://p402.io/docs/skill) that gives Claude Code deep knowledge of the P402 API, routing engine, payment flows, and A2A protocol. When you open this repo in Claude Code, the skill loads automatically and Claude can generate P402 integration code, debug routing decisions, compare model pricing, and set up agent spending controls.
+
+**Already cloned?** The skill is in `.claude/skills/p402/` and activates automatically in Claude Code.
+
+**Using Claude.ai?** Download and upload via Settings > Capabilities > Skills:
+
+```bash
+# Download the skill package
+curl -sL https://p402.io/skill/p402.skill -o p402.skill
+# Then upload p402.skill in Claude.ai Settings > Capabilities > Skills
+```
+
+**Global install for Claude Code (all projects):**
+
+```bash
+curl -sL https://p402.io/skill/p402.zip -o /tmp/p402.zip
+unzip /tmp/p402.zip -d ~/.claude/skills/
+```
+
+**OpenAI Codex CLI:**
+
+```bash
+cp -r .claude/skills/p402 ~/.codex/skills/p402
+```
+
+**Plugin marketplace:**
+
+```
+/plugin install p402@p402-router
+```
+
+### Skill Contents
+
+| File | Lines | Coverage |
+|------|-------|----------|
+| `SKILL.md` | 167 | Routing modes, billing guard, session lifecycle, integration patterns |
+| `references/api-reference.md` | 533 | Every endpoint, TypeScript interfaces, error codes, examples |
+| `references/routing-guide.md` | 247 | Scoring algorithm, provider tiers, failover, advanced config |
+| `references/payment-flows.md` | 416 | x402 3-step flow, all payment schemes, USDC addresses |
+| `references/a2a-protocol.md` | 607 | JSON-RPC methods, AP2 mandates, Bazaar, complete integration |
+
+---
+
 ## Local Development
 
 ### Prerequisites
