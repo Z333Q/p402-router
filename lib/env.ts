@@ -15,9 +15,9 @@ const envSchema = z.object({
     STRIPE_SECRET_KEY: z.string().optional(),
     STRIPE_WEBHOOK_SECRET: z.string().optional(),
     STRIPE_PRO_PRICE_ID: z.string().optional(),
-    // Facilitator
-    P402_SIGNER_ADDRESS: z.string().optional(),
-    P402_FACILITATOR_PRIVATE_KEY: z.string().optional(),
+    // Facilitator — required for settlement to function
+    P402_SIGNER_ADDRESS: z.string().min(1),
+    P402_FACILITATOR_PRIVATE_KEY: z.string().min(1),
 });
 
 /**
