@@ -47,7 +47,7 @@ Content-Type: application/json
       "network": "base"
     }
   ],
-  "service_description": "AI inference: claude-sonnet-4-5, ~500 tokens",
+  "service_description": "AI inference: claude-sonnet-4-6, ~500 tokens",
   "expires_at": "2026-02-24T12:00:00Z"
 }
 ```
@@ -302,39 +302,16 @@ P402 Treasury Address: `0xb23f146251e3816a011e800bcbae704baa5619ec`
 
 ## Settlement Verification
 
-P402 uses `viem` to verify on-chain transactions. The verification process:
+P402 handles all on-chain verification server-side. When you submit a payment (transaction hash, EIP-3009 signature, or receipt ID), P402 verifies it automatically before releasing the resource. The verification process checks:
 
-```typescript
-import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
+1. Transaction receipt confirms success
+2. USDC Transfer event to the correct treasury address
+3. Transfer amount meets the minimum requirement
+4. Sender address is extracted and recorded
 
-const client = createPublicClient({
-  chain: base,
-  transport: http('https://mainnet.base.org')
-});
+Developers using the session-based flow do not need to implement any verification logic. P402 handles it automatically when funding a session with a transaction hash.
 
-// 1. Get transaction receipt
-const receipt = await client.getTransactionReceipt({ hash: txHash });
-
-// 2. Check status
-if (receipt.status !== 'success') {
-  return { valid: false, error: 'Transaction failed' };
-}
-
-// 3. Find USDC Transfer event to treasury
-const transferLog = receipt.logs.find(log =>
-  log.address.toLowerCase() === USDC_ADDRESS.toLowerCase() &&
-  log.topics[2]?.toLowerCase() === paddedTreasuryAddress
-);
-
-// 4. Verify amount
-const amount = BigInt(transferLog.data);
-if (amount < minAmount) {
-  return { valid: false, error: 'Insufficient amount' };
-}
-```
-
-This verification happens server-side in P402. Developers using the session-based flow do not need to implement this; it is handled automatically when funding a session with a transaction hash.
+For the raw x402 flow, P402 verifies payment proof server-side and returns the result in the `payment-completed` response. See the [P402 dashboard](https://p402.io/dashboard) for settlement logs and transaction history.
 
 ---
 
@@ -414,3 +391,7 @@ async function payAndChat(messages: any[], walletClient: any) {
   return initial.json();
 }
 ```
+
+---
+
+**Start with sessions:** For most developers, session-based payments are the fastest path to production. Create a session, fund it with USDC, and start making API calls. Try it instantly via the [P402 Mini App](https://mini.p402.io) -- connect a Base Account, fund via Base Pay, and chat with real-time cost tracking. For the full x402 payment flow, get your API key at [p402.io](https://p402.io).

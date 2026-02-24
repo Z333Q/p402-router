@@ -41,31 +41,31 @@ Sessions enforce spending boundaries. An agent with a $10 session physically can
 
 Every chat completion request can specify a routing mode that controls how P402 selects the provider and model:
 
-| Mode | Weights | Best For | Typical Provider |
-|------|---------|----------|-----------------|
-| `cost` | 80% cost, 10% quality, 10% speed | Batch processing, background tasks, high-volume | DeepSeek, Haiku, GPT-4o-mini |
-| `quality` | 10% cost, 80% quality, 10% speed | Final outputs, complex reasoning, user-facing answers | Claude Opus, GPT-4o, Gemini Ultra |
-| `speed` | 10% cost, 10% quality, 80% speed | Real-time chat, interactive UX, streaming | Groq (LPU), Flash models |
-| `balanced` | 33% cost, 34% quality, 33% speed | General purpose, default choice | Sonnet, GPT-4o-mini, Gemini Pro |
+| Mode | Optimizes For | Best For | Typical Provider |
+|------|--------------|----------|-----------------|
+| `cost` | Lowest price, acceptable quality | Batch processing, background tasks, high-volume | DeepSeek V3.2, Haiku 4.5, GPT-4o-mini |
+| `quality` | Best output, price secondary | Final outputs, complex reasoning, user-facing answers | Claude Opus 4.6, GPT-5.2, Gemini 3.1 Pro |
+| `speed` | Lowest latency, price secondary | Real-time chat, interactive UX, streaming | Groq (LPU), Flash models |
+| `balanced` | Equal weight across all factors | General purpose, default choice | Sonnet 4.6, GPT-4o-mini, Gemini 3.1 Pro |
 
-The router scores every available model on these weighted dimensions, filters by capability requirements and policy constraints, and returns the optimal choice. If the selected provider fails, automatic failover retries with the next-best alternative.
+The router scores every available model using a proprietary weighted algorithm, filters by capability requirements and policy constraints, and returns the optimal choice. If the selected provider fails, automatic failover retries with the next-best alternative.
 
 **Decision guidance for developers:** Start with `balanced` as your default. Switch to `cost` for any task where quality above "good enough" does not matter (summarization, classification, extraction). Use `quality` only for tasks where the output is the final product a human will read or where reasoning depth is critical. Use `speed` when time-to-first-byte matters more than cost (real-time chat, autocomplete).
 
 ### The Billing Guard
 
-P402 enforces a 6-layer defense system on every request. Developers should be aware of these limits to avoid unexpected rejections:
+P402 enforces a multi-layer defense system on every request. Default limits are configurable per tenant via the [P402 dashboard](https://p402.io/dashboard). Developers should handle these error codes:
 
-| Layer | Limit | Error Code | What To Do |
-|-------|-------|------------|------------|
-| Rate limit | 1,000 requests/hour | `RATE_LIMIT_EXCEEDED` | Back off, use `retryAfterMs` from error |
-| Daily circuit breaker | $1,000/day | `DAILY_LIMIT_EXCEEDED` | Contact support or wait for daily reset |
-| Concurrent requests | 10 simultaneous | `TOO_MANY_CONCURRENT` | Queue requests, reduce parallelism |
-| Anomaly detection | Z-score > 3.0 | Logged warning (soft) | Unusual cost pattern flagged, not blocked |
-| Per-request cap | $50 max | `REQUEST_TOO_EXPENSIVE` | Use a cheaper model or reduce max_tokens |
-| Budget reservation | Atomic via Redis | Insufficient budget error | Fund the session with more USDC |
+| Layer | Protection | Error Code | What To Do |
+|-------|-----------|------------|------------|
+| Rate limit | Requests per hour cap | `RATE_LIMIT_EXCEEDED` | Back off, use `retryAfterMs` from error |
+| Daily circuit breaker | Daily spend cap | `DAILY_LIMIT_EXCEEDED` | Contact support or wait for daily reset |
+| Concurrent requests | Simultaneous request cap | `TOO_MANY_CONCURRENT` | Queue requests, reduce parallelism |
+| Anomaly detection | Statistical outlier detection | Logged warning (soft) | Unusual cost pattern flagged, not blocked |
+| Per-request cap | Single request cost cap | `REQUEST_TOO_EXPENSIVE` | Use a cheaper model or reduce max_tokens |
+| Budget reservation | Atomic budget check | Insufficient budget error | Fund the session with more USDC |
 
-The guard runs `preCheck()` before every completion, executing all 6 layers in sequence. If any hard layer fails, the request is rejected before it reaches the provider. This fail-closed design means an agent cannot spend money it has not been authorized to spend.
+The guard runs a pre-check before every completion, executing all layers in sequence. If any hard layer fails, the request is rejected before it reaches the provider. This fail-closed design means an agent cannot spend money it has not been authorized to spend. View and adjust your limits at [p402.io/dashboard](https://p402.io/dashboard).
 
 ### The OpenAI-Compatible Interface
 
@@ -95,14 +95,20 @@ The response includes `p402_metadata` with the actual provider used, cost in USD
 
 P402 can cache responses for semantically similar prompts. When enabled (`p402.cache: true`), the system:
 
-1. Generates an embedding of the request using `text-embedding-3-small` via OpenRouter
-2. Searches existing cache entries for cosine similarity > 0.92
-3. Returns the cached response instantly if a match is found
+1. Generates an embedding of the request via OpenRouter
+2. Searches existing cache entries for high semantic similarity
+3. Returns the cached response instantly if a strong match is found
 4. Otherwise, forwards to the provider and caches the result
 
-Caching is scoped by tenant -- no cross-tenant data leakage is possible. Default TTL is 1 hour, max age is 24 hours. Both are configurable per request via `p402.cache_ttl`.
+Caching is scoped by tenant -- no cross-tenant data leakage is possible. Default TTL is 1 hour, max age is 24 hours. Both are configurable per request via `p402.cache_ttl`. Tune cache settings in your [P402 dashboard](https://p402.io/dashboard).
 
 Cache is most effective for: classification tasks, FAQ-style queries, repeated extractions, and any workload with natural prompt repetition. It is least effective for: creative generation, conversation continuations, and tasks requiring fresh data.
+
+## Getting Started
+
+The fastest way to try P402 is the **Base Mini App** at [mini.p402.io](https://mini.p402.io). Connect a Base Account, fund with USDC via Base Pay, and start chatting with real-time cost and savings tracking. No API key needed.
+
+For API access, sign up at [p402.io](https://p402.io) to get your API key and access the full dashboard with analytics, session management, and billing configuration.
 
 ## API Quick Reference
 
@@ -163,7 +169,7 @@ Read these when you need deeper detail than this overview provides:
 
 ## Tech Stack Context
 
-P402 is a Next.js 15.1 App Router monolith using TypeScript 5.3+, PostgreSQL 16 on Neon (raw SQL via `pg` driver, no ORM), Redis on Upstash, and OpenRouter as the upstream model aggregator. The design system follows neo-brutalist principles: primary color #B6FF2E (lime), 2px borders, no rounded corners, IBM Plex Sans + monospace fonts. When generating UI code for P402-related interfaces, follow this aesthetic.
+P402 is a Next.js App Router application using TypeScript. The design system follows neo-brutalist principles: primary color #B6FF2E (lime), 2px borders, no rounded corners, IBM Plex Sans + monospace fonts. When generating UI code for P402-related interfaces, follow this aesthetic.
 
 
 ---
@@ -270,7 +276,7 @@ OpenAI-compatible chat completion with P402 orchestration. Supports streaming, m
     request_id: string,
     tenant_id: string,
     provider: string,                // e.g., 'openai', 'anthropic', 'groq'
-    model: string,                   // e.g., 'gpt-4o-mini', 'claude-sonnet-4-5'
+    model: string,                   // e.g., 'gpt-4o-mini', 'claude-sonnet-4-6'
     cost_usd: number,               // Actual cost of this request
     latency_ms: number,             // Total latency including routing overhead
     provider_latency_ms: number,    // Provider-only latency
@@ -654,10 +660,11 @@ interface CostEstimate {
 }
 
 // BillingGuardError codes:
-// 'RATE_LIMIT_EXCEEDED' -- 1,000 req/hr exceeded, retryAfterMs provided
-// 'DAILY_LIMIT_EXCEEDED' -- $1,000/day cap reached
-// 'TOO_MANY_CONCURRENT' -- 10 simultaneous request limit
-// 'REQUEST_TOO_EXPENSIVE' -- single request exceeds $50
+// 'RATE_LIMIT_EXCEEDED' -- hourly request cap exceeded, retryAfterMs provided
+// 'DAILY_LIMIT_EXCEEDED' -- daily spend cap reached
+// 'TOO_MANY_CONCURRENT' -- concurrent request limit hit
+// 'REQUEST_TOO_EXPENSIVE' -- single request exceeds per-request cost cap
+// Default limits are configurable per tenant at https://p402.io/dashboard
 ```
 
 ---
@@ -702,6 +709,10 @@ Every chat completion response includes P402-specific headers:
 | `X-P402-Cost-USD` | Cost of this request in USD | `0.0034` |
 | `X-P402-Latency-MS` | Total latency in milliseconds | `847` |
 
+---
+
+**Ready to integrate?** Get your API key at [p402.io](https://p402.io). Try the [P402 Mini App](https://mini.p402.io) for an instant demo with USDC on Base. Full API explorer and test playground available in the [P402 dashboard](https://p402.io/dashboard).
+
 
 ---
 
@@ -736,46 +747,34 @@ The entire routing decision adds less than 50ms of overhead to the request. The 
 
 ## Scoring Algorithm
 
-The router uses a weighted scoring model. Each candidate model gets three normalized scores between 0 and 1:
+The router uses a proprietary weighted scoring model. Each candidate model is evaluated on three normalized dimensions:
 
-**Cost Score:** Calculated from the model's per-1k-token pricing relative to all candidates. The cheapest model scores 1.0, the most expensive scores 0.0, others are linearly interpolated.
+**Cost Score:** Based on the model's per-token pricing relative to all available candidates. Cheaper models score higher.
 
-```
-costScore = 1 - ((modelCost - minCost) / (maxCost - minCost))
-```
+**Quality Score:** Derived from model tier. Premium models (Claude Opus 4.6, GPT-5.2, Gemini 3.1 Pro) score highest. Mid-tier models (Sonnet 4.6, GPT-4o-mini, Gemini Flash) score moderately. Budget models (Haiku 4.5, DeepSeek V3.2, Llama 3.3) score lower but are often the best value.
 
-**Quality Score:** Derived from model tier:
-- `premium` tier: 1.0 (Claude Opus, GPT-4o, Gemini Ultra)
-- `mid` tier: 0.7 (Claude Sonnet, GPT-4o-mini, Gemini Pro)
-- `budget` tier: 0.4 (Haiku, DeepSeek, Llama variants)
+**Speed Score:** Derived from expected inference speed. Budget and specialized inference models (Groq LPU) score highest. Premium models with larger parameter counts score lower.
 
-**Speed Score:** Also derived from tier (smaller models are generally faster):
-- `budget` tier: 0.9
-- `mid` tier: 0.6
-- `premium` tier: 0.4
+**Routing Modes:**
 
-**Final Score:**
+Each mode applies a different weighting strategy:
 
-```
-totalScore = (costWeight * costScore) + (qualityWeight * qualityScore) + (speedWeight * speedScore)
-```
+| Mode | Strategy |
+|------|----------|
+| `cost` | Heavily favors price, with quality and speed as tiebreakers |
+| `quality` | Heavily favors output quality, with cost and speed as tiebreakers |
+| `speed` | Heavily favors low latency, with cost and quality as tiebreakers |
+| `balanced` | Roughly equal weight across all three dimensions |
 
-**Preset Weights:**
-
-| Mode | Cost Weight | Quality Weight | Speed Weight |
-|------|------------|---------------|-------------|
-| `cost` | 0.80 | 0.10 | 0.10 |
-| `quality` | 0.10 | 0.80 | 0.10 |
-| `speed` | 0.10 | 0.10 | 0.80 |
-| `balanced` | 0.33 | 0.34 | 0.33 |
-
-You can also pass custom weights:
+You can also pass custom weights to blend your own strategy:
 
 ```typescript
 p402: {
   mode: { cost: 0.5, quality: 0.3, speed: 0.2 }  // Custom blend
 }
 ```
+
+The exact weighting values and scoring internals are managed by P402 and tuned continuously based on real-world performance data. Use the [provider comparison endpoint](https://p402.io/api/v2/providers/compare) to see how models rank for your specific workload.
 
 ## Provider Landscape
 
@@ -785,7 +784,7 @@ The provider registry includes direct adapters for:
 
 | Provider | Adapter | Specialty |
 |----------|---------|-----------|
-| OpenAI | `openai` | GPT-4o, o3, general purpose |
+| OpenAI | `openai` | GPT-5.2, o3, general purpose |
 | Anthropic | `anthropic` | Claude family, long context, coding |
 | Google | `google` | Gemini family, multimodal, massive context |
 | Groq | `groq` | Ultra-low latency via LPU hardware |
@@ -803,25 +802,16 @@ When a provider has a direct API key configured, P402 can route to it directly. 
 
 P402 organizes models into three tiers that drive quality and speed scoring:
 
-**Premium (quality_score: 1.0, speed_score: 0.4):**
-Claude Opus, GPT-4o, Gemini Ultra/Pro, o3-high. These are the most capable models for complex reasoning, nuanced writing, and multi-step analysis. Use when output quality is paramount.
+**Premium:**
+Claude Opus 4.6, GPT-5.2, Gemini 3.1 Pro, o3. The most capable models for complex reasoning, nuanced writing, and multi-step analysis. Use when output quality is paramount.
 
-**Mid (quality_score: 0.7, speed_score: 0.6):**
-Claude Sonnet, GPT-4o-mini, Gemini Flash, Mistral Large, DeepSeek V3. Strong general-purpose models with good cost/quality tradeoffs. The sweet spot for most production workloads.
+**Mid:**
+Claude Sonnet 4.6, GPT-4o-mini, Gemini Flash, Mistral Large, DeepSeek V3.2. Strong general-purpose models with good cost/quality tradeoffs. The sweet spot for most production workloads.
 
-**Budget (quality_score: 0.4, speed_score: 0.9):**
-Claude Haiku, Llama variants, Mixtral, DeepSeek R1. Fast and cheap. Best for high-volume tasks where "good enough" quality is acceptable: classification, extraction, summarization, simple Q&A.
+**Budget:**
+Claude Haiku 4.5, Llama 3.3, Devstral 2, DeepSeek R1. Fast and cheap. Best for high-volume tasks where "good enough" quality is acceptable: classification, extraction, summarization, simple Q&A.
 
-You can restrict routing to specific tiers:
-
-```typescript
-p402: {
-  mode: 'cost',
-  // Never use premium models, even if mode is quality
-  // maxTier: 'mid'  -- not exposed via p402 options directly,
-  // but achievable through policies on sessions
-}
-```
+You can restrict routing to specific tiers via session policies. Configure this in your [P402 dashboard](https://p402.io/dashboard).
 
 ## Advanced Configuration
 
@@ -953,6 +943,10 @@ const response = await p402Chat({
 
 This pattern reduces overall costs by 40-60% compared to routing everything through a premium model.
 
+---
+
+**Try it now:** The fastest way to see routing in action is the [P402 Mini App](https://mini.p402.io). Fund with USDC on Base, pick a routing mode, and watch real-time cost tracking as you chat. For API access, get your key at [p402.io](https://p402.io).
+
 
 ---
 
@@ -1005,7 +999,7 @@ Content-Type: application/json
       "network": "base"
     }
   ],
-  "service_description": "AI inference: claude-sonnet-4-5, ~500 tokens",
+  "service_description": "AI inference: claude-sonnet-4-6, ~500 tokens",
   "expires_at": "2026-02-24T12:00:00Z"
 }
 ```
@@ -1260,39 +1254,16 @@ P402 Treasury Address: `0xb23f146251e3816a011e800bcbae704baa5619ec`
 
 ## Settlement Verification
 
-P402 uses `viem` to verify on-chain transactions. The verification process:
+P402 handles all on-chain verification server-side. When you submit a payment (transaction hash, EIP-3009 signature, or receipt ID), P402 verifies it automatically before releasing the resource. The verification process checks:
 
-```typescript
-import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
+1. Transaction receipt confirms success
+2. USDC Transfer event to the correct treasury address
+3. Transfer amount meets the minimum requirement
+4. Sender address is extracted and recorded
 
-const client = createPublicClient({
-  chain: base,
-  transport: http('https://mainnet.base.org')
-});
+Developers using the session-based flow do not need to implement any verification logic. P402 handles it automatically when funding a session with a transaction hash.
 
-// 1. Get transaction receipt
-const receipt = await client.getTransactionReceipt({ hash: txHash });
-
-// 2. Check status
-if (receipt.status !== 'success') {
-  return { valid: false, error: 'Transaction failed' };
-}
-
-// 3. Find USDC Transfer event to treasury
-const transferLog = receipt.logs.find(log =>
-  log.address.toLowerCase() === USDC_ADDRESS.toLowerCase() &&
-  log.topics[2]?.toLowerCase() === paddedTreasuryAddress
-);
-
-// 4. Verify amount
-const amount = BigInt(transferLog.data);
-if (amount < minAmount) {
-  return { valid: false, error: 'Insufficient amount' };
-}
-```
-
-This verification happens server-side in P402. Developers using the session-based flow do not need to implement this; it is handled automatically when funding a session with a transaction hash.
+For the raw x402 flow, P402 verifies payment proof server-side and returns the result in the `payment-completed` response. See the [P402 dashboard](https://p402.io/dashboard) for settlement logs and transaction history.
 
 ---
 
@@ -1372,6 +1343,10 @@ async function payAndChat(messages: any[], walletClient: any) {
   return initial.json();
 }
 ```
+
+---
+
+**Start with sessions:** For most developers, session-based payments are the fastest path to production. Create a session, fund it with USDC, and start making API calls. Try it instantly via the [P402 Mini App](https://mini.p402.io) -- connect a Base Account, fund via Base Pay, and chat with real-time cost tracking. For the full x402 payment flow, get your API key at [p402.io](https://p402.io).
 
 
 ---
@@ -1487,7 +1462,7 @@ Send a message to the P402 agent:
       "mode": "cost",
       "maxCost": 0.10,
       "provider": "anthropic",
-      "model": "claude-sonnet-4-5"
+      "model": "claude-sonnet-4-6"
     }
   },
   "id": 1
@@ -1645,7 +1620,7 @@ curl -X POST https://p402.io/api/a2a/mandates/mandate_abc/use \
   -d '{
     "amount_usd": 0.05,
     "category": "ai-inference",
-    "description": "Claude Sonnet completion, 500 tokens"
+    "description": "Claude Sonnet 4.6 completion, 500 tokens"
   }'
 ```
 
@@ -1698,7 +1673,7 @@ Within an A2A conversation, payments follow a 3-message flow using dedicated JSO
         "network": "base"
       }
     ],
-    "service_description": "AI inference via Claude Sonnet",
+    "service_description": "AI inference via Claude Sonnet 4.6",
     "expires_at": "2026-02-24T12:00:00Z"
   }
 }
@@ -1983,3 +1958,7 @@ console.log('Task:', task.result.task.id);
 console.log('Response:', task.result.task.status.message.parts[0].text);
 console.log('Cost:', task.result.task.metadata.cost_usd);
 ```
+
+---
+
+**Build your first agent integration:** Start by discovering P402's capabilities at [p402.io/.well-known/agent.json](https://p402.io/.well-known/agent.json), then create a mandate and send your first A2A message. The [P402 Mini App](https://mini.p402.io) demonstrates the full session and payment flow in a consumer-friendly interface. Get your API key at [p402.io](https://p402.io).

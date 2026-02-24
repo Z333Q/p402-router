@@ -41,31 +41,31 @@ Sessions enforce spending boundaries. An agent with a $10 session physically can
 
 Every chat completion request can specify a routing mode that controls how P402 selects the provider and model:
 
-| Mode | Weights | Best For | Typical Provider |
-|------|---------|----------|-----------------|
-| `cost` | 80% cost, 10% quality, 10% speed | Batch processing, background tasks, high-volume | DeepSeek, Haiku, GPT-4o-mini |
-| `quality` | 10% cost, 80% quality, 10% speed | Final outputs, complex reasoning, user-facing answers | Claude Opus, GPT-4o, Gemini Ultra |
-| `speed` | 10% cost, 10% quality, 80% speed | Real-time chat, interactive UX, streaming | Groq (LPU), Flash models |
-| `balanced` | 33% cost, 34% quality, 33% speed | General purpose, default choice | Sonnet, GPT-4o-mini, Gemini Pro |
+| Mode | Optimizes For | Best For | Typical Provider |
+|------|--------------|----------|-----------------|
+| `cost` | Lowest price, acceptable quality | Batch processing, background tasks, high-volume | DeepSeek V3.2, Haiku 4.5, GPT-4o-mini |
+| `quality` | Best output, price secondary | Final outputs, complex reasoning, user-facing answers | Claude Opus 4.6, GPT-5.2, Gemini 3.1 Pro |
+| `speed` | Lowest latency, price secondary | Real-time chat, interactive UX, streaming | Groq (LPU), Flash models |
+| `balanced` | Equal weight across all factors | General purpose, default choice | Sonnet 4.6, GPT-4o-mini, Gemini 3.1 Pro |
 
-The router scores every available model on these weighted dimensions, filters by capability requirements and policy constraints, and returns the optimal choice. If the selected provider fails, automatic failover retries with the next-best alternative.
+The router scores every available model using a proprietary weighted algorithm, filters by capability requirements and policy constraints, and returns the optimal choice. If the selected provider fails, automatic failover retries with the next-best alternative.
 
 **Decision guidance for developers:** Start with `balanced` as your default. Switch to `cost` for any task where quality above "good enough" does not matter (summarization, classification, extraction). Use `quality` only for tasks where the output is the final product a human will read or where reasoning depth is critical. Use `speed` when time-to-first-byte matters more than cost (real-time chat, autocomplete).
 
 ### The Billing Guard
 
-P402 enforces a 6-layer defense system on every request. Developers should be aware of these limits to avoid unexpected rejections:
+P402 enforces a multi-layer defense system on every request. Default limits are configurable per tenant via the [P402 dashboard](https://p402.io/dashboard). Developers should handle these error codes:
 
-| Layer | Limit | Error Code | What To Do |
-|-------|-------|------------|------------|
-| Rate limit | 1,000 requests/hour | `RATE_LIMIT_EXCEEDED` | Back off, use `retryAfterMs` from error |
-| Daily circuit breaker | $1,000/day | `DAILY_LIMIT_EXCEEDED` | Contact support or wait for daily reset |
-| Concurrent requests | 10 simultaneous | `TOO_MANY_CONCURRENT` | Queue requests, reduce parallelism |
-| Anomaly detection | Z-score > 3.0 | Logged warning (soft) | Unusual cost pattern flagged, not blocked |
-| Per-request cap | $50 max | `REQUEST_TOO_EXPENSIVE` | Use a cheaper model or reduce max_tokens |
-| Budget reservation | Atomic via Redis | Insufficient budget error | Fund the session with more USDC |
+| Layer | Protection | Error Code | What To Do |
+|-------|-----------|------------|------------|
+| Rate limit | Requests per hour cap | `RATE_LIMIT_EXCEEDED` | Back off, use `retryAfterMs` from error |
+| Daily circuit breaker | Daily spend cap | `DAILY_LIMIT_EXCEEDED` | Contact support or wait for daily reset |
+| Concurrent requests | Simultaneous request cap | `TOO_MANY_CONCURRENT` | Queue requests, reduce parallelism |
+| Anomaly detection | Statistical outlier detection | Logged warning (soft) | Unusual cost pattern flagged, not blocked |
+| Per-request cap | Single request cost cap | `REQUEST_TOO_EXPENSIVE` | Use a cheaper model or reduce max_tokens |
+| Budget reservation | Atomic budget check | Insufficient budget error | Fund the session with more USDC |
 
-The guard runs `preCheck()` before every completion, executing all 6 layers in sequence. If any hard layer fails, the request is rejected before it reaches the provider. This fail-closed design means an agent cannot spend money it has not been authorized to spend.
+The guard runs a pre-check before every completion, executing all layers in sequence. If any hard layer fails, the request is rejected before it reaches the provider. This fail-closed design means an agent cannot spend money it has not been authorized to spend. View and adjust your limits at [p402.io/dashboard](https://p402.io/dashboard).
 
 ### The OpenAI-Compatible Interface
 
@@ -95,14 +95,20 @@ The response includes `p402_metadata` with the actual provider used, cost in USD
 
 P402 can cache responses for semantically similar prompts. When enabled (`p402.cache: true`), the system:
 
-1. Generates an embedding of the request using `text-embedding-3-small` via OpenRouter
-2. Searches existing cache entries for cosine similarity > 0.92
-3. Returns the cached response instantly if a match is found
+1. Generates an embedding of the request via OpenRouter
+2. Searches existing cache entries for high semantic similarity
+3. Returns the cached response instantly if a strong match is found
 4. Otherwise, forwards to the provider and caches the result
 
-Caching is scoped by tenant -- no cross-tenant data leakage is possible. Default TTL is 1 hour, max age is 24 hours. Both are configurable per request via `p402.cache_ttl`.
+Caching is scoped by tenant -- no cross-tenant data leakage is possible. Default TTL is 1 hour, max age is 24 hours. Both are configurable per request via `p402.cache_ttl`. Tune cache settings in your [P402 dashboard](https://p402.io/dashboard).
 
 Cache is most effective for: classification tasks, FAQ-style queries, repeated extractions, and any workload with natural prompt repetition. It is least effective for: creative generation, conversation continuations, and tasks requiring fresh data.
+
+## Getting Started
+
+The fastest way to try P402 is the **Base Mini App** at [mini.p402.io](https://mini.p402.io). Connect a Base Account, fund with USDC via Base Pay, and start chatting with real-time cost and savings tracking. No API key needed.
+
+For API access, sign up at [p402.io](https://p402.io) to get your API key and access the full dashboard with analytics, session management, and billing configuration.
 
 ## API Quick Reference
 
@@ -163,4 +169,4 @@ Read these when you need deeper detail than this overview provides:
 
 ## Tech Stack Context
 
-P402 is a Next.js 15.1 App Router monolith using TypeScript 5.3+, PostgreSQL 16 on Neon (raw SQL via `pg` driver, no ORM), Redis on Upstash, and OpenRouter as the upstream model aggregator. The design system follows neo-brutalist principles: primary color #B6FF2E (lime), 2px borders, no rounded corners, IBM Plex Sans + monospace fonts. When generating UI code for P402-related interfaces, follow this aesthetic.
+P402 is a Next.js App Router application using TypeScript. The design system follows neo-brutalist principles: primary color #B6FF2E (lime), 2px borders, no rounded corners, IBM Plex Sans + monospace fonts. When generating UI code for P402-related interfaces, follow this aesthetic.

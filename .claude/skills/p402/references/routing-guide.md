@@ -29,46 +29,34 @@ The entire routing decision adds less than 50ms of overhead to the request. The 
 
 ## Scoring Algorithm
 
-The router uses a weighted scoring model. Each candidate model gets three normalized scores between 0 and 1:
+The router uses a proprietary weighted scoring model. Each candidate model is evaluated on three normalized dimensions:
 
-**Cost Score:** Calculated from the model's per-1k-token pricing relative to all candidates. The cheapest model scores 1.0, the most expensive scores 0.0, others are linearly interpolated.
+**Cost Score:** Based on the model's per-token pricing relative to all available candidates. Cheaper models score higher.
 
-```
-costScore = 1 - ((modelCost - minCost) / (maxCost - minCost))
-```
+**Quality Score:** Derived from model tier. Premium models (Claude Opus 4.6, GPT-5.2, Gemini 3.1 Pro) score highest. Mid-tier models (Sonnet 4.6, GPT-4o-mini, Gemini Flash) score moderately. Budget models (Haiku 4.5, DeepSeek V3.2, Llama 3.3) score lower but are often the best value.
 
-**Quality Score:** Derived from model tier:
-- `premium` tier: 1.0 (Claude Opus, GPT-4o, Gemini Ultra)
-- `mid` tier: 0.7 (Claude Sonnet, GPT-4o-mini, Gemini Pro)
-- `budget` tier: 0.4 (Haiku, DeepSeek, Llama variants)
+**Speed Score:** Derived from expected inference speed. Budget and specialized inference models (Groq LPU) score highest. Premium models with larger parameter counts score lower.
 
-**Speed Score:** Also derived from tier (smaller models are generally faster):
-- `budget` tier: 0.9
-- `mid` tier: 0.6
-- `premium` tier: 0.4
+**Routing Modes:**
 
-**Final Score:**
+Each mode applies a different weighting strategy:
 
-```
-totalScore = (costWeight * costScore) + (qualityWeight * qualityScore) + (speedWeight * speedScore)
-```
+| Mode | Strategy |
+|------|----------|
+| `cost` | Heavily favors price, with quality and speed as tiebreakers |
+| `quality` | Heavily favors output quality, with cost and speed as tiebreakers |
+| `speed` | Heavily favors low latency, with cost and quality as tiebreakers |
+| `balanced` | Roughly equal weight across all three dimensions |
 
-**Preset Weights:**
-
-| Mode | Cost Weight | Quality Weight | Speed Weight |
-|------|------------|---------------|-------------|
-| `cost` | 0.80 | 0.10 | 0.10 |
-| `quality` | 0.10 | 0.80 | 0.10 |
-| `speed` | 0.10 | 0.10 | 0.80 |
-| `balanced` | 0.33 | 0.34 | 0.33 |
-
-You can also pass custom weights:
+You can also pass custom weights to blend your own strategy:
 
 ```typescript
 p402: {
   mode: { cost: 0.5, quality: 0.3, speed: 0.2 }  // Custom blend
 }
 ```
+
+The exact weighting values and scoring internals are managed by P402 and tuned continuously based on real-world performance data. Use the [provider comparison endpoint](https://p402.io/api/v2/providers/compare) to see how models rank for your specific workload.
 
 ## Provider Landscape
 
@@ -78,7 +66,7 @@ The provider registry includes direct adapters for:
 
 | Provider | Adapter | Specialty |
 |----------|---------|-----------|
-| OpenAI | `openai` | GPT-4o, o3, general purpose |
+| OpenAI | `openai` | GPT-5.2, o3, general purpose |
 | Anthropic | `anthropic` | Claude family, long context, coding |
 | Google | `google` | Gemini family, multimodal, massive context |
 | Groq | `groq` | Ultra-low latency via LPU hardware |
@@ -96,25 +84,16 @@ When a provider has a direct API key configured, P402 can route to it directly. 
 
 P402 organizes models into three tiers that drive quality and speed scoring:
 
-**Premium (quality_score: 1.0, speed_score: 0.4):**
-Claude Opus, GPT-4o, Gemini Ultra/Pro, o3-high. These are the most capable models for complex reasoning, nuanced writing, and multi-step analysis. Use when output quality is paramount.
+**Premium:**
+Claude Opus 4.6, GPT-5.2, Gemini 3.1 Pro, o3. The most capable models for complex reasoning, nuanced writing, and multi-step analysis. Use when output quality is paramount.
 
-**Mid (quality_score: 0.7, speed_score: 0.6):**
-Claude Sonnet, GPT-4o-mini, Gemini Flash, Mistral Large, DeepSeek V3. Strong general-purpose models with good cost/quality tradeoffs. The sweet spot for most production workloads.
+**Mid:**
+Claude Sonnet 4.6, GPT-4o-mini, Gemini Flash, Mistral Large, DeepSeek V3.2. Strong general-purpose models with good cost/quality tradeoffs. The sweet spot for most production workloads.
 
-**Budget (quality_score: 0.4, speed_score: 0.9):**
-Claude Haiku, Llama variants, Mixtral, DeepSeek R1. Fast and cheap. Best for high-volume tasks where "good enough" quality is acceptable: classification, extraction, summarization, simple Q&A.
+**Budget:**
+Claude Haiku 4.5, Llama 3.3, Devstral 2, DeepSeek R1. Fast and cheap. Best for high-volume tasks where "good enough" quality is acceptable: classification, extraction, summarization, simple Q&A.
 
-You can restrict routing to specific tiers:
-
-```typescript
-p402: {
-  mode: 'cost',
-  // Never use premium models, even if mode is quality
-  // maxTier: 'mid'  -- not exposed via p402 options directly,
-  // but achievable through policies on sessions
-}
-```
+You can restrict routing to specific tiers via session policies. Configure this in your [P402 dashboard](https://p402.io/dashboard).
 
 ## Advanced Configuration
 
@@ -245,3 +224,7 @@ const response = await p402Chat({
 ```
 
 This pattern reduces overall costs by 40-60% compared to routing everything through a premium model.
+
+---
+
+**Try it now:** The fastest way to see routing in action is the [P402 Mini App](https://mini.p402.io). Fund with USDC on Base, pick a routing mode, and watch real-time cost tracking as you chat. For API access, get your key at [p402.io](https://p402.io).

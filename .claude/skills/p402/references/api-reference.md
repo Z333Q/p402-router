@@ -100,7 +100,7 @@ OpenAI-compatible chat completion with P402 orchestration. Supports streaming, m
     request_id: string,
     tenant_id: string,
     provider: string,                // e.g., 'openai', 'anthropic', 'groq'
-    model: string,                   // e.g., 'gpt-4o-mini', 'claude-sonnet-4-5'
+    model: string,                   // e.g., 'gpt-4o-mini', 'claude-sonnet-4-6'
     cost_usd: number,               // Actual cost of this request
     latency_ms: number,             // Total latency including routing overhead
     provider_latency_ms: number,    // Provider-only latency
@@ -484,10 +484,11 @@ interface CostEstimate {
 }
 
 // BillingGuardError codes:
-// 'RATE_LIMIT_EXCEEDED' -- 1,000 req/hr exceeded, retryAfterMs provided
-// 'DAILY_LIMIT_EXCEEDED' -- $1,000/day cap reached
-// 'TOO_MANY_CONCURRENT' -- 10 simultaneous request limit
-// 'REQUEST_TOO_EXPENSIVE' -- single request exceeds $50
+// 'RATE_LIMIT_EXCEEDED' -- hourly request cap exceeded, retryAfterMs provided
+// 'DAILY_LIMIT_EXCEEDED' -- daily spend cap reached
+// 'TOO_MANY_CONCURRENT' -- concurrent request limit hit
+// 'REQUEST_TOO_EXPENSIVE' -- single request exceeds per-request cost cap
+// Default limits are configurable per tenant at https://p402.io/dashboard
 ```
 
 ---
@@ -531,3 +532,7 @@ Every chat completion response includes P402-specific headers:
 | `X-P402-Provider` | Provider that served the request | `anthropic` |
 | `X-P402-Cost-USD` | Cost of this request in USD | `0.0034` |
 | `X-P402-Latency-MS` | Total latency in milliseconds | `847` |
+
+---
+
+**Ready to integrate?** Get your API key at [p402.io](https://p402.io). Try the [P402 Mini App](https://mini.p402.io) for an instant demo with USDC on Base. Full API explorer and test playground available in the [P402 dashboard](https://p402.io/dashboard).

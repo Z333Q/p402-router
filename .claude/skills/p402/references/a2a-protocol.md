@@ -109,7 +109,7 @@ Send a message to the P402 agent:
       "mode": "cost",
       "maxCost": 0.10,
       "provider": "anthropic",
-      "model": "claude-sonnet-4-5"
+      "model": "claude-sonnet-4-6"
     }
   },
   "id": 1
@@ -267,7 +267,7 @@ curl -X POST https://p402.io/api/a2a/mandates/mandate_abc/use \
   -d '{
     "amount_usd": 0.05,
     "category": "ai-inference",
-    "description": "Claude Sonnet completion, 500 tokens"
+    "description": "Claude Sonnet 4.6 completion, 500 tokens"
   }'
 ```
 
@@ -320,7 +320,7 @@ Within an A2A conversation, payments follow a 3-message flow using dedicated JSO
         "network": "base"
       }
     ],
-    "service_description": "AI inference via Claude Sonnet",
+    "service_description": "AI inference via Claude Sonnet 4.6",
     "expires_at": "2026-02-24T12:00:00Z"
   }
 }
@@ -605,3 +605,7 @@ console.log('Task:', task.result.task.id);
 console.log('Response:', task.result.task.status.message.parts[0].text);
 console.log('Cost:', task.result.task.metadata.cost_usd);
 ```
+
+---
+
+**Build your first agent integration:** Start by discovering P402's capabilities at [p402.io/.well-known/agent.json](https://p402.io/.well-known/agent.json), then create a mandate and send your first A2A message. The [P402 Mini App](https://mini.p402.io) demonstrates the full session and payment flow in a consumer-friendly interface. Get your API key at [p402.io](https://p402.io).
