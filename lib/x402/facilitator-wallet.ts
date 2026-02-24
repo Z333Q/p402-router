@@ -7,6 +7,7 @@ import { ApiError } from '@/lib/errors';
 // Environment configuration
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://mainnet.base.org';
 const PRIVATE_KEY = process.env.P402_FACILITATOR_PRIVATE_KEY;
+const SIGNER_ADDRESS = process.env.P402_SIGNER_ADDRESS;
 const MAX_GAS_PRICE_GWEI = BigInt(process.env.P402_MAX_GAS_PRICE_GWEI || '50');
 
 export class FacilitatorWallet {
@@ -19,9 +20,19 @@ export class FacilitatorWallet {
             throw new Error("P402_FACILITATOR_PRIVATE_KEY is not configured");
         }
 
+        if (!SIGNER_ADDRESS) {
+            throw new Error("P402_SIGNER_ADDRESS is not configured");
+        }
+
         // Initialize account from private key
         // SECURITY: Currently using env var. Future migration to KMS recommended.
         this.account = privateKeyToAccount(PRIVATE_KEY as `0x${string}`);
+
+        if (this.account.address.toLowerCase() !== SIGNER_ADDRESS.toLowerCase()) {
+            throw new Error(
+                `P402_SIGNER_ADDRESS mismatch. Derived ${this.account.address}, expected ${SIGNER_ADDRESS}`
+            );
+        }
 
         const chain = process.env.NEXT_PUBLIC_CHANGE_ENV === 'testnet' ? baseSepolia : base;
 

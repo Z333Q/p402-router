@@ -10,7 +10,7 @@ function getSignerAddress(): string {
         const prefixed = pk.startsWith('0x') ? pk : `0x${pk}`;
         return privateKeyToAccount(prefixed as `0x${string}`).address;
     }
-    return '0x0000000000000000000000000000000000000000';
+    throw new Error('Facilitator signer not configured: set P402_SIGNER_ADDRESS or P402_FACILITATOR_PRIVATE_KEY');
 }
 
 export async function GET() {

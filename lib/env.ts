@@ -39,4 +39,9 @@ export function validateEnv() {
 
 export const env = process.env as unknown as z.infer<typeof envSchema>;
 
-export const P402_FACILITATOR_PRIVATE_KEY = process.env.P402_FACILITATOR_PRIVATE_KEY || '0x0000000000000000000000000000000000000000000000000000000000000000';
+export const P402_FACILITATOR_PRIVATE_KEY = process.env.P402_FACILITATOR_PRIVATE_KEY;
+
+const envOk = validateEnv();
+if (!envOk) {
+  throw new Error('Environment validation failed');
+}
