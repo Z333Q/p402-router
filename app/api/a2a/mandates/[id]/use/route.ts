@@ -9,19 +9,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     try {
         const body = await req.json();
-        const { amount_usd, task_id, category } = body;
+        const { amount_usd, task_id, category, agent_did } = body;
 
         if (!amount_usd) {
             return NextResponse.json({ error: 'Amount required' }, { status: 400 });
         }
 
-        // 1. Verify Policy
-        const policyResult = await AP2PolicyEngine.verifyMandate(id, Number(amount_usd), category);
+        // 1. Verify Policy & Trust Guard (ERC-8004 validation)
+        const policyResult = await AP2PolicyEngine.verifyMandate(id, Number(amount_usd), category, agent_did);
 
         if (!policyResult.valid) {
             // Map common policy errors to HTTP/JSON-RPC-like responses
             // Since this is REST, we return JSON with the error structure as requested
-            // Use the error object if present, or fallback
+            // Specially format SECURITY_PACK_BLOCKED to match JSON-RPC -32005 pattern
+            if (policyResult.error?.code === 'SECURITY_PACK_BLOCKED') {
+                return NextResponse.json({
+                    error: {
+                        code: -32005,
+                        message: policyResult.error.message,
+                        data: policyResult.error.data
+                    }
+                }, { status: 403 });
+            }
+
             return NextResponse.json({
                 error: policyResult.error || { code: 'UNKNOWN', message: 'Unknown error' }
             }, { status: 403 });

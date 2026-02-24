@@ -11,6 +11,13 @@ const envSchema = z.object({
     NEXT_PUBLIC_APP_URL: z.string().url().optional().default('http://localhost:3000'),
     POLL_SECRET: z.string().optional(),
     CRON_SECRET: z.string().optional(),
+    // Stripe
+    STRIPE_SECRET_KEY: z.string().optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().optional(),
+    STRIPE_PRO_PRICE_ID: z.string().optional(),
+    // Facilitator
+    P402_SIGNER_ADDRESS: z.string().optional(),
+    P402_FACILITATOR_PRIVATE_KEY: z.string().optional(),
 });
 
 /**
@@ -31,3 +38,5 @@ export function validateEnv() {
 }
 
 export const env = process.env as unknown as z.infer<typeof envSchema>;
+
+export const P402_FACILITATOR_PRIVATE_KEY = process.env.P402_FACILITATOR_PRIVATE_KEY || '0x0000000000000000000000000000000000000000000000000000000000000000';

@@ -2,8 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
 import { NextRequest } from 'next/server';
 import { SettlementService } from '@/lib/services/settlement-service';
+import { assertWithinCap } from '@/lib/billing/plan-guard';
+import { recordUsage } from '@/lib/billing/usage';
 
 vi.mock('@/lib/services/settlement-service');
+vi.mock('@/lib/billing/plan-guard');
+vi.mock('@/lib/billing/usage');
 
 function createRequest(body: unknown) {
     return new NextRequest(new URL('/api/v1/router/settle', 'https://p402.io'), {
@@ -44,6 +48,9 @@ describe('POST /api/v1/router/settle', () => {
     });
 
     it('should handle onchain settlement correctly', async () => {
+        vi.mocked(assertWithinCap).mockResolvedValue();
+        vi.mocked(recordUsage).mockResolvedValue();
+
         (SettlementService.settle as any).mockResolvedValue({
             settled: true,
             facilitatorId: 'chain_base',
@@ -74,6 +81,9 @@ describe('POST /api/v1/router/settle', () => {
     });
 
     it('should handle receipt settlement correctly', async () => {
+        vi.mocked(assertWithinCap).mockResolvedValue();
+        vi.mocked(recordUsage).mockResolvedValue();
+
         (SettlementService.settleWithReceipt as any).mockResolvedValue({
             settled: true,
             facilitatorId: 'p402-receipt',

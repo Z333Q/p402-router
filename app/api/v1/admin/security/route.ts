@@ -7,8 +7,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MultisigTreasury } from '@/lib/security/multisig';
 import { EnhancedRateLimiter } from '@/lib/security/rate-limiter';
 import { EnvironmentValidator } from '@/lib/security/environment-validator';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!(session?.user as any)?.isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const action = searchParams.get('action');
@@ -47,8 +54,8 @@ export async function POST(req: NextRequest) {
     const { action } = body;
 
     // Validate authentication for administrative actions
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !isAuthorizedAdmin(authHeader)) {
+    const session = await getServerSession(authOptions);
+    if (!(session?.user as any)?.isAdmin) {
       return NextResponse.json({
         error: 'Unauthorized',
         message: 'Administrative access required'
@@ -286,19 +293,6 @@ async function banClient(body: any) {
     ban_record: banRecord,
     message: `Client ${client_id} banned for ${duration_hours || 24} hours`
   });
-}
-
-/**
- * Validate admin authentication
- */
-function isAuthorizedAdmin(authHeader: string): boolean {
-  // In production, implement proper admin authentication
-  // This could check JWT tokens, API keys, or session authentication
-
-  const token = authHeader.replace('Bearer ', '');
-
-  // Mock validation - in production, verify against authorized admin list
-  return token.startsWith('admin_') && token.length > 32;
 }
 
 /**

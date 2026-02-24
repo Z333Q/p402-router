@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getProviderRegistry } from '@/lib/ai-providers';
+import { requireTenantAccess } from '@/lib/auth';
 
 interface Recommendation {
     id: string;
@@ -37,9 +38,14 @@ interface Recommendation {
     implementation: string;
 }
 
+
+
 export async function GET(req: NextRequest) {
-    const searchParams = req.nextUrl.searchParams;
-    const tenantId = searchParams.get('tenant_id') || req.headers.get('x-p402-tenant') || 'default';
+    const access = await requireTenantAccess(req);
+    if (access.error) {
+        return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+    const tenantId = access.tenantId;
 
     const recommendations: Recommendation[] = [];
     const registry = getProviderRegistry();

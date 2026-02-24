@@ -92,3 +92,57 @@ export const authOptions: NextAuthOptions = {
         }
     }
 }
+
+import { NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth';
+
+/**
+ * Validates tenant access for API requests.
+ * Uses NextAuth session if available to enforce tenant isolation, 
+ * otherwise requires an explicit tenant ID for API keys.
+ */
+export async function requireTenantAccess(req: NextRequest) {
+    const session = await getServerSession(authOptions);
+    let requestedTenant = req.headers.get('x-p402-tenant');
+
+    if (session?.user) {
+        const userTenant = (session.user as any).tenantId;
+        // User requested a specific tenant that is NOT theirs, and they aren't admin
+        if (requestedTenant &&
+            requestedTenant !== 'default' &&
+            requestedTenant !== 'anonymous' &&
+            requestedTenant !== userTenant &&
+            !(session.user as any).isAdmin) {
+            return { error: 'Forbidden: Cannot access other tenant data', status: 403 };
+        }
+
+        // S4 Safety Pack: Reject requests from banned tenants globally
+        try {
+            const repCheck = await pool.query('SELECT is_banned FROM tenant_reputation WHERE tenant_id = $1', [userTenant]);
+            if (repCheck.rows[0]?.is_banned) {
+                return { error: 'Safety Lock: Tenant access suspended due to TOS violations', status: 403 };
+            }
+        } catch {
+            // tenant_reputation table may not exist yet (migration pending) — fail-open
+        }
+
+        return { tenantId: userTenant };
+    }
+
+    // Fallback for API keys (no NextAuth session)
+    if (!requestedTenant || requestedTenant === 'default' || requestedTenant === 'anonymous') {
+        return { error: 'Unauthorized: Missing or invalid tenant context', status: 401 };
+    }
+
+    // S4 Safety Pack: Reject API requests from banned tenants
+    try {
+        const repCheckApi = await pool.query('SELECT is_banned FROM tenant_reputation WHERE tenant_id = $1', [requestedTenant]);
+        if (repCheckApi.rows[0]?.is_banned) {
+            return { error: 'Safety Lock: Tenant API suspended due to TOS violations', status: 403 };
+        }
+    } catch {
+        // tenant_reputation table may not exist yet (migration pending) — fail-open
+    }
+
+    return { tenantId: requestedTenant };
+}

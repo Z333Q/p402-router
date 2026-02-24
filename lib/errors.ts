@@ -26,21 +26,26 @@ export type ApiErrorCode =
     | 'MANDATE_BUDGET_EXCEEDED'
     | 'MANDATE_CATEGORY_DENIED'
     | 'MANDATE_SIGNATURE_INVALID'
+    | 'PLAN_CAP_EXCEEDED'
+    | 'PLAN_FEATURE_LOCKED'
     | 'SAFETY_SCAN_REJECTED'
     | 'SAFETY_IDENTITY_REQUIRED'
+    | 'SECURITY_PACK_BLOCKED'
 
 export class ApiError extends Error {
     public readonly code: ApiErrorCode
     public readonly status: number
     public readonly requestId: string
     public readonly details?: unknown
+    public readonly metadata?: unknown
 
-    constructor(args: { code: ApiErrorCode; status: number; message: string; requestId: string; details?: unknown }) {
+    constructor(args: { code: ApiErrorCode; status: number; message: string; requestId: string; details?: unknown; metadata?: unknown }) {
         super(args.message)
         this.code = args.code
         this.status = args.status
         this.requestId = args.requestId
         this.details = args.details
+        this.metadata = args.metadata
     }
 }
 

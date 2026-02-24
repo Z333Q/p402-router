@@ -3,6 +3,13 @@ import { type Hex } from "viem";
 import { SettlementService } from "@/lib/services/settlement-service";
 import { type EIP3009Authorization } from "@/lib/x402/eip3009";
 import { ApiError } from "@/lib/errors";
+import { requireTenantAccess } from "@/lib/auth";
+import { computePlatformFeeUsd } from "@/lib/billing/entitlements";
+import { getTenantPlan } from "@/lib/billing/plan-guard";
+import { recordUsage } from "@/lib/billing/usage";
+
+// Force dynamic execution to prevent Next.js from evaluating Redis/DB on build-time
+export const dynamic = 'force-dynamic';
 
 /**
  * Parse a 65-byte hex signature into v, r, s components.
@@ -108,7 +115,17 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Legacy format: { txHash, amount, authorization, ... } ──
-        const { txHash, amount, asset, network, tenantId, decisionId, authorization } = body;
+        const { txHash, amount, asset, network, decisionId, authorization } = body;
+
+        // Resolve Tenant
+        const access = await requireTenantAccess(req);
+        if (access.error) {
+            return NextResponse.json(
+                buildSettleResponse(false, "", null, access.error),
+                { status: access.status }
+            );
+        }
+        const tenantId = access.tenantId;
 
         if (!txHash && !authorization) {
             return NextResponse.json(
@@ -133,6 +150,38 @@ export async function POST(req: NextRequest) {
             authorization,
             network,
         });
+
+        // =====================================================================
+        // NEW BILLING LOGIC: Platform Fees & Usage Recording
+        // =====================================================================
+        // Calculate the platform fee for the facilitator transaction based on
+        // the tenant's current plan.
+        const planId = await getTenantPlan(tenantId || 'default');
+
+        let numericAmount = 0;
+        if (amount) {
+            numericAmount = parseFloat(amount);
+        } else if (result.receipt?.verifiedAmount) {
+            numericAmount = parseFloat(result.receipt.verifiedAmount);
+        }
+
+        if (numericAmount > 0) {
+            const platformFee = computePlatformFeeUsd(planId, numericAmount);
+            // Record the standard tx value
+            await recordUsage({
+                tenantId: tenantId || 'default',
+                eventType: 'api_call',
+                costUsd: numericAmount
+            });
+            // Record the platform fee
+            if (platformFee > 0) {
+                await recordUsage({
+                    tenantId: tenantId || 'default',
+                    eventType: 'platform_fee',
+                    costUsd: platformFee
+                });
+            }
+        }
 
         return NextResponse.json({
             ...buildSettleResponse(true, result.receipt.txHash, result.payer ?? null),

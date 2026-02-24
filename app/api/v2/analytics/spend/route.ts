@@ -10,10 +10,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { requireTenantAccess } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
+    const access = await requireTenantAccess(req);
+    if (access.error) {
+        return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+    const tenantId = access.tenantId;
+
     const searchParams = req.nextUrl.searchParams;
-    const tenantId = searchParams.get('tenant_id') || req.headers.get('x-p402-tenant') || 'default';
     const period = searchParams.get('period') || '30d';
     const groupBy = searchParams.get('group_by') || 'day';
 

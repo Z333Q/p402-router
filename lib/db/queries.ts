@@ -102,13 +102,15 @@ export async function getTrafficStats(tenantId: string, since: Date): Promise<{ 
     return await db.query(query, [tenantId, since.toISOString()]);
   } catch (error) {
     console.error('Error fetching traffic stats:', error);
-    return { rows: [{
-      total_requests: 0,
-      total_cost: 0,
-      avg_latency: 0,
-      unique_sessions: 0,
-      providers_used: []
-    }] };
+    return {
+      rows: [{
+        total_requests: 0,
+        total_cost: 0,
+        avg_latency: 0,
+        unique_sessions: 0,
+        providers_used: []
+      }]
+    };
   }
 }
 
@@ -199,10 +201,7 @@ export async function getActiveFacilitators(): Promise<{ rows: any[] }> {
   }
 }
 
-/**
- * Get session analytics
- */
-export async function getSessionAnalytics(sessionId: string): Promise<{
+export async function getSessionAnalytics(sessionId: string, tenantId: string): Promise<{
   requestCount: number;
   totalCost: number;
   avgLatency: number;
@@ -210,22 +209,23 @@ export async function getSessionAnalytics(sessionId: string): Promise<{
 }> {
   const query = `
     SELECT
-      COUNT(*)::int as request_count,
-      COALESCE(SUM(cost_usd), 0) as total_cost,
-      COALESCE(AVG(latency_ms), 0) as avg_latency,
+      COUNT(mu.*)::int as request_count,
+      COALESCE(SUM(mu.cost_usd), 0) as total_cost,
+      COALESCE(AVG(mu.latency_ms), 0) as avg_latency,
       json_agg(
         json_build_object(
-          'timestamp', created_at,
-          'cost', cost_usd
+          'timestamp', mu.created_at,
+          'cost', mu.cost_usd
         )
-        ORDER BY created_at
+        ORDER BY mu.created_at
       ) as cost_history
-    FROM model_usage
-    WHERE session_id = $1
+    FROM model_usage mu
+    JOIN agent_sessions s ON mu.session_id = s.session_token
+    WHERE mu.session_id = $1 AND s.tenant_id = $2
   `;
 
   try {
-    const result = await db.query(query, [sessionId]);
+    const result = await db.query(query, [sessionId, tenantId]);
     const row = result.rows[0];
 
     return {
@@ -273,4 +273,81 @@ export async function getCurrentTenantId(): Promise<string> {
   // In a real implementation, this would get the tenant ID from the current session
   // For now, return the default tenant
   return '00000000-0000-0000-0000-000000000001';
+}
+
+// =============================================================================
+// S6-002: Transient DB Retry Utility
+// =============================================================================
+//
+// Neon serverless Postgres enforces a 20-connection hard cap. During traffic
+// spikes, connections might temporarily exhaust. This wrapper retries ONLY on
+// known infrastructure error codes — never on business-logic errors like
+// unique constraint violations, preventing accidental double-writes.
+//
+// Postgres transient codes:
+//   53300 = too_many_connections
+//   08006 = connection failure
+//   08003 = connection does not exist
+//   57P03 = cannot connect now (DB restarting)
+//   08000 = connection exception (generic)
+
+const TRANSIENT_PG_CODES = new Set(['53300', '08006', '08003', '57P03', '08000']);
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 100;
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Executes a DB query function with exponential backoff for transient pool errors.
+ *
+ * @param queryFn    - Zero-arg function returning a promise (e.g. `() => db.query(...)`)
+ * @param contextName - Human-readable label for warning logs (e.g. 'x402_settlement')
+ */
+export async function withTransientRetry<T>(
+  queryFn: () => Promise<T>,
+  contextName: string
+): Promise<T> {
+  let attempt = 0;
+
+  while (attempt < MAX_RETRIES) {
+    try {
+      return await queryFn();
+    } catch (error: any) {
+      attempt++;
+
+      const isTransient = error.code && TRANSIENT_PG_CODES.has(error.code);
+
+      if (!isTransient || attempt >= MAX_RETRIES) {
+        // Propagate immediately: non-transient errors (constraint violation,
+        // syntax error) or we've exhausted all retries.
+        throw error;
+      }
+
+      // Exponential backoff with ±50ms jitter: ~200ms, ~400ms, ~800ms
+      const delay = BASE_DELAY_MS * Math.pow(2, attempt) + Math.random() * 50;
+      console.warn(
+        `[DB_RETRY] ${contextName}: Pool exhausted (code=${error.code}, ` +
+        `attempt=${attempt}/${MAX_RETRIES}). Retrying in ${Math.round(delay)}ms...`
+      );
+
+      await sleep(delay);
+    }
+  }
+
+  throw new Error(`[DB_RETRY] ${contextName}: Exhausted all retry attempts.`);
+}
+
+/**
+ * Convenience wrapper: retry-safe db.query for read paths (SELECTs).
+ * Use for settlement lookups, billing checks, and any SELECT under high concurrency.
+ */
+export async function retryQuery(
+  text: string,
+  params: any[],
+  contextName: string
+) {
+  return withTransientRetry(
+    () => db.query(text, params),
+    contextName
+  );
 }

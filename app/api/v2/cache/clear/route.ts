@@ -8,9 +8,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSemanticCache } from '@/lib/cache';
+import { requireTenantAccess } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
-    const tenantId = req.headers.get('x-p402-tenant') || 'default';
+    const access = await requireTenantAccess(req);
+    if (access.error) {
+        return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+    const tenantId = access.tenantId;
 
     try {
         const body = await req.json().catch(() => ({}));

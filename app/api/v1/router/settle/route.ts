@@ -3,6 +3,12 @@ import { z } from 'zod'
 import { SettlementService } from '@/lib/services/settlement-service'
 import { toApiErrorResponse, ApiError } from '@/lib/errors'
 import type { EIP3009Authorization } from '@/lib/x402/eip3009'
+import { requireTenantAccess } from '@/lib/auth'
+import { assertWithinCap } from '@/lib/billing/plan-guard'
+import { recordUsage } from '@/lib/billing/usage'
+
+// Force dynamic execution to prevent Next.js from evaluating Redis/DB on build-time
+export const dynamic = 'force-dynamic';
 
 // Payment Scheme Schemas
 const OnchainPaymentSchema = z.object({
@@ -62,7 +68,19 @@ export async function POST(req: NextRequest) {
             })
         }
 
-        const { tenantId, decisionId, mandateId, amount, asset, payment } = result.data;
+        const { decisionId, mandateId, amount, asset, payment } = result.data;
+
+        // 1.5 Secure Tenant Identification
+        const access = await requireTenantAccess(req);
+        if (access.error) {
+            throw new ApiError({
+                code: 'INVALID_REQUEST',
+                status: access.status || 401,
+                message: access.error,
+                requestId
+            });
+        }
+        const tenantId = access.tenantId;
 
         // 2. Route to appropriate settlement method based on scheme
         let response;
@@ -110,6 +128,21 @@ export async function POST(req: NextRequest) {
                     message: `Payment scheme '${(payment as any).scheme}' is not supported`,
                     requestId
                 });
+        }
+
+        // 3. Billing Guard & Usage Recording
+        // We do this after settlement validation so we don't bill for failed txs
+        const numericAmount = parseFloat(amount);
+        if (!isNaN(numericAmount) && numericAmount > 0) {
+            // Re-verify they haven't exceeded the hard cap for their tier
+            await assertWithinCap(tenantId, numericAmount);
+
+            // Record the usage for the current billing cycle
+            await recordUsage({
+                tenantId,
+                eventType: 'api_call', // Treat standard router settlements as api_call
+                costUsd: numericAmount
+            });
         }
 
         return NextResponse.json({

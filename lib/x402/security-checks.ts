@@ -3,6 +3,8 @@ import { EIP3009Authorization, EIP712_DOMAIN_TYPE, TRANSFER_WITH_AUTHORIZATION_T
 import { TokenConfig } from '@/lib/tokens';
 import { ApiError } from '@/lib/errors';
 import pool from '@/lib/db';
+import { ReplayProtection } from '@/lib/replay-protection';
+import { ethers } from 'ethers';
 
 export class SecurityChecks {
 
@@ -83,12 +85,28 @@ export class SecurityChecks {
             });
         }
 
-        // 4. Rate Limiting (Simple check)
-        // Prevent a single address from spamming us with settlements in a short window
-        // TODO: Implement using Redis or DB if high scale needed. 
-        // For MVP, we rely on the implementation plan's guidance which prioritized core functionality.
-        // We will skip complex rate limiting for this MVP phase to ensure delivery, 
-        // as recommended in the user plan decision "Start with minimal viable implementation".
+        // 4. Replay Protection
+        // Ensure this signature hasn't already been used and settled
+        const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+        const paymentHash = ethers.keccak256(
+            abiCoder.encode(
+                ['address', 'bytes32', 'uint256'],
+                [auth.from, auth.nonce, auth.value]
+            )
+        );
+
+        const isProcessed = await ReplayProtection.isProcessed(paymentHash);
+        if (isProcessed) {
+            throw new ApiError({
+                code: 'REPLAY_DETECTED',
+                status: 409,
+                message: 'This authorization has already been processed or settled.',
+                requestId
+            });
+        }
+
+        // 5. Rate Limiting (Simple check)
+        // Handled by global enhanced rate limiter in area 2.
 
         return true;
     }

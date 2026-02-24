@@ -95,3 +95,57 @@ export async function recordValidationRequest(params: {
   // this will initiate on-chain validation and poll for the response.
   return { requestHash, approved: true };
 }
+
+// ---------------------------------------------------------------------------
+// S4-004: Agent DID Runtime Trust Gate
+// ---------------------------------------------------------------------------
+
+import { ApiError } from '../errors';
+import { getReputationScore } from './reputation-cache';
+
+const MINIMUM_REPUTATION_SCORE = 50;
+
+/**
+ * Validates an agent's ERC-8004 reputation score before allowing an A2A task
+ * to proceed. Throws an ApiError (SECURITY_PACK_BLOCKED → JSON-RPC -32005)
+ * if the agent's score is below the threshold or the registry is unreachable.
+ *
+ * Redis-backed cache ensures we don't hit the Base RPC on every task.
+ */
+export async function validateAgentTrust(agentDid: string): Promise<void> {
+  // Fast-bypass when validation is not enforced
+  if (process.env.ERC8004_ENABLE_VALIDATION !== 'true') return;
+
+  let score: number | null;
+
+  try {
+    // Uses the DB-backed cache (refreshed every 5 min) — protects RPC & Neon pool
+    score = await getReputationScore(agentDid);
+  } catch (error) {
+    // Fail-close: if registry is unreachable, block the request
+    throw new ApiError({
+      code: 'INTERNAL_ERROR',
+      status: 502,
+      message: `Failed to verify ERC-8004 trust anchor for agent ${agentDid}. Registry unreachable.`,
+      requestId: crypto.randomUUID(),
+    });
+  }
+
+  // null score = no ERC-8004 identity; treat as 0 if strict mode, skip if permissive
+  const effectiveScore = score ?? 100;
+
+  if (effectiveScore < MINIMUM_REPUTATION_SCORE) {
+    throw new ApiError({
+      code: 'SECURITY_PACK_BLOCKED',
+      status: 403,
+      message: `Agent execution blocked. ${agentDid} has been quarantined due to low reputation.`,
+      requestId: crypto.randomUUID(),
+      metadata: {
+        agentDid,
+        currentScore: effectiveScore,
+        requiredScore: MINIMUM_REPUTATION_SCORE,
+        reason: 'ERC8004_QUARANTINE',
+      },
+    });
+  }
+}

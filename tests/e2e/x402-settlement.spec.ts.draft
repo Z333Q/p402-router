@@ -1,0 +1,120 @@
+import { test, expect, Page } from '@playwright/test';
+
+/**
+ * X402 Settlement Mock Tests
+ * Validates the UI for merchants monitoring and claiming accumulated micropayments.
+ */
+
+const mockWalletSession = async (page: Page) => {
+    // NextAuth mock
+    await page.route('**/api/auth/session', (route) => {
+        route.fulfill({
+            status: 200,
+            json: {
+                user: { id: 'merchant', address: '0xMerchantAddr', roles: ['admin'] },
+                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            },
+        });
+    });
+};
+
+test.describe('x402 Settlement', () => {
+    test.beforeEach(async ({ page }) => {
+        await mockWalletSession(page);
+
+        await page.route('**/api/v1/routes*', (route) => {
+            route.fulfill({ status: 200, json: { routes: [] } });
+        });
+        await page.route('**/api/v1/stats*', (route) => {
+            route.fulfill({ status: 200, json: { totalPayments: 0, totalVolume: '0', successRate: 1, avgLatencyMs: 0 } });
+        });
+        await page.route('**/api/v1/events*', (route) => {
+            route.fulfill({ status: 200, json: { events: [] } });
+        });
+        await page.route('**/api/v1/intelligence/status*', (route) => {
+            route.fulfill({ status: 200, json: { status: 'active', cache: { entries: 0 } } });
+        });
+    });
+
+    test('displays outstanding x402 token balances correctly', async ({ page }) => {
+        // Mock the internal balances endpoint
+        await page.route('**/api/v1/settlement/balances', (route) => {
+            route.fulfill({
+                status: 200,
+                json: {
+                    totalAccumulatedUSD: '14.50',
+                    unclaimedTokens: 290,
+                    readyToBatch: true
+                }
+            });
+        });
+
+        await page.goto('/dashboard/settlement');
+        await page.waitForLoadState('networkidle');
+
+        // Value must be formatted and visible
+        await expect(page.getByText('$14.50')).toBeVisible();
+
+        // Claim action must be available
+        const claimButton = page.getByRole('button', { name: /Claim/i });
+        await expect(claimButton).toBeVisible();
+        await expect(claimButton).not.toBeDisabled();
+    });
+
+    test('handles empty settlement state gracefully', async ({ page }) => {
+        await page.route('**/api/v1/settlement/balances', (route) => {
+            route.fulfill({
+                status: 200,
+                json: {
+                    totalAccumulatedUSD: '0.00',
+                    unclaimedTokens: 0,
+                    readyToBatch: false
+                }
+            });
+        });
+
+        await page.goto('/dashboard/settlement');
+        await page.waitForLoadState('networkidle');
+
+        await expect(page.getByText('$0.00')).toBeVisible();
+
+        // Claim button should be disabled when nothing to claim
+        const claimButton = page.getByRole('button', { name: /Claim/i });
+        if (await claimButton.isVisible()) {
+            await expect(claimButton).toBeDisabled();
+        }
+    });
+
+    test('simulates hitting the Viem writeContract endpoint to settle', async ({ page }) => {
+        await page.route('**/api/v1/settlement/balances', (route) => {
+            route.fulfill({
+                status: 200,
+                json: { totalAccumulatedUSD: '5.00', unclaimedTokens: 100, readyToBatch: true }
+            });
+        });
+
+        // Mock the internal "batch" transaction building endpoint
+        await page.route('**/api/v1/settlement/batch', (route) => {
+            if (route.request().method() === 'POST') {
+                route.fulfill({
+                    status: 200,
+                    json: {
+                        txHash: '0xDeAdBeEfDeAdBeEfDeAdBeEfDeAdBeEfDeAdBeEf' // Successfully broadcast to blockchain
+                    }
+                });
+            }
+        });
+
+        await page.goto('/dashboard/settlement');
+        await page.waitForLoadState('networkidle');
+
+        const claimButton = page.getByRole('button', { name: /Claim/i });
+        await claimButton.click();
+
+        // Usually it goes into a processing state
+        await expect(page.locator('text=Processing...').or(page.getByRole('button', { name: /Processing/i }))).toBeVisible({ timeout: 2000 });
+
+        // A toast or success message should appear representing the txHash
+        await expect(page.getByText(/0xDeAdBeEf/i).or(page.getByText(/Success/i))).toBeVisible({ timeout: 5000 });
+    });
+});

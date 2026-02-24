@@ -8,13 +8,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { requireTenantAccess } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
-    let tenantId = req.headers.get('x-p402-tenant');
-    if (!tenantId || tenantId === 'default' || tenantId === 'anonymous') {
-        const tRes = await pool.query('SELECT id FROM tenants LIMIT 1');
-        tenantId = tRes.rows[0]?.id || '00000000-0000-0000-0000-000000000001';
+    const access = await requireTenantAccess(req);
+    if (access.error) {
+        return NextResponse.json({ error: access.error }, { status: access.status });
     }
+    const tenantId = access.tenantId;
 
     try {
         const body = await req.json();

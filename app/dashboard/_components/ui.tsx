@@ -437,6 +437,15 @@ export function Badge({ children, variant = 'default', tone, className = '' }: B
     );
 }
 
+export function ProTierBadge({ className = '' }: { className?: string }) {
+    return (
+        <span className={`inline-flex items-center gap-1.5 px-2 py-1 bg-black text-primary font-black text-[9px] uppercase tracking-widest border border-primary/20 ${className}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            PRO TIER
+        </span>
+    );
+}
+
 // =============================================================================
 // CODE BLOCK / CODE BOX
 // =============================================================================

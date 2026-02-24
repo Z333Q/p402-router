@@ -126,6 +126,26 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // 0. Replay Protection (Finding 1.1)
+        // Ensure this exact signature hasn't been replayed (Theft of Service)
+        const { ethers } = await import('ethers');
+        const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+        const paymentHash = ethers.keccak256(
+            abiCoder.encode(
+                ['address', 'bytes32', 'uint256'],
+                [auth.from, auth.nonce, auth.value]
+            )
+        );
+
+        const { ReplayProtection } = await import('@/lib/replay-protection');
+        const isProcessed = await ReplayProtection.isProcessed(paymentHash);
+        if (isProcessed) {
+            return NextResponse.json(
+                { isValid: false, invalidReason: 'This authorization has already been processed or settled.' },
+                { status: 409 }
+            );
+        }
+
         // Run security checks (signature recovery + timing)
         const token = DEFAULT_TOKEN;
         await SecurityChecks.validateAuthorization(auth, token, requestId);

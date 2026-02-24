@@ -6,6 +6,8 @@ const ParamsSchema = z.object({
   id: z.string().min(1)
 });
 
+import { requireTenantAccess } from '@/lib/auth';
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -13,8 +15,14 @@ export async function GET(
   try {
     const { id: sessionId } = ParamsSchema.parse(await params);
 
+    const access = await requireTenantAccess(req);
+    if (access.error) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+    const tenantId = access.tenantId;
+
     // Get real-time session analytics from database
-    const analytics = await getSessionAnalytics(sessionId);
+    const analytics = await getSessionAnalytics(sessionId, tenantId);
 
     // Calculate savings estimate (mock for now, would need baseline costs)
     const estimatedDirectCost = analytics.totalCost * 1.3; // Assume 30% markup without P402

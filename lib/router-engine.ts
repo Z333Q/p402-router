@@ -7,6 +7,8 @@ import { CCIPBridgeAdapter } from './facilitator-adapters/ccip'
 import { SmartContractAdapter } from './facilitator-adapters/smart-contract'
 import { GeminiOptimizer } from './intelligence/gemini-optimizer'
 
+import { checkUsageLimit, BillingError } from './billing/enforcement'
+
 export type RoutingMode = 'cost' | 'quality' | 'speed' | 'balanced';
 
 export type FacilitatorCandidate = {
@@ -65,6 +67,31 @@ export class RoutingEngine {
         const mode = options?.mode || 'cost';
         const tenantId = options?.tenantId;
         const prompt = options?.prompt;
+
+        // 0. Usage Enforcement (Phase 13)
+        if (tenantId) {
+            try {
+                await checkUsageLimit(tenantId);
+            } catch (error) {
+                if (error instanceof BillingError && error.code === 'LIMIT_EXCEEDED') {
+                    console.warn(`[Router] Access denied for tenant ${tenantId}: ${error.message}`);
+                    // Record Blocked Decision
+                    if (options?.requestId) {
+                        await pool.query(`
+                            INSERT INTO router_decisions (
+                                request_id, tenant_id, task, requested_mode, 
+                                selected_provider_id, reason, success, cost_usd
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                        `, [
+                            options.requestId, tenantId, options.task || 'inference',
+                            mode, 'system', 'usage_limit_reached', false, 0
+                        ]);
+                    }
+                    throw error;
+                }
+                throw error;
+            }
+        }
 
         // 1. Semantic Cache Pre-flight (Spec 4.4)
         if (tenantId && prompt) {

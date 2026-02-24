@@ -2,11 +2,14 @@ import { AP2Mandate, MandateConstraints } from './a2a-types';
 import { query } from './db';
 import { pushNotificationService } from './push-service';
 
+import { validateAgentTrust } from './erc8004/validation-guard';
+
 export interface AP2PolicyContext {
     tenant_id: string;
     category?: string;
     requested_amount_usd: number;
     metadata?: any;
+    agent_did?: string;
 }
 
 export interface AP2PolicyResult {
@@ -32,8 +35,26 @@ export class AP2PolicyEngine {
     static async verifyMandate(
         mandateId: string,
         requestedAmountUsd: number,
-        category?: string
+        category?: string,
+        agentDid?: string
     ): Promise<{ valid: boolean; error?: { code: string; message: string; data?: any } }> {
+
+        // 0. S4-004 Trust Gate: Block execution if agent's trust score < 50
+        if (agentDid) {
+            try {
+                await validateAgentTrust(agentDid);
+            } catch (err: any) {
+                // Return the precise ApiError structure the validation guard threw
+                return {
+                    valid: false,
+                    error: {
+                        code: err.code || 'SECURITY_PACK_BLOCKED',
+                        message: err.message || 'Agent execution blocked due to low reputation.',
+                        data: err.metadata
+                    }
+                };
+            }
+        }
 
         // 1. Fetch mandate
         // In real world, we might fetch from on-chain or local DB cache.
@@ -132,8 +153,8 @@ export class AP2PolicyEngine {
 // HELPER FUNCTIONS
 // =============================================================================
 
-export async function validateMandate(mandateId: string, requestedAmountUsd: number, category?: string) {
-    return AP2PolicyEngine.verifyMandate(mandateId, requestedAmountUsd, category);
+export async function validateMandate(mandateId: string, requestedAmountUsd: number, category?: string, agentDid?: string) {
+    return AP2PolicyEngine.verifyMandate(mandateId, requestedAmountUsd, category, agentDid);
 }
 
 export async function findActiveMandate(tenantId: string, agentDid: string, category?: string) {
@@ -163,12 +184,13 @@ export async function getMandateBudgetStatus(mandateId: string) {
 }
 
 export async function enforceAP2Policy(context: AP2PolicyContext): Promise<AP2PolicyResult> {
-    const mandate = await findActiveMandate(context.tenant_id, context.metadata?.agent_did, context.category);
+    const agentDid = context.agent_did || context.metadata?.agent_did;
+    const mandate = await findActiveMandate(context.tenant_id, agentDid, context.category);
     if (!mandate) {
         return { allowed: false, error: { code: 'NO_ACTIVE_MANDATE', message: 'No active mandate found for this agent' } };
     }
 
-    const validation = await validateMandate(mandate.id, context.requested_amount_usd, context.category);
+    const validation = await validateMandate(mandate.id, context.requested_amount_usd, context.category, agentDid);
     if (!validation.valid) {
         return { allowed: false, mandate_id: mandate.id, error: validation.error };
     }

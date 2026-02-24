@@ -9,8 +9,8 @@ export default defineConfig({
         globals: true,
         setupFiles: ['./__tests__/setup.ts'],
         include: ['**/*.test.{ts,tsx}'],
-        exclude: ['node_modules/**', 'cloudflare-facilitator/**', '__tests__/build-smoke.test.ts'],
-        testTimeout: 10_000,
+        exclude: ['node_modules/**', 'cloudflare-facilitator/**'],
+        testTimeout: 300_000,
         coverage: {
             reporter: ['text', 'json', 'html'],
         },

@@ -1,252 +1,154 @@
-'use client';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import db from "@/lib/db";
+import { ShieldCheck, ShieldAlert, BadgeCheck, AlertTriangle } from 'lucide-react';
 
-import React from 'react';
-import useSWR from 'swr';
-import { Card, Badge, Button, MetricBox, ProgressBar, EmptyState, Skeleton } from '../_components/ui';
-import { TrustBadge } from '../_components/TrustBadge';
-import { TrustOnboardingBanner } from '../_components/TrustOnboardingBanner';
-import { ShieldCheck, Shield, ExternalLink } from 'lucide-react';
-import Link from 'next/link';
-
-interface FacilitatorTrust {
-    facilitator_id: string;
-    name: string;
-    erc8004_agent_id: string | null;
-    erc8004_verified: boolean;
-    erc8004_reputation_cached: number | null;
-}
-
-interface FeedbackEntry {
-    id: number;
-    facilitator_id: string;
-    value: number;
-    status: string;
-    tx_hash?: string | null;
-    created_at: string;
-    submitted_at?: string | null;
-}
-
-const fetcher = async (url: string) => {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch');
-    return res.json();
+export const metadata = {
+    title: 'Trust & Safety | P402',
 };
 
-export default function TrustLayerPage() {
-    const { data: repData, isLoading: repLoading } = useSWR<{ facilitators: FacilitatorTrust[] }>(
-        '/api/v1/erc8004/reputation',
-        fetcher,
-        { refreshInterval: 60000 }
-    );
+export default async function TrustDashboardPage() {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        redirect('/login');
+    }
 
-    const { data: fbData, isLoading: fbLoading } = useSWR<{ feedback: FeedbackEntry[] }>(
-        '/api/v1/erc8004/feedback',
-        fetcher,
-        { refreshInterval: 60000 }
-    );
+    const tenantId = (session.user as any).tenantId;
 
-    const facilitators = repData?.facilitators ?? [];
-    const feedback = fbData?.feedback ?? [];
-    const verified = facilitators.filter(f => f.erc8004_verified);
-    const avgReputation = verified.length > 0
-        ? verified.reduce((acc, f) => acc + (f.erc8004_reputation_cached ?? 0), 0) / verified.length
-        : 0;
-    const pendingFeedback = feedback.filter(f => f.status === 'pending').length;
-    const submittedFeedback = feedback.filter(f => f.status === 'submitted').length;
+    // Fetch Tenant Reputation
+    let reputationScore = 100;
+    let isBanned = false;
+    let rankScore = 0;
+    try {
+        const repRes = await db.query(`SELECT trust_score, is_banned FROM tenant_reputation WHERE tenant_id = $1`, [tenantId]);
+        if (repRes.rows.length > 0) {
+            reputationScore = repRes.rows[0].trust_score;
+            isBanned = repRes.rows[0].is_banned;
+        }
+
+        // Just aggregate some mock or real rank score from bazaar listings
+        const rankRes = await db.query(`SELECT AVG(rank_score) as avg_rank FROM bazaar_resources WHERE tenant_id = $1`, [tenantId]);
+        rankScore = rankRes.rows[0]?.avg_rank || 0;
+    } catch (e) {
+        console.error('Failed to fetch reputation', e);
+    }
+
+    // Fetch Safety Incidents
+    let incidents: any[] = [];
+    try {
+        const incRes = await db.query(`
+            SELECT * FROM safety_incidents 
+            WHERE tenant_id = $1 
+            ORDER BY created_at DESC 
+            LIMIT 10
+        `, [tenantId]);
+        incidents = incRes.rows;
+    } catch (e) {
+        console.error('Failed to fetch incidents', e);
+    }
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-                <div className="space-y-1">
-                    <h1 className="text-4xl font-black uppercase tracking-tighter text-black italic">Trust Layer</h1>
-                    <p className="text-neutral-500 font-medium">ERC-8004 on-chain identity, reputation, and validation status.</p>
+        <div className="space-y-8 max-w-6xl">
+            <div>
+                <h1 className="page-title !text-3xl mb-2 flex items-center gap-3">
+                    <ShieldCheck className="w-8 h-8 text-[var(--primary)]" />
+                    Trust & Safety Command Center
+                </h1>
+                <p className="text-[var(--neutral-600)] font-medium">
+                    Manage your Enterprise trust posture, publisher identity, and safety incidents.
+                </p>
+            </div>
+
+            {/* TOP PANE: Audit & Scorecard */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="card bg-[var(--neutral-50)] border-2 border-black flex flex-col justify-center items-center p-8">
+                    <div className="text-[var(--neutral-500)] font-black uppercase text-sm mb-2">Network Reputation</div>
+                    <div className="text-6xl font-black text-black">{Number(reputationScore).toFixed(0)}</div>
+                    {isBanned && (
+                        <div className="mt-4 bg-[var(--error)] text-white text-xs font-bold uppercase px-3 py-1 border-2 border-black">
+                            Account Suspended
+                        </div>
+                    )}
                 </div>
-                <Link href="/docs/erc8004">
-                    <Button variant="dark" className="text-[10px] tracking-widest px-6">
-                        ERC-8004 DOCS
-                    </Button>
-                </Link>
+                <div className="card bg-[var(--neutral-50)] border-2 border-black flex flex-col justify-center items-center p-8">
+                    <div className="text-[var(--neutral-500)] font-black uppercase text-sm mb-2">Bazaar Rank</div>
+                    <div className="text-6xl font-black text-black">{Number(rankScore).toFixed(1)}</div>
+                </div>
+                <div className="card bg-[var(--primary)] text-black border-2 border-black flex flex-col justify-center items-center p-8 shadow-[4px_4px_0px_#000]">
+                    <ShieldCheck className="w-12 h-12 mb-4" />
+                    <div className="font-black uppercase text-center leading-tight">
+                        ERC-8004 Validation Guard Active
+                    </div>
+                </div>
             </div>
 
-            {/* Onboarding Banner */}
-            <TrustOnboardingBanner />
-
-            {/* Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <MetricBox
-                    label="Verified Agents"
-                    value={repLoading ? '...' : `${verified.length}`}
-                    subtext={`of ${facilitators.length} Total`}
-                    helpText="Number of facilitators with verified ERC-8004 on-chain identity"
-                    accent={verified.length > 0}
-                />
-                <MetricBox
-                    label="Avg Reputation"
-                    value={repLoading ? '...' : `${Math.round(avgReputation)}`}
-                    subtext="Out of 100"
-                    helpText="Average on-chain reputation score across verified facilitators"
-                />
-                <MetricBox
-                    label="Feedback Queued"
-                    value={fbLoading ? '...' : `${pendingFeedback}`}
-                    subtext="Pending Submission"
-                    helpText="Reputation feedback awaiting batch on-chain submission"
-                />
-                <MetricBox
-                    label="Feedback Submitted"
-                    value={fbLoading ? '...' : `${submittedFeedback}`}
-                    subtext="On-Chain"
-                    helpText="Total reputation feedback successfully submitted on-chain"
-                />
-            </div>
-
-            {/* Facilitator Trust Table */}
-            <Card title="Agent Registry" className="p-0">
-                {repLoading ? (
-                    <div className="p-6 space-y-4">
-                        <Skeleton className="h-12 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                        <Skeleton className="h-12 w-full" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* PUBLISHER MODE */}
+                <div className="space-y-6">
+                    <h2 className="text-2xl font-black uppercase text-black border-b-4 border-[var(--primary)] inline-block pb-1">Publisher Mode</h2>
+                    <div className="card border-2 border-black p-6 bg-white">
+                        <div className="flex items-start gap-4 mb-6">
+                            <div className="w-12 h-12 bg-[var(--neutral-100)] border-2 border-black flex items-center justify-center shrink-0">
+                                <BadgeCheck className="w-6 h-6 text-[var(--success)]" />
+                            </div>
+                            <div>
+                                <h3 className="font-black text-lg uppercase mb-1">On-Chain Identity</h3>
+                                <p className="text-sm text-[var(--neutral-600)] leading-relaxed">
+                                    Register your Publisher DID on Base to receive a verified Trust Badge in the public Bazaar. High reputation publishers receive priority routing in the A2A network.
+                                </p>
+                            </div>
+                        </div>
+                        <button className="btn bg-black text-white w-full uppercase font-black tracking-widest border-2 border-black hover:bg-[var(--primary)] hover:text-black transition-colors">
+                            Connect DID Registry
+                        </button>
                     </div>
-                ) : facilitators.length === 0 ? (
-                    <div className="p-6">
-                        <EmptyState
-                            title="No Agents Registered"
-                            body="No facilitators have ERC-8004 agent identities. Register your first agent to begin building on-chain trust."
-                            action={
-                                <Link href="/docs/erc8004">
-                                    <Button>View Setup Guide</Button>
-                                </Link>
-                            }
-                        />
-                    </div>
-                ) : (
-                    <div className="overflow-hidden">
-                        <table className="min-w-full divide-y divide-neutral-200">
-                            <thead className="bg-neutral-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">Agent</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">Reputation</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">Agent ID</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-neutral-200">
-                                {facilitators.map(f => (
-                                    <tr key={f.facilitator_id} className="hover:bg-neutral-50">
-                                        <td className="px-6 py-4">
+                </div>
+
+                {/* OPERATOR MODE */}
+                <div className="space-y-6">
+                    <h2 className="text-2xl font-black uppercase text-black border-b-4 border-[var(--error)] inline-block pb-1">Operator Mode</h2>
+                    <div className="card border-2 border-black p-0 bg-white overflow-hidden">
+                        <div className="p-4 bg-[var(--neutral-50)] border-b-2 border-black flex justify-between items-center">
+                            <h3 className="font-black text-sm uppercase flex items-center gap-2">
+                                <AlertTriangle className="w-4 h-4 text-[var(--error)]" />
+                                Safety Incidents
+                            </h3>
+                            <span className="text-xs font-bold uppercase text-[var(--neutral-500)]">Last 10 Events</span>
+                        </div>
+
+                        {incidents.length === 0 ? (
+                            <div className="p-8 text-center text-[var(--neutral-500)] font-medium text-sm">
+                                No safety incidents detected.
+                            </div>
+                        ) : (
+                            <div className="divide-y-2 divide-black">
+                                {incidents.map((incident: any) => (
+                                    <div key={incident.id} className="p-4 flex items-center justify-between hover:bg-[var(--neutral-50)] transition-colors">
+                                        <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2">
-                                                {f.erc8004_verified ? (
-                                                    <ShieldCheck size={14} className="text-emerald-600 flex-shrink-0" strokeWidth={3} />
-                                                ) : (
-                                                    <Shield size={14} className="text-neutral-300 flex-shrink-0" strokeWidth={3} />
-                                                )}
-                                                <span className="text-sm font-bold">{f.name || f.facilitator_id}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {f.erc8004_verified ? (
-                                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[9px]">VERIFIED</Badge>
-                                            ) : (
-                                                <Badge className="bg-neutral-50 text-neutral-400 border-neutral-200 text-[9px]">UNVERIFIED</Badge>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3 w-48">
-                                                <ProgressBar
-                                                    value={f.erc8004_reputation_cached ?? 0}
-                                                    max={100}
-                                                    showValue={false}
-                                                    variant={
-                                                        (f.erc8004_reputation_cached ?? 0) >= 70 ? 'success' :
-                                                        (f.erc8004_reputation_cached ?? 0) >= 40 ? 'warning' : 'default'
-                                                    }
-                                                    className="flex-1"
-                                                />
-                                                <span className="text-xs font-mono font-bold w-8 text-right">
-                                                    {f.erc8004_reputation_cached != null ? Math.round(f.erc8004_reputation_cached) : '---'}
+                                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 border-2 border-black ${incident.severity === 'critical' ? 'bg-[var(--error)] text-white' :
+                                                        incident.severity === 'high' ? 'bg-[var(--warning)] text-black' :
+                                                            'bg-[var(--neutral-200)] text-black'
+                                                    }`}>
+                                                    {incident.severity}
                                                 </span>
+                                                <span className="font-bold text-sm tracking-tight">{incident.category}</span>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {f.erc8004_agent_id ? (
-                                                <a
-                                                    href={`https://basescan.org/token/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432?a=${f.erc8004_agent_id}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="inline-flex items-center gap-1 text-xs font-mono text-blue-600 hover:text-blue-800"
-                                                >
-                                                    #{f.erc8004_agent_id}
-                                                    <ExternalLink size={10} />
-                                                </a>
-                                            ) : (
-                                                <span className="text-xs text-neutral-400">---</span>
-                                            )}
-                                        </td>
-                                    </tr>
+                                            <span className="text-xs text-[var(--neutral-600)] font-mono">{incident.id.split('-')[0]} • {new Date(incident.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                        <div>
+                                            <span className={`text-[10px] font-bold uppercase tracking-wider ${incident.status === 'open' ? 'text-[var(--error)]' : 'text-[var(--success)]'}`}>
+                                                {incident.status}
+                                            </span>
+                                        </div>
+                                    </div>
                                 ))}
-                            </tbody>
-                        </table>
+                            </div>
+                        )}
                     </div>
-                )}
-            </Card>
-
-            {/* Feedback History */}
-            <Card title="Feedback History" className="p-0">
-                {fbLoading ? (
-                    <div className="p-6 space-y-4">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                    </div>
-                ) : feedback.length === 0 ? (
-                    <div className="p-6">
-                        <EmptyState
-                            title="No Feedback Yet"
-                            body="Reputation feedback is automatically queued after successful settlements when ERC8004_ENABLE_REPUTATION is enabled."
-                        />
-                    </div>
-                ) : (
-                    <div className="overflow-hidden">
-                        <table className="min-w-full divide-y divide-neutral-200">
-                            <thead className="bg-neutral-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">Facilitator</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">Score</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-neutral-900 uppercase tracking-wider">Created</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-neutral-200">
-                                {feedback.slice(0, 20).map(fb => (
-                                    <tr key={fb.id} className="hover:bg-neutral-50">
-                                        <td className="px-6 py-3 text-sm font-mono">
-                                            {fb.facilitator_id.slice(0, 16)}...
-                                        </td>
-                                        <td className="px-6 py-3">
-                                            <span className="text-sm font-bold">{fb.value}/100</span>
-                                        </td>
-                                        <td className="px-6 py-3">
-                                            <Badge className={
-                                                fb.status === 'submitted'
-                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 text-[9px]'
-                                                    : fb.status === 'pending'
-                                                    ? 'bg-amber-50 text-amber-700 border-amber-200 text-[9px]'
-                                                    : 'bg-neutral-50 text-neutral-400 border-neutral-200 text-[9px]'
-                                            }>
-                                                {fb.status.toUpperCase()}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-6 py-3 text-xs text-neutral-500">
-                                            {new Date(fb.created_at).toLocaleDateString()}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </Card>
+                </div>
+            </div>
         </div>
     );
 }

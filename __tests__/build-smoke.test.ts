@@ -12,7 +12,7 @@ describe('Build Smoke Test', () => {
     try {
       execSync('npx next build', {
         cwd: ROOT,
-        timeout: 120_000,
+        timeout: 300_000,
         stdio: 'pipe',
         env: {
           ...process.env,

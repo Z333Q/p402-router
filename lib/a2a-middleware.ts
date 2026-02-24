@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import pool from './db';
 import { A2AMessage, A2ATask, TaskState } from './a2a-types';
 import { pushNotificationService } from './push-service';
+import { checkUsageLimit } from './billing/enforcement';
 
 export interface A2ATaskInput {
     message: A2AMessage;
@@ -36,6 +37,9 @@ export class A2AMiddleware {
     async createTask(input: A2ATaskInput): Promise<A2ATaskRecord> {
         const taskId = `task_${uuidv4()}`;
         const contextId = input.contextId || `ctx_${uuidv4()}`;
+
+        // Ensure usage limit is not exceeded (Phase 13)
+        await checkUsageLimit(input.tenantId);
 
         // Ensure context exists
         await pool.query(

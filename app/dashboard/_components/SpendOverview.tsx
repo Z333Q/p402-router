@@ -10,6 +10,9 @@
 import React from 'react';
 import useSWR from 'swr';
 import { Card, Stat, ProgressBar, Skeleton, Badge } from './ui';
+import { usePlanUsage } from '@/hooks/usePlanUsage';
+import { Zap, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 
 interface SpendData {
     summary: {
@@ -55,6 +58,7 @@ export function SpendOverview() {
         fetcher,
         { refreshInterval: 60000 }
     );
+    const { usagePercent, planId, maxSpendUsd, currentUsageUsd, isLoading: planLoading } = usePlanUsage();
 
     if (error) {
         return (
@@ -91,6 +95,25 @@ export function SpendOverview() {
 
     return (
         <Card title="COST INTELLIGENCE">
+            {/* Plan Usage Warning Intercept */}
+            {usagePercent >= 80 && !planLoading && (
+                <div className="mb-8 bg-warn/10 border-2 border-warn p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-pulse">
+                    <div className="flex items-center gap-3">
+                        <AlertCircle className="w-5 h-5 text-warn" />
+                        <div>
+                            <p className="text-sm font-black uppercase tracking-tight">Approaching {planId === 'free' ? 'Monthly Free' : 'Plan'} Limit ({usagePercent.toFixed(1)}%)</p>
+                            <p className="text-[10px] font-bold text-neutral-600 uppercase">Current Usage: ${currentUsageUsd.toFixed(2)} / ${maxSpendUsd.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <Link
+                        href="/pricing"
+                        className="bg-black text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest border-2 border-black hover:bg-warn hover:text-black transition-all"
+                    >
+                        Upgrade Plan
+                    </Link>
+                </div>
+            )}
+
             {/* Top Stats Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <Stat

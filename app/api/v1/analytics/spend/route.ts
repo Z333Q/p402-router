@@ -1,17 +1,15 @@
-import { NextResponse, NextRequest } from 'next/server';
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { requireTenantAccess } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-    const session = await getServerSession(authOptions)
-    const tenantId = (session?.user as any)?.tenantId
-
-    if (!tenantId) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const access = await requireTenantAccess(request);
+    if (access.error) {
+        return NextResponse.json({ error: access.error }, { status: access.status });
     }
+    const tenantId = access.tenantId;
 
     try {
         const { searchParams } = new URL(request.url);

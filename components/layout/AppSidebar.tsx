@@ -1,6 +1,6 @@
-
 "use client"
 
+import { useActionState, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -16,11 +16,14 @@ import {
     Unplug,
     Activity,
     X,
-    Shield
+    Shield,
+    CreditCard,
+    Zap
 } from "lucide-react"
 import { useSession, signOut } from "next-auth/react"
 import { useDisconnect } from 'wagmi'
 import { Badge } from "@/app/dashboard/_components/ui"
+import { usePlanUsage } from "@/hooks/usePlanUsage"
 
 const NAV_ITEMS = [
     { name: "Mission Control", href: "/dashboard", icon: LayoutDashboard },
@@ -31,6 +34,7 @@ const NAV_ITEMS = [
     { name: "Facilitators", href: "/dashboard/facilitators", icon: Network },
     { name: "Trust Layer", href: "/dashboard/trust", icon: Shield },
     { name: "Discovery Bazaar", href: "/dashboard/bazaar", icon: Store },
+    { name: "Billing & Plans", href: "/dashboard/billing", icon: CreditCard },
 ]
 
 const ADMIN_ITEMS = [
@@ -41,7 +45,28 @@ export function AppSidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
     const pathname = usePathname()
     const { data: session } = useSession()
     const { disconnect } = useDisconnect()
+    const { planId, isLoading: planLoading } = usePlanUsage((session?.user as any)?.tenantId)
     const isAdmin = (session?.user as any)?.isAdmin
+
+    const [isUpgrading, setIsUpgrading] = useState(false)
+
+    const handleUpgrade = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        setIsUpgrading(true)
+        try {
+            const res = await fetch('/api/v2/billing/checkout', { method: 'POST' });
+            const data = await res.json();
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                alert('Checkout failed: ' + (data.error || 'Unknown error'));
+                setIsUpgrading(false);
+            }
+        } catch (err) {
+            alert('Payment system unreachable');
+            setIsUpgrading(false);
+        }
+    }
 
     const handleDeauthorize = async () => {
         disconnect()
@@ -125,7 +150,18 @@ export function AppSidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
             </nav>
 
             {/* Footer / User */}
-            <div className="border-t-2 border-black p-4 bg-neutral-50">
+            <div className="border-t-2 border-black p-4 bg-neutral-50 space-y-3">
+                {planId === 'free' && !planLoading && (
+                    <button
+                        onClick={handleUpgrade}
+                        disabled={isUpgrading}
+                        className="flex w-full items-center justify-center gap-2 bg-primary px-4 py-3 text-[11px] font-black uppercase tracking-widest border-2 border-black hover:bg-black hover:text-white transition-all shadow-[4px_4px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] disabled:opacity-50"
+                    >
+                        <Zap className={`h-4 w-4 ${isUpgrading ? 'animate-pulse' : ''}`} />
+                        {isUpgrading ? 'Redirecting...' : 'Upgrade to Pro'}
+                    </button>
+                )}
+
                 <button
                     onClick={handleDeauthorize}
                     className="flex w-full items-center gap-3 px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-error transition-colors group"

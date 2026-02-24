@@ -12,13 +12,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-    getProviderRegistry, 
-    CompletionRequest, 
+import {
+    getProviderRegistry,
+    CompletionRequest,
     RoutingOptions,
     AIProviderError,
     RateLimitError
 } from '@/lib/ai-providers';
+import { requireTenantAccess } from '@/lib/auth';
 
 // =============================================================================
 // REQUEST TYPES
@@ -83,9 +84,20 @@ export async function POST(req: NextRequest) {
         // Parse request body
         const body = await req.json() as V2ChatRequest;
 
+        // Resolve tenant
+        const access = await requireTenantAccess(req);
+        if (access.error) {
+            return NextResponse.json({ error: access.error }, { status: access.status });
+        }
+
         // Extract P402 options
         const p402Options = body.p402 || {};
-        const tenantId = p402Options.tenant_id || req.headers.get('x-p402-tenant') || 'default';
+
+        // Use session tenantId as priority, but allow body override if it matches (requireTenantAccess handles this)
+        let tenantId = access.tenantId;
+
+        // Force body tenant_id into req headers so requireTenantAccess can check it if we want to be strict,
+        // but here we just use the one from requireTenantAccess which is already vetted.
 
         // Build routing options
         const routingOptions: RoutingOptions = {
@@ -140,7 +152,7 @@ export async function POST(req: NextRequest) {
                     provider: error.providerId,
                     retry_after_ms: error.retryAfterMs
                 }
-            }, { 
+            }, {
                 status: 429,
                 headers: error.retryAfterMs ? { 'Retry-After': String(Math.ceil(error.retryAfterMs / 1000)) } : {}
             });
@@ -250,7 +262,7 @@ async function handleStreamingResponse(
             try {
                 // Get routing decision first
                 const decision = await registry.route(request, options);
-                
+
                 // Send initial P402 metadata as a comment
                 controller.enqueue(encoder.encode(
                     `: P402 Request ${requestId} routed to ${decision.provider.id}/${decision.model.id}\n\n`

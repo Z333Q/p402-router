@@ -4,75 +4,77 @@ import { Facilitator } from '../types';
 import { Activity, Server } from 'lucide-react';
 
 export default function ConsoleFacilitators() {
-  const [facilitators, setFacilitators] = useState<Facilitator[]>([]);
+    const [facilitators, setFacilitators] = useState<Facilitator[]>([]);
 
-  useEffect(() => {
-    // Load facilitators from simulation service which manages state
-    setFacilitators(simulation.getFacilitators());
-  }, []);
+    useEffect(() => {
+        // Load facilitators from simulation service which manages state
+        setFacilitators(simulation.getFacilitators());
+    }, []);
 
-  return (
-    <div>
-        <div className="mb-6">
-            <h2 className="text-base font-semibold text-neutral-900">Facilitators</h2>
-            <p className="text-sm text-neutral-500 mt-1">Manage underlying settlement providers and route priority.</p>
-        </div>
+    return (
+        <div>
+            <div className="mb-8 p-6 bg-white border-2 border-black shadow-[4px_4px_0px_#000]">
+                <h2 className="text-xl font-black uppercase tracking-tight text-black">Connected Facilitators</h2>
+                <p className="text-sm font-bold text-neutral-500 mt-1 uppercase tracking-tight">Manage underlying settlement facilitators and route priority.</p>
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {facilitators.map(fac => (
-                <div key={fac.id} className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-                    <div className="p-5 border-b border-neutral-100">
-                        <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-lg bg-neutral-50 border border-neutral-200 flex items-center justify-center text-primary">
-                                    <Server size={20} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {facilitators.map(fac => (
+                    <div key={fac.id} className="bg-white border-2 border-black shadow-[8px_8px_0px_#000] overflow-hidden flex flex-col">
+                        <div className="p-6 border-b-2 border-black bg-neutral-50">
+                            <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="h-12 w-12 bg-white border-2 border-black flex items-center justify-center text-black">
+                                        <Server size={24} strokeWidth={3} />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <div className="font-black text-lg text-black uppercase tracking-tight leading-none mb-1">{fac.name}</div>
+                                        <div className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">{fac.type}</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="font-semibold text-sm text-neutral-900">{fac.name}</div>
-                                    <div className="text-xs text-neutral-500">{fac.type}</div>
-                                </div>
-                            </div>
-                            <span className={`
-                                px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider
-                                ${fac.status === 'healthy' ? 'bg-emerald-50 text-emerald-700' : 
-                                  fac.status === 'degraded' ? 'bg-amber-50 text-amber-700' : 
-                                  'bg-red-50 text-red-700'}
+                                <span className={`
+                                px-2 py-1 border-2 border-black text-[10px] font-black uppercase tracking-[0.2em]
+                                ${fac.status === 'healthy' ? 'bg-primary text-black' :
+                                        fac.status === 'degraded' ? 'bg-[var(--warning)] text-black' :
+                                            'bg-red-500 text-white'}
                             `}>
-                                {fac.status}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div className="p-5 grid grid-cols-2 gap-4">
-                        <div>
-                            <div className="text-xs text-neutral-500 mb-1">Success Rate</div>
-                            <div className="text-lg font-semibold tabular-nums text-neutral-900">{(fac.successRate * 100).toFixed(2)}%</div>
-                        </div>
-                        <div>
-                            <div className="text-xs text-neutral-500 mb-1">p95 Latency</div>
-                            <div className="text-lg font-semibold tabular-nums text-neutral-900">{fac.p95Latency}ms</div>
-                        </div>
-                    </div>
-
-                    <div className="px-5 pb-5">
-                         <div className="text-xs text-neutral-500 mb-2">Supported Networks</div>
-                         <div className="flex flex-wrap gap-2">
-                            {fac.supportedNetworks.map(net => (
-                                <span key={net} className="px-2 py-1 bg-neutral-50 border border-neutral-200 rounded text-[10px] text-neutral-600">
-                                    {net}
+                                    {fac.status}
                                 </span>
-                            ))}
-                         </div>
-                    </div>
-                </div>
-            ))}
+                            </div>
+                        </div>
 
-            {/* Add New Card */}
-            <button className="bg-neutral-50 rounded-xl border border-dashed border-neutral-300 flex flex-col items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:border-neutral-400 transition-all min-h-[240px]">
-                <Server size={32} className="mb-3 opacity-50" />
-                <span className="text-sm font-medium">Add Facilitator</span>
-            </button>
+                        <div className="p-6 grid grid-cols-2 gap-6 border-b-2 border-black">
+                            <div>
+                                <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1">Success Rate</div>
+                                <div className="text-2xl font-black tabular-nums text-black">{(fac.successRate * 100).toFixed(2)}%</div>
+                            </div>
+                            <div>
+                                <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1">p95 Latency</div>
+                                <div className="text-2xl font-black tabular-nums text-black">{fac.p95Latency}ms</div>
+                            </div>
+                        </div>
+
+                        <div className="p-6 bg-white flex-1">
+                            <div className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">Settlement Networks</div>
+                            <div className="flex flex-wrap gap-2">
+                                {fac.supportedNetworks.map(net => (
+                                    <span key={net} className="px-2 py-1 bg-neutral-100 border-2 border-black text-[10px] font-bold text-black uppercase tracking-tighter">
+                                        {net}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                {/* Add New Card */}
+                <button className="bg-neutral-50 border-2 border-black border-dashed flex flex-col items-center justify-center text-neutral-500 hover:bg-neutral-100 transition-all min-h-[300px] shadow-[4px_4px_0px_rgba(0,0,0,0.1)] hover:shadow-[8px_8px_0px_rgba(0,0,0,0.1)] group">
+                    <div className="h-16 w-16 bg-white border-2 border-black border-dashed flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <Server size={32} strokeWidth={2} />
+                    </div>
+                    <span className="text-xs font-black uppercase tracking-widest text-black/50 group-hover:text-black">Add Facilitator</span>
+                </button>
+            </div>
         </div>
-    </div>
-  );
+    );
 }

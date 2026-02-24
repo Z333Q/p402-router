@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import { Badge, Card, CodeBox, EmptyState, Button } from '../../_components/ui'
 import { clsx } from 'clsx'
+import { getAuditSummaryForScope } from '@/lib/services/audit-service'
+import { AuditPanel } from '../../_components/audit/AuditPanel'
+import { AuditGateBanner } from '../../_components/audit/AuditGateBanner'
 
 async function getRoute(routeId: string) {
     const base = process.env.NEXT_PUBLIC_BASE_URL || ''
@@ -12,6 +15,12 @@ async function getRoute(routeId: string) {
 export default async function RouteDetailPage({ params }: { params: Promise<{ routeId: string }> }) {
     const { routeId } = await params
     const data = await getRoute(routeId)
+
+    // Server-side audit data fetch — zero client-side waterfalls
+    let auditData = null;
+    try {
+        auditData = await getAuditSummaryForScope('default', 'route', routeId);
+    } catch { /* audit data is optional — don't block the page */ }
 
     if (!data) {
         return (
@@ -150,6 +159,33 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ ro
                         </div>
                     </Card>
                 </div>
+            </div>
+
+            {/* ─── Audit & Health Tab ─── */}
+            <div className="space-y-6 mt-4">
+                <Card title="Audit & Health" body="Integration health score and actionable findings for this route.">
+                    <div className="mt-6">
+                        <AuditPanel
+                            scopeType="route"
+                            scopeId={routeId}
+                            initialData={auditData}
+                        />
+                    </div>
+
+                    {/* Gate: Schedule daily audit (Free → Locked) */}
+                    <div className="mt-6">
+                        <AuditGateBanner
+                            state={auditData?.entitlements?.plan_tier === 'free' ? 'locked' : 'preview'}
+                            featureName="Scheduled Audits"
+                            prompt={{
+                                target_plan: 'Pro',
+                                headline: 'Schedule daily audits to catch regressions before they hit production.',
+                                body: 'Pro unlocks automated daily and weekly audit scheduling for this route.',
+                                cta_route: '/dashboard/billing',
+                            }}
+                        />
+                    </div>
+                </Card>
             </div>
         </div>
     )

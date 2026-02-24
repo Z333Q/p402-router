@@ -1,0 +1,106 @@
+import { test, expect, Page } from '@playwright/test';
+
+/**
+ * API Key Management Tests
+ * Validates the developer onboarding flow: creating, viewing, copying, and revoking API keys.
+ */
+
+const mockSession = async (page: Page) => {
+    await page.route('**/api/auth/session', (route) => {
+        route.fulfill({
+            status: 200,
+            json: {
+                user: { id: 'test-user', address: '0x123...abc', roles: ['admin'] },
+                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            },
+        });
+    });
+};
+
+test.describe('API Key Management', () => {
+    test.beforeEach(async ({ page }) => {
+        await mockSession(page);
+
+        await page.route('**/api/v1/routes*', (route) => {
+            route.fulfill({ status: 200, json: { routes: [] } });
+        });
+        await page.route('**/api/v1/stats*', (route) => {
+            route.fulfill({ status: 200, json: { totalPayments: 0, totalVolume: '0', successRate: 1, avgLatencyMs: 0 } });
+        });
+        await page.route('**/api/v1/events*', (route) => {
+            route.fulfill({ status: 200, json: { events: [] } });
+        });
+        await page.route('**/api/v1/intelligence/status*', (route) => {
+            route.fulfill({ status: 200, json: { status: 'active', cache: { entries: 0 } } });
+        });
+    });
+
+    test('can generate a new API key and see it once', async ({ page }) => {
+        // Mock the initial empty state
+        await page.route('**/api/v1/apikeys', (route) => {
+            if (route.request().method() === 'GET') {
+                route.fulfill({ status: 200, json: [] });
+            } else if (route.request().method() === 'POST') {
+                route.fulfill({
+                    status: 201, // Created
+                    json: {
+                        id: 'key_123',
+                        name: 'Test Setup Key',
+                        key: 'p402_live_1234567890abcdef', // Only shown once!
+                        createdAt: new Date().toISOString()
+                    }
+                });
+            }
+        });
+
+        await page.goto('/dashboard/apikeys');
+        await page.waitForLoadState('networkidle');
+
+        // Click create button
+        await page.getByRole('button', { name: /Create API Key/i }).click();
+
+        // Fill form if there is a dialog
+        const modal = page.locator('dialog');
+        if (await modal.isVisible()) {
+            await page.getByPlaceholder(/Key Name/i).fill('Test Setup Key');
+            await page.getByRole('button', { name: /Generate/i }).click();
+        }
+
+        // Verify the raw key is shown to the user
+        await expect(page.getByText('p402_live_1234567890abcdef')).toBeVisible();
+    });
+
+    test('can revoke an active API key', async ({ page }) => {
+        let isRevoked = false;
+
+        // Mock state: one active key, then empty after revocation
+        await page.route('**/api/v1/apikeys*', (route) => {
+            if (route.request().method() === 'GET') {
+                route.fulfill({
+                    status: 200,
+                    json: isRevoked ? [] : [{
+                        id: 'key_abc',
+                        name: 'Stale Key',
+                        createdAt: new Date().toISOString()
+                    }]
+                });
+            } else if (route.request().method() === 'DELETE') {
+                isRevoked = true;
+                route.fulfill({ status: 200, json: { success: true } });
+            }
+        });
+
+        await page.goto('/dashboard/apikeys');
+        await page.waitForLoadState('networkidle');
+
+        // Verify key is in the list
+        await expect(page.getByText('Stale Key')).toBeVisible();
+
+        // Revoke the key
+        const revokeButton = page.getByRole('button', { name: /Revoke/i });
+        await revokeButton.click();
+
+        // Wait for list to update to empty state
+        await expect(page.getByText('Stale Key')).not.toBeVisible();
+    });
+});

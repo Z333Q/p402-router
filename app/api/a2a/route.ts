@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { A2AMessage, A2ATask, A2ATaskState, A2ATaskStatus } from '../../../lib/a2a-types';
 import { query } from '../../../lib/db';
-import { A2A_ERRORS, A2AError } from '../../../lib/a2a-errors';
+import { A2A_ERRORS, A2AError, toA2ARpcError } from '../../../lib/a2a-errors';
 import { pushNotificationService } from '../../../lib/push-service';
 import { SettlementService } from '../../../lib/services/settlement-service';
 import { findActiveMandate } from '../../../lib/ap2-policy-engine';
 import { EIP3009Authorization } from '../../../lib/x402/eip3009';
+import { validateAgentTrust } from '../../../lib/erc8004/validation-guard';
+import { ApiError } from '../../../lib/errors';
 
 export async function POST(req: NextRequest) {
     try {
@@ -23,6 +25,23 @@ export async function POST(req: NextRequest) {
 
         const { method, params, id } = body;
         const tenantIdHeader = req.headers.get('X-P402-Tenant');
+
+        // ── S4-004: ERC-8004 Agent Trust Gate ────────────────────────────────
+        // Validate the calling agent's DID against the on-chain reputation
+        // registry before any method is dispatched. Throws ApiError on failure.
+        const agentDid = req.headers.get('x-agent-did') || params?.agentDid || 'anonymous';
+        try {
+            await validateAgentTrust(agentDid);
+        } catch (trustErr) {
+            // Format as JSON-RPC 2.0 per protocol spec — HTTP always 200
+            const rpcError = toA2ARpcError(trustErr);
+            return NextResponse.json({
+                jsonrpc: '2.0',
+                error: rpcError,
+                id: id || null
+            }, { status: 200 });
+        }
+        // ─────────────────────────────────────────────────────────────────────
 
         // Dispatch methods
         if (method === 'message/send') {

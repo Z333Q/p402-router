@@ -1,17 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db'
+import { requireTenantAccess } from '@/lib/auth'
 
 export async function GET(req: NextRequest) {
-    const session = await getServerSession(authOptions)
-
-    // Security: Only show policies belonging to the logged-in user's tenant
-    const tenantId = (session?.user as any)?.tenantId
-
-    if (!tenantId) {
-        return NextResponse.json({ policies: [] }) // Or 401, but empty list is safer UI wise for unauth view
+    const access = await requireTenantAccess(req)
+    if (access.error) {
+        return NextResponse.json({ policies: [] })
     }
+    const tenantId = access.tenantId
 
     try {
         const result = await pool.query('SELECT * FROM policies WHERE tenant_id = $1 ORDER BY updated_at DESC', [tenantId])
@@ -29,12 +25,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const session = await getServerSession(authOptions)
-    const tenantId = (session?.user as any)?.tenantId
-
-    if (!tenantId) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const access = await requireTenantAccess(req)
+    if (access.error) {
+        return NextResponse.json({ error: access.error }, { status: access.status })
     }
+    const tenantId = access.tenantId
 
     try {
         const body = await req.json()

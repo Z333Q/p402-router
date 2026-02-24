@@ -92,8 +92,8 @@ export class BillingGuard {
             }
         } catch (err) {
             if (err instanceof BillingGuardError) throw err;
-            // Redis unavailable — degrade gracefully, allow request
-            console.warn('[BillingGuard] checkRateLimit: Redis unavailable, skipping', (err as Error).message);
+            console.error('[BillingGuard] checkRateLimit error:', err);
+            throw err;
         }
     }
 

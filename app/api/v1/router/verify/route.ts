@@ -3,6 +3,7 @@ import { RoutingEngine } from '@/lib/router-engine'
 import { PolicyEngine } from '@/lib/policy-engine'
 import pool from '@/lib/db'
 import { P402Analytics } from '@/lib/analytics'
+import { requireTenantAccess } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
     const start = Date.now()
@@ -13,7 +14,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ code: 'INVALID_JSON', message: 'Invalid JSON body' }, { status: 400 })
     }
 
-    const { tenantId, decisionId, paymentSignature, paymentRequired, amount, asset, scheme } = body
+    const { decisionId, paymentSignature, paymentRequired, amount, asset, scheme } = body
+
+    // 0. Secure Tenant Identification
+    const access = await requireTenantAccess(req);
+    if (access.error) {
+        return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+    const tenantId = access.tenantId;
     const eventId = crypto.randomUUID()
 
     // 1. Re-validate Policy (optional, but good for enforcement)

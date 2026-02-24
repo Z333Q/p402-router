@@ -170,6 +170,12 @@ export default function BazaarIndexPage() {
                     className="mb-0"
                 />
 
+                <ProTip
+                    id="verified_publisher_badge"
+                    text="Pro users receive the 'Verified Publisher' badge on all listed routes, significantly increasing discovery trust and import volume."
+                    className="mt-4"
+                />
+
                 {statusMsg && (
                     <div className="animate-in slide-in-from-top-2 duration-300">
                         <Badge tone={statusMsg.type} className="w-full justify-center py-3 text-sm">
