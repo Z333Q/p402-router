@@ -8,6 +8,7 @@ import { LandingGuide } from "@/components/landing/LandingGuide"
 import { ProductionFeatures } from "@/components/landing/ProductionFeatures"
 import Link from 'next/link'
 import { Badge } from "@/app/dashboard/_components/ui"
+import { PricingStrip } from "@/components/landing/PricingStrip"
 
 export const dynamic = 'force-dynamic';
 
@@ -104,6 +105,7 @@ export default async function Page() {
                     </div>
                 </section>
 
+                <PricingStrip />
                 <BazaarLoop />
                 <Testimonials />
 
@@ -119,6 +121,11 @@ export default async function Page() {
                             </Link>
                             <Link href="/docs" className="btn btn-outline text-2xl px-12 py-6 h-auto border-2 border-black bg-transparent text-black hover:bg-black hover:text-primary">
                                 Read Documentation
+                            </Link>
+                        </div>
+                        <div className="mt-8">
+                            <Link href="/docs/skill" className="inline-flex items-center gap-2 text-black font-black uppercase tracking-widest text-sm border-b-2 border-black hover:border-transparent transition-all">
+                                <span className="text-base">⬡</span> Get the Claude Skill →
                             </Link>
                         </div>
                     </div>

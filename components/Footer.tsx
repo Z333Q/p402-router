@@ -31,6 +31,8 @@ export function Footer() {
                     </div>
                     <FooterCol title="Product" links={[
                         { label: 'Router', href: '/#product' },
+                        { label: 'Intelligence', href: '/intelligence' },
+                        { label: 'Pricing', href: '/pricing' },
                         { label: 'Policies', href: '/dashboard/policies' },
                         { label: 'Bazaar', href: '/dashboard/bazaar' },
                         { label: 'How it Works', href: '#how-it-works', onClick: () => setHelpOpen(true) },
@@ -38,8 +40,9 @@ export function Footer() {
                     <FooterCol title="Developers" links={[
                         { label: 'SDK', href: '/docs/sdk' },
                         { label: 'API Docs', href: '/docs/api' },
-                        { label: 'Status', href: '/status' },
+                        { label: 'Claude Skill', href: '/docs/skill' },
                         { label: 'MCP', href: '/docs/mcp' },
+                        { label: 'Status', href: '/status' },
                     ]} />
                     <FooterCol title="Company" links={[
                         { label: 'Whitepaper', href: '/whitepaper.pdf' },

@@ -57,10 +57,10 @@ export function TopNav() {
 
                 {/* Desktop Nav */}
                 <nav className="hidden md:flex gap-8 text-[11px] font-black uppercase tracking-[0.15em]">
-                    <Link href="/#product" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Product</Link>
+                    <Link href="/docs/api" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Docs</Link>
                     <Link href="/intelligence" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Intelligence</Link>
                     <Link href="/dashboard/bazaar" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Bazaar</Link>
-                    <Link href="/docs/api" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Developers</Link>
+                    <Link href="/pricing" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Pricing</Link>
                 </nav>
 
                 <div className="flex items-center gap-3">
@@ -90,13 +90,12 @@ export function TopNav() {
             {isMenuOpen && (
                 <div className="absolute top-16 left-0 right-0 bg-white border-b-2 border-black p-6 flex flex-col gap-4 z-40">
                     <nav className="flex flex-col gap-4 text-base font-extrabold uppercase">
-                        <Link href="/#product" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Product</Link>
-                        <Link href="/intelligence" onClick={() => setIsMenuOpen(false)} className="text-black no-underline text-primary">Intelligence</Link>
+                        <Link href="/docs/api" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Docs</Link>
+                        <Link href="/docs/skill" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Claude Skill</Link>
                         <Link href="/dashboard/bazaar" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Bazaar</Link>
-                        <Link href="/docs/api" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">API Reference</Link>
-                        <Link href="/docs/sdk" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Developer Guide</Link>
-                        <Link href="/docs/facilitator" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Facilitator Network</Link>
-                        <Link href="/docs/mcp" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">MCP</Link>
+                        <Link href="/pricing" onClick={() => setIsMenuOpen(false)} className="text-black no-underline">Pricing</Link>
+                        <Link href="/intelligence" onClick={() => setIsMenuOpen(false)} className="text-black no-underline text-primary">Intelligence</Link>
+                        <Link href="/#product" onClick={() => setIsMenuOpen(false)} className="text-black no-underline italic opacity-50">Product</Link>
                     </nav>
                     <div className="border-t-2 border-black pt-4 flex flex-col gap-3">
                         <ConnectButton />
