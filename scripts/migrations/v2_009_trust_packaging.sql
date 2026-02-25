@@ -7,7 +7,7 @@ BEGIN;
 -- 1. Map On-Chain DIDs to Bazaar Listings
 CREATE TABLE IF NOT EXISTS erc8004_agents (
     agent_did VARCHAR(128) PRIMARY KEY,
-    resource_id UUID NOT NULL REFERENCES bazaar_resources(resource_id) ON DELETE CASCADE,
+    resource_id TEXT NOT NULL REFERENCES bazaar_resources(resource_id) ON DELETE CASCADE,
     reputation_score NUMERIC(10, 4) DEFAULT 100,
     is_verified BOOLEAN DEFAULT FALSE,
     last_synced_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

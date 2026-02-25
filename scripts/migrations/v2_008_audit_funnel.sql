@@ -5,7 +5,7 @@ BEGIN;
 -- ==========================================
 CREATE TABLE IF NOT EXISTS audit_runs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     scope_type TEXT NOT NULL CHECK (scope_type IN ('tenant', 'route', 'endpoint', 'listing', 'publisher', 'policy_set')),
     scope_id TEXT NOT NULL,
     domains TEXT[] NOT NULL,
@@ -26,7 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_runs_tenant_started ON audit_runs(tenant_id
 CREATE TABLE IF NOT EXISTS audit_scores (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     audit_run_id UUID REFERENCES audit_runs(id) ON DELETE CASCADE,
-    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     scope_type TEXT NOT NULL,
     scope_id TEXT NOT NULL,
     overall_score INT NOT NULL CHECK (overall_score >= 0 AND overall_score <= 100),
@@ -47,7 +47,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_scores_scope ON audit_scores(scope_type, sc
 -- ==========================================
 CREATE TABLE IF NOT EXISTS audit_findings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     scope_type TEXT NOT NULL,
     scope_id TEXT NOT NULL,
     code TEXT NOT NULL,
@@ -112,7 +112,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_actions_finding ON audit_finding_actions(fi
 -- ==========================================
 CREATE TABLE IF NOT EXISTS audit_schedules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     scope_type TEXT NOT NULL,
     scope_id TEXT NOT NULL,
     frequency TEXT NOT NULL CHECK (frequency IN ('hourly', 'daily', 'weekly')),
@@ -130,7 +130,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_schedules_due ON audit_schedules(tenant_id,
 -- ==========================================
 CREATE TABLE IF NOT EXISTS audit_exports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     requested_by TEXT NOT NULL,
     format TEXT NOT NULL CHECK (format IN ('csv', 'json', 'ndjson', 'signed_bundle')),
     from_ts TIMESTAMPTZ NOT NULL,

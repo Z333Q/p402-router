@@ -8,7 +8,7 @@ BEGIN;
 -- 1. Daily Revenue Rollup
 CREATE TABLE IF NOT EXISTS kpi_daily_revenue (
     date DATE NOT NULL,
-    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     plan_tier TEXT NOT NULL DEFAULT 'free',
     total_x402_volume_micros BIGINT NOT NULL DEFAULT 0,
     total_platform_fees_micros BIGINT NOT NULL DEFAULT 0,
@@ -24,7 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_kpi_revenue_date ON kpi_daily_revenue(date DESC);
 -- 2. Daily Adoption & Safety Rollup
 CREATE TABLE IF NOT EXISTS kpi_daily_adoption (
     date DATE NOT NULL,
-    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     total_a2a_tasks INT NOT NULL DEFAULT 0,
     cache_hits INT NOT NULL DEFAULT 0,
     safety_blocks INT NOT NULL DEFAULT 0,

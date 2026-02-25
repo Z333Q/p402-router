@@ -6,5 +6,5 @@
 -- (e.g. creating the default 'system' tenant). 
 
 INSERT INTO tenants (id, name, tenant_plan)
-VALUES ('default', 'System Default Tenant', 'free')
+VALUES ('00000000-0000-0000-0000-000000000001', 'System Default Tenant', 'free')
 ON CONFLICT (id) DO NOTHING;

@@ -16,7 +16,7 @@ ADD COLUMN IF NOT EXISTS tenant_plan VARCHAR(32) NOT NULL DEFAULT 'free';
 
 CREATE TABLE IF NOT EXISTS billing_subscriptions (
     id VARCHAR(64) PRIMARY KEY,
-    tenant_id VARCHAR(64) NOT NULL REFERENCES tenants(id),
+    tenant_id UUID NOT NULL REFERENCES tenants(id),
     
     -- Sub-Type 
     provider VARCHAR(32) NOT NULL DEFAULT 'onchain', -- e.g., 'onchain', 'stripe', 'coinbase'
@@ -48,7 +48,7 @@ ON billing_subscriptions(status, provider, current_period_end);
 
 CREATE TABLE IF NOT EXISTS billing_usage_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id VARCHAR(64) NOT NULL REFERENCES tenants(id),
+    tenant_id UUID NOT NULL REFERENCES tenants(id),
     session_id VARCHAR(64), -- Optional: Tie back to a specific orchestration session
     
     event_type VARCHAR(64) NOT NULL,                 -- e.g., 'model_inference', 'cache_hit'
