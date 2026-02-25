@@ -12,7 +12,9 @@ if (!SUBSCRIPTION_FACILITATOR_ADDRESS) {
 }
 
 // Ethers v6 strict syntax
-const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL!);
+const provider = new ethers.JsonRpcProvider(
+    process.env.BASE_RPC_URL || process.env.NEXT_PUBLIC_RPC_URL || 'https://mainnet.base.org'
+);
 // env.P402_FACILITATOR_PRIVATE_KEY is typed string (required in schema)
 const facilitatorWallet = new ethers.Wallet(env.P402_FACILITATOR_PRIVATE_KEY, provider);
 
