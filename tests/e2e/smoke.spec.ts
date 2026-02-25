@@ -227,6 +227,50 @@ test('new route page renders without crash', async ({ page }) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Billing
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('billing page renders without crash', async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    await setupCommonMocks(page);
+    await mockApi(page, '**/api/v2/billing/usage**', {
+        planId: 'free',
+        maxSpendUsd: 5.00,
+        currentUsageUsd: 0,
+        usagePercent: 0,
+    });
+    await mockApi(page, '**/api/admin/revenue**', { revenue: [] });
+
+    await page.goto('/dashboard/billing');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page).toHaveURL(/\/dashboard\/billing/);
+    expect(errors.filter(isRealError)).toHaveLength(0);
+});
+
+test('billing upgrade page renders without crash', async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    await setupCommonMocks(page);
+
+    await page.goto('/dashboard/billing/upgrade');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page).toHaveURL(/\/dashboard\/billing\/upgrade/);
+    expect(errors.filter(isRealError)).toHaveLength(0);
+});
+
+test('billing wallet page renders without crash', async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    await setupCommonMocks(page);
+
+    await page.goto('/dashboard/billing/wallet');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page).toHaveURL(/\/dashboard\/billing\/wallet/);
+    expect(errors.filter(isRealError)).toHaveLength(0);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Unauthenticated redirect
 // ─────────────────────────────────────────────────────────────────────────────
 
