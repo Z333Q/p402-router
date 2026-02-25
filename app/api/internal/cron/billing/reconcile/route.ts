@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db'; // STRICT RULE: Default export
-import { executeFirstSubscriptionCharge as executeSubscriptionCharge } from '@/lib/billing/providers/onchain';
-import { P402_SIGNER_ADDRESS } from '@/lib/constants';
+import { executeRecurringCharge } from '@/lib/billing/providers/onchain';
 
 // Force dynamic execution for chron jobs
 export const dynamic = 'force-dynamic';
@@ -67,13 +66,12 @@ export async function POST(req: Request) {
           VALUES ($1, $2, $3, $4, 'pending', 'pending_' || gen_random_uuid())
         `, [sub.tenant_id, sub.id, nextPeriodStart, sub.monthly_fee_micros]);
 
-                // Step B: Execute the Ethers v6 Smart Contract call
-                // (This relies on the EIP-2612 allowance set up in month 1)
-                const txHash = await executeSubscriptionCharge(
+                // Step B: Execute the Ethers v6 Smart Contract call.
+                // chargeSubscription() uses the EIP-2612 allowance set during month 1.
+                // No permit signature needed — the allowance is already on-chain.
+                const txHash = await executeRecurringCharge(
                     sub.wallet_address,
-                    sub.monthly_fee_micros,
-                    BigInt(0), // Placeholder: require proper deadline
-                    "" // Placeholder: require proper sig
+                    sub.monthly_fee_micros
                 );
 
                 // Step C: Confirm the charge and advance the subscription date

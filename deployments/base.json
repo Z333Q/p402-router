@@ -1,0 +1,16 @@
+{
+  "network": "Base",
+  "chainId": 8453,
+  "deployedAt": "2026-02-26T00:00:00.000Z",
+  "deployer": "0xB23f146251E3816a011e800BCbAE704baa5619Ec",
+  "treasury": "0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6",
+  "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "contracts": {
+    "P402Settlement": "0xd03c7ab9a84d86dbc171367168317d6ebe408601",
+    "SubscriptionFacilitator": "0xc64747651e977464af5bce98895ca6018a3e26d7"
+  },
+  "txHashes": {
+    "P402Settlement": "0x95ee7ddb73a5eca8c01e0632a7dc1aef361d22d7666fb2b27573aa2f32566d2b",
+    "SubscriptionFacilitator": "0x7c0ab1b29f9de6332dda15de497abe9e045ea826ca8a6a6fcdc0866eda7a53a5"
+  }
+}

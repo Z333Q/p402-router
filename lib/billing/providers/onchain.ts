@@ -6,35 +6,39 @@ const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL);
 // env.P402_FACILITATOR_PRIVATE_KEY is typed string (required in schema)
 const facilitatorWallet = new ethers.Wallet(env.P402_FACILITATOR_PRIVATE_KEY, provider);
 
-// ABI for your new custom Subscription contract
+// ABI must match SubscriptionFacilitator.sol exactly.
 const SUBSCRIPTION_ABI = [
-    "function setupAndCharge(address user, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external",
-    "function chargeSubscription(address user, uint256 amount) external" // Used for month 2+
+    "function setupAndCharge(address user, uint256 totalAllowance, uint256 deadline, uint8 v, bytes32 r, bytes32 s, uint256 firstMonthCharge) external",
+    "function chargeSubscription(address user, uint256 amount) external"
 ];
 
+function getContract() {
+    const addr = process.env.SUBSCRIPTION_FACILITATOR_ADDRESS;
+    if (!addr) throw new Error('SUBSCRIPTION_FACILITATOR_ADDRESS is not configured');
+    return new ethers.Contract(addr, SUBSCRIPTION_ABI, facilitatorWallet);
+}
+
+/**
+ * Month 1: set allowance via EIP-2612 permit and charge the first period.
+ * Called from /api/v1/billing/onchain/subscribe and billing-finalize Server Action.
+ */
 export async function executeFirstSubscriptionCharge(
     userAddress: string,
-    amount: bigint,
+    totalAllowance: bigint,
     deadline: bigint,
     signature: string
 ) {
-    const contract = new ethers.Contract(
-        process.env.SUBSCRIPTION_FACILITATOR_ADDRESS!,
-        SUBSCRIPTION_ABI,
-        facilitatorWallet
-    );
-
-    // Ethers v6 signature splitting
     const { v, r, s } = ethers.Signature.from(signature);
+    const firstMonthCharge = 499_000000n; // $499 USDC (6 decimals)
 
-    // Execute the transaction (pays gas, sets allowance, and charges month 1)
-    const tx = await (contract.getFunction('setupAndCharge'))(
+    const tx = await getContract().setupAndCharge(
         userAddress,
-        amount,
+        totalAllowance,
         deadline,
         v,
         r,
-        s
+        s,
+        firstMonthCharge
     );
 
     const receipt = await tx.wait();
@@ -42,5 +46,23 @@ export async function executeFirstSubscriptionCharge(
         throw new Error('On-chain subscription setup failed');
     }
 
-    return receipt.hash;
+    return receipt.hash as string;
+}
+
+/**
+ * Month 2+: pull the renewal charge from the pre-approved allowance.
+ * Called by the billing reconcile cron job.
+ */
+export async function executeRecurringCharge(
+    userAddress: string,
+    amount: bigint
+) {
+    const tx = await getContract().chargeSubscription(userAddress, amount);
+
+    const receipt = await tx.wait();
+    if (!receipt || receipt.status === 0) {
+        throw new Error('On-chain subscription renewal failed');
+    }
+
+    return receipt.hash as string;
 }
