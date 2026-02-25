@@ -1,23 +1,33 @@
 import { ethers } from 'ethers';
 import { env } from '@/lib/env';
 
-// Ethers v6 strict setup
-const provider = new ethers.JsonRpcProvider(
-    process.env.BASE_RPC_URL || process.env.NEXT_PUBLIC_RPC_URL || 'https://mainnet.base.org'
-);
-// env.P402_FACILITATOR_PRIVATE_KEY is typed string (required in schema)
-const facilitatorWallet = new ethers.Wallet(env.P402_FACILITATOR_PRIVATE_KEY, provider);
-
 // ABI must match SubscriptionFacilitator.sol exactly.
 const SUBSCRIPTION_ABI = [
     "function setupAndCharge(address user, uint256 totalAllowance, uint256 deadline, uint8 v, bytes32 r, bytes32 s, uint256 firstMonthCharge) external",
     "function chargeSubscription(address user, uint256 amount) external"
 ];
 
+// Lazy-initialized at first call, not at module load.
+// P402_FACILITATOR_PRIVATE_KEY is a runtime secret — not available during Next.js build.
+let _provider: ethers.JsonRpcProvider | undefined;
+let _facilitatorWallet: ethers.Wallet | undefined;
+
+function getWallet(): ethers.Wallet {
+    if (!_provider) {
+        _provider = new ethers.JsonRpcProvider(
+            process.env.BASE_RPC_URL || process.env.NEXT_PUBLIC_RPC_URL || 'https://mainnet.base.org'
+        );
+    }
+    if (!_facilitatorWallet) {
+        _facilitatorWallet = new ethers.Wallet(env.P402_FACILITATOR_PRIVATE_KEY, _provider);
+    }
+    return _facilitatorWallet;
+}
+
 function getContract() {
     const addr = process.env.SUBSCRIPTION_FACILITATOR_ADDRESS;
     if (!addr) throw new Error('SUBSCRIPTION_FACILITATOR_ADDRESS is not configured');
-    return new ethers.Contract(addr, SUBSCRIPTION_ABI, facilitatorWallet);
+    return new ethers.Contract(addr, SUBSCRIPTION_ABI, getWallet());
 }
 
 /**

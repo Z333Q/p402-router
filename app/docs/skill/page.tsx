@@ -2,6 +2,18 @@ import Link from 'next/link';
 import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
 
+export const metadata = {
+    title: 'Claude Skill | P402 Router',
+    description: 'Install the P402 Claude Skill to give Claude Code and Claude.ai deep knowledge of the P402 routing API, billing guard, x402 payment flows (EIP-3009), A2A protocol, and AP2 mandates. AI-assisted integration for production AI deployments on Base.',
+    keywords: ['Claude skill', 'Claude Code', 'P402', 'AI routing', 'x402 payments', 'LLM integration', 'EIP-3009', 'A2A protocol', 'billing guard', 'USDC payments'],
+    openGraph: {
+        title: 'P402 Claude Skill — AI-Assisted Integration',
+        description: 'Give Claude deep knowledge of the P402 API: routing modes, billing guard, x402 payments, and A2A protocol. Ask Claude to generate integration code, debug routing, or compare 300+ model prices.',
+        url: 'https://p402.io/docs/skill',
+        type: 'article',
+    },
+};
+
 export default function SkillDocs() {
     return (
         <div className="min-h-screen bg-white text-black font-sans selection:bg-primary selection:text-black">

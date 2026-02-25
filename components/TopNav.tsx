@@ -58,6 +58,7 @@ export function TopNav() {
                 {/* Desktop Nav */}
                 <nav className="hidden md:flex gap-8 text-[11px] font-black uppercase tracking-[0.15em]">
                     <Link href="/docs/api" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Docs</Link>
+                    <Link href="/docs/skill" className="text-primary no-underline hover:text-black transition-none border-b-2 border-primary">Skill</Link>
                     <Link href="/intelligence" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Intelligence</Link>
                     <Link href="/dashboard/bazaar" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Bazaar</Link>
                     <Link href="/pricing" className="text-black no-underline hover:text-primary transition-none border-b-2 border-transparent">Pricing</Link>

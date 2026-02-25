@@ -7,20 +7,29 @@ import { authOptions } from '@/lib/auth';
 import { SUBSCRIPTION_FACILITATOR_ADDRESS } from '@/lib/constants';
 import { env } from '@/lib/env';
 
-if (!SUBSCRIPTION_FACILITATOR_ADDRESS) {
-    throw new Error('SUBSCRIPTION_FACILITATOR_ADDRESS is not configured');
-}
-
-// Ethers v6 strict syntax
-const provider = new ethers.JsonRpcProvider(
-    process.env.BASE_RPC_URL || process.env.NEXT_PUBLIC_RPC_URL || 'https://mainnet.base.org'
-);
-// env.P402_FACILITATOR_PRIVATE_KEY is typed string (required in schema)
-const facilitatorWallet = new ethers.Wallet(env.P402_FACILITATOR_PRIVATE_KEY, provider);
-
 const SUBSCRIPTION_ABI = [
     "function setupAndCharge(address user, uint256 totalAllowance, uint256 deadline, uint8 v, bytes32 r, bytes32 s, uint256 firstMonthCharge) external"
 ];
+
+// Lazy-initialized at first call, not at module load.
+// P402_FACILITATOR_PRIVATE_KEY is a runtime secret — not available during Next.js build.
+let _provider: ethers.JsonRpcProvider | undefined;
+let _facilitatorWallet: ethers.Wallet | undefined;
+
+function getWallet(): ethers.Wallet {
+    if (!_provider) {
+        _provider = new ethers.JsonRpcProvider(
+            process.env.BASE_RPC_URL || process.env.NEXT_PUBLIC_RPC_URL || 'https://mainnet.base.org'
+        );
+    }
+    if (!_facilitatorWallet) {
+        if (!SUBSCRIPTION_FACILITATOR_ADDRESS) {
+            throw new Error('SUBSCRIPTION_FACILITATOR_ADDRESS is not configured');
+        }
+        _facilitatorWallet = new ethers.Wallet(env.P402_FACILITATOR_PRIVATE_KEY, _provider);
+    }
+    return _facilitatorWallet;
+}
 
 interface FinalizePayload {
     userAddress: string;
@@ -47,9 +56,9 @@ export async function finalizeWalletSubscription(payload: FinalizePayload) {
         const firstMonthCharge = 499_000000n;
 
         const contract = new ethers.Contract(
-            SUBSCRIPTION_FACILITATOR_ADDRESS!, // guarded at module init above
+            SUBSCRIPTION_FACILITATOR_ADDRESS!,
             SUBSCRIPTION_ABI,
-            facilitatorWallet
+            getWallet()
         ) as any;
 
         // 2. Execute transaction (Facilitator pays the gas)

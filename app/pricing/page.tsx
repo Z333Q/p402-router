@@ -7,7 +7,7 @@ import { UpgradeMathCalculator } from "@/components/pricing/UpgradeMathCalculato
 
 export const metadata = {
     title: 'Pricing | P402 Router',
-    description: 'Agent commerce pricing that rewards commitment. High platform fees for experiments, lower fees for production.',
+    description: 'Agent commerce pricing that rewards commitment. Pro includes Claude Skill — AI-assisted integration for routing, billing guard, and x402 payment flows. High platform fees for experiments, lower for production.',
 };
 
 export default function PricingPage() {
@@ -100,6 +100,7 @@ export default function PricingPage() {
                                     <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-[var(--primary)] bg-black" strokeWidth={3} /> <span>90-day route-level analytics</span></li>
                                     <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-[var(--primary)] bg-black" strokeWidth={3} /> <span>Scheduled daily health audits</span></li>
                                     <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-[var(--primary)] bg-black" strokeWidth={3} /> <span>Verified Publisher Workflow</span></li>
+                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-[var(--primary)] bg-black" strokeWidth={3} /> <span><Link href="/docs/skill" className="underline">Claude Skill</Link> — AI integration assistant</span></li>
                                     <li className="flex items-start gap-3 text-xs bg-[var(--neutral-100)] p-2 border border-black border-dashed"><Info className="w-4 h-4 shrink-0" /> <span>Pay via Stripe or EIP-2612</span></li>
                                 </ul>
                                 <Link
@@ -172,6 +173,7 @@ export default function PricingPage() {
                                     <ComparisonRow label="Trust & Publisher" free="Public Scanner" pro="Verified Workflow" enterprise="Moderation Queue" />
                                     <ComparisonRow label="AP2 Mandate Limits" free="Basic Caps" pro="Advanced Rules" enterprise="Multi-stage Approvals" />
                                     <ComparisonRow label="Audit Evidence" free="Locked" pro="Preview" enterprise="Signed Bundles & CSV" />
+                                    <ComparisonRow label="Claude Skill" free="Community" pro="Included" enterprise="Included" />
                                 </tbody>
                             </table>
                         </div>
@@ -205,6 +207,10 @@ export default function PricingPage() {
                                 {
                                     q: "What happens if my agent loses its Trustless Reputation?",
                                     a: "If an agent's reputation drops below your defined threshold, the ERC-8004 validation guard will intercept requests. On the Enterprise tier, these incidents are routed to a Moderation Queue for manual review and override."
+                                },
+                                {
+                                    q: "Is there an AI assistant to help with P402 integration?",
+                                    a: "Yes. The P402 Claude Skill gives Claude Code and Claude.ai deep knowledge of the routing API, billing guard, TypeScript interfaces, x402 payment flows, and A2A protocol. Install it from p402.io/docs/skill and ask Claude to generate integration code, debug routing decisions, set up agent spending controls, or compare model pricing across 300+ models."
                                 }
                             ].map((faq, i) => (
                                 <div key={i} className="bg-white border-2 border-black p-8 hover:bg-[var(--neutral-100)] transition-all shadow-[4px_4px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#000] cursor-default">
