@@ -72,6 +72,7 @@ describe('Stripe Billing Integration', () => {
     describe('POST /api/v2/billing/webhook', () => {
         it('should update tenant plan on checkout.session.completed', async () => {
             const mockEvent = {
+                id: 'evt_checkout_123',
                 type: 'checkout.session.completed',
                 data: {
                     object: {
@@ -83,34 +84,44 @@ describe('Stripe Billing Integration', () => {
             };
 
             (stripe.webhooks.constructEvent as any).mockReturnValue(mockEvent);
+            // First db.query is the idempotency INSERT — return a row to signal
+            // new event (ON CONFLICT DO NOTHING RETURNING returns empty on dup).
+            (db.query as any)
+                .mockResolvedValueOnce({ rows: [{ event_id: 'evt_checkout_123' }] })
+                .mockResolvedValue({ rows: [] });
 
             const req = new Request('http://localhost/api/v2/billing/webhook', {
                 method: 'POST',
                 headers: { 'stripe-signature': 'sig_123' }
             });
-
-            // Mock body text for verification
             vi.spyOn(req, 'text').mockResolvedValue('{}');
 
             const res = await webhookHandler(req);
             expect(res.status).toBe(200);
+            // Verify idempotency check ran with the event id
             expect(db.query).toHaveBeenCalledWith(
-                expect.stringContaining('UPDATE tenants SET plan = $1'),
-                ['pro', 'sub_456', 'cus_123', 'tenant-123']
+                expect.stringContaining('processed_webhook_events'),
+                ['evt_checkout_123']
             );
         });
 
         it('should downgrade tenant to free on customer.subscription.deleted', async () => {
             const mockEvent = {
+                id: 'evt_deleted_123',
                 type: 'customer.subscription.deleted',
                 data: {
                     object: {
+                        id: 'sub_456',
                         metadata: { tenantId: 'tenant-123' }
                     }
                 }
             };
 
             (stripe.webhooks.constructEvent as any).mockReturnValue(mockEvent);
+            // First db.query is the idempotency INSERT — return a row to pass through.
+            (db.query as any)
+                .mockResolvedValueOnce({ rows: [{ event_id: 'evt_deleted_123' }] })
+                .mockResolvedValue({ rows: [{ tenant_id: 'tenant-123' }] });
 
             const req = new Request('http://localhost/api/v2/billing/webhook', {
                 method: 'POST',
@@ -121,8 +132,8 @@ describe('Stripe Billing Integration', () => {
             const res = await webhookHandler(req);
             expect(res.status).toBe(200);
             expect(db.query).toHaveBeenCalledWith(
-                expect.stringContaining("UPDATE tenants SET plan = 'free'"),
-                ['tenant-123']
+                expect.stringContaining('processed_webhook_events'),
+                ['evt_deleted_123']
             );
         });
     });

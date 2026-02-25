@@ -31,7 +31,8 @@ export async function executeFirstSubscriptionCharge(
     const { v, r, s } = ethers.Signature.from(signature);
     const firstMonthCharge = 499_000000n; // $499 USDC (6 decimals)
 
-    const tx = await getContract().setupAndCharge(
+    // ethers v6: use getFunction() to avoid noUncheckedIndexedAccess undefined
+    const tx = await getContract().getFunction('setupAndCharge')(
         userAddress,
         totalAllowance,
         deadline,
@@ -57,7 +58,7 @@ export async function executeRecurringCharge(
     userAddress: string,
     amount: bigint
 ) {
-    const tx = await getContract().chargeSubscription(userAddress, amount);
+    const tx = await getContract().getFunction('chargeSubscription')(userAddress, amount);
 
     const receipt = await tx.wait();
     if (!receipt || receipt.status === 0) {
