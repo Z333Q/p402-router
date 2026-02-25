@@ -2,8 +2,8 @@
 // DO NOT hardcode addresses elsewhere - import from this file
 
 export const P402_CONFIG = {
-  // Primary treasury address (verified, production)
-  TREASURY_ADDRESS: '0xb23f146251e3816a011e800bcbae704baa5619ec' as const,
+  // Primary treasury address — matches deployed P402Settlement + SubscriptionFacilitator contracts
+  TREASURY_ADDRESS: '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6' as const,
 
   // Network configuration
   NETWORK: 'base' as const,

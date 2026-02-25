@@ -34,7 +34,7 @@ vi.mock('ethers', () => {
 
 vi.mock('@/lib/constants', () => ({
     P402_CONFIG: {
-        TREASURY_ADDRESS: '0xb23f146251e3816a011e800bcbae704baa5619ec',
+        TREASURY_ADDRESS: '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6',
         USDC_ADDRESS: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
         CHAIN_ID: 8453,
         NETWORK: 'base'

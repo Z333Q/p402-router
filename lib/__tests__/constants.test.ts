@@ -4,7 +4,7 @@ import { P402_CONFIG, P402_TESTNET_CONFIG, validateP402Config, getP402TreasuryAd
 describe('P402 Constants', () => {
     describe('P402_CONFIG', () => {
         it('should have the correct treasury address', () => {
-            expect(P402_CONFIG.TREASURY_ADDRESS).toBe('0xb23f146251e3816a011e800bcbae704baa5619ec');
+            expect(P402_CONFIG.TREASURY_ADDRESS).toBe('0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6');
         });
 
         it('should have correct chain ID for Base mainnet', () => {

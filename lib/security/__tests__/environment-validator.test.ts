@@ -3,7 +3,7 @@ import { EnvironmentValidator } from '../environment-validator';
 
 vi.mock('@/lib/constants', () => ({
     P402_CONFIG: {
-        TREASURY_ADDRESS: '0xb23f146251e3816a011e800bcbae704baa5619ec',
+        TREASURY_ADDRESS: '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6',
         USDC_ADDRESS: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
         CHAIN_ID: 8453,
         NETWORK: 'base'
@@ -47,7 +47,7 @@ describe('EnvironmentValidator', () => {
             process.env.DATABASE_URL = 'postgresql://user:pass@localhost/db';
             process.env.NEXTAUTH_SECRET = 'a'.repeat(64);
             process.env.NEXTAUTH_URL = 'http://localhost:3000';
-            process.env.P402_TREASURY_ADDRESS = '0xb23f146251e3816a011e800bcbae704baa5619ec';
+            process.env.P402_TREASURY_ADDRESS = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
             process.env.BASE_RPC_URL = 'https://mainnet.base.org';
             process.env.NODE_ENV = 'development';
 
@@ -87,7 +87,7 @@ describe('EnvironmentValidator', () => {
             process.env.DATABASE_URL = 'not-a-url';
             process.env.NEXTAUTH_SECRET = 'a'.repeat(64);
             process.env.NEXTAUTH_URL = 'http://localhost:3000';
-            process.env.P402_TREASURY_ADDRESS = '0xb23f146251e3816a011e800bcbae704baa5619ec';
+            process.env.P402_TREASURY_ADDRESS = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
             process.env.BASE_RPC_URL = 'https://mainnet.base.org';
 
             const result = EnvironmentValidator.validate();
@@ -100,7 +100,7 @@ describe('EnvironmentValidator', () => {
             process.env.DATABASE_URL = 'postgresql://user:pass@localhost/db';
             process.env.NEXTAUTH_SECRET = 'tooshort';
             process.env.NEXTAUTH_URL = 'http://localhost:3000';
-            process.env.P402_TREASURY_ADDRESS = '0xb23f146251e3816a011e800bcbae704baa5619ec';
+            process.env.P402_TREASURY_ADDRESS = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
             process.env.BASE_RPC_URL = 'https://mainnet.base.org';
 
             const result = EnvironmentValidator.validate();
@@ -117,7 +117,7 @@ describe('EnvironmentValidator', () => {
             process.env.DATABASE_URL = 'postgresql://user:pass@localhost/db';
             process.env.NEXTAUTH_SECRET = 'a'.repeat(64);
             process.env.NEXTAUTH_URL = 'https://p402.io';
-            process.env.P402_TREASURY_ADDRESS = '0xb23f146251e3816a011e800bcbae704baa5619ec';
+            process.env.P402_TREASURY_ADDRESS = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
             process.env.BASE_RPC_URL = 'https://mainnet.base.org';
 
             const result = EnvironmentValidator.validate();
@@ -130,7 +130,7 @@ describe('EnvironmentValidator', () => {
             process.env.DATABASE_URL = 'postgresql://user:pass@localhost/db';
             process.env.NEXTAUTH_SECRET = 'a'.repeat(64);
             process.env.NEXTAUTH_URL = 'http://localhost:3000';
-            process.env.P402_TREASURY_ADDRESS = '0xb23f146251e3816a011e800bcbae704baa5619ec';
+            process.env.P402_TREASURY_ADDRESS = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
             process.env.BASE_RPC_URL = 'https://mainnet.base.org';
 
             const result = EnvironmentValidator.validate();
@@ -152,7 +152,7 @@ describe('EnvironmentValidator', () => {
             process.env.DATABASE_URL = 'postgresql://user:pass@localhost/db';
             process.env.NEXTAUTH_SECRET = 'a'.repeat(64);
             process.env.NEXTAUTH_URL = 'https://p402.io';
-            process.env.P402_TREASURY_ADDRESS = '0xb23f146251e3816a011e800bcbae704baa5619ec';
+            process.env.P402_TREASURY_ADDRESS = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
             process.env.BASE_RPC_URL = 'https://mainnet.base.org';
             process.env.REDIS_URL = 'redis://localhost:6379';
             process.env.SENTRY_DSN = 'https://sentry.example.com/123';
@@ -168,7 +168,7 @@ describe('EnvironmentValidator', () => {
             process.env.DATABASE_URL = 'postgresql://user:pass@localhost/db';
             process.env.NEXTAUTH_SECRET = 'a'.repeat(64);
             process.env.NEXTAUTH_URL = 'http://localhost:3000';
-            process.env.P402_TREASURY_ADDRESS = '0xb23f146251e3816a011e800bcbae704baa5619ec';
+            process.env.P402_TREASURY_ADDRESS = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
             process.env.BASE_RPC_URL = 'https://mainnet.base.org';
 
             const result = EnvironmentValidator.validate();
@@ -179,7 +179,7 @@ describe('EnvironmentValidator', () => {
             process.env.DATABASE_URL = 'postgresql://user:password@localhost/db';
             process.env.NEXTAUTH_SECRET = 'a'.repeat(64);
             process.env.NEXTAUTH_URL = 'http://localhost:3000';
-            process.env.P402_TREASURY_ADDRESS = '0xb23f146251e3816a011e800bcbae704baa5619ec';
+            process.env.P402_TREASURY_ADDRESS = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
             process.env.BASE_RPC_URL = 'https://mainnet.base.org';
 
             const result = EnvironmentValidator.validate();

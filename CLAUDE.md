@@ -302,7 +302,8 @@ p402-router/
 │   ├── seed.ts
 │   ├── apply-schema.ts
 │   ├── register-erc8004.ts         # ERC-8004 registration (run: npx tsx)
-│   ├── deploy-settlement.ts
+│   ├── deploy-settlement.ts        # Legacy: P402Settlement only
+│   ├── deploy-contracts.ts         # ★ Deploy both contracts (Viem, Base mainnet)
 │   └── migrations/                 # SQL migration files (run in order)
 │       ├── 002_openrouter_integration.sql
 │       ├── 003_replay_protection.sql
@@ -322,6 +323,8 @@ p402-router/
 │   └── wrangler.toml
 │
 ├── contracts/                      # Solidity (excluded from tsconfig)
+│   ├── P402Settlement.sol          # Marketplace settlement with 1% fee
+│   └── SubscriptionFacilitator.sol # EIP-2612 recurring billing (deployed: 0xc647...)
 ├── tests/e2e/                      # Playwright specs
 │   ├── helpers/web3-mock.ts        # EIP-2612 mock
 │   ├── smoke.spec.ts
@@ -498,9 +501,11 @@ interface X402Request {
 
 ### Key Addresses (Production — Base Mainnet)
 ```
-Network:      Base (Chain ID: 8453, CAIP-2: eip155:8453)
-USDC:         0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
-Treasury:     0xb23f146251e3816a011e800bcbae704baa5619ec
+Network:                 Base (Chain ID: 8453, CAIP-2: eip155:8453)
+USDC:                    0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+Treasury:                0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6
+P402Settlement:          0xd03c7ab9a84d86dbc171367168317d6ebe408601
+SubscriptionFacilitator: 0xc64747651e977464af5bce98895ca6018a3e26d7
 ```
 
 ### EIP-712 Domain (USDC on Base)
@@ -548,6 +553,19 @@ Facilitator → executes transferWithAuthorization on USDC contract
 - `lib/replay-protection.ts` — nonce tracking (DB + Redis)
 - `app/api/v1/facilitator/verify/route.ts`
 - `app/api/v1/facilitator/settle/route.ts`
+
+### USDC Subscription Billing (EIP-2612)
+
+Separate from x402 micropayments. Uses the deployed `SubscriptionFacilitator` contract.
+
+| Step | Function | Called by |
+|---|---|---|
+| Month 1 | `executeFirstSubscriptionCharge()` | `lib/actions/billing-finalize.ts` Server Action |
+| Month 2+ | `executeRecurringCharge()` | `app/api/internal/cron/billing/reconcile/route.ts` |
+
+- Both functions live in `lib/billing/providers/onchain.ts`
+- Month 1 sets the EIP-2612 permit allowance; months 2+ draw from it (no new user signature)
+- `getFunction('methodName')` pattern required for ethers v6 `noUncheckedIndexedAccess`
 
 ---
 
@@ -860,30 +878,52 @@ GET  /api/v2/sessions/[id]/stats    — Real-time session metrics
 ## Environment Variables
 
 ```bash
-# Required
+# ── Auth (Required) ───────────────────────────────────────────────────────────
 DATABASE_URL=postgresql://...           # Neon PostgreSQL
-JWT_SECRET=                             # Session signing
+NEXTAUTH_SECRET=                        # NextAuth session signing (32+ chars)
+NEXTAUTH_URL=https://p402.io           # Canonical URL
+GOOGLE_CLIENT_ID=                       # Google OAuth client ID
+GOOGLE_CLIENT_SECRET=                   # Google OAuth client secret
+JWT_SECRET=                             # API JWT signing
 
-# AI Orchestration (Primary)
+# ── Stripe Billing (Required for subscription) ────────────────────────────────
+STRIPE_SECRET_KEY=sk_live_...           # Stripe secret key
+STRIPE_WEBHOOK_SECRET=whsec_...         # Stripe webhook signing secret
+STRIPE_PRICE_ID_PRO=price_...          # Pro plan price ID
+STRIPE_PRICE_ID_ENTERPRISE=price_...   # Enterprise plan price ID
+
+# ── AI Orchestration (Primary) ────────────────────────────────────────────────
 OPENROUTER_API_KEY=                     # Main access for all LLMs (Required for routing)
 GOOGLE_API_KEY=                         # Required for Gemini intelligence layer
 
-# Direct Providers (Optional, bypasses OpenRouter)
+# ── Direct Providers (Optional, bypass OpenRouter) ────────────────────────────
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 GROQ_API_KEY=
 
-# x402 Settlement
+# ── x402 Settlement ───────────────────────────────────────────────────────────
 P402_SIGNER_ADDRESS=0x...              # Facilitator wallet address
-P402_FACILITATOR_PRIVATE_KEY=0x...     # Facilitator wallet key (or DEPLOYER_PRIVATE_KEY)
+P402_FACILITATOR_PRIVATE_KEY=0x...     # Facilitator wallet key
+P402_TREASURY_ADDRESS=0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6  # Deployed treasury
+P402_SETTLEMENT_ADDRESS=0xd03c7ab9a84d86dbc171367168317d6ebe408601
+SUBSCRIPTION_FACILITATOR_ADDRESS=0xc64747651e977464af5bce98895ca6018a3e26d7
 
-# Optional
+# ── Admin ─────────────────────────────────────────────────────────────────────
+ADMIN_EMAILS=admin@p402.io             # Comma-separated admin emails
+CRON_SECRET=                            # Shared secret for cron routes
+POLL_SECRET=                            # Shared secret for poll routes
+
+# ── Notifications ─────────────────────────────────────────────────────────────
+RESEND_API_KEY=                         # Resend email API key
+
+# ── Optional ──────────────────────────────────────────────────────────────────
 REDIS_URL=                              # Defaults to no caching
+BASE_RPC_URL=https://mainnet.base.org  # Base RPC endpoint
 ENABLE_SEMANTIC_CACHE=true
 ENABLE_COST_INTELLIGENCE=true
 CORS_ORIGINS=https://p402.io,...
 
-# ERC-8004 (all optional, default disabled)
+# ── ERC-8004 (all optional, default disabled) ─────────────────────────────────
 ERC8004_AGENT_ID=
 ERC8004_AGENT_URI=
 ERC8004_TESTNET=false
