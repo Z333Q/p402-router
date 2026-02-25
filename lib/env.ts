@@ -14,7 +14,8 @@ const envSchema = z.object({
     // Stripe — required for billing to function
     STRIPE_SECRET_KEY: z.string().min(1),
     STRIPE_WEBHOOK_SECRET: z.string().min(1),
-    STRIPE_PRO_PRICE_ID: z.string().min(1),
+    STRIPE_PRICE_ID_PRO: z.string().min(1),
+    STRIPE_PRICE_ID_ENTERPRISE: z.string().min(1),
     // Facilitator — required for settlement to function
     P402_SIGNER_ADDRESS: z.string().min(1),
     P402_FACILITATOR_PRIVATE_KEY: z.string().min(1),
@@ -29,8 +30,6 @@ export function validateEnv() {
 
     if (!parsed.success) {
         console.error('❌ Invalid environment variables:', parsed.error.flatten().fieldErrors);
-        // In a strict production environment, we might throw here to prevent boot
-        // throw new Error('Invalid environment variables');
         return false;
     }
 

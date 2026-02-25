@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import Stripe from 'stripe';
+import { stripe } from '@/lib/stripe';
 import { SubscriptionService } from '@/lib/billing/subscription-service';
 
 export const dynamic = 'force-dynamic';
@@ -22,10 +22,6 @@ export async function POST(req: NextRequest) {
              WHERE provider_subscription_id IS NOT NULL 
              LIMIT 100`
         ) as { rows: { provider_subscription_id: string }[] };
-
-        const stripe = new Stripe(process.env.P402_STRIPE_SECRET_KEY || '', {
-            apiVersion: '2026-01-28.clover'
-        });
 
         const syncResults = {
             success: 0,

@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         }
 
         // 3. Create Checkout Session
-        const priceId = env.STRIPE_PRO_PRICE_ID;
+        const priceId = env.STRIPE_PRICE_ID_PRO;
 
         const checkoutSession = await stripe.checkout.sessions.create({
             customer: customerId,

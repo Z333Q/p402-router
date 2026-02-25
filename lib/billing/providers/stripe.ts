@@ -1,53 +1,35 @@
-import Stripe from 'stripe';
 import { NextRequest } from 'next/server';
+import { stripe } from '@/lib/stripe';
+import { env } from '@/lib/env';
 import { BillingProvider, CreateSubscriptionResult, VerifyWebhookResult } from '../provider';
-
-// Initialize the Stripe SDK.
-// We use the '2023-10-16' api version (or newest), but Stripe SDK requires it as an explicit string.
-const stripe = new Stripe(process.env.P402_STRIPE_SECRET_KEY || 'sk_test_placeholder', {
-    apiVersion: '2026-01-28.clover', // Or your specific version
-    appInfo: {
-        name: 'P402',
-        version: '2.0.0'
-    }
-});
 
 export class StripeProvider implements BillingProvider {
 
-    // Map internal sprint 1 plan IDs to Stripe Price IDs configured in the dashboard
     private getPriceIdForPlan(planId: string): string {
-        const proPrice = process.env.STRIPE_PRICE_ID_PRO || 'price_123';
-        const enterprisePrice = process.env.STRIPE_PRICE_ID_ENTERPRISE || 'price_456';
-
         const productMap: Record<string, string> = {
-            'pro': proPrice,
-            'enterprise': enterprisePrice
+            'pro': env.STRIPE_PRICE_ID_PRO,
+            'enterprise': env.STRIPE_PRICE_ID_ENTERPRISE,
         };
 
-        return productMap[planId] ?? proPrice;
+        const priceId = productMap[planId];
+        if (!priceId) {
+            throw new Error(`No Stripe price ID configured for plan: ${planId}`);
+        }
+        return priceId;
     }
 
     async createSubscription(tenantId: string, planId: string, returnUrl: string): Promise<CreateSubscriptionResult> {
         try {
             const priceId = this.getPriceIdForPlan(planId);
 
-            // Generate a checkout session for the user
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ['card'],
-                line_items: [
-                    {
-                        price: priceId,
-                        quantity: 1,
-                    },
-                ],
+                line_items: [{ price: priceId, quantity: 1 }],
                 mode: 'subscription',
                 success_url: `${returnUrl}?session_id={CHECKOUT_SESSION_ID}&status=success`,
                 cancel_url: `${returnUrl}?status=canceled`,
-                client_reference_id: tenantId, // Crucial: Ties Stripe session back to our DB
-                metadata: {
-                    tenantId,
-                    planId
-                }
+                client_reference_id: tenantId,
+                metadata: { tenantId, planId }
             });
 
             return {
@@ -66,9 +48,7 @@ export class StripeProvider implements BillingProvider {
             if (immediately) {
                 await stripe.subscriptions.cancel(providerSubId);
             } else {
-                await stripe.subscriptions.update(providerSubId, {
-                    cancel_at_period_end: true
-                });
+                await stripe.subscriptions.update(providerSubId, { cancel_at_period_end: true });
             }
             return true;
         } catch (error) {
@@ -79,7 +59,7 @@ export class StripeProvider implements BillingProvider {
 
     async verifyWebhookSignature(req: NextRequest, rawBody: string): Promise<VerifyWebhookResult> {
         const signature = req.headers.get('stripe-signature');
-        const webhookSecret = process.env.P402_STRIPE_WEBHOOK_SECRET;
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
         if (!signature || !webhookSecret) {
             return {
@@ -89,11 +69,7 @@ export class StripeProvider implements BillingProvider {
         }
 
         try {
-            const event = stripe.webhooks.constructEvent(
-                rawBody,
-                signature,
-                webhookSecret
-            );
+            const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
 
             return {
                 isValid: true,
