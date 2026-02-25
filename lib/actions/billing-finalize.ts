@@ -5,11 +5,16 @@ import db from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { SUBSCRIPTION_FACILITATOR_ADDRESS } from '@/lib/constants';
-import { P402_FACILITATOR_PRIVATE_KEY } from '@/lib/env';
+import { env } from '@/lib/env';
+
+if (!SUBSCRIPTION_FACILITATOR_ADDRESS) {
+    throw new Error('SUBSCRIPTION_FACILITATOR_ADDRESS is not configured');
+}
 
 // Ethers v6 strict syntax
 const provider = new ethers.JsonRpcProvider(process.env.BASE_RPC_URL!);
-const facilitatorWallet = new ethers.Wallet(P402_FACILITATOR_PRIVATE_KEY, provider);
+// env.P402_FACILITATOR_PRIVATE_KEY is typed string (required in schema)
+const facilitatorWallet = new ethers.Wallet(env.P402_FACILITATOR_PRIVATE_KEY, provider);
 
 const SUBSCRIPTION_ABI = [
     "function setupAndCharge(address user, uint256 totalAllowance, uint256 deadline, uint8 v, bytes32 r, bytes32 s, uint256 firstMonthCharge) external"
@@ -40,7 +45,7 @@ export async function finalizeWalletSubscription(payload: FinalizePayload) {
         const firstMonthCharge = 499_000000n;
 
         const contract = new ethers.Contract(
-            SUBSCRIPTION_FACILITATOR_ADDRESS,
+            SUBSCRIPTION_FACILITATOR_ADDRESS!, // guarded at module init above
             SUBSCRIPTION_ABI,
             facilitatorWallet
         ) as any;

@@ -1,9 +1,8 @@
 import Stripe from 'stripe';
 
 // STRIPE_SECRET_KEY is validated at runtime by lib/env.ts.
-// The empty-string fallback prevents build-time failures only;
-// Stripe will reject requests with a clear 401 if the key is wrong.
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
+// Use || (not ??) so empty string also falls back — Stripe SDK v20+ throws on ''.
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_placeholder_not_configured', {
     apiVersion: '2026-01-28.clover' as Stripe.LatestApiVersion,
     typescript: true,
 });
