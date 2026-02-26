@@ -17,6 +17,7 @@ import { CostComparison } from './_components/CostComparison';
 import { TrustMini } from './_components/TrustMini';
 import { TrustOverview } from './_components/TrustOverview';
 import { SafetyOverview, SafetyMini } from './_components/SafetyOverview';
+import { OnboardingChecklist } from './_components/OnboardingChecklist';
 
 import { useSWRConfig } from 'swr';
 import { useEffect, useState } from 'react';
@@ -50,6 +51,9 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-8">
+            {/* Activation Checklist — visible until dismissed or completed */}
+            <OnboardingChecklist />
+
             {/* Claude Skill Banner */}
             {!skillBannerDismissed && (
                 <div className="border-2 border-black bg-primary flex items-center justify-between gap-4 px-5 py-3">

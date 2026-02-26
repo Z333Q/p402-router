@@ -10,8 +10,6 @@ import { ProductionFeatures } from "@/components/landing/ProductionFeatures"
 import Link from 'next/link'
 import { Badge } from "@/app/dashboard/_components/ui"
 import { PricingStrip } from "@/components/landing/PricingStrip"
-import { WorksWithStrip } from "@/components/landing/WorksWithStrip"
-
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
@@ -44,9 +42,6 @@ export default async function Page() {
             <main>
                 {/* 1. Hero — one endpoint, code swap, live routing */}
                 <HeroAuditor />
-
-                {/* 1b. Works With — provider credibility strip */}
-                <WorksWithStrip />
 
                 {/* 2. How it works — 3-step activation path */}
                 <HowItWorks />

@@ -42,5 +42,11 @@ export const P402_FACILITATOR_PRIVATE_KEY = process.env.P402_FACILITATOR_PRIVATE
 
 const envOk = validateEnv();
 if (!envOk) {
-  throw new Error('Environment validation failed');
+    // During Next.js production build, runtime secrets (Stripe keys, private keys)
+    // are intentionally absent — they live in Vercel's runtime environment, not the
+    // build environment. Suppress the throw so static analysis completes cleanly.
+    // Any real misconfiguration surfaces at request time when the code actually runs.
+    if (process.env.NEXT_PHASE !== 'phase-production-build') {
+        throw new Error('Environment validation failed');
+    }
 }

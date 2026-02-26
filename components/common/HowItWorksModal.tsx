@@ -3,9 +3,11 @@ import React, { useState } from 'react';
 import { Card, Button } from '@/app/dashboard/_components/ui';
 import { X, Shield, Zap, Cpu, Activity, Database, Lock } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useRouter } from 'next/navigation';
 
 export function HowItWorksModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const [step, setStep] = useState(0);
+    const router = useRouter();
 
     if (!isOpen) return null;
 
@@ -143,9 +145,9 @@ export function HowItWorksModal({ isOpen, onClose }: { isOpen: boolean; onClose:
                     ) : (
                         <Button
                             className="bg-[#B6FF2E] hover:bg-[#B6FF2E]/90 text-black font-bold h-11 px-8"
-                            onClick={onClose}
+                            onClick={() => { onClose(); router.push('/login'); }}
                         >
-                            GET STARTED
+                            Create Free Account →
                         </Button>
                     )}
                 </div>
