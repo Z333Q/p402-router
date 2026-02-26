@@ -14,6 +14,24 @@ jobs:
       matrix:
         node-version: [18.x, 20.x]
 
+    # Placeholder env vars for build + test steps.
+    # These are NOT real secrets — they satisfy Zod schema validation so
+    # the Next.js build and Vitest suite complete in CI without live credentials.
+    env:
+      DATABASE_URL: postgresql://user:pass@localhost:5432/testdb
+      NEXTAUTH_SECRET: ci-nextauth-secret-32-chars-placeholder
+      NEXTAUTH_URL: http://localhost:3000
+      GOOGLE_CLIENT_ID: ci-google-client-id
+      GOOGLE_CLIENT_SECRET: ci-google-client-secret
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder_key
+      STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder_secret
+      STRIPE_PRICE_ID_PRO: price_ci_pro_placeholder
+      STRIPE_PRICE_ID_ENTERPRISE: price_ci_enterprise_placeholder
+      P402_SIGNER_ADDRESS: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+      # Hardhat account #0 — well-known public test key, safe for CI
+      P402_FACILITATOR_PRIVATE_KEY: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+
     steps:
     - uses: actions/checkout@v4
 
@@ -34,8 +52,3 @@ jobs:
 
     - name: Run Tests
       run: npm run test:run
-      env:
-        # Mock env vars for CI
-        DATABASE_URL: postgres://user:pass@localhost:5432/db
-        NEXTAUTH_SECRET: supersecret
-        NEXTAUTH_URL: http://localhost:3000
