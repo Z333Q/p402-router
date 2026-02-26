@@ -7,12 +7,75 @@ import { UpgradeMathCalculator } from "@/components/pricing/UpgradeMathCalculato
 
 export const metadata = {
     title: 'Pricing | P402 Router',
-    description: 'Agent commerce pricing that rewards commitment. Pro includes Claude Skill — AI-assisted integration for routing, billing guard, and x402 payment flows. High platform fees for experiments, lower for production.',
+    description: 'P402 pricing: Free (1% fee), Pro $499/mo (0.75% fee, Claude Skill), Enterprise (custom). Pay with Stripe or USDC via EIP-2612. AI payment router for agent commerce.',
+    alternates: { canonical: 'https://p402.io/pricing' },
+    openGraph: { title: 'P402 Pricing — Free, Pro $499/mo, Enterprise', description: 'Transparent platform fees for AI routing. Higher fees for experiments, lower for production. Pay with card or USDC.', url: 'https://p402.io/pricing' },
+};
+
+const pricingJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'SoftwareApplication',
+            name: 'P402 Router',
+            applicationCategory: 'DeveloperApplication',
+            offers: [
+                {
+                    '@type': 'Offer',
+                    name: 'Free',
+                    price: '0',
+                    priceCurrency: 'USD',
+                    description: '1.00% platform fee. Standard x402 routing, basic AP2 mandate caps, 5 integration audits/mo.',
+                },
+                {
+                    '@type': 'Offer',
+                    name: 'Pro',
+                    price: '499',
+                    priceCurrency: 'USD',
+                    description: '0.75% platform fee. High priority routing, unlimited audits, 90-day analytics, Claude Skill.',
+                    billingIncrement: 1,
+                },
+                {
+                    '@type': 'Offer',
+                    name: 'Enterprise',
+                    price: 'Custom',
+                    priceCurrency: 'USD',
+                    description: 'From 0.40% platform fee. Dedicated infrastructure, multi-stage AP2 approvals, moderation queues.',
+                },
+            ],
+        },
+        {
+            '@type': 'FAQPage',
+            mainEntity: [
+                {
+                    '@type': 'Question',
+                    name: 'What is the difference between the platform fee and the subscription?',
+                    acceptedAnswer: { '@type': 'Answer', text: 'The subscription fee (e.g., $499/mo for Pro) unlocks the SaaS control plane, advanced analytics, and priority infrastructure. The platform fee (e.g., 0.75% for Pro) is taken atomically on-chain during each x402 settlement.' },
+                },
+                {
+                    '@type': 'Question',
+                    name: 'Can I pay for my subscription with crypto?',
+                    acceptedAnswer: { '@type': 'Answer', text: 'Yes. In the Billing dashboard, you can opt to pay via our gasless EIP-2612 wallet flow using USDC on Base, or via traditional Stripe.' },
+                },
+                {
+                    '@type': 'Question',
+                    name: 'Do cache hits count towards my platform fee?',
+                    acceptedAnswer: { '@type': 'Answer', text: 'No. Semantic Cache hits bypass the routing engine and on-chain settlement entirely, making them free of platform fees.' },
+                },
+                {
+                    '@type': 'Question',
+                    name: 'Is there an AI assistant to help with P402 integration?',
+                    acceptedAnswer: { '@type': 'Answer', text: 'Yes. The P402 Claude Skill gives Claude Code and Claude.ai deep knowledge of the routing API, billing guard, x402 payment flows, and A2A protocol. Install it from p402.io/docs/skill.' },
+                },
+            ],
+        },
+    ],
 };
 
 export default function PricingPage() {
     return (
         <div className="min-h-screen bg-[var(--neutral-50)] text-[var(--neutral-900)] font-sans selection:bg-[var(--primary)] selection:text-black flex flex-col">
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }} />
             <TopNav />
 
             <main className="flex-grow">

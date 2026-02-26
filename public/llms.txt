@@ -1,49 +1,102 @@
 # P402.io
 
-> Payment-aware AI orchestration layer. Routes LLM requests across 300+ models with cost optimization and settles payments in USDC on Base via the x402 protocol.
+> Payment-aware AI orchestration layer. Routes LLM requests across 300+ models with cost/speed/quality optimization and settles micropayments in USDC on Base via the x402 protocol (EIP-3009, gasless).
 
-P402 sits between your application and AI providers the same way a payment network sits between merchants and banks. It handles routing, authorization, and settlement so your code just makes API calls. Traditional payment processors charge ~$0.30 per transaction, making micropayments for AI API calls ($0.001-$0.05) economically impossible. P402 uses stablecoin settlement on Base L2 where transaction costs are fractions of a cent.
+P402 sits between your application and AI providers the same way a payment network sits between merchants and banks — handling routing, authorization, and settlement so your code just makes API calls.
 
-## Docs
-
-- [API Reference](https://p402.io/docs/api): Endpoints for chat completions, sessions, providers, analytics, cache
-- [A2A Protocol](https://p402.io/docs/a2a): Google A2A integration with x402 payment extension
-- [Router Guide](https://p402.io/docs/router): Routing modes (cost, speed, quality, balanced), scoring algorithm, failover, model tiers
-- [SDK Reference](https://p402.io/docs/sdk): TypeScript SDK, MCP server, CLI tools
-- [Full Documentation](https://p402.io/llms-full.txt): Complete technical reference in a single markdown file
+- **OpenAI-compatible**: Drop-in replacement for `openai` SDK — change one URL
+- **300+ models**: GPT-4o, Claude 4, Gemini 3, Llama 4, Mistral, and more via OpenRouter
+- **Micropayments**: USDC settlement on Base L2 at fractions of a cent per request
+- **Routing modes**: `cost`, `speed`, `quality`, `balanced` — or custom weights
+- **Semantic cache**: Cosine-similarity cache cuts redundant LLM calls and fees
+- **A2A protocol**: Google A2A JSON-RPC with x402 payment extension
+- **Spending controls**: AP2 mandates give agents bounded authority with budget caps
 
 ## Claude Skill
 
-- [Download P402 Skill](https://p402.io/skill/p402.zip): Installable skill for Claude Code and Claude.ai
-- [SKILL.md](https://p402.io/skill/SKILL.md): Core skill with routing guide, billing guard reference, integration patterns
-- [API Reference](https://p402.io/skill/references/api-reference.md): TypeScript interfaces, request/response examples, error codes
-- [Routing Guide](https://p402.io/skill/references/routing-guide.md): Scoring algorithm, provider landscape, advanced configuration
-- [Payment Flows](https://p402.io/skill/references/payment-flows.md): x402 3-step flow, EIP-3009, onchain verification, USDC addresses
-- [A2A Protocol](https://p402.io/skill/references/a2a-protocol.md): JSON-RPC methods, AP2 mandates, Bazaar marketplace
+Install the P402 skill to give Claude Code and Claude.ai deep integration knowledge:
+
+- [Install Skill (zip)](https://p402.io/skill/p402.zip): `claude mcp install https://p402.io/skill/p402.zip`
+- [SKILL.md](https://p402.io/skill/SKILL.md): Core routing guide, billing guard reference, migration patterns
+- [Skill Documentation](https://p402.io/docs/skill): Full installation guide and use cases
+
+### What the Skill Teaches Claude
+- Generate P402 integration code from scratch
+- Debug routing decisions and billing guard errors
+- Compare model pricing across all 300+ providers
+- Set up session-based spending limits for autonomous agents
+- Implement x402 payment flows (verify → settle → receipt)
+- Configure AP2 mandates for multi-agent workflows
+
+## Docs
+
+- [API Reference](https://p402.io/docs/api): Chat completions, sessions, providers, analytics, cache, x402 settlement
+- [Routing Guide](https://p402.io/docs/router): Modes (cost, speed, quality, balanced), scoring algorithm, failover
+- [SDK Reference](https://p402.io/docs/sdk): TypeScript SDK, MCP server integration, CLI tools
+- [A2A Protocol](https://p402.io/docs/a2a): JSON-RPC 2.0 with x402 payment extension, AP2 mandates
+- [x402 Facilitator](https://p402.io/docs/facilitator): Deploy a facilitator, EIP-3009, USDC on Base
+- [AP2 Mandates](https://p402.io/docs/mandates): Bounded spending authority for AI agents
+- [MCP Server](https://p402.io/docs/mcp): Model Context Protocol integration for Claude and other agents
+- [ERC-8004 Agents](https://p402.io/docs/erc8004): On-chain agent identity and reputation on Base
+- [Full Documentation](https://p402.io/llms-full.txt): Complete technical reference (1,900+ lines)
+
+## Skill Reference Files
+
+- [API Reference](https://p402.io/skill/references/api-reference.md): TypeScript interfaces, error codes, examples
+- [Routing Guide](https://p402.io/skill/references/routing-guide.md): Scoring algorithm, provider landscape, config
+- [Payment Flows](https://p402.io/skill/references/payment-flows.md): x402 3-step flow, EIP-3009, USDC addresses
+- [A2A Protocol](https://p402.io/skill/references/a2a-protocol.md): JSON-RPC methods, mandates, Bazaar marketplace
 
 ## Key Endpoints
 
-- `POST /api/v2/chat/completions`: OpenAI-compatible routing endpoint with P402 extensions
-- `POST /api/v2/sessions`: Create budget-capped sessions for autonomous agent spending
-- `GET /api/v2/sessions/:id`: Check session budget utilization and status
-- `POST /api/v2/providers/compare`: Compare model pricing across 300+ models
-- `GET /api/v2/analytics/recommendations`: Cost optimization suggestions
-- `POST /api/a2a`: Google A2A JSON-RPC messaging with x402 payment extension
-- `GET /.well-known/agent.json`: A2A agent discovery card
+- `POST /api/v2/chat/completions` — OpenAI-compatible routing (change base URL, keep your code)
+- `POST /api/v2/sessions` — Create budget-capped sessions for autonomous agent spending
+- `GET  /api/v2/sessions/:id` — Check session budget and status
+- `POST /api/v2/providers/compare` — Compare pricing across 300+ models in real time
+- `GET  /api/v2/analytics/recommendations` — AI-generated cost optimization suggestions
+- `POST /api/v1/facilitator/verify` — Verify x402 EIP-3009 payment authorization
+- `POST /api/v1/facilitator/settle` — Execute USDC transfer on Base L2
+- `POST /api/a2a` — Google A2A JSON-RPC with x402 payment extension
+- `GET  /.well-known/agent.json` — A2A agent discovery card
 
-## Agent Discovery
-
-- [Agent Card](https://p402.io/.well-known/agent.json): A2A-compliant agent discovery
-- [OpenAPI Spec](https://p402.io/openapi.yaml): Machine-readable API specification
-
-## Integration
+## Quick Integration
 
 ```bash
 npm install @p402/sdk
-npm install @p402/a2a-sdk
 ```
+
+```typescript
+import OpenAI from 'openai';
+
+// Drop-in: change base URL only
+const client = new OpenAI({
+  baseURL: 'https://p402.io/api/v2',
+  apiKey: process.env.P402_API_KEY,
+});
+
+const response = await client.chat.completions.create({
+  model: 'auto',  // P402 picks the optimal model
+  messages: [{ role: 'user', content: 'Hello' }],
+  // P402 extensions:
+  // x_routing_mode: 'cost',   // or 'speed', 'quality', 'balanced'
+  // x_session_id: 'sess_...',  // budget-capped session
+});
+```
+
+## Agent Discovery
+
+- [Agent Card](https://p402.io/.well-known/agent.json): A2A-compliant discovery (streaming, x402 payments)
+- [OpenAPI Spec](https://p402.io/openapi.yaml): Machine-readable full API specification
+- [p402.json](https://p402.io/.well-known/p402.json): x402 protocol governance configuration
+
+## Contracts (Base Mainnet, Chain ID 8453)
+
+- USDC: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`
+- Treasury: `0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6`
+- Settlement: `0xd03c7ab9a84d86dbc171367168317d6ebe408601`
 
 ## Source
 
 - [GitHub](https://github.com/Z333Q/p402-router)
 - [Twitter](https://twitter.com/p402_io)
+- [Whitepaper](https://p402.io/whitepaper.pdf)

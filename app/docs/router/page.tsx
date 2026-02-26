@@ -1,6 +1,13 @@
 import { TopNav } from '@/components/TopNav'
 import { Footer } from '@/components/Footer'
 
+export const metadata = {
+    title: 'Routing Guide | P402 Router',
+    description: 'P402 routing guide: cost, speed, quality, and balanced modes. Scoring algorithm, provider comparison across 300+ models, semantic cache, failover, and advanced routing configuration.',
+    alternates: { canonical: 'https://p402.io/docs/router' },
+    openGraph: { title: 'P402 Routing Guide — Cost, Speed, Quality, Balanced', description: 'Route AI calls across 300+ models. Scoring algorithm, semantic cache, and automatic failover.', url: 'https://p402.io/docs/router' },
+};
+
 export default function RouterDocs() {
     return (
         <div className="min-h-screen flex flex-col">

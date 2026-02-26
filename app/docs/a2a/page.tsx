@@ -1,6 +1,13 @@
 import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
 
+export const metadata = {
+    title: 'A2A Protocol Docs | P402 Router',
+    description: 'Google A2A Protocol integration with x402 payment extension. JSON-RPC 2.0 agent communication, AP2 spending mandates, SSE task streaming, and agent marketplace (Bazaar).',
+    alternates: { canonical: 'https://p402.io/docs/a2a' },
+    openGraph: { title: 'A2A Protocol — P402 Agent-to-Agent Integration', description: 'Build payment-aware AI agents with A2A JSON-RPC, x402 micropayments, and AP2 mandate governance.', url: 'https://p402.io/docs/a2a' },
+};
+
 export default function A2ADocs() {
     return (
         <div className="min-h-screen bg-white text-black font-sans selection:bg-primary selection:text-black">

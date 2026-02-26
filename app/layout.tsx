@@ -21,11 +21,21 @@ export const metadata: Metadata = {
         siteName: 'P402',
         type: 'website',
         locale: 'en_US',
+        images: [
+            {
+                url: '/opengraph-image',
+                width: 1200,
+                height: 630,
+                alt: 'P402 — AI Payment Router for Agent Commerce',
+            },
+        ],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'P402 Protocol',
         description: 'The Agent-to-Agent (A2A) Commerce Infrastructure.',
+        site: '@p402_io',
+        images: ['/opengraph-image'],
     },
     robots: {
         index: true,

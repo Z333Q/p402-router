@@ -1,6 +1,13 @@
 import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
 
+export const metadata = {
+    title: 'AP2 Spending Mandates | P402 Router',
+    description: 'AP2 mandate protocol: issue signed spending authorizations that allow AI agents to spend USDC on your behalf. Budget caps, category restrictions, expiry, and multi-stage approvals.',
+    alternates: { canonical: 'https://p402.io/docs/mandates' },
+    openGraph: { title: 'AP2 Spending Mandates — P402 Agent Governance', description: 'Give AI agents bounded spending authority. Signed mandates with budget caps, category filters, and on-chain enforcement.', url: 'https://p402.io/docs/mandates' },
+};
+
 export default function MandatesDocs() {
     return (
         <div className="min-h-screen bg-white text-black font-sans selection:bg-primary selection:text-black">

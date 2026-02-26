@@ -2,6 +2,13 @@ import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
 import { Badge } from "@/app/dashboard/_components/ui";
 
+export const metadata = {
+    title: 'x402 Facilitator Guide | P402 Router',
+    description: 'Deploy a P402 x402 facilitator: verify EIP-3009 signatures, settle USDC micropayments on Base L2. Gasless payments for AI agents — users pay zero gas fees.',
+    alternates: { canonical: 'https://p402.io/docs/facilitator' },
+    openGraph: { title: 'x402 Facilitator Guide — Gasless USDC Payments', description: 'Run a facilitator node: verify EIP-3009 authorizations and settle micropayments on Base L2.', url: 'https://p402.io/docs/facilitator' },
+};
+
 export default function FacilitatorDocs() {
   return (
     <div className="min-h-screen bg-white text-black font-sans selection:bg-primary selection:text-black">

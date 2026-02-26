@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { TopNav } from "@/components/TopNav"
 import { Footer } from "@/components/Footer"
 import { HeroAuditor } from "@/components/landing/HeroAuditor"
@@ -11,6 +12,29 @@ import { Badge } from "@/app/dashboard/_components/ui"
 import { PricingStrip } from "@/components/landing/PricingStrip"
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+    title: 'P402 | AI Payment Router for Agent Commerce',
+    description: 'Route LLM calls across 300+ AI models with intelligent cost optimization. Settle micropayments in USDC on Base via the x402 protocol. The economic layer for autonomous AI agents.',
+    alternates: { canonical: 'https://p402.io' },
+    keywords: [
+        'AI payment router', 'LLM routing', 'x402 protocol', 'agent payments', 'USDC micropayments',
+        'A2A protocol', 'AI cost optimization', 'Base blockchain', 'EIP-3009', 'Claude Code',
+        'OpenAI compatible', 'multi-model routing', 'agentic commerce', 'AP2 mandates'
+    ],
+    openGraph: {
+        title: 'P402 | AI Payment Router — 300+ Models, USDC Settlement',
+        description: 'Route AI calls across 300+ models. Settle USDC micropayments with zero gas fees via EIP-3009. The economic layer for autonomous AI agents.',
+        url: 'https://p402.io',
+        type: 'website',
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'P402 — AI Payment Router for Agent Commerce',
+        description: 'Route 300+ AI models. Settle USDC micropayments. Zero gas via EIP-3009. Built for the Agentic Web.',
+        site: '@p402_io',
+    },
+};
 
 export default async function Page() {
     return (

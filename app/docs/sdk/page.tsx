@@ -1,6 +1,13 @@
 import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
 
+export const metadata = {
+    title: 'TypeScript SDK | P402 Router',
+    description: 'P402 TypeScript SDK — npm install @p402/sdk. Session creation, AP2 mandate helpers, x402 payment utilities, MCP server integration, and OpenAI-compatible chat completions.',
+    alternates: { canonical: 'https://p402.io/docs/sdk' },
+    openGraph: { title: 'P402 TypeScript SDK', description: 'Drop-in SDK for routing AI calls, managing sessions, and settling USDC payments. OpenAI-compatible.', url: 'https://p402.io/docs/sdk' },
+};
+
 export default function SDKDocs() {
   return (
     <div className="min-h-screen bg-white text-black font-sans selection:bg-primary selection:text-black">

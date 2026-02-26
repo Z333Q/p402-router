@@ -35,13 +35,27 @@ const nextConfig = {
   },
 
   async headers() {
+    const securityHeaders = [
+      { key: 'X-Content-Type-Options',  value: 'nosniff' },
+      { key: 'X-Frame-Options',         value: 'DENY' },
+      { key: 'X-XSS-Protection',        value: '1; mode=block' },
+      { key: 'Referrer-Policy',         value: 'strict-origin-when-cross-origin' },
+      { key: 'Permissions-Policy',      value: 'camera=(), microphone=(), geolocation=()' },
+      { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+    ];
+
     return [
+      // Apply security headers globally
+      { source: '/(.*)', headers: securityHeaders },
+
+      // LLM discovery files — open CORS, explicit content-type
       {
         source: '/llms.txt',
         headers: [
           { key: 'Access-Control-Allow-Origin', value: '*' },
           { key: 'Content-Type', value: 'text/markdown; charset=utf-8' },
           { key: 'Cache-Control', value: 'public, max-age=3600' },
+          { key: 'X-Robots-Tag', value: 'index, follow' },
         ],
       },
       {
@@ -50,6 +64,26 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Origin', value: '*' },
           { key: 'Content-Type', value: 'text/markdown; charset=utf-8' },
           { key: 'Cache-Control', value: 'public, max-age=3600' },
+          { key: 'X-Robots-Tag', value: 'index, follow' },
+        ],
+      },
+
+      // OpenAPI spec — machine-readable API discovery
+      {
+        source: '/openapi.yaml',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Content-Type', value: 'application/yaml' },
+          { key: 'Cache-Control', value: 'public, max-age=3600' },
+        ],
+      },
+
+      // Well-known files — A2A agent discovery
+      {
+        source: '/.well-known/(.*)',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Cache-Control', value: 'public, max-age=300' },
         ],
       },
     ];

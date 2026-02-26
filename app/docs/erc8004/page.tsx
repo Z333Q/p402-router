@@ -1,6 +1,13 @@
 import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
 
+export const metadata = {
+    title: 'ERC-8004 Trustless Agents | P402 Router',
+    description: 'ERC-8004 on-chain agent identity and reputation on Base. Register AI agents, accumulate reputation scores via payment-backed feedback, and validate agents in real time.',
+    alternates: { canonical: 'https://p402.io/docs/erc8004' },
+    openGraph: { title: 'ERC-8004 Trustless Agent Identity — P402', description: 'On-chain AI agent identity and reputation. No centralized authority — reputation backed by real payments on Base.', url: 'https://p402.io/docs/erc8004' },
+};
+
 export default function ERC8004Docs() {
     return (
         <div className="min-h-screen bg-white text-black font-sans selection:bg-primary selection:text-black">

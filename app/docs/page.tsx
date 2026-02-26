@@ -3,6 +3,13 @@ import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
 import { ProTierBadge } from '../dashboard/_components/ui';
 
+export const metadata = {
+    title: 'Developer Docs | P402 Router',
+    description: 'P402 developer documentation hub. API reference, SDK quickstart, routing guide, x402 payment protocol, A2A agent integration, AP2 mandates, and ERC-8004 trustless agents.',
+    alternates: { canonical: 'https://p402.io/docs' },
+    openGraph: { title: 'P402 Developer Docs', description: 'Everything you need to route AI calls and settle payments at scale — API, SDK, x402, A2A, and Claude Skill.', url: 'https://p402.io/docs' },
+};
+
 export default function DocsIndex() {
     return (
         <div className="min-h-screen bg-white text-black font-sans selection:bg-primary selection:text-black">
