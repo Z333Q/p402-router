@@ -5,13 +5,17 @@ import { Terminal, ArrowRight, ArrowDown, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
 const ROUTING_EXAMPLES = [
-    { from: 'claude-opus-4-6', to: 'gemini-2.0-flash', fromCost: '$0.015', toCost: '$0.0003', saved: '98%' },
-    { from: 'gpt-4o', to: 'deepseek-v3', fromCost: '$0.005', toCost: '$0.0003', saved: '94%' },
-    { from: 'o3', to: 'claude-haiku-4-5', fromCost: '$0.060', toCost: '$0.0008', saved: '99%' },
+    { from: 'claude-opus-4-6', to: 'gemini-2.0-flash', fromCost: '$0.015', toCost: '$0.0003', saved: '98%', reqId: 'req_7f3a9c12' },
+    { from: 'gpt-4o', to: 'deepseek-v3', fromCost: '$0.005', toCost: '$0.0003', saved: '94%', reqId: 'req_2b8e4f19' },
+    { from: 'o3', to: 'claude-haiku-4-5', fromCost: '$0.060', toCost: '$0.0008', saved: '99%', reqId: 'req_9c1d7a55' },
 ];
+
+const MODES = ['Cost', 'Speed', 'Quality', 'Balanced'] as const;
+type Mode = typeof MODES[number];
 
 export const HeroAuditor = () => {
     const [routeIdx, setRouteIdx] = useState(0);
+    const [mode, setMode] = useState<Mode>('Cost');
 
     useEffect(() => {
         const t = setInterval(() => {
@@ -35,16 +39,34 @@ export const HeroAuditor = () => {
                     </div>
 
                     <h1 className="text-5xl lg:text-7xl font-extrabold uppercase leading-[0.88] tracking-tighter mb-6">
-                        One<br />
-                        Endpoint.<br />
-                        <span className="bg-[#B6FF2E] px-2 text-black">Every AI.</span>
+                        Pay less<br />
+                        for AI.<br />
+                        <span className="bg-[#B6FF2E] px-2 text-black">Smart routing.</span>
                     </h1>
 
-                    <p className="text-base lg:text-lg font-bold text-neutral-600 max-w-lg mb-10 leading-relaxed border-l-4 border-black pl-5">
-                        Drop P402 in where you use OpenAI. We route to the cheapest model
-                        that meets your quality bar. Payments settle gaslessly on Base.
+                    <p className="text-base lg:text-lg font-bold text-neutral-600 max-w-lg mb-6 leading-relaxed border-l-4 border-black pl-5">
+                        We route each request to the cheapest model that meets your quality bar,
+                        optimizing continuously across 300+ models. Payments settle gaslessly on Base.
                         Full audit trail.
                     </p>
+
+                    {/* Mode selector preview */}
+                    <div className="flex flex-wrap items-center gap-2 mb-8">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mr-1">Mode:</span>
+                        {MODES.map(m => (
+                            <button
+                                key={m}
+                                onClick={() => setMode(m)}
+                                className={`h-7 px-3 border-2 border-black text-[10px] font-black uppercase tracking-wider transition-colors ${
+                                    mode === m
+                                        ? 'bg-[#B6FF2E] text-black'
+                                        : 'bg-white text-neutral-500 hover:text-black hover:bg-neutral-50'
+                                }`}
+                            >
+                                {m}
+                            </button>
+                        ))}
+                    </div>
 
                     <div className="flex flex-col sm:flex-row gap-4">
                         <Link href="/login">
@@ -61,15 +83,22 @@ export const HeroAuditor = () => {
                     </div>
 
                     {/* Trust signals */}
-                    <div className="mt-8 flex flex-wrap gap-5 text-[10px] font-black uppercase tracking-widest text-neutral-500">
+                    <div className="mt-6 flex flex-wrap gap-5 text-[10px] font-black uppercase tracking-widest text-neutral-500">
                         <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />300+ models</span>
                         <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />Zero gas fees</span>
-                        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />OpenAI-compatible</span>
                         <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />USDC on Base</span>
+                    </div>
+
+                    {/* Compatibility note */}
+                    <div className="mt-3">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-neutral-400">
+                            <span className="border border-neutral-300 px-1.5 py-0.5 text-neutral-500 font-bold">OpenAI schema supported</span>
+                            — routes to Claude, Gemini, and beyond.
+                        </span>
                     </div>
                 </div>
 
-                {/* RIGHT — Code Swap + Live Routing Decision */}
+                {/* RIGHT — Code Swap + Live Trace */}
                 <div className="col-span-1 lg:col-span-5 bg-[#0D0D0D] p-6 lg:p-10 flex flex-col justify-center gap-6 relative overflow-hidden">
                     {/* Subtle grid texture */}
                     <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
@@ -103,39 +132,47 @@ export const HeroAuditor = () => {
                         </div>
                     </div>
 
-                    {/* Live routing decision */}
+                    {/* Live trace */}
                     <div className="relative z-10 border border-neutral-700 bg-neutral-900 p-4 font-mono text-xs">
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Last Routing Decision</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Trace</span>
                             <span className="flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 bg-[#B6FF2E] rounded-full animate-pulse inline-block" />
                                 <span className="text-[9px] text-[#B6FF2E] font-bold uppercase">live</span>
                             </span>
                         </div>
 
-                        <div className="space-y-1.5 text-[11px]">
-                            <div className="flex items-center gap-2">
-                                <span className="text-neutral-500">req</span>
-                                <span className="text-neutral-400 line-through opacity-50">{ex.from}</span>
-                                <ArrowRight size={10} className="text-neutral-600" />
+                        <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 text-[10px]">
+                                <span className="text-neutral-600 w-16 shrink-0">req_id</span>
+                                <span className="text-neutral-400">{ex.reqId}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px]">
+                                <span className="text-neutral-600 w-16 shrink-0">→ route</span>
                                 <span className="text-[#B6FF2E] font-bold">{ex.to}</span>
+                                <span className="text-neutral-600 ml-auto">{mode.toLowerCase()}</span>
                             </div>
-                            <div className="flex gap-6 mt-2 pt-2 border-t border-neutral-800">
-                                <div>
-                                    <div className="text-[9px] text-neutral-600 uppercase">was</div>
-                                    <div className="text-red-400 font-bold">{ex.fromCost}<span className="text-neutral-600 font-normal">/1K</span></div>
-                                </div>
-                                <div>
-                                    <div className="text-[9px] text-neutral-600 uppercase">now</div>
-                                    <div className="text-[#B6FF2E] font-bold">{ex.toCost}<span className="text-neutral-600 font-normal">/1K</span></div>
-                                </div>
-                                <div>
-                                    <div className="text-[9px] text-neutral-600 uppercase">saved</div>
-                                    <div className="text-white font-black">{ex.saved}</div>
-                                </div>
+                            <div className="flex items-center gap-2 text-[10px]">
+                                <span className="text-neutral-600 w-16 shrink-0">→ cost</span>
+                                <span className="text-red-400 line-through opacity-60">{ex.fromCost}</span>
+                                <ArrowRight size={8} className="text-neutral-600 shrink-0" />
+                                <span className="text-[#B6FF2E]">{ex.toCost}</span>
+                                <span className="text-neutral-500 ml-auto">−{ex.saved}</span>
                             </div>
-                            <div className="text-[9px] text-neutral-600 mt-1 pt-2 border-t border-neutral-800">
-                                ✓ Settled via x402 · Base · gasless
+                            <div className="flex items-center gap-2 text-[10px]">
+                                <span className="text-neutral-600 w-16 shrink-0">→ settle</span>
+                                <span className="text-neutral-400">tx 0xab2f…c13e</span>
+                                <span className="text-green-500 ml-auto">✓ Base</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px]">
+                                <span className="text-neutral-600 w-16 shrink-0">→ receipt</span>
+                                <span className="text-neutral-400">rcpt_{ex.reqId.slice(4)}</span>
+                                <span className="text-neutral-600 ml-auto">cached 30s</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] border-t border-neutral-800 pt-1.5 mt-0.5">
+                                <span className="text-neutral-600 w-16 shrink-0">→ policy</span>
+                                <span className="text-green-500">✓ mandate ok</span>
+                                <span className="text-neutral-600 ml-auto">gasless</span>
                             </div>
                         </div>
                     </div>

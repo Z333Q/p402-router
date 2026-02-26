@@ -40,7 +40,7 @@ const pricingJsonLd = {
                     name: 'Enterprise',
                     price: 'Custom',
                     priceCurrency: 'USD',
-                    description: 'From 0.40% platform fee. Dedicated infrastructure, multi-stage AP2 approvals, moderation queues.',
+                    description: 'Volume-tiered platform fee. Dedicated infrastructure, multi-stage AP2 approvals, moderation queues.',
                 },
             ],
         },
@@ -186,7 +186,7 @@ export default function PricingPage() {
                                     <span className="text-6xl font-black text-[var(--neutral-300)]">Custom</span>
                                 </div>
                                 <div className="inline-block bg-white text-black font-black uppercase text-xs px-3 py-1 border-2 border-black">
-                                    From 0.40% Platform Fee
+                                    Volume-Tiered Platform Fee
                                 </div>
                             </div>
                             <div className="p-8 flex-1 flex flex-col gap-6">

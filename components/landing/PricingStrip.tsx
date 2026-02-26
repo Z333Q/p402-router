@@ -24,7 +24,7 @@ export function PricingStrip() {
             name: "Enterprise",
             tag: "Govern",
             price: "Custom",
-            fee: "0.40%",
+            fee: "Volume-tiered",
             cta: "Contact Sales",
             href: "mailto:sales@p402.io"
         }
