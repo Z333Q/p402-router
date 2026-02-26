@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 import { TopNav } from "@/components/TopNav"
 import { Footer } from "@/components/Footer"
 import { HeroAuditor } from "@/components/landing/HeroAuditor"
+import { HowItWorks } from "@/components/landing/HowItWorks"
 import { BazaarLoop } from "@/components/landing/BazaarLoop"
 import { Testimonials } from "@/components/landing/Testimonials"
 import { RequestInspector } from "@/components/landing/RequestInspector"
-import { LandingGuide } from "@/components/landing/LandingGuide"
 import { ProductionFeatures } from "@/components/landing/ProductionFeatures"
 import Link from 'next/link'
 import { Badge } from "@/app/dashboard/_components/ui"
@@ -41,72 +41,108 @@ export default async function Page() {
         <div className="min-h-screen bg-white text-black font-sans selection:bg-primary selection:text-black">
             <TopNav />
             <main>
+                {/* 1. Hero — one endpoint, code swap, live routing */}
                 <HeroAuditor />
 
-                <LandingGuide />
+                {/* 2. How it works — 3-step activation path */}
+                <HowItWorks />
 
-                {/* Protocol Deep Dive / Features */}
-                <section id="product" className="py-24 bg-white border-t-2 border-black">
+                {/* 3. Proof strip — trust before depth */}
+                <section className="py-5 bg-neutral-50 border-t-2 border-b-2 border-black">
                     <div className="container mx-auto px-6 max-w-7xl">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            <div className="card p-10 border-2 border-black bg-white shadow-[8px_8px_0px_#000]">
-                                <div className="text-[10px] font-black text-black mb-2 uppercase">EIP-3009 Settlement</div>
-                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Gasless Payments</h3>
-                                <p className="text-sm font-bold leading-relaxed text-neutral-600">
-                                    Users pay zero gas fees. P402's facilitator network executes USDC transfers on Base L2 using
-                                    EIP-3009 transferWithAuthorization, eliminating wallet friction for AI payments.
-                                </p>
-                            </div>
-                            <div className="card p-10 border-2 border-black bg-white shadow-[8px_8px_0px_#000]">
-                                <div className="text-[10px] font-black text-black mb-2 uppercase">Global Edge Network</div>
-                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Sub-50ms Verification</h3>
-                                <p className="text-sm font-bold leading-relaxed text-neutral-600">
-                                    Production facilitator deployed across 15 global regions on Cloudflare Workers. Real-time payment
-                                    verification with P95 latency under 50ms worldwide.
-                                </p>
-                            </div>
-                            <div className="card p-10 border-2 border-black bg-white shadow-[8px_8px_0px_#000]">
-                                <div className="text-[10px] font-black text-black mb-2 uppercase">Real-time Analytics</div>
-                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">Cost Transparency</h3>
-                                <p className="text-sm font-bold leading-relaxed text-neutral-600">
-                                    Live cost tracking, transaction history, and savings analytics. Complete audit trail with
-                                    on-chain verification and multisig treasury security controls.
-                                </p>
-                            </div>
-                            <div className="card p-10 border-2 border-black bg-emerald-50 shadow-[8px_8px_0px_#000]">
-                                <div className="text-[10px] font-black text-black mb-2 uppercase">ERC-8004 Trustless Agents</div>
-                                <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter italic">On-Chain Trust</h3>
-                                <p className="text-sm font-bold leading-relaxed text-neutral-600">
-                                    Every facilitator carries a verifiable on-chain identity and reputation score. Payment-backed
-                                    feedback ensures only real users build trust. No centralized reputation — just math.
-                                </p>
-                            </div>
+                        <div className="flex flex-wrap items-center gap-6 text-[10px] font-black uppercase tracking-widest">
+                            <span className="text-neutral-400">Verify independently:</span>
+                            <Link href="/status" className="flex items-center gap-1.5 text-black hover:text-primary transition-colors no-underline">
+                                <span className="w-2 h-2 bg-green-500 inline-block" />
+                                System status
+                            </Link>
+                            <Link href="/trust" className="text-black hover:text-primary transition-colors no-underline">Trust Center</Link>
+                            <a href="https://basescan.org/address/0xd03c7ab9a84d86dbc171367168317d6ebe408601" target="_blank" rel="noopener noreferrer" className="text-black hover:text-primary transition-colors no-underline">
+                                Settlement contract ↗
+                            </a>
+                            <a href="https://basescan.org/address/0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6" target="_blank" rel="noopener noreferrer" className="text-black hover:text-primary transition-colors no-underline">
+                                Treasury ↗
+                            </a>
                         </div>
                     </div>
                 </section>
 
+                {/* 4. Product doorway cards — lead to where the work happens */}
+                <section id="product" className="py-20 bg-white border-b-2 border-black">
+                    <div className="container mx-auto px-6 max-w-7xl">
+                        <div className="mb-10">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">What you get</div>
+                            <h2 className="text-4xl font-black uppercase tracking-tighter">Four capabilities. One protocol.</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-black border-2 border-black">
+                            <Link href="/product/payments" className="group bg-white p-8 flex flex-col gap-4 hover:bg-neutral-50 transition-colors no-underline">
+                                <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Payments</div>
+                                <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Verify. Settle. Receipt.</h3>
+                                <p className="text-sm font-medium text-neutral-600 leading-relaxed flex-1">
+                                    EIP-3009 gasless USDC settlement on Base. Sign once, facilitator executes. Receipts for repeat access without re-payment.
+                                </p>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">x402 protocol →</span>
+                            </Link>
+                            <Link href="/product/controls" className="group bg-white p-8 flex flex-col gap-4 hover:bg-neutral-50 transition-colors no-underline">
+                                <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Controls</div>
+                                <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Mandates. Policies. Evidence.</h3>
+                                <p className="text-sm font-medium text-neutral-600 leading-relaxed flex-1">
+                                    AP2 mandates constrain each agent&apos;s spend cryptographically. Policies enforce account-wide limits. Every deny returns a structured code with requestId.
+                                </p>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">AP2 mandates →</span>
+                            </Link>
+                            <Link href="/product/orchestration" className="group bg-white p-8 flex flex-col gap-4 hover:bg-neutral-50 transition-colors no-underline">
+                                <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Orchestration</div>
+                                <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Tasks. Stream. Trace.</h3>
+                                <p className="text-sm font-medium text-neutral-600 leading-relaxed flex-1">
+                                    A2A JSON-RPC 2.0 task protocol with SSE streaming. Payment-required events are structured messages — not errors. Live trace for every routing decision.
+                                </p>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">A2A protocol →</span>
+                            </Link>
+                            <Link href="/product/ecosystem" className="group bg-primary p-8 flex flex-col gap-4 hover:bg-black transition-colors no-underline">
+                                <div className="text-[10px] font-black text-black/60 uppercase tracking-widest group-hover:text-primary/60">Ecosystem</div>
+                                <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Skills. Bazaar. Verified.</h3>
+                                <p className="text-sm font-medium text-black/70 group-hover:text-neutral-400 leading-relaxed flex-1">
+                                    Publish typed skills. List paid agents on the Bazaar. Earn Verified Publisher status. ERC-8004 on-chain reputation — optional, toggleable.
+                                </p>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-black/50 group-hover:text-primary transition-colors mt-auto">Bazaar marketplace →</span>
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 4. Live routing demo — show the product working */}
                 <RequestInspector />
 
+                {/* 5. Pricing — surface early before the deep dive */}
+                <PricingStrip />
+
+                {/* 6. Production features */}
                 <ProductionFeatures />
 
-                {/* Intelligence Engine Feature */}
-                <section className="py-32 bg-black text-white border-y-2 border-white">
+                {/* 7. Social proof */}
+                <Testimonials />
+
+                {/* 8. Agent marketplace */}
+                <BazaarLoop />
+
+                {/* 9. Intelligence — for those who want the full story */}
+                <section className="py-20 bg-black text-white border-y-2 border-neutral-800">
                     <div className="container mx-auto px-6 max-w-7xl">
-                        <div className="flex flex-col lg:flex-row gap-16 items-start">
-                            <div className="lg:w-1/3">
-                                <Badge variant="primary" className="mb-6">Knowledge Base</Badge>
-                                <h2 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter leading-none mb-6">
-                                    Intelligence<br />Engine
+                        <div className="flex flex-col lg:flex-row gap-12 items-start">
+                            <div className="lg:w-80 shrink-0">
+                                <Badge variant="primary" className="mb-4">Research</Badge>
+                                <h2 className="text-3xl font-black uppercase tracking-tighter leading-none mb-4">
+                                    Intelligence Engine
                                 </h2>
-                                <p className="text-neutral-400 font-mono text-lg mb-8 leading-relaxed">
-                                    P402 is not just code; it is a new economic physics for the Agentic Web.
-                                    Explore our foundational research papers on flash settlement, circuit breakers, and machine governance.
+                                <p className="text-neutral-400 text-sm mb-6 leading-relaxed">
+                                    The routing decisions P402 makes are driven by a real-time intelligence layer. Explore the research.
                                 </p>
-                                <Link href="/intelligence" className="inline-block bg-[#B6FF2E] text-black font-bold uppercase px-8 py-4 border-2 border-transparent hover:border-white hover:bg-black hover:text-white transition-all text-sm tracking-widest">
-                                    Read the Research →
+                                <Link href="/intelligence" className="inline-flex items-center h-10 px-5 bg-primary text-black font-black text-[11px] uppercase tracking-wider border-2 border-primary hover:bg-black hover:text-primary hover:border-primary transition-colors no-underline">
+                                    Read the research →
                                 </Link>
                             </div>
-                            <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-3 gap-px bg-white/20 border-2 border-white/20">
+                            <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-px bg-white/10 border border-white/10">
                                 {[
                                     { title: "Protocol Economics", desc: "Atomic settlement & market design.", link: "/intelligence/protocol-economics" },
                                     { title: "Machine Governance", desc: "Cryptographic AP2 mandates.", link: "/intelligence/machine-governance" },
@@ -115,11 +151,11 @@ export default async function Page() {
                                     { title: "Trustless Agents", desc: "ERC-8004 on-chain identity & reputation.", link: "/docs/erc8004" },
                                     { title: "Validation Registry", desc: "High-value transaction verification.", link: "/docs/erc8004" },
                                 ].map((pillar, i) => (
-                                    <Link key={i} href={pillar.link} className="group bg-neutral-900 p-8 hover:bg-black transition-colors">
-                                        <h3 className="text-xl font-bold uppercase text-[#B6FF2E] mb-2 group-hover:underline decoration-2 underline-offset-4">
+                                    <Link key={i} href={pillar.link} className="group bg-neutral-900 p-5 hover:bg-neutral-800 transition-colors no-underline">
+                                        <h3 className="text-sm font-black uppercase text-primary mb-1.5 group-hover:underline decoration-2 underline-offset-4">
                                             {pillar.title}
                                         </h3>
-                                        <p className="text-neutral-400 font-mono text-sm leading-relaxed">
+                                        <p className="text-neutral-500 font-mono text-[11px] leading-relaxed">
                                             {pillar.desc}
                                         </p>
                                     </Link>
@@ -129,22 +165,22 @@ export default async function Page() {
                     </div>
                 </section>
 
-                <PricingStrip />
-                <BazaarLoop />
-                <Testimonials />
-
-                {/* CTA */}
+                {/* 10. Final CTA — drive to signup */}
                 <section className="py-32 bg-primary text-center border-t-2 border-black">
                     <div className="container mx-auto px-6">
-                        <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-8 leading-none italic">
-                            Try real payments<br />in 60 seconds
+                        <div className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-4">Free to start. No credit card.</div>
+                        <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-4 leading-none">
+                            Start routing<br />in minutes.
                         </h2>
-                        <div className="flex justify-center gap-6">
-                            <Link href="/demo/payment-flow" className="btn btn-dark text-2xl px-12 py-6 h-auto">
-                                Live Payment Demo
+                        <p className="text-black/70 font-bold text-xl mb-10 max-w-xl mx-auto">
+                            One endpoint. 300+ models. Automatic cost savings. Gasless payments on Base.
+                        </p>
+                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                            <Link href="/login" className="btn btn-dark text-xl px-10 py-5 h-auto">
+                                Create Free Account
                             </Link>
-                            <Link href="/docs" className="btn btn-outline text-2xl px-12 py-6 h-auto border-2 border-black bg-transparent text-black hover:bg-black hover:text-primary">
-                                Read Documentation
+                            <Link href="/developers/quickstart" className="text-xl px-10 py-5 h-auto border-2 border-black bg-transparent text-black font-black uppercase tracking-wider hover:bg-black hover:text-primary transition-colors inline-flex items-center justify-center">
+                                Run Quickstart
                             </Link>
                         </div>
                         <div className="mt-8">

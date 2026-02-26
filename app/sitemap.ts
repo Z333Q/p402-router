@@ -8,10 +8,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
         // ── Core pages ────────────────────────────────────────────────
         { url: baseUrl,                             lastModified: now, changeFrequency: 'daily',   priority: 1.0 },
         { url: `${baseUrl}/pricing`,                lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
-        { url: `${baseUrl}/bazaar`,                 lastModified: now, changeFrequency: 'hourly',  priority: 0.9 },
-        { url: `${baseUrl}/intelligence`,           lastModified: now, changeFrequency: 'daily',   priority: 0.9 },
-        { url: `${baseUrl}/get-access`,             lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
-        { url: `${baseUrl}/status`,                 lastModified: now, changeFrequency: 'hourly',  priority: 0.5 },
+        { url: `${baseUrl}/trust`,                  lastModified: now, changeFrequency: 'weekly',  priority: 0.95 },
+        { url: `${baseUrl}/status`,                 lastModified: now, changeFrequency: 'hourly',  priority: 0.8 },
+
+        // ── Product pages ─────────────────────────────────────────────
+        { url: `${baseUrl}/product/payments`,       lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
+        { url: `${baseUrl}/product/controls`,       lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },
+        { url: `${baseUrl}/product/orchestration`,  lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },
+        { url: `${baseUrl}/product/ecosystem`,      lastModified: now, changeFrequency: 'weekly',  priority: 0.8 },
+
+        // ── Developer pages ───────────────────────────────────────────
+        { url: `${baseUrl}/developers/quickstart`,  lastModified: now, changeFrequency: 'weekly',  priority: 0.95 },
+
+        // ── Intelligence + marketplace ────────────────────────────────
+        { url: `${baseUrl}/intelligence`,           lastModified: now, changeFrequency: 'daily',   priority: 0.7 },
+        { url: `${baseUrl}/bazaar`,                 lastModified: now, changeFrequency: 'hourly',  priority: 0.7 },
+        { url: `${baseUrl}/get-access`,             lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
 
         // ── Documentation hub ─────────────────────────────────────────
         { url: `${baseUrl}/docs`,                   lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
