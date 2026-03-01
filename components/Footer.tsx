@@ -43,6 +43,7 @@ export function Footer() {
                         { label: 'Claude Skill', href: '/docs/skill' },
                         { label: 'MCP', href: '/docs/mcp' },
                         { label: 'Status', href: '/status' },
+                        { label: 'GitHub ↗', href: 'https://github.com/Z333Q/p402-protocol' },
                     ]} />
                     <FooterCol title="Company" links={[
                         { label: 'Whitepaper', href: '/whitepaper.pdf' },

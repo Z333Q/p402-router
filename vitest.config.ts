@@ -9,7 +9,7 @@ export default defineConfig({
         globals: true,
         setupFiles: ['./__tests__/setup.ts'],
         include: ['**/*.test.{ts,tsx}'],
-        exclude: ['node_modules/**', 'cloudflare-facilitator/**'],
+        exclude: ['**/node_modules/**', 'cloudflare-facilitator/**'],
         testTimeout: 300_000,
         coverage: {
             reporter: ['text', 'json', 'html'],

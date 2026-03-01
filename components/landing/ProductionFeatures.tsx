@@ -30,7 +30,7 @@ export const ProductionFeatures = () => {
         'P95 Latency': '<50ms',
         'Uptime SLA': '99.9%'
       },
-      demoPath: 'https://facilitator.p402.io/health'
+      demoPath: 'https://p402.io/api/v1/facilitator/health'
     },
     {
       id: 'real-time-analytics',

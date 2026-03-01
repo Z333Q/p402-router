@@ -138,6 +138,7 @@ export default function DocsIndex() {
                             <li><Link href="/docs/api" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">🔌 API Reference</Link></li>
                             <li><Link href="/docs/sdk" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">📦 SDK & Tools</Link></li>
                             <li><Link href="/docs/erc8004" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2 text-emerald-600">🛡️ ERC-8004 Trustless Agents Guide</Link></li>
+                            <li><a href="https://github.com/Z333Q/p402-protocol" target="_blank" rel="noopener noreferrer" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">⭐ p402-protocol on GitHub (open source)</a></li>
                         </ul>
                     </div>
                     {/* Decorative Background Element */}

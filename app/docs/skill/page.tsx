@@ -209,6 +209,7 @@ unzip /tmp/p402.zip \\
                             <li><Link href="/docs/sdk" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">📦 SDK &amp; Tools</Link></li>
                             <li><Link href="/llms.txt" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2 text-primary">🤖 llms.txt (AI discovery)</Link></li>
                             <li><Link href="/llms-full.txt" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2 text-primary">📄 llms-full.txt (1,985 lines)</Link></li>
+                            <li><a href="https://github.com/Z333Q/p402-protocol" target="_blank" rel="noopener noreferrer" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">⭐ p402-protocol on GitHub (open source)</a></li>
                         </ul>
                     </div>
                     <div className="absolute top-0 right-0 p-4 opacity-5 font-black text-8xl italic pointer-events-none select-none">

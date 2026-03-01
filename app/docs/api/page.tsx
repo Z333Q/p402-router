@@ -36,7 +36,7 @@ const ENDPOINTS: Endpoint[] = [
     {
         id: 'facilitator-verify',
         method: 'POST',
-        path: 'https://facilitator.p402.io/verify',
+        path: 'https://p402.io/api/v1/facilitator/verify',
         title: 'Verify Payment Authorization',
         description: 'Verify an EIP-3009 payment authorization without executing it. Uses the x402 wire format: paymentPayload (containing the signed authorization) and paymentRequirements (the terms being paid for). Returns { isValid, payer } on success.',
         params: [
@@ -44,7 +44,7 @@ const ENDPOINTS: Endpoint[] = [
             { name: 'paymentRequirements', type: 'object', required: true, desc: 'The payment requirements: scheme, network, maxAmountRequired, payTo, asset, resource' }
         ],
         examples: {
-            curl: `curl https://facilitator.p402.io/verify \\
+            curl: `curl https://p402.io/api/v1/facilitator/verify \\
   -H "Content-Type: application/json" \\
   -d '{
     "paymentPayload": {
@@ -73,7 +73,7 @@ const ENDPOINTS: Endpoint[] = [
       "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
     }
   }'`,
-            javascript: `const response = await fetch('https://facilitator.p402.io/verify', {
+            javascript: `const response = await fetch('https://p402.io/api/v1/facilitator/verify', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -106,7 +106,7 @@ const ENDPOINTS: Endpoint[] = [
 });`,
             python: `import requests
 res = requests.post(
-    "https://facilitator.p402.io/verify",
+    "https://p402.io/api/v1/facilitator/verify",
     json={
         "paymentPayload": {
             "x402Version": 2,
@@ -144,7 +144,7 @@ res = requests.post(
     {
         id: 'facilitator-settle',
         method: 'POST',
-        path: 'https://facilitator.p402.io/settle',
+        path: 'https://p402.io/api/v1/facilitator/settle',
         title: 'Execute Gasless Settlement',
         description: 'Execute a gasless USDC settlement using the x402 wire format. The facilitator pays gas fees and executes the EIP-3009 transferWithAuthorization. Returns a SettleResponse with { success, transaction, network, payer }.',
         params: [
@@ -152,7 +152,7 @@ res = requests.post(
             { name: 'paymentRequirements', type: 'object', required: true, desc: 'The payment requirements: scheme, network, maxAmountRequired, payTo, asset' }
         ],
         examples: {
-            curl: `curl https://facilitator.p402.io/settle \\
+            curl: `curl https://p402.io/api/v1/facilitator/settle \\
   -H "Content-Type: application/json" \\
   -d '{
     "paymentPayload": {
@@ -181,7 +181,7 @@ res = requests.post(
       "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
     }
   }'`,
-            javascript: `const response = await fetch('https://facilitator.p402.io/settle', {
+            javascript: `const response = await fetch('https://p402.io/api/v1/facilitator/settle', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -212,7 +212,7 @@ res = requests.post(
 });`,
             python: `import requests
 res = requests.post(
-    "https://facilitator.p402.io/settle",
+    "https://p402.io/api/v1/facilitator/settle",
     json={
         "paymentPayload": {
             "x402Version": 2,

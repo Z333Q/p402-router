@@ -364,7 +364,7 @@ const p402 = new P402Client({
 });
 
 // 3. Settle via x402 wire format
-const result = await fetch('https://facilitator.p402.io/settle', {
+const result = await fetch('https://p402.io/api/v1/facilitator/settle', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -387,7 +387,7 @@ console.log(data.transaction); // "0x..."`}</pre>
           <div>
             <h4 className="font-bold text-neutral-900 mb-2">Backend Integration</h4>
             <pre className="bg-neutral-100 p-4 rounded text-sm overflow-x-auto">{`// Verify payment server-side (x402 wire format)
-const verification = await fetch('https://facilitator.p402.io/verify', {
+const verification = await fetch('https://p402.io/api/v1/facilitator/verify', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({

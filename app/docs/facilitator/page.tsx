@@ -28,7 +28,7 @@ export default function FacilitatorDocs() {
           <p className="font-bold text-neutral-600 mb-8 uppercase tracking-tight">Production facilitator deployed on Cloudflare Workers</p>
 
           <div className="bg-black p-8 border-4 border-black font-mono text-sm text-primary shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-            https://facilitator.p402.io
+            https://p402.io/api/v1/facilitator
           </div>
         </section>
 
@@ -38,7 +38,7 @@ export default function FacilitatorDocs() {
 
           <div className="bg-neutral-900 p-8 border-4 border-black text-xs overflow-x-auto text-zinc-300 shadow-[12px_12px_0px_0px_rgba(182,255,46,1)]">
             <pre><code>{`// Discover facilitator capabilities
-const response = await fetch('https://facilitator.p402.io/.well-known/agent.json');
+const response = await fetch('https://p402.io/.well-known/agent.json');
 const capabilities = await response.json();
 
 console.log('Facilitator:', capabilities.name);
@@ -93,7 +93,7 @@ console.log('Fee Structure:', capabilities.fee_structure);
 
           <div className="bg-neutral-900 p-8 border-4 border-black text-xs overflow-x-auto text-zinc-300 shadow-[12px_12px_0px_0px_rgba(34,211,238,1)]">
             <pre><code>{`// Check facilitator health
-const health = await fetch('https://facilitator.p402.io/health');
+const health = await fetch('https://p402.io/api/v1/facilitator/health');
 const status = await health.json();
 
 console.log('Status:', status.status);
@@ -171,7 +171,7 @@ console.log('Response Time:', status.checks.response_time.duration_ms);
 
           <div className="bg-neutral-900 p-8 border-4 border-black text-xs overflow-x-auto text-zinc-300 shadow-[12px_12px_0px_0px_rgba(168,85,247,1)]">
             <pre><code>{`// 1. Discover facilitator
-const discovery = await fetch('https://facilitator.p402.io/.well-known/agent.json');
+const discovery = await fetch('https://p402.io/.well-known/agent.json');
 const facilitator = await discovery.json();
 
 // 2. Verify payment capability
@@ -180,7 +180,7 @@ if (!facilitator.payment_schemes.includes('exact')) {
 }
 
 // 3. Check facilitator health
-const health = await fetch('https://facilitator.p402.io/health');
+const health = await fetch('https://p402.io/api/v1/facilitator/health');
 const healthStatus = await health.json();
 
 if (healthStatus.status !== 'healthy') {
@@ -188,7 +188,7 @@ if (healthStatus.status !== 'healthy') {
 }
 
 // 4. Verify payment (x402 wire format)
-const verification = await fetch('https://facilitator.p402.io/verify', {
+const verification = await fetch('https://p402.io/api/v1/facilitator/verify', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -210,7 +210,7 @@ const verifyResult = await verification.json();
 
 // 5. Execute settlement if verified
 if (verifyResult.isValid) {
-  const settlement = await fetch('https://facilitator.p402.io/settle', {
+  const settlement = await fetch('https://p402.io/api/v1/facilitator/settle', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

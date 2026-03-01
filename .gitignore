@@ -44,3 +44,9 @@ next-env.d.ts
 # Secrets (IMPORTANT)
 DEPLOYMENT_GUIDE_SECRET.md
 .env*.local
+
+# Local development directories not part of this project
+# (p402-protocol public repo, Dune analytics scripts)
+cli/
+dune/
+scripts/dune-sync.ts

@@ -62,6 +62,9 @@ export default async function Page() {
                             <a href="https://basescan.org/address/0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6" target="_blank" rel="noopener noreferrer" className="text-black hover:text-primary transition-colors no-underline">
                                 Treasury ↗
                             </a>
+                            <a href="https://github.com/Z333Q/p402-protocol" target="_blank" rel="noopener noreferrer" className="text-black hover:text-primary transition-colors no-underline">
+                                Open source SDK ↗
+                            </a>
                         </div>
                     </div>
                 </section>
