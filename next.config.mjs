@@ -89,12 +89,38 @@ const nextConfig = {
     ];
   },
 
+  // ── Server-only packages — exclude from webpack bundle ─────────────────────
+  // @coinbase/cdp-sdk ships Solana bindings that use ESM imports unavailable
+  // in the webpack runtime (e.g. @solana/kit's sequentialInstructionPlan).
+  // Marking these as serverExternalPackages tells Next.js to require() them
+  // at runtime via Node.js instead of bundling them with webpack.
+  serverExternalPackages: [
+    '@coinbase/cdp-sdk',
+    '@coinbase/agentkit',
+    '@solana/kit',
+    '@solana-program/token',
+  ],
+
   // Ignore React Native modules in web build
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@react-native-async-storage/async-storage': false,
+      // Solana modules pulled in transitively by @coinbase/cdp-sdk and x402-fetch
+      // are not used in P402 (EVM-only). Stub them out to prevent webpack errors
+      // caused by @solana/kit's missing sequentialInstructionPlan export.
+      '@solana/kit': false,
+      '@solana-program/token': false,
     };
+
+    // SES / lockdown-install.js freezes JS globals and crashes the Next.js
+    // client runtime. Stub it out in the browser bundle — @coinbase/agentkit
+    // is server-only so lockdown is never needed on the client.
+    if (!isServer) {
+      config.resolve.alias['ses/lockdown-install.js'] = false;
+      config.resolve.alias['ses'] = false;
+    }
+
     return config;
   },
 };
