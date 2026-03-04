@@ -26,6 +26,9 @@ function getWallet(): ethers.Wallet {
         if (!SUBSCRIPTION_FACILITATOR_ADDRESS) {
             throw new Error('SUBSCRIPTION_FACILITATOR_ADDRESS is not configured');
         }
+        if (!env.P402_FACILITATOR_PRIVATE_KEY) {
+            throw new Error('P402_FACILITATOR_PRIVATE_KEY is not configured (required when CDP_SERVER_WALLET_ENABLED is not set)');
+        }
         _facilitatorWallet = new ethers.Wallet(env.P402_FACILITATOR_PRIVATE_KEY, _provider);
     }
     return _facilitatorWallet;
