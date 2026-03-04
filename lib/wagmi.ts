@@ -1,13 +1,14 @@
 /**
  * Wagmi Configuration
  * ===================
- * Dual-wallet setup: CDP Embedded Wallet (primary) + RainbowKit connectors (secondary).
+ * Dual-wallet setup: CDP Embedded Wallet (hidden) + RainbowKit EOA connectors.
  *
- * CDP Embedded Wallet is listed FIRST in connectors[] so wagmi auto-connects to it
- * when a CDP session already exists (no MetaMask required).
+ * CDP Embedded Wallet is registered with wagmi via a hidden RainbowKit wallet
+ * so it never appears in the "Connect a Wallet" modal. CDP auth is handled
+ * exclusively by the CDPEmailAuth component (email OTP flow on /login).
  *
- * RainbowKit connectors follow — users with existing EOA wallets continue to use them
- * exactly as before. Zero breaking changes for existing users.
+ * EOA wallets (MetaMask, WalletConnect, Browser Wallet) appear in the modal
+ * for users who already have a crypto wallet.
  *
  * Provider hierarchy required in app/providers.tsx:
  *   CDPHooksProvider → WagmiProvider → QueryClientProvider → RainbowKitProvider
@@ -16,6 +17,7 @@
 import { createConfig, http } from 'wagmi';
 import { base, mainnet, optimism } from 'wagmi/chains';
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
+import type { Wallet } from '@rainbow-me/rainbowkit';
 import {
     metaMaskWallet,
     walletConnectWallet,
@@ -40,25 +42,31 @@ export const cdpConfig: CDPConfig = {
 };
 
 // ---------------------------------------------------------------------------
-// CDP Embedded Wallet connector — handles its own auth UI via CDPHooksProvider
+// Hidden CDP wallet — registered with wagmi for auto-connect + signing,
+// but hidden from the RainbowKit modal. Users authenticate via CDPEmailAuth.
 // ---------------------------------------------------------------------------
 
-export const cdpEmbeddedConnector = createCDPEmbeddedWalletConnector({
-    cdpConfig,
-    providerConfig: {
-        chains: [base, mainnet, optimism],
-        transports: {
-            [base.id]:     http(),
-            [mainnet.id]:  http(),
-            [optimism.id]: http(),
+const hiddenCdpWallet = (): Wallet => ({
+    id: 'cdp-embedded-wallet',
+    name: 'CDP Embedded Wallet',
+    iconUrl: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>',
+    iconBackground: '#000',
+    hidden: () => true,
+    createConnector: () => createCDPEmbeddedWalletConnector({
+        cdpConfig,
+        providerConfig: {
+            chains: [base, mainnet, optimism],
+            transports: {
+                [base.id]:     http(),
+                [mainnet.id]:  http(),
+                [optimism.id]: http(),
+            },
         },
-    },
+    }),
 });
 
 // ---------------------------------------------------------------------------
-// RainbowKit wallet list — only EOA wallets visible in the modal.
-// cdpEmbeddedConnector is intentionally excluded here: CDP email auth is
-// handled by CDPEmailAuth directly, not via the RainbowKit modal.
+// RainbowKit connectors — CDP hidden, EOA wallets visible in modal.
 // ---------------------------------------------------------------------------
 
 const WALLETCONNECT_PROJECT_ID =
@@ -67,6 +75,11 @@ const WALLETCONNECT_PROJECT_ID =
 
 const rainbowKitConnectors = connectorsForWallets(
     [
+        {
+            // Hidden — registered with wagmi but never shown in modal
+            groupName: 'Embedded',
+            wallets: [hiddenCdpWallet],
+        },
         {
             groupName: 'Connect existing wallet',
             wallets: [metaMaskWallet, walletConnectWallet, injectedWallet],
@@ -79,14 +92,13 @@ const rainbowKitConnectors = connectorsForWallets(
 );
 
 // ---------------------------------------------------------------------------
-// Final wagmi config — CDP connector first = default auto-connect target.
-// multiInjectedProviderDiscovery: false — prevents EIP-6963 auto-detection
-// which would otherwise surface the CDP embedded connector in RainbowKit's
-// "Installed" section. Explicit connectors above cover all intended wallets.
+// Final wagmi config — all connectors via connectorsForWallets (no duplicates).
+// multiInjectedProviderDiscovery: false prevents EIP-6963 auto-detection which
+// would otherwise surface the CDP provider in the "Installed" section.
 // ---------------------------------------------------------------------------
 
 export const wagmiConfig = createConfig({
-    connectors: [cdpEmbeddedConnector, ...rainbowKitConnectors],
+    connectors: rainbowKitConnectors,
     chains: [base, mainnet, optimism],
     transports: {
         [base.id]:     http(),
