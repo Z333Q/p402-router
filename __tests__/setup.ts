@@ -53,3 +53,39 @@ vi.mock('next-auth', () => ({
 vi.mock('next-auth/next', () => ({
   getServerSession: vi.fn(),
 }));
+
+// Mock cdp-client (not the raw SDK) to prevent dynamic import of @coinbase/cdp-sdk
+// which transitively requires @solana/kit (ESM-only, breaks JSDOM test environment).
+vi.mock('@/lib/cdp-client', () => ({
+  isCdpEnabled: vi.fn().mockReturnValue(false),
+  getCdpClientAsync: vi.fn().mockResolvedValue({
+    evm: {
+      getOrCreateAccount: vi.fn().mockResolvedValue({ address: '0x0000000000000000000000000000000000000001' }),
+      createAccount: vi.fn(),
+    },
+    policies: {
+      createPolicy: vi.fn().mockResolvedValue({ id: 'pol_mock' }),
+    },
+  }),
+  getCdpClient: vi.fn().mockReturnValue({
+    evm: {
+      getOrCreateAccount: vi.fn().mockResolvedValue({ address: '0x0000000000000000000000000000000000000001' }),
+      createAccount: vi.fn(),
+    },
+    policies: {
+      createPolicy: vi.fn().mockResolvedValue({ id: 'pol_mock' }),
+    },
+  }),
+  _resetCdpClient: vi.fn(),
+}));
+
+// Mock @coinbase/cdp-wagmi and @coinbase/cdp-core to prevent browser-only
+// API calls in JSDOM test environment.
+vi.mock('@coinbase/cdp-wagmi', () => ({
+  createCDPEmbeddedWalletConnector: vi.fn().mockReturnValue({ id: 'cdp-embedded', type: 'mock' }),
+}));
+vi.mock('@coinbase/cdp-hooks', () => ({
+  CDPHooksProvider: ({ children }: { children: unknown }) => children,
+  useSignInWithEmail: vi.fn().mockReturnValue({ signInWithEmail: vi.fn(), isPending: false }),
+  useVerifyEmailOTP: vi.fn().mockReturnValue({ verifyEmailOTP: vi.fn(), isPending: false }),
+}));

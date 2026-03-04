@@ -106,9 +106,9 @@ Cache is most effective for: classification tasks, FAQ-style queries, repeated e
 
 ## Getting Started
 
-The fastest way to try P402 is the **Base Mini App** at [mini.p402.io](https://mini.p402.io). Connect a Base Account, fund with USDC via Base Pay, and start chatting with real-time cost and savings tracking. No API key needed.
+The fastest way to try P402 is to sign in at [p402.io](https://p402.io) with your **email address** — no MetaMask or seed phrases required. A Base embedded wallet is created automatically via Coinbase CDP Embedded Wallet (email OTP, keys secured in AWS Nitro Enclave). The guided onboarding walks you through: role selection → API key generation → wallet funding (send USDC on Base) → dashboard orientation.
 
-For API access, sign up at [p402.io](https://p402.io) to get your API key and access the full dashboard with analytics, session management, and billing configuration.
+For programmatic access, grab your API key from the dashboard after signing in. You can also try P402 via the **Base Mini App** at [mini.p402.io](https://mini.p402.io) — connect a Base Account, fund with USDC via Base Pay, and start chatting with real-time cost and savings tracking.
 
 ## API Quick Reference
 

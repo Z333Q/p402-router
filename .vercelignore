@@ -1,0 +1,8 @@
+p402-animation-demo/
+node_modules/
+.next/
+out/
+build/
+dist/
+*.log
+.DS_Store

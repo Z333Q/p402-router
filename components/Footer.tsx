@@ -32,24 +32,26 @@ export function Footer() {
                     <FooterCol title="Product" links={[
                         { label: 'Router', href: '/#product' },
                         { label: 'Intelligence', href: '/intelligence' },
+                        { label: 'Agent Bazaar', href: '/dashboard/bazaar' },
+                        { label: 'Routing Policies', href: '/dashboard/policies' },
                         { label: 'Pricing', href: '/pricing' },
-                        { label: 'Policies', href: '/dashboard/policies' },
-                        { label: 'Bazaar', href: '/dashboard/bazaar' },
-                        { label: 'How it Works', href: '#how-it-works', onClick: () => setHelpOpen(true) },
+                        { label: 'Changelog', href: '/changelog' },
+                        { label: 'Demo', href: '/demo' },
                     ]} />
                     <FooterCol title="Developers" links={[
-                        { label: 'SDK', href: '/docs/sdk' },
-                        { label: 'API Docs', href: '/docs/api' },
+                        { label: 'Documentation', href: '/docs/api' },
+                        { label: 'Node.js SDK', href: '/docs/sdk' },
                         { label: 'Claude Skill', href: '/docs/skill' },
                         { label: 'MCP', href: '/docs/mcp' },
-                        { label: 'Status', href: '/status' },
                         { label: 'GitHub ↗', href: 'https://github.com/Z333Q/p402-protocol' },
+                        { label: 'Status', href: '/status' },
                     ]} />
                     <FooterCol title="Company" links={[
                         { label: 'Whitepaper', href: '/whitepaper.pdf' },
+                        { label: 'How it Works', href: '#how-it-works', onClick: () => setHelpOpen(true) },
+                        { label: 'Get Access', href: '/get-access' },
                         { label: 'Privacy', href: '/privacy' },
                         { label: 'Terms', href: '/terms' },
-                        { label: 'Get Access', href: '/get-access' },
                     ]} />
                 </div>
 

@@ -54,6 +54,7 @@
     "scripts",
     "p402-protocol",
     "cli",
-    "dune"
+    "dune",
+    "p402-animation-demo"
   ]
 }

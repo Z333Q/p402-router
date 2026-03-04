@@ -210,7 +210,34 @@ interface A2ATask {
 
 AP2 (Agent-to-Platform) mandates are the authorization primitive for agent spending. A mandate is a pre-signed permission granting an agent the right to spend up to a specified amount.
 
-### Create a Mandate
+### CDP Session Auto-Provisioning (Recommended)
+
+When you create a session with `wallet_source: "cdp"` and an `agent_id`, P402 automatically issues a `payment` mandate scoped to that agent — no separate mandate API call needed:
+
+```bash
+curl -X POST https://p402.io/api/v2/sessions \
+  -H "Content-Type: application/json" \
+  -H "x-p402-session: YOUR_SESSION_KEY" \
+  -d '{
+    "wallet_source": "cdp",
+    "agent_id": "my-autonomous-agent",
+    "budget_usd": 10.00,
+    "expires_in_hours": 24
+  }'
+```
+
+The response `policy.ap2_mandate_id` field contains the auto-issued mandate ID. All subsequent auto-pay calls through this session are pre-checked against the mandate budget:
+- **Budget check:** `amount_spent_usd + request_cost <= max_amount_usd` — returns 403 with `{ error: { type: "mandate_error", code: "MANDATE_BUDGET_EXCEEDED" } }` on failure
+- **Expiry check:** mandate `valid_until` matches the session `expires_at`
+- **ERC-8004 trust gate:** if `ERC8004_ENABLE_VALIDATION=true`, the agent's on-chain reputation must be ≥ 50 (returns 403 with `SECURITY_PACK_BLOCKED` on failure)
+
+After each successful auto-pay, `budget_spent_usd` on the session increments atomically and ERC-8004 reputation feedback is queued for the agent.
+
+Pre-existing sessions (created before this feature) have no `ap2_mandate_id` in their `policies` and are skipped — fully backwards compatible.
+
+### Manual Mandate Creation
+
+For non-CDP sessions or custom mandate constraints:
 
 ```bash
 curl -X POST https://p402.io/api/a2a/mandates \

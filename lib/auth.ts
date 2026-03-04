@@ -1,13 +1,73 @@
 import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
+import CredentialsProvider from "next-auth/providers/credentials"
 import pool from '@/lib/db'
 import { Notifications } from '@/lib/notifications'
+import { verifyMessage } from 'viem'
 
 export const authOptions: NextAuthOptions = {
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID || "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+        }),
+
+        /**
+         * CDP Wallet Auth — wallet-address-as-identity.
+         * Client signs a deterministic message with their CDP embedded wallet;
+         * server verifies the signature via viem recoverAddress.
+         * Identity: <address>@wallet.p402.io — auto-provisions tenant on first sign-in.
+         *
+         * Security: The signed message includes a timestamp so replayed signatures
+         * expire after 5 minutes. No CDP server SDK call required here — signature
+         * verification is fully self-contained.
+         */
+        CredentialsProvider({
+            id: 'cdp-wallet',
+            name: 'CDP Wallet',
+            credentials: {
+                address:   { label: 'Wallet Address', type: 'text' },
+                signature: { label: 'Signature',      type: 'text' },
+                message:   { label: 'Message',        type: 'text' },
+            },
+            async authorize(credentials) {
+                if (!credentials?.address || !credentials?.signature || !credentials?.message) {
+                    return null;
+                }
+
+                try {
+                    // Validate message format: "Sign in to P402\nAddress: 0x...\nTimestamp: <unix>"
+                    const lines = credentials.message.split('\n');
+                    const tsLine = lines.find((l: string) => l.startsWith('Timestamp: '));
+                    if (!tsLine) return null;
+
+                    const ts = parseInt(tsLine.replace('Timestamp: ', ''), 10);
+                    const ageSeconds = Math.floor(Date.now() / 1000) - ts;
+
+                    // Reject signatures older than 5 minutes
+                    if (ageSeconds > 300 || ageSeconds < -30) return null;
+
+                    // Verify ECDSA signature — no external calls, purely local
+                    const recovered = await verifyMessage({
+                        address: credentials.address as `0x${string}`,
+                        message: credentials.message,
+                        signature: credentials.signature as `0x${string}`,
+                    });
+
+                    if (!recovered) return null;
+
+                    // Wallet address is the canonical identity
+                    const email = `${credentials.address.toLowerCase()}@wallet.p402.io`;
+                    return {
+                        id:    credentials.address,
+                        email,
+                        name:  `Wallet ${credentials.address.slice(0, 6)}…${credentials.address.slice(-4)}`,
+                        image: null,
+                    };
+                } catch {
+                    return null;
+                }
+            },
         }),
     ],
     session: {

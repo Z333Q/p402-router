@@ -9,6 +9,8 @@ import { ReplayProtection } from '@/lib/replay-protection'
 import { P402_CONFIG } from '@/lib/constants'
 import { queueFeedback as queueERC8004Feedback } from '@/lib/erc8004/feedback-service'
 import { AP2PolicyEngine } from '@/lib/ap2-policy-engine'
+import { getFacilitatorWallet } from '@/lib/x402/facilitator-wallet'
+import { isCdpEnabled } from '@/lib/cdp-client'
 
 export interface SettleRequest {
     tenantId?: string;
@@ -283,31 +285,42 @@ export class SettlementService {
         }
 
         // 5. Execute gasless transfer (P402 pays gas)
-        const facilitatorPrivateKey = process.env.P402_FACILITATOR_PRIVATE_KEY;
-        if (!facilitatorPrivateKey) {
-            await ReplayProtection.releaseTxHash(verification.paymentHash);
-            throw new ApiError({
-                code: 'INTERNAL_ERROR',
-                status: 500,
-                message: 'Facilitator wallet not configured',
-                requestId
-            });
-        }
-
+        //    CDP Server Wallet (Mode A) or legacy private key (Mode B) via FacilitatorWallet.
         let txHash: string;
         try {
-            const execution = await BlockchainService.executeEIP3009Transfer(
-                transferAuth,
-                signature,
-                facilitatorPrivateKey
-            );
-
-            if (!execution.success) {
-                await ReplayProtection.releaseTxHash(verification.paymentHash);
-                throw new Error(execution.error || 'Transfer execution failed');
+            if (isCdpEnabled()) {
+                // Mode A — CDP Server Wallet: keys in TEE, never in this process
+                const wallet = await getFacilitatorWallet();
+                const tokenConfig = getTokenConfig(asset) ?? { address: P402_CONFIG.USDC_ADDRESS };
+                const hash = await wallet.executeSettlement(
+                    tokenConfig.address,
+                    authorization,
+                    requestId
+                );
+                txHash = hash;
+            } else {
+                // Mode B — Legacy ethers path (raw private key)
+                const facilitatorPrivateKey = process.env.P402_FACILITATOR_PRIVATE_KEY;
+                if (!facilitatorPrivateKey) {
+                    await ReplayProtection.releaseTxHash(verification.paymentHash);
+                    throw new ApiError({
+                        code: 'INTERNAL_ERROR',
+                        status: 500,
+                        message: 'Facilitator wallet not configured. Set CDP_SERVER_WALLET_ENABLED=true or P402_FACILITATOR_PRIVATE_KEY.',
+                        requestId
+                    });
+                }
+                const execution = await BlockchainService.executeEIP3009Transfer(
+                    transferAuth,
+                    signature,
+                    facilitatorPrivateKey
+                );
+                if (!execution.success) {
+                    await ReplayProtection.releaseTxHash(verification.paymentHash);
+                    throw new Error(execution.error ?? 'Transfer execution failed');
+                }
+                txHash = execution.txHash;
             }
-
-            txHash = execution.txHash;
         } catch (error: any) {
             // Log failure
             await pool.query(

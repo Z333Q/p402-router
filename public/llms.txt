@@ -11,6 +11,7 @@ P402 sits between your application and AI providers the same way a payment netwo
 - **Semantic cache**: Cosine-similarity cache cuts redundant LLM calls and fees
 - **A2A protocol**: Google A2A JSON-RPC with x402 payment extension
 - **Spending controls**: AP2 mandates give agents bounded authority with budget caps
+- **Email login**: Sign in with email OTP — CDP embedded wallet created automatically, no MetaMask required
 
 ## Claude Skill
 

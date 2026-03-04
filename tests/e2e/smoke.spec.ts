@@ -98,6 +98,14 @@ async function setupCommonMocks(page: Parameters<typeof mockApi>[0]) {
     // ProviderStatus reads data.meta.total_models — meta must be present
     await mockApi(page, '**/api/v2/providers**', { providers: [], meta: { total_models: 0 } });
     await mockApi(page, '**/api/v2/models**', { models: [] });
+    // CDP / facilitator health — used by settings and health checks
+    await mockApi(page, '**/api/v1/facilitator/health**', {
+        status: 'ok',
+        facilitator: { status: 'ok', mode: 'raw-private-key', address: '0xB23f146251E3816a011e800BCbAE704baa5619Ec' },
+        cdp: { enabled: false, keyIsolation: 'env-var' },
+    });
+    // Sessions v2
+    await mockApi(page, '**/api/v2/sessions**', { sessions: [] });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

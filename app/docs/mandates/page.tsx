@@ -40,7 +40,30 @@ export default function MandatesDocs() {
                 </section>
 
                 <section className="mb-16">
-                    <h2 className="text-3xl font-black uppercase italic mb-8">Creating a Mandate</h2>
+                    <h2 className="text-3xl font-black uppercase italic mb-8">Auto-Provisioned Mandates (CDP Sessions)</h2>
+                    <p className="text-base font-bold text-neutral-600 mb-6 max-w-2xl uppercase tracking-tight">
+                        When you create a session with <code className="bg-black text-primary px-1">wallet_source: &quot;cdp&quot;</code> and an <code className="bg-black text-primary px-1">agent_id</code>, P402 automatically issues a <strong>payment</strong> mandate — no separate API call needed.
+                    </p>
+                    <div className="bg-black p-8 border-4 border-black font-mono text-sm overflow-x-auto text-primary shadow-[12px_12px_0px_0px_rgba(182,255,46,1)] mb-4">
+                        <pre><code>{`POST /api/v2/sessions
+{
+  "wallet_source": "cdp",
+  "agent_id": "my-autonomous-agent",
+  "budget_usd": 10.00,
+  "expires_in_hours": 24
+}
+
+// Response includes:
+// "policy": { "ap2_mandate_id": "mnd_..." }`}</code></pre>
+                    </div>
+                    <p className="text-sm font-bold text-neutral-500 uppercase tracking-tight mb-12">
+                        All auto-pay calls through this session are enforced against the mandate. Budget overruns return 403 <code className="bg-neutral-100 px-1">MANDATE_BUDGET_EXCEEDED</code>.
+                    </p>
+
+                    <h2 className="text-3xl font-black uppercase italic mb-8">Manual Mandate Creation</h2>
+                    <p className="text-base font-bold text-neutral-600 mb-6 max-w-2xl uppercase tracking-tight">
+                        For non-CDP sessions or custom mandate constraints:
+                    </p>
                     <div className="bg-black p-8 border-4 border-black font-mono text-sm overflow-x-auto text-primary shadow-[12px_12px_0px_0px_rgba(182,255,46,1)]">
                         <pre><code>{`POST /api/a2a/mandates
 {

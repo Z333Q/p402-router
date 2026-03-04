@@ -20,6 +20,7 @@ import {
     RateLimitError
 } from '@/lib/ai-providers';
 import { requireTenantAccess } from '@/lib/auth';
+import { BillingGuard, BillingGuardError } from '@/lib/providers/openrouter/billing-guard';
 
 // =============================================================================
 // REQUEST TYPES
@@ -96,8 +97,11 @@ export async function POST(req: NextRequest) {
         // Use session tenantId as priority, but allow body override if it matches (requireTenantAccess handles this)
         let tenantId = access.tenantId;
 
-        // Force body tenant_id into req headers so requireTenantAccess can check it if we want to be strict,
-        // but here we just use the one from requireTenantAccess which is already vetted.
+        // ── Billing Guard (6-layer spending protection) ──────────────────────
+        const billingGuard = new BillingGuard();
+        await billingGuard.checkRateLimit({ userId: tenantId, tenantId });
+        await billingGuard.checkDailySpend({ userId: tenantId, tenantId });
+        await billingGuard.checkConcurrentReservations({ userId: tenantId, tenantId });
 
         // Build routing options
         const routingOptions: RoutingOptions = {
@@ -143,6 +147,20 @@ export async function POST(req: NextRequest) {
         console.error(`[V2/chat/completions] Error:`, error);
 
         // Handle known error types
+        if (error instanceof BillingGuardError) {
+            return NextResponse.json({
+                error: {
+                    type: 'billing_error',
+                    message: error.message,
+                    code: error.code,
+                    ...(error.retryAfterMs && { retry_after_ms: error.retryAfterMs })
+                }
+            }, {
+                status: 429,
+                headers: error.retryAfterMs ? { 'Retry-After': String(Math.ceil(error.retryAfterMs / 1000)) } : {}
+            });
+        }
+
         if (error instanceof RateLimitError) {
             return NextResponse.json({
                 error: {

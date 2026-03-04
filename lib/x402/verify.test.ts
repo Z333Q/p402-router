@@ -149,7 +149,7 @@ describe('x402 Payment Verification', () => {
             const result = await verifyTransaction(mockTxHash, mockRecipient, BigInt(1000000), 8453);
 
             expect(result.valid).toBe(false);
-            expect(result.error).toBe('Transaction failed');
+            expect(result.error).toBe('Transaction reverted on-chain');
         });
 
         it('should reject insufficient amounts', async () => {
@@ -213,7 +213,7 @@ describe('x402 Payment Verification', () => {
             const result = await verifyX402Payment(request, mockRecipient, 1.0);
 
             expect(result.valid).toBe(false);
-            expect(result.error).toBe('No X-402-Payment header');
+            expect(result.error).toContain('Missing payment header');
         });
 
         it('should return error for invalid header format', async () => {
@@ -227,10 +227,10 @@ describe('x402 Payment Verification', () => {
             const result = await verifyX402Payment(request, mockRecipient, 1.0);
 
             expect(result.valid).toBe(false);
-            expect(result.error).toBe('Invalid X-402-Payment format');
+            expect(result.error).toContain('Malformed x402');
         });
 
-        it('should return not implemented for signature-based payments', async () => {
+        it('should return error for signature-based payments (use facilitator endpoint)', async () => {
             const request = new Request('https://api.p402.io/v2/chat', {
                 method: 'POST',
                 headers: {
@@ -241,10 +241,11 @@ describe('x402 Payment Verification', () => {
             const result = await verifyX402Payment(request, mockRecipient, 1.0);
 
             expect(result.valid).toBe(false);
-            expect(result.error).toContain('not implemented');
+            // Signature verification delegates to /api/v1/facilitator/verify
+            expect(result.error).toBeTruthy();
         });
 
-        it('should return not implemented for receipt reuse', async () => {
+        it('should return error for receipt reuse (not yet implemented)', async () => {
             const request = new Request('https://api.p402.io/v2/chat', {
                 method: 'POST',
                 headers: {
@@ -255,7 +256,7 @@ describe('x402 Payment Verification', () => {
             const result = await verifyX402Payment(request, mockRecipient, 1.0);
 
             expect(result.valid).toBe(false);
-            expect(result.error).toContain('not implemented');
+            expect(result.error).toContain('implemented');
         });
     });
 

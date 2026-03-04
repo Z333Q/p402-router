@@ -208,6 +208,8 @@ p402-router/
 │   │   ├── semantic-cache.ts       # Semantic similarity cache (text-embedding-004)
 │   │   └── index.ts
 │   ├── cache-engine.ts             # High-level cache interface
+│   ├── cdp-client.ts               # ★ CDP SDK accessor — MUST use getCdpClientAsync() (dynamic import)
+│   ├── cdp-server-wallet.ts        # CDP Server Wallet signing (TEE mode)
 │   ├── constants.ts                # ★ All addresses, chain IDs, limits
 │   ├── db/
 │   │   ├── queries.ts              # Typed query helpers
@@ -286,6 +288,8 @@ p402-router/
 │   └── useWalletSync.ts
 │
 ├── components/                     # Shared legacy components
+│   ├── auth/
+│   │   └── CDPEmailAuth.tsx        # ★ Email OTP login via CDP Embedded Wallet
 │   ├── TopNav.tsx
 │   ├── NavConnectButton.tsx
 │   ├── WalletSync.tsx
@@ -315,7 +319,12 @@ p402-router/
 │       ├── a2a_003_x402_payments.sql
 │       ├── v2_001_initial_schema.sql
 │       ├── v2_009_trust_packaging.sql
-│       └── v2_010_developer_settings.sql
+│       ├── v2_010_developer_settings.sql
+│       ├── v2_011_stripe_integration.sql
+│       ├── v2_012_webhook_idempotency.sql
+│       ├── v2_013_drop_tenant_plan.sql
+│       ├── v2_014_access_requests.sql  # ★ access_requests table (beta signup)
+│       └── v2_015_cdp_wallets.sql      # ★ CDP wallet registry + agent_sessions columns
 │
 ├── artifacts/                      # Compiled contract artifacts
 ├── cloudflare-facilitator/         # ★ SEPARATE PROJECT — excluded from tsconfig
@@ -795,13 +804,15 @@ Pool: max 20 connections, idle timeout 30s, connection timeout 2s.
 | `erc8004_agents` | Registered trustless agents |
 | `api_keys` | Developer API keys (SHA-256 hashed) |
 | `tenant_settings` | Webhook URLs and secrets |
+| `access_requests` | Beta signup form submissions |
+| `cdp_wallet_registry` | Audit log of CDP-managed wallet provisioning |
 
 ### Running Migrations
 ```bash
-# Apply in numeric order:
-psql $DATABASE_URL -f scripts/migrations/v2_001_initial_schema.sql
-psql $DATABASE_URL -f scripts/migrations/a2a_001_task_model.sql
-# ... continue in order
+# Apply schema.sql first (base tables: tenants, policies, routes, facilitators)
+psql $DATABASE_URL -f scripts/migrations/schema.sql
+# Then apply numbered migrations in order through v2_015
+# See DEPLOYMENT.md §1 for the full ordered list
 ```
 
 ---
@@ -971,6 +982,26 @@ npm run test:coverage
 
 ---
 
+## CDP ↔ AP2 ↔ ERC-8004 Wiring
+
+Three governance layers are now wired together at two integration points:
+
+### Session creation (`app/api/v2/sessions/route.ts`)
+When `wallet_source === 'cdp'` AND `agent_id` is provided:
+1. **AP2 mandate auto-issued** — inserts into `ap2_mandates` with `type: 'payment'`, `user_did: did:p402:tenant:{tenantId}`, `agent_did: did:p402:agent:{agent_id}`, `max_amount_usd = budget_usd`, `valid_until = expiresAt`. Mandate ID stored as `ap2_mandate_id` in `policies` JSONB on `agent_sessions`.
+2. **ERC-8004 wallet link** — if `ERC8004_ENABLE_VALIDATION=true` and `agent_id` is numeric, fires `setAgentWalletOnChain()` as fire-and-forget dynamic import. Never blocks session creation.
+
+### Auto-pay (`app/api/v1/router/auto-pay/route.ts`)
+Session query expanded to fetch `policies` and `agent_id` (uses `session_token` column, not `id`).
+
+Pre-settlement: if `ap2_mandate_id` in `session.policies`, calls `AP2PolicyEngine.verifyMandate()` → 403 on failure. Sessions without a mandate skip check (backwards compatible).
+
+Post-settlement (non-blocking): `recordUsage()`, `budget_spent_usd` increment, `queueFeedback()`.
+
+E2E tests: `tests/e2e/cdp-ap2-erc8004-wiring.spec.ts`
+
+---
+
 ## Critical Gotchas
 
 1. **`lib/db.ts` is a default export** — `import db from '@/lib/db'` not `import { db }`
@@ -990,6 +1021,9 @@ npm run test:coverage
 15. **A2A JSON-RPC Errors**: If an agent hits a billing cap, DO NOT throw an HTTP 402. Map the error via `lib/a2a-errors.ts` to a JSON-RPC `-32000` block error so the orchestrator does not crash.
 16. **API Keys API**: Raw API keys (`p402_live_...`) are generated via `crypto.randomBytes` and returned EXACTLY ONCE by the Server Action. Only the SHA-256 hash is stored.
 17. **Idempotency**: All billing events and audit findings use `INSERT ... ON CONFLICT` constraints to prevent database bloat and double-charging during transient network retries.
+18. **`@coinbase/cdp-sdk` — dynamic import only**: Never `import { CdpClient } from '@coinbase/cdp-sdk'` at module top-level. It loads `@solana/kit` (ESM-only, broken named exports) which crashes the Next.js build at page-data-collection time. Always use `await getCdpClientAsync()` from `lib/cdp-client.ts`.
+19. **CDP Server Wallet API**: Policy creation is `cdp.policies.createPolicy(...)` — NOT `cdp.createPolicy(...)`. Required body shape: `{ policy: { scope: 'account', rules: [{ action: 'reject', operation: 'signEvmTransaction', criteria: [...] }] } }`.
+20. **CDP test mocks**: Mock `@/lib/cdp-client` (not the raw `@coinbase/cdp-sdk`) so tests never trigger the dynamic import or `@solana/kit`. The mock must export `isCdpEnabled`, `getCdpClientAsync`, `getCdpClient`, `_resetCdpClient`.
 
 ---
 

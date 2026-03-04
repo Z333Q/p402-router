@@ -31,6 +31,10 @@ export type ApiErrorCode =
     | 'SAFETY_SCAN_REJECTED'
     | 'SAFETY_IDENTITY_REQUIRED'
     | 'SECURITY_PACK_BLOCKED'
+    | 'CDP_WALLET_ERROR'
+    | 'CDP_PROVISION_FAILED'
+    | 'CDP_AUTH_INVALID'
+    | 'CDP_POLICY_DENIED'
 
 export class ApiError extends Error {
     public readonly code: ApiErrorCode

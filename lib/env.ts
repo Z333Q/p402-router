@@ -16,9 +16,12 @@ const envSchema = z.object({
     STRIPE_WEBHOOK_SECRET: z.string().min(1),
     STRIPE_PRICE_ID_PRO: z.string().min(1),
     STRIPE_PRICE_ID_ENTERPRISE: z.string().min(1),
-    // Facilitator — required for settlement to function
+    // Facilitator — P402_SIGNER_ADDRESS always required.
+    // P402_FACILITATOR_PRIVATE_KEY only required when CDP_SERVER_WALLET_ENABLED != 'true'.
+    // When CDP mode is active, the private key lives in CDP's TEE and is never set here.
     P402_SIGNER_ADDRESS: z.string().min(1),
-    P402_FACILITATOR_PRIVATE_KEY: z.string().min(1),
+    P402_FACILITATOR_PRIVATE_KEY: z.string().optional(),
+    CDP_SERVER_WALLET_ENABLED: z.string().optional(),
 });
 
 /**

@@ -19,7 +19,6 @@ import { connectorsForWallets } from '@rainbow-me/rainbowkit';
 import {
     metaMaskWallet,
     walletConnectWallet,
-    injectedWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 import { createCDPEmbeddedWalletConnector } from '@coinbase/cdp-wagmi';
 import type { Config as CDPConfig } from '@coinbase/cdp-core';
