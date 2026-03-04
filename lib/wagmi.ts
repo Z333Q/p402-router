@@ -80,8 +80,9 @@ const rainbowKitConnectors = connectorsForWallets(
 
 // ---------------------------------------------------------------------------
 // Final wagmi config — CDP connector first = default auto-connect target.
-// RainbowKit only renders wallets created via connectorsForWallets above,
-// so cdpEmbeddedConnector is wagmi-only (used for session auto-detect).
+// multiInjectedProviderDiscovery: false — prevents EIP-6963 auto-detection
+// which would otherwise surface the CDP embedded connector in RainbowKit's
+// "Installed" section. Explicit connectors above cover all intended wallets.
 // ---------------------------------------------------------------------------
 
 export const wagmiConfig = createConfig({
@@ -92,5 +93,6 @@ export const wagmiConfig = createConfig({
         [mainnet.id]:  http(),
         [optimism.id]: http(),
     },
+    multiInjectedProviderDiscovery: false,
     ssr: true,
 });
