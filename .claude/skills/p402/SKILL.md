@@ -106,7 +106,7 @@ Cache is most effective for: classification tasks, FAQ-style queries, repeated e
 
 ## Getting Started
 
-The fastest way to try P402 is to sign in at [p402.io](https://p402.io) with your **email address** — no MetaMask or seed phrases required. A Base embedded wallet is created automatically via Coinbase CDP Embedded Wallet (email OTP, keys secured in AWS Nitro Enclave). The guided onboarding walks you through: role selection → API key generation → wallet funding (send USDC on Base) → dashboard orientation.
+The fastest way to try P402 is to sign in at [p402.io](https://p402.io) with your **email address** — no MetaMask or seed phrases required. A Base embedded wallet is created automatically via Coinbase CDP Embedded Wallet (email OTP, keys secured in AWS Nitro Enclave). The guided onboarding walks you through: role selection → API key generation → dashboard orientation. Wallet funding is pay-as-you-go — you'll be prompted to send USDC on Base when you make your first routed request.
 
 For programmatic access, grab your API key from the dashboard after signing in. You can also try P402 via the **Base Mini App** at [mini.p402.io](https://mini.p402.io) — connect a Base Account, fund with USDC via Base Pay, and start chatting with real-time cost and savings tracking.
 
