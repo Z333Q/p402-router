@@ -6,24 +6,48 @@ import { Card, Button } from '../_components/ui';
 import { useWallet } from '@/hooks/useWallet';
 import { AuditPanel } from '../_components/audit/AuditPanel';
 import { AuditGateBanner } from '../_components/audit/AuditGateBanner';
+import { useFundWallet } from '../_components/FundWalletModal';
 import type { AuditContractPayload } from '@/lib/types/audit';
 
 const client = new P402Client({ routerUrl: '/api' });
 
+// Errors that signal the user needs to fund their wallet
+const FUNDING_ERROR_CODES = ['INSUFFICIENT_FUNDS', 'BALANCE_TOO_LOW', 'PAYMENT_REQUIRED'];
+
+function isFundingError(err: unknown): boolean {
+    if (!(err instanceof Error)) return false;
+    const msg = err.message.toLowerCase();
+    return (
+        msg.includes('insufficient') ||
+        msg.includes('balance') ||
+        msg.includes('fund') ||
+        FUNDING_ERROR_CODES.some(code => err.message.includes(code))
+    );
+}
+
 export default function PlaygroundPage() {
     const initialAuditData: AuditContractPayload | null = null;
     const tenantId: string | undefined = undefined;
-    const { address, isConnected } = useWallet();
+    const { address } = useWallet();
+    const { openFundModal } = useFundWallet();
+
     const [messages, setMessages] = useState<any[]>([
         { role: 'system', content: 'You are a helpful AI assistant.' }
     ]);
     const [chatLoading, setChatLoading] = useState(false);
+    const [chatError, setChatError] = useState<string | null>(null);
+
     const [session, setSession] = useState<Session | null>(null);
+    const [sessionError, setSessionError] = useState<string | null>(null);
+
     const [policy, setPolicy] = useState<Policy | null>(null);
+    const [policyError, setPolicyError] = useState<string | null>(null);
+
     const [taskSuccess, setTaskSuccess] = useState(false);
 
     const handleChat = async () => {
         setChatLoading(true);
+        setChatError(null);
         try {
             const userMsg = { role: 'user', content: 'Explain quantum computing in one sentence.' };
             const newHistory = [...messages, userMsg];
@@ -36,19 +60,23 @@ export default function PlaygroundPage() {
 
             if (res.choices?.[0]?.message) {
                 setMessages([...newHistory, res.choices[0].message]);
-                setTaskSuccess(true); // Trigger PLG funnel
+                setTaskSuccess(true);
             } else {
                 throw new Error('No response from AI');
             }
         } catch (err: any) {
-            console.error(err);
-            alert(`Chat failed: ${err.message}`);
+            if (isFundingError(err)) {
+                openFundModal();
+            } else {
+                setChatError(err.message ?? 'Chat request failed.');
+            }
         } finally {
             setChatLoading(false);
         }
     };
 
     const handleCreateSession = async () => {
+        setSessionError(null);
         try {
             const s = await client.createSession({
                 budget_usd: 10.0,
@@ -57,11 +85,16 @@ export default function PlaygroundPage() {
             });
             setSession(s);
         } catch (err: any) {
-            alert(`Session creation failed: ${err.message}`);
+            if (isFundingError(err)) {
+                openFundModal();
+            } else {
+                setSessionError(err.message ?? 'Session creation failed.');
+            }
         }
     };
 
     const handleCreatePolicy = async () => {
+        setPolicyError(null);
         try {
             const p = await client.createPolicy({
                 name: "Playground Policy",
@@ -69,7 +102,7 @@ export default function PlaygroundPage() {
             });
             setPolicy(p);
         } catch (err: any) {
-            alert(`Policy creation failed: ${err.message}`);
+            setPolicyError(err.message ?? 'Policy creation failed.');
         }
     };
 
@@ -94,6 +127,11 @@ export default function PlaygroundPage() {
                                 </div>
                             ))}
                         </div>
+                        {chatError && (
+                            <p className="text-[11px] font-bold text-error border-2 border-error px-3 py-2">
+                                {chatError}
+                            </p>
+                        )}
                         <Button onClick={handleChat} disabled={chatLoading} className="w-full">
                             {chatLoading ? 'Thinking...' : 'Send Message'}
                         </Button>
@@ -128,6 +166,11 @@ export default function PlaygroundPage() {
                                 <p className="text-neutral-400 text-center pt-8">No Active Session</p>
                             )}
                         </div>
+                        {sessionError && (
+                            <p className="text-[11px] font-bold text-error border-2 border-error px-3 py-2">
+                                {sessionError}
+                            </p>
+                        )}
                         <Button onClick={handleCreateSession} variant="secondary" className="w-full">
                             Create $10 Session
                         </Button>
@@ -143,6 +186,11 @@ export default function PlaygroundPage() {
                                 <p className="text-neutral-400 text-center pt-8">No Policy Loaded</p>
                             )}
                         </div>
+                        {policyError && (
+                            <p className="text-[11px] font-bold text-error border-2 border-error px-3 py-2">
+                                {policyError}
+                            </p>
+                        )}
                         <Button onClick={handleCreatePolicy} variant="ghost" className="w-full border-black border-2">
                             Create Policy
                         </Button>

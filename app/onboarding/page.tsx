@@ -103,8 +103,11 @@ const NEXT_STEPS: Record<Role, Array<{ label: string; desc: string; href: string
     ],
 };
 
+const TOTAL_STEPS = 3;
+
 export default function OnboardingPage() {
     const router = useRouter();
+
     const [step, setStep] = useState<1 | 2 | 3>(1);
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
@@ -129,7 +132,6 @@ export default function OnboardingPage() {
             const result = await generateApiKeyAction(null, fd);
             if (result.success && result.rawKey) {
                 setApiKey(result.rawKey);
-                // Flag for OnboardingChecklist
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('api_key_generated', '1');
                 }
@@ -156,7 +158,6 @@ export default function OnboardingPage() {
         fd.append('role', selectedRole);
         fd.append('goal', selectedGoal);
         await completeOnboardingAction(fd);
-        // completeOnboardingAction redirects server-side; fallback:
         router.push('/dashboard');
     }, [selectedRole, selectedGoal, isSubmitting, router]);
 
@@ -173,12 +174,12 @@ export default function OnboardingPage() {
 
             {/* Progress indicator */}
             <div className="flex items-center gap-2 mb-10">
-                {[1, 2, 3].map((n) => (
+                {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((n) => (
                     <div key={n} className="flex items-center gap-2">
                         <div className={`w-7 h-7 border-2 border-black flex items-center justify-center font-black text-xs ${step >= n ? 'bg-[var(--primary)] text-black' : 'bg-white text-neutral-400'}`}>
                             {step > n ? <CheckCircle2 size={14} strokeWidth={3} /> : n}
                         </div>
-                        {n < 3 && <div className={`w-12 h-0.5 ${step > n ? 'bg-black' : 'bg-neutral-200'}`} />}
+                        {n < TOTAL_STEPS && <div className={`w-10 h-0.5 ${step > n ? 'bg-black' : 'bg-neutral-200'}`} />}
                     </div>
                 ))}
             </div>
@@ -302,6 +303,16 @@ export default function OnboardingPage() {
                                     <ArrowRight size={14} className="mt-auto text-black opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </a>
                             ))}
+                        </div>
+
+                        {/* Wallet funding — deferred, non-blocking */}
+                        <div className="border-2 border-dashed border-neutral-300 p-4 mb-8 flex items-start gap-3">
+                            <div className="w-1.5 h-1.5 bg-neutral-400 mt-1.5 shrink-0" />
+                            <p className="text-[11px] text-neutral-500 font-medium leading-relaxed">
+                                <span className="font-black text-black">Payments are pay-as-you-go.</span>{' '}
+                                You'll be prompted to fund your wallet (USDC on Base) when you make your first routed request.
+                                Minimum $0.01. Each AI call costs ~$0.001–0.01 depending on model.
+                            </p>
                         </div>
 
                         <div className="flex justify-end pt-4 border-t-4 border-black">
