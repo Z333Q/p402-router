@@ -4,6 +4,8 @@ import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import { useAccount } from 'wagmi';
+import { useEffect, useState } from 'react';
 import { TopNav } from '@/components/TopNav';
 import { Footer } from '@/components/Footer';
 
@@ -23,6 +25,39 @@ const ConnectButton = dynamic(
         ),
     }
 );
+
+// Shows a "connecting" state while useCdpAuth bridges the wallet → NextAuth session
+function WalletSection() {
+    const { address, isConnected } = useAccount();
+    const [connecting, setConnecting] = useState(false);
+
+    // Detect wallet connection and show bridging state
+    useEffect(() => {
+        if (isConnected && address) {
+            setConnecting(true);
+        } else {
+            setConnecting(false);
+        }
+    }, [isConnected, address]);
+
+    if (connecting) {
+        return (
+            <div className="flex items-center gap-3 border-2 border-black bg-neutral-50 px-4 py-3">
+                <div className="w-4 h-4 border-2 border-black border-t-primary animate-spin shrink-0" />
+                <div>
+                    <p className="text-[11px] font-black uppercase tracking-widest text-black">Wallet connected.</p>
+                    <p className="text-[10px] font-medium text-neutral-500">Creating your account…</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex justify-center [&>*]:w-full [&>button]:w-full">
+            <ConnectButton label="Connect Wallet" />
+        </div>
+    );
+}
 
 export default function LoginPage() {
     const router = useRouter();
@@ -68,7 +103,7 @@ export default function LoginPage() {
                     {/* Secondary: Google */}
                     <button
                         onClick={() => void signIn('google', { callbackUrl: '/onboarding' })}
-                        className="w-full h-12 flex items-center justify-center gap-3 border-2 border-black bg-white font-black text-[11px] uppercase tracking-wider hover:bg-neutral-100 transition-colors mb-6"
+                        className="w-full h-12 flex items-center justify-center gap-3 border-2 border-black bg-white font-black text-[11px] uppercase tracking-wider hover:bg-neutral-100 transition-colors mb-1"
                     >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -79,6 +114,9 @@ export default function LoginPage() {
                         />
                         Continue with Google
                     </button>
+                    <p className="text-[10px] text-neutral-400 text-center mb-6 font-medium">
+                        Google login creates a dashboard account. Add a wallet in onboarding to enable payments.
+                    </p>
 
                     {/* Tertiary: Existing wallet — collapsed/de-emphasized */}
                     <div className="border border-neutral-200 p-4">
@@ -88,9 +126,7 @@ export default function LoginPage() {
                         <p className="text-[11px] text-neutral-500 font-medium mb-3">
                             Connect MetaMask, Coinbase Wallet, or any WalletConnect-compatible wallet.
                         </p>
-                        <div className="flex justify-center [&>*]:w-full [&>button]:w-full">
-                            <ConnectButton label="Connect Wallet" />
-                        </div>
+                        <WalletSection />
                     </div>
 
                     {/* Legal */}

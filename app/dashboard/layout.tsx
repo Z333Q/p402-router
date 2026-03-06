@@ -6,55 +6,97 @@ import { useEffect, useState } from 'react'
 import { Menu, X } from 'lucide-react'
 import { Footer } from '@/components/Footer'
 import { FundWalletProvider, useFundWallet } from './_components/FundWalletModal'
+import { useAuthState } from '@/lib/hooks/useAuthState'
+import Link from 'next/link'
 
 // =============================================================================
-// Funding Banner — shown once for new users, dismissed via localStorage
+// Auth State Banner — surfaces the user's authorization state prominently
 // =============================================================================
 
-function FundingBanner() {
+function AuthStateBanner() {
     const { openFundModal } = useFundWallet();
-    const [visible, setVisible] = useState(false);
+    const { state: authState, isLoading } = useAuthState();
+    const [dismissed, setDismissed] = useState<string | null>(null);
 
     useEffect(() => {
-        // Show if the user just completed onboarding AND hasn't dismissed this yet
-        const justOnboarded = localStorage.getItem('api_key_generated') === '1';
-        const dismissed = localStorage.getItem('funding_banner_dismissed') === '1';
-        if (justOnboarded && !dismissed) setVisible(true);
+        setDismissed(localStorage.getItem('auth_banner_dismissed'));
     }, []);
 
-    const handleDismiss = () => {
-        localStorage.setItem('funding_banner_dismissed', '1');
-        setVisible(false);
-    };
+    if (isLoading || dismissed) return null;
 
-    if (!visible) return null;
+    // identity_only: Google user with no wallet — amber banner
+    if (authState === 'identity_only') {
+        return (
+            <div className="flex items-center justify-between gap-4 border-b-2 border-black bg-warning/10 border-warning px-4 lg:px-8 py-2.5">
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-1.5 h-1.5 bg-warning shrink-0" />
+                    <p className="text-[11px] font-medium text-neutral-700 truncate">
+                        <span className="font-black text-black">Payments not activated.</span>
+                        {' '}Add a wallet in 30 seconds to unlock the AI Router.
+                    </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                    <Link
+                        href="/dashboard/settings?activate=payments"
+                        className="h-7 px-3 bg-warning text-black font-black text-[10px] uppercase tracking-widest border border-black hover:bg-black hover:text-warning transition-colors whitespace-nowrap"
+                    >
+                        Activate Now →
+                    </Link>
+                    <button
+                        onClick={() => {
+                            localStorage.setItem('auth_banner_dismissed', '1');
+                            setDismissed('1');
+                        }}
+                        className="p-1 text-neutral-400 hover:text-black transition-colors"
+                        aria-label="Dismiss"
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
-    return (
-        <div className="flex items-center justify-between gap-4 border-b-2 border-black bg-neutral-900 px-4 lg:px-8 py-2.5">
-            <div className="flex items-center gap-3 min-w-0">
-                <div className="w-1.5 h-1.5 bg-primary shrink-0" />
-                <p className="text-[11px] font-medium text-neutral-300 truncate">
-                    <span className="text-white font-black">Your wallet has no USDC yet.</span>
-                    {' '}Add funds to enable on-chain payments — min $0.01.
-                </p>
+    // wallet_linked: has wallet but no funds — show funding nudge for new users
+    if (authState === 'wallet_linked') {
+        const justOnboarded = typeof window !== 'undefined'
+            && localStorage.getItem('api_key_generated') === '1';
+        const fundingDismissed = typeof window !== 'undefined'
+            && localStorage.getItem('funding_banner_dismissed') === '1';
+        if (!justOnboarded || fundingDismissed) return null;
+
+        return (
+            <div className="flex items-center justify-between gap-4 border-b-2 border-black bg-neutral-900 px-4 lg:px-8 py-2.5">
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-1.5 h-1.5 bg-primary shrink-0" />
+                    <p className="text-[11px] font-medium text-neutral-300 truncate">
+                        <span className="text-white font-black">Your wallet has no USDC yet.</span>
+                        {' '}Add funds to enable on-chain payments — min $0.01.
+                    </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                    <button
+                        onClick={openFundModal}
+                        className="h-7 px-3 bg-primary text-black font-black text-[10px] uppercase tracking-widest border border-black hover:bg-white transition-colors whitespace-nowrap"
+                    >
+                        Fund wallet →
+                    </button>
+                    <button
+                        onClick={() => {
+                            localStorage.setItem('funding_banner_dismissed', '1');
+                            setDismissed('1');
+                        }}
+                        className="p-1 text-neutral-500 hover:text-white transition-colors"
+                        aria-label="Dismiss"
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-                <button
-                    onClick={openFundModal}
-                    className="h-7 px-3 bg-primary text-black font-black text-[10px] uppercase tracking-widest border border-black hover:bg-white transition-colors whitespace-nowrap"
-                >
-                    Fund wallet →
-                </button>
-                <button
-                    onClick={handleDismiss}
-                    className="p-1 text-neutral-500 hover:text-white transition-colors"
-                    aria-label="Dismiss"
-                >
-                    <X size={14} />
-                </button>
-            </div>
-        </div>
-    );
+        );
+    }
+
+    return null;
 }
 
 // =============================================================================
@@ -124,8 +166,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 {/* Main Content Area */}
                 <main className="flex-1 flex flex-col min-w-0 lg:ml-64">
-                    {/* Funding Banner — new users only */}
-                    <FundingBanner />
+                    {/* Auth State Banner */}
+                    <AuthStateBanner />
 
                     {/* Global Status Bar */}
                     <header className="flex h-16 items-center justify-between border-b-2 border-black bg-white px-4 lg:px-8 sticky top-0 z-20">

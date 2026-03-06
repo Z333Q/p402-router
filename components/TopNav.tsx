@@ -7,10 +7,6 @@ import dynamic from 'next/dynamic';
 import { CommandPalette } from '@/components/common/CommandPalette';
 
 const NavConnectButton = dynamic(() => import('./NavConnectButton'), { ssr: false });
-const ConnectButton = dynamic(
-    () => import('@rainbow-me/rainbowkit').then(mod => mod.ConnectButton),
-    { ssr: false }
-);
 
 const PRODUCT_LINKS = [
     {
@@ -248,9 +244,13 @@ export function TopNav() {
 
                         {/* Auth actions */}
                         <div className="px-6 py-4 flex flex-col gap-3">
-                            <ConnectButton />
                             {user ? (
-                                <Link href="/dashboard" onClick={() => setIsMenuOpen(false)} className="btn btn-primary w-full justify-center">Dashboard</Link>
+                                <>
+                                    <div className="flex justify-center">
+                                        <NavConnectButton />
+                                    </div>
+                                    <Link href="/dashboard" onClick={() => setIsMenuOpen(false)} className="btn btn-primary w-full justify-center">Dashboard</Link>
+                                </>
                             ) : (
                                 <>
                                     <Link href="/login" onClick={() => setIsMenuOpen(false)} className="btn btn-primary w-full justify-center">Start free</Link>

@@ -1,9 +1,26 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAuthState } from '@/lib/hooks/useAuthState';
 
 export default function NavConnectButton() {
+    const { state: authState, isLoading } = useAuthState();
+
+    // Google user with no wallet linked — show activation prompt instead of wallet UI
+    if (!isLoading && authState === 'identity_only') {
+        return (
+            <Link
+                href="/dashboard/settings?activate=payments"
+                className="flex items-center gap-1.5 h-9 px-3 bg-warning text-black font-black text-[10px] uppercase tracking-widest border-2 border-black hover:bg-black hover:text-warning transition-colors whitespace-nowrap"
+            >
+                <span className="text-xs">⚡</span>
+                Activate Payments
+            </Link>
+        );
+    }
+
     return (
         <ConnectButton.Custom>
             {({

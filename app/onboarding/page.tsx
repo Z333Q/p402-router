@@ -1,10 +1,19 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import dynamic from 'next/dynamic';
 import { Server, Store, ShieldCheck, Copy, CheckCircle2, ArrowRight, Key } from 'lucide-react';
 import { generateApiKeyAction } from '@/lib/actions/settings';
 import { completeOnboardingAction } from '@/lib/actions/onboarding';
+import { useAuthState } from '@/lib/hooks/useAuthState';
+
+// CDP hooks require browser context — disable SSR
+const CDPEmailAuth = dynamic(
+    () => import('@/components/auth/CDPEmailAuth').then(m => ({ default: m.CDPEmailAuth })),
+    { ssr: false, loading: () => <div className="h-24 animate-pulse bg-neutral-100 border-2 border-neutral-200" /> }
+);
 
 type Role = 'builder' | 'publisher' | 'enterprise';
 type Goal = 'test_routing' | 'publish_agent' | 'enterprise_trust';
@@ -103,12 +112,18 @@ const NEXT_STEPS: Record<Role, Array<{ label: string; desc: string; href: string
     ],
 };
 
+// Step 0 is the Google wallet activation pre-step; steps 1–3 are the standard flow.
+type OnboardingStep = 0 | 1 | 2 | 3;
+
+// Total visible progress steps (not counting the conditional pre-step)
 const TOTAL_STEPS = 3;
 
 export default function OnboardingPage() {
     const router = useRouter();
+    const { data: session } = useSession();
+    const { state: authState, isLoading: authLoading } = useAuthState();
 
-    const [step, setStep] = useState<1 | 2 | 3>(1);
+    const [step, setStep] = useState<OnboardingStep>(1);
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
     const [apiKey, setApiKey] = useState<string | null>(null);
@@ -116,6 +131,23 @@ export default function OnboardingPage() {
     const [keyError, setKeyError] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Determine if the Step 0 wallet activation pre-step should be shown.
+    // Only for Google users (non-wallet.p402.io email) who have no wallet linked.
+    const email = session?.user?.email ?? '';
+    const isGoogleUser = email.length > 0 && !email.endsWith('@wallet.p402.io');
+    const showWalletActivation = isGoogleUser && authState === 'identity_only' && !authLoading;
+
+    // Jump to Step 0 once we know the user needs wallet activation (and haven't deferred)
+    useEffect(() => {
+        if (!authLoading && showWalletActivation) {
+            const deferred = typeof window !== 'undefined'
+                && localStorage.getItem('wallet_activation_deferred') === '1';
+            if (!deferred) {
+                setStep(0);
+            }
+        }
+    }, [authLoading, showWalletActivation]);
 
     const handleRoleSelect = (option: RoleOption) => {
         setSelectedRole(option.role);
@@ -164,6 +196,9 @@ export default function OnboardingPage() {
     const snippet = selectedRole ? CODE_SNIPPETS[selectedRole] : null;
     const nextSteps = selectedRole ? NEXT_STEPS[selectedRole] : null;
 
+    // Progress indicator only shows steps 1–3
+    const progressStep = step === 0 ? 0 : step;
+
     return (
         <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 selection:bg-[var(--primary)] selection:text-black">
 
@@ -172,19 +207,62 @@ export default function OnboardingPage() {
                 P402.IO
             </div>
 
-            {/* Progress indicator */}
-            <div className="flex items-center gap-2 mb-10">
-                {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((n) => (
-                    <div key={n} className="flex items-center gap-2">
-                        <div className={`w-7 h-7 border-2 border-black flex items-center justify-center font-black text-xs ${step >= n ? 'bg-[var(--primary)] text-black' : 'bg-white text-neutral-400'}`}>
-                            {step > n ? <CheckCircle2 size={14} strokeWidth={3} /> : n}
+            {/* Progress indicator — hidden during pre-step */}
+            {step > 0 && (
+                <div className="flex items-center gap-2 mb-10">
+                    {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((n) => (
+                        <div key={n} className="flex items-center gap-2">
+                            <div className={`w-7 h-7 border-2 border-black flex items-center justify-center font-black text-xs ${progressStep >= n ? 'bg-[var(--primary)] text-black' : 'bg-white text-neutral-400'}`}>
+                                {progressStep > n ? <CheckCircle2 size={14} strokeWidth={3} /> : n}
+                            </div>
+                            {n < TOTAL_STEPS && <div className={`w-10 h-0.5 ${progressStep > n ? 'bg-black' : 'bg-neutral-200'}`} />}
                         </div>
-                        {n < TOTAL_STEPS && <div className={`w-10 h-0.5 ${step > n ? 'bg-black' : 'bg-neutral-200'}`} />}
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
 
             <div className="max-w-4xl w-full bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
+
+                {/* ── STEP 0: Wallet Activation (Google users only) ── */}
+                {step === 0 && (
+                    <div className="p-8 md:p-12">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-8 h-8 bg-[var(--warning)] border-2 border-black flex items-center justify-center font-black text-lg">⚡</div>
+                            <h1 className="text-4xl font-black uppercase tracking-tight text-black">One more step.</h1>
+                        </div>
+                        <p className="font-mono text-neutral-500 mb-8 text-base">Activate Payments to use the AI Router.</p>
+
+                        <div className="border-2 border-black bg-neutral-50 p-6 mb-8">
+                            <p className="text-sm font-medium text-neutral-700 leading-relaxed mb-6">
+                                Your account is ready. To make gasless USDC payments and use the AI Router,
+                                you need a self-custody wallet — <span className="font-black text-black">created automatically in 30 seconds.</span>
+                            </p>
+
+                            <CDPEmailAuth
+                                initialEmail={isGoogleUser ? email : undefined}
+                                onSuccess={() => setStep(1)}
+                            />
+                        </div>
+
+                        <div className="flex justify-between items-center pt-4 border-t-2 border-neutral-200">
+                            <p className="text-[11px] text-neutral-400 font-medium">
+                                You can also add a wallet later from dashboard settings.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (typeof window !== 'undefined') {
+                                        localStorage.setItem('wallet_activation_deferred', '1');
+                                    }
+                                    setStep(1);
+                                }}
+                                className="text-[11px] font-black uppercase tracking-widest text-neutral-400 hover:text-black transition-colors whitespace-nowrap"
+                            >
+                                Skip — add later →
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* ── STEP 1: Role Selection ── */}
                 {step === 1 && (
@@ -267,6 +345,15 @@ export default function OnboardingPage() {
                             </div>
                         )}
 
+                        {selectedRole === 'builder' && (
+                            <div className="border-2 border-dashed border-neutral-300 p-4 mb-6 bg-neutral-50">
+                                <p className="text-[11px] text-neutral-600 font-medium leading-relaxed">
+                                    <span className="font-black text-black">No wallet required to start routing.</span>{' '}
+                                    Add payments when your app needs them — your agents can use CDP server wallets funded by your clients.
+                                </p>
+                            </div>
+                        )}
+
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4 border-t-4 border-black">
                             <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">
                                 You can generate more keys in Settings.
@@ -287,7 +374,9 @@ export default function OnboardingPage() {
                     <div className="p-8 md:p-12">
                         <h1 className="text-4xl font-black uppercase tracking-tight mb-2 text-black">You're ready.</h1>
                         <p className="font-mono text-neutral-500 mb-10 text-base">
-                            Here's where to start in your dashboard:
+                            {selectedRole === 'builder'
+                                ? 'Start routing AI calls in minutes:'
+                                : 'Here\'s where to start in your dashboard:'}
                         </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
@@ -305,15 +394,34 @@ export default function OnboardingPage() {
                             ))}
                         </div>
 
-                        {/* Wallet funding — deferred, non-blocking */}
-                        <div className="border-2 border-dashed border-neutral-300 p-4 mb-8 flex items-start gap-3">
-                            <div className="w-1.5 h-1.5 bg-neutral-400 mt-1.5 shrink-0" />
-                            <p className="text-[11px] text-neutral-500 font-medium leading-relaxed">
-                                <span className="font-black text-black">Payments are pay-as-you-go.</span>{' '}
-                                You'll be prompted to fund your wallet (USDC on Base) when you make your first routed request.
-                                Minimum $0.01. Each AI call costs ~$0.001–0.01 depending on model.
-                            </p>
-                        </div>
+                        {/* Builder-specific: session API docs CTA */}
+                        {selectedRole === 'builder' ? (
+                            <div className="border-2 border-black bg-neutral-900 p-4 mb-8 flex items-start justify-between gap-4">
+                                <div className="flex items-start gap-3 min-w-0">
+                                    <div className="w-1.5 h-1.5 bg-[var(--primary)] mt-1.5 shrink-0" />
+                                    <p className="text-[11px] text-neutral-300 font-medium leading-relaxed">
+                                        <span className="font-black text-white">Payment capability is optional for builders.</span>{' '}
+                                        Your agents use CDP server wallets funded by your clients — no personal wallet needed.
+                                    </p>
+                                </div>
+                                <a
+                                    href="/docs/v2-sessions"
+                                    className="shrink-0 h-7 px-3 bg-[var(--primary)] text-black font-black text-[10px] uppercase tracking-widest border border-black hover:bg-white transition-colors flex items-center whitespace-nowrap"
+                                >
+                                    Session API →
+                                </a>
+                            </div>
+                        ) : (
+                            /* Wallet funding — deferred, non-blocking */
+                            <div className="border-2 border-dashed border-neutral-300 p-4 mb-8 flex items-start gap-3">
+                                <div className="w-1.5 h-1.5 bg-neutral-400 mt-1.5 shrink-0" />
+                                <p className="text-[11px] text-neutral-500 font-medium leading-relaxed">
+                                    <span className="font-black text-black">Payments are pay-as-you-go.</span>{' '}
+                                    You'll be prompted to fund your wallet (USDC on Base) when you make your first routed request.
+                                    Minimum $0.01. Each AI call costs ~$0.001–0.01 depending on model.
+                                </p>
+                            </div>
+                        )}
 
                         <div className="flex justify-end pt-4 border-t-4 border-black">
                             <button

@@ -26,13 +26,14 @@ import { signIn, useSession } from 'next-auth/react';
 
 interface Props {
     onSuccess?: () => void;
+    initialEmail?: string;
 }
 
 type Step = 'email' | 'otp' | 'connecting' | 'confirmed';
 
-export function CDPEmailAuth({ onSuccess }: Props) {
+export function CDPEmailAuth({ onSuccess, initialEmail }: Props) {
     const [step, setStep] = useState<Step>('email');
-    const [email, setEmail] = useState('');
+    const [email, setEmail] = useState(initialEmail ?? '');
     const [otp, setOtp] = useState('');
     const [flowId, setFlowId] = useState('');
     const [error, setError] = useState<string | null>(null);
