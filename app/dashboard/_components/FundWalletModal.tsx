@@ -13,6 +13,7 @@
 
 import { useState, useCallback, createContext, useContext } from 'react';
 import { useAccount } from 'wagmi';
+import { useAuthState } from '@/lib/hooks/useAuthState';
 import { Copy, CheckCircle2, X, ExternalLink, Wallet } from 'lucide-react';
 
 // =============================================================================
@@ -54,7 +55,10 @@ export function FundWalletProvider({ children }: { children: React.ReactNode }) 
 // =============================================================================
 
 function FundWalletModal({ onClose }: { onClose: () => void }) {
-    const { address } = useAccount();
+    const { address: wagmiAddress } = useAccount();
+    const { walletAddress: sessionAddress } = useAuthState();
+    // CDP email users: wagmi may not have auto-connected yet, fall back to session address
+    const address = wagmiAddress ?? sessionAddress ?? undefined;
     const [copied, setCopied] = useState(false);
 
     const handleCopy = useCallback(() => {
