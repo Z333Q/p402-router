@@ -35,6 +35,7 @@ const NAV_ITEMS = [
     { name: "Trust Layer", href: "/dashboard/trust", icon: Shield },
     { name: "Discovery Bazaar", href: "/dashboard/bazaar", icon: Store },
     { name: "Billing & Plans", href: "/dashboard/billing", icon: CreditCard },
+    { name: "Settings & API Keys", href: "/dashboard/settings", icon: Settings },
 ]
 
 const ADMIN_ITEMS = [
