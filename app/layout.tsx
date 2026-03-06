@@ -54,7 +54,10 @@ export const metadata: Metadata = {
     icons: {
         icon: '/favicon.png',
         apple: '/favicon.png',
-    }
+    },
+    other: {
+        'talentapp:project_verification': '40df97d439212fe62ca4cdda435f46a7f0aa749026e971d62fb274535da77606ca5b6b53a5734cd1c81b8cd192a03efc133660fb2cb8f9808a114cb1c1f56e70',
+    },
 }
 
 // JSON-LD Structured Data for SEO & LLMs
