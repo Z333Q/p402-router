@@ -89,6 +89,7 @@ describe('POST /api/v2/governance/policies', () => {
           status: 'active',
           version: '1.0.0',
           created_at: '2025-01-01',
+          updated_at: '2025-01-01',
         },
       ],
     });
@@ -102,6 +103,7 @@ describe('POST /api/v2/governance/policies', () => {
     expect(res.status).toBe(201);
     expect(body.object).toBe('policy');
     expect(body.id).toMatch(/^pol_/);
+    expect(body.updated_at).toBe('2025-01-01');
   });
 
   it('returns 400 for missing name', async () => {

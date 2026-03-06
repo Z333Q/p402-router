@@ -6,6 +6,15 @@ vi.mock('@/lib/db', () => ({
   default: { query: vi.fn(), getPool: vi.fn(), end: vi.fn() },
 }));
 
+vi.mock('@/lib/cdp-server-wallet', () => ({
+  getOrProvisionAgentWallet: vi.fn().mockResolvedValue({
+    address: '0xCDPWallet',
+    cdpWalletName: 'agent-wallet-name',
+  }),
+  createSessionSpendingPolicy: vi.fn().mockResolvedValue('cdp-policy-id'),
+  recordCdpWallet: vi.fn(),
+}));
+
 import pool from '@/lib/db';
 
 const mockPool = pool as unknown as { query: ReturnType<typeof vi.fn> };
@@ -29,6 +38,8 @@ describe('GET /api/v2/sessions', () => {
           tenant_id: 'tenant-1',
           agent_id: 'agent-1',
           wallet_address: '0x123',
+          wallet_source: 'eoa',
+          cdp_wallet_name: null,
           budget_total_usd: '100.00',
           budget_spent_usd: '10.00',
           budget_remaining: '90.00',
@@ -121,6 +132,8 @@ describe('POST /api/v2/sessions', () => {
           tenant_id: 'tenant-1',
           agent_id: 'my-agent',
           wallet_address: null,
+          wallet_source: 'eoa',
+          cdp_wallet_name: null,
           budget_total_usd: '50.00',
           budget_spent_usd: '0',
           policies: '{}',
@@ -176,6 +189,8 @@ describe('POST /api/v2/sessions', () => {
           tenant_id: 'tenant-1',
           agent_id: null,
           wallet_address: null,
+          wallet_source: 'eoa',
+          cdp_wallet_name: null,
           budget_total_usd: '10.00',
           budget_spent_usd: '0',
           policies: '{}',

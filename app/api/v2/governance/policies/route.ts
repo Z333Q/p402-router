@@ -119,16 +119,12 @@ export async function POST(req: NextRequest) {
             rules: row.rules,
             status: row.status,
             version: row.version,
-            created_at: row.created_at
+            created_at: row.created_at,
+            updated_at: row.updated_at
         }, { status: 201 });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Governance] Create policy error:', error);
-        return NextResponse.json({
-            error: {
-                type: 'internal_error',
-                message: error.message
-            }
-        }, { status: 500 });
+        return toApiErrorResponse(error, crypto.randomUUID());
     }
 }

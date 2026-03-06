@@ -123,7 +123,7 @@ export default function PlaygroundPage() {
                     <Card className="p-6 space-y-4 border-2 border-black shadow-[4px_4px_0_0_#000]">
                         <h2 className="text-lg font-bold uppercase">AI Chat</h2>
                         <div className="h-[300px] overflow-y-auto bg-neutral-100 p-4 border border-black font-mono text-xs space-y-2">
-                            {messages.map((m, i) => (
+                            {messages.filter(m => m.role !== 'system').map((m, i) => (
                                 <div key={i} className={m.role === 'user' ? 'text-right' : 'text-left'}>
                                     <span className={m.role === 'user' ? 'bg-black text-white px-2 py-1' : 'bg-white border border-black px-2 py-1'}>
                                         {m.content}

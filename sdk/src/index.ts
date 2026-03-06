@@ -90,7 +90,7 @@ export class P402Client {
     private defaultNetwork: Network;
 
     constructor(config: P402Config = {}) {
-        this.routerUrl = (config.routerUrl || 'https://p402.io').replace(/\/$/, '');
+        this.routerUrl = (config.routerUrl ?? 'https://p402.io').replace(/\/$/, '');
         this.debug = config.debug || false;
         this.apiKey = config.apiKey;
         this.defaultNetwork = config.network || 'eip155:8453';

@@ -48,8 +48,13 @@ export function middleware(request: NextRequest) {
         const sessionToken = request.cookies.get('next-auth.session-token') ||
             request.cookies.get('__Secure-next-auth.session-token');
 
-        // Allow if it's an internal dashboard path and we have a session token
-        const isInternalApiPath = pathname.startsWith('/api/v2/analytics') || pathname.startsWith('/api/v1/events');
+        // Allow if it's a dashboard-accessible path and we have a session token
+        const isInternalApiPath =
+            pathname.startsWith('/api/v2/analytics') ||
+            pathname.startsWith('/api/v1/events') ||
+            pathname.startsWith('/api/v2/chat') ||
+            pathname.startsWith('/api/v2/governance') ||
+            pathname.startsWith('/api/v2/sessions');
         if (isInternalApiPath && sessionToken) {
             return NextResponse.next();
         }
