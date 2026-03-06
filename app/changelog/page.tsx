@@ -64,6 +64,44 @@ export default function ChangelogPage() {
 
                 <section style={{ marginBottom: 48 }}>
                     <div className="flex justify-between items-baseline mb-4 border-b-2 border-black pb-2">
+                        <h2 className="title-2 m-0 text-2xl">Auth UX Redesign</h2>
+                        <span className="mono-id text-sm bg-black text-white px-2 py-1">March 6, 2026</span>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                        <div className="card p-6 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-[#B6FF2E]">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">Progressive Authorization — 4 Distinct States</h3>
+                            <p className="text-neutral-900 mb-3 leading-relaxed">
+                                P402 now has a formal authorization model: <strong>Visitor → Identity Only → Wallet Linked → Payment Ready</strong>.
+                                The product surfaces your current state and offers a clear, low-friction path to the next one.
+                            </p>
+                            <ul className="list-disc pl-5 text-neutral-900 text-sm flex flex-col gap-2 font-medium">
+                                <li>Dashboard banner adapts to your state — amber nudge for unactivated payments, green for unfunded wallet, silent when payment-ready</li>
+                                <li>Nav wallet indicator shows "Activate Payments" for Google users without a wallet, address chip for connected users</li>
+                                <li>Mobile nav no longer shows a wallet connect prompt for unauthenticated visitors</li>
+                            </ul>
+                        </div>
+
+                        <div className="card p-6 border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-white">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">Google Sign-In → Wallet Activation Flow</h3>
+                            <p className="text-neutral-700 mb-3 leading-relaxed">
+                                Google OAuth users now see a dedicated wallet activation pre-step in onboarding — email pre-filled, skippable,
+                                with a clear explanation of what payments unlock. Skipping is tracked and surfaces an inline activation prompt in the dashboard.
+                            </p>
+                        </div>
+
+                        <div className="card p-6 border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-neutral-50">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">Builder-Specific Onboarding Path</h3>
+                            <p className="text-neutral-700 leading-relaxed">
+                                Developers who select the "Build &amp; Route" role now see targeted messaging: no personal wallet required,
+                                agent sessions use CDP server wallets funded by clients, and a direct link to the Session API docs.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <section style={{ marginBottom: 48 }}>
+                    <div className="flex justify-between items-baseline mb-4 border-b-2 border-black pb-2">
                         <h2 className="title-2 m-0 text-2xl">CDP Wallet Integration</h2>
                         <span className="mono-id text-sm bg-black text-white px-2 py-1">March 4, 2026</span>
                     </div>
