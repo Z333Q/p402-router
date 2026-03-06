@@ -9,7 +9,7 @@ import { AuditGateBanner } from '../_components/audit/AuditGateBanner';
 import { useFundWallet } from '../_components/FundWalletModal';
 import type { AuditContractPayload } from '@/lib/types/audit';
 
-const client = new P402Client({ routerUrl: '/api' });
+const client = new P402Client({ routerUrl: '' });
 
 // Errors that signal the user needs to fund their wallet
 const FUNDING_ERROR_CODES = ['INSUFFICIENT_FUNDS', 'BALANCE_TOO_LOW', 'PAYMENT_REQUIRED'];
