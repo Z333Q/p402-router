@@ -34,6 +34,7 @@ export default function PlaygroundPage() {
     const [messages, setMessages] = useState<any[]>([
         { role: 'system', content: 'You are a helpful AI assistant.' }
     ]);
+    const [chatInput, setChatInput] = useState('');
     const [chatLoading, setChatLoading] = useState(false);
     const [chatError, setChatError] = useState<string | null>(null);
 
@@ -46,10 +47,13 @@ export default function PlaygroundPage() {
     const [taskSuccess, setTaskSuccess] = useState(false);
 
     const handleChat = async () => {
+        const text = chatInput.trim();
+        if (!text) return;
         setChatLoading(true);
         setChatError(null);
+        setChatInput('');
         try {
-            const userMsg = { role: 'user', content: 'Explain quantum computing in one sentence.' };
+            const userMsg = { role: 'user', content: text };
             const newHistory = [...messages, userMsg];
             setMessages(newHistory);
 
@@ -132,9 +136,20 @@ export default function PlaygroundPage() {
                                 {chatError}
                             </p>
                         )}
-                        <Button onClick={handleChat} disabled={chatLoading} className="w-full">
-                            {chatLoading ? 'Thinking...' : 'Send Message'}
-                        </Button>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={chatInput}
+                                onChange={e => setChatInput(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && !chatLoading && handleChat()}
+                                placeholder="Type a message..."
+                                disabled={chatLoading}
+                                className="flex-1 border-2 border-black px-3 py-2 font-mono text-xs bg-white focus:outline-none focus:bg-neutral-50 disabled:opacity-50"
+                            />
+                            <Button onClick={handleChat} disabled={chatLoading || !chatInput.trim()}>
+                                {chatLoading ? 'Thinking...' : 'Send'}
+                            </Button>
+                        </div>
                     </Card>
 
                     {/* Success Panel — PLG Trigger */}
