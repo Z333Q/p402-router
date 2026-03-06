@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
             estimatedSavings,
             namespace: tenantId
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Cache/Stats] Error:', error);
 
         // Return empty stats if cache unavailable

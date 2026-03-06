@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSemanticCache } from '@/lib/cache';
 import { requireTenantAccess } from '@/lib/auth';
+import { toApiErrorResponse } from '@/lib/errors';
 
 export async function POST(req: NextRequest) {
     const access = await requireTenantAccess(req);
@@ -30,12 +31,8 @@ export async function POST(req: NextRequest) {
             namespace: tenantId,
             pattern: pattern || null
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Cache/Clear] Error:', error);
-
-        return NextResponse.json({
-            success: false,
-            error: error.message
-        }, { status: 500 });
+        return toApiErrorResponse(error, crypto.randomUUID());
     }
 }

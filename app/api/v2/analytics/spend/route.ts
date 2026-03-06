@@ -130,7 +130,7 @@ export async function GET(req: NextRequest) {
             time_series: timeSeries
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Analytics/Spend] Error:', error);
 
         // Return empty analytics if no data

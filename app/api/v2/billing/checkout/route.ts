@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import db from '@/lib/db';
 import { stripe } from '@/lib/stripe';
 import { env } from '@/lib/env';
+import { toApiErrorResponse } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,11 +72,8 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json({ url: checkoutSession.url });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Stripe Checkout Error:', error);
-        return NextResponse.json(
-            { error: error.message || 'Internal Server Error' },
-            { status: 500 }
-        );
+        return toApiErrorResponse(error, crypto.randomUUID());
     }
 }

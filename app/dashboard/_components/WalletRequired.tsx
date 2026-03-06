@@ -3,6 +3,8 @@
 import React from 'react';
 import { useAccount } from 'wagmi';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
+import { useAuthState } from '@/lib/hooks/useAuthState';
 
 const ConnectButton = dynamic(
     () => import('@rainbow-me/rainbowkit').then(mod => mod.ConnectButton),
@@ -26,8 +28,10 @@ export function WalletRequired({
     mode = 'soft'
 }: WalletRequiredProps) {
     const { isConnected } = useAccount();
+    const { walletAddress } = useAuthState();
 
-    if (isConnected) {
+    // CDP email users have a session wallet even when wagmi is not connected
+    if (isConnected || walletAddress) {
         return <>{children}</>;
     }
 
@@ -48,12 +52,18 @@ export function WalletRequired({
                             <p className="text-xs font-bold text-black/70 max-w-xl leading-relaxed italic">{description}</p>
                         </div>
                     </div>
-                    <div className="shrink-0 relative z-10">
+                    <div className="shrink-0 relative z-10 flex items-center gap-2">
                         <ConnectButton
                             label="Anchor Identity"
                             accountStatus="address"
                             showBalance={false}
                         />
+                        <Link
+                            href="/dashboard/settings?activate=payments"
+                            className="h-8 px-3 bg-black text-primary font-black text-[9px] uppercase tracking-widest border-2 border-black hover:bg-neutral-800 transition-colors flex items-center whitespace-nowrap"
+                        >
+                            CDP Email →
+                        </Link>
                     </div>
                 </div>
                 <div className="opacity-40 grayscale pointer-events-none select-none">
@@ -82,12 +92,23 @@ export function WalletRequired({
                         </p>
                     </div>
 
-                    <div className="flex justify-center pt-4">
+                    <div className="flex flex-col items-center gap-3 pt-4">
                         <ConnectButton
                             label="Connect Wallet to Unlock Console"
                             accountStatus="address"
                             showBalance={false}
                         />
+                        <div className="flex items-center gap-2 text-[9px] text-neutral-400 font-medium">
+                            <span className="h-px w-8 bg-neutral-200" />
+                            or use a CDP embedded wallet
+                            <span className="h-px w-8 bg-neutral-200" />
+                        </div>
+                        <Link
+                            href="/dashboard/settings?activate=payments"
+                            className="h-9 px-4 bg-neutral-900 text-primary font-black text-[10px] uppercase tracking-widest border-2 border-black hover:bg-black transition-colors flex items-center"
+                        >
+                            Set up CDP email wallet →
+                        </Link>
                     </div>
 
                     <div className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400">

@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { requireTenantAccess } from '@/lib/auth';
+import { toApiErrorResponse } from '@/lib/errors';
 
 // =============================================================================
 // LIST MANDATES
@@ -60,11 +61,9 @@ export async function GET(req: NextRequest) {
             }))
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Governance] List mandates error:', error);
-        return NextResponse.json({
-            error: { type: 'internal_error', message: error.message }
-        }, { status: 500 });
+        return toApiErrorResponse(error, crypto.randomUUID());
     }
 }
 
@@ -154,10 +153,8 @@ export async function POST(req: NextRequest) {
             created_at: row.created_at
         }, { status: 201 });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Governance] Create mandate error:', error);
-        return NextResponse.json({
-            error: { type: 'internal_error', message: error.message }
-        }, { status: 500 });
+        return toApiErrorResponse(error, crypto.randomUUID());
     }
 }

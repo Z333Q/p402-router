@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import pool from '@/lib/db'
+import { toApiErrorResponse } from '@/lib/errors'
 
 // SSRF Protection: Check if IP is private/internal
 function isPrivateIP(ip: string): boolean {
@@ -74,8 +75,8 @@ export async function GET(req: NextRequest) {
         }))
 
         return NextResponse.json({ facilitators })
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+    } catch (error: unknown) {
+        return toApiErrorResponse(error, crypto.randomUUID())
     }
 }
 

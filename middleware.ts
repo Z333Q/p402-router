@@ -92,15 +92,15 @@ export function middleware(request: NextRequest) {
     // 2. Security Headers (Top 1% Standards)
     response.headers.set('X-DNS-Prefetch-Control', 'on')
     response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
-    response.headers.set('X-Frame-Options', 'SAMEORIGIN')
+    response.headers.set('X-Frame-Options', 'DENY')
     response.headers.set('X-Content-Type-Options', 'nosniff')
-    response.headers.set('Referrer-Policy', 'origin-when-cross-origin')
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
     response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()')
 
     // 3. CSP (Strict but functional)
     response.headers.set(
         'Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.coinbase.com https://*.circle.com https://*.google-analytics.com https://*.googletagmanager.com https://*.walletconnect.org https://*.walletconnect.com https://*.web3modal.org https://*.web3modal.com https://eth.merkle.io https://*.base.org https://*.p402.io wss://*.walletconnect.org wss://*.walletconnect.com;"
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.coinbase.com https://*.circle.com https://*.google-analytics.com https://*.googletagmanager.com https://*.walletconnect.org https://*.walletconnect.com https://*.web3modal.org https://*.web3modal.com https://eth.merkle.io https://*.base.org https://*.p402.io wss://*.walletconnect.org wss://*.walletconnect.com; frame-ancestors 'none';"
     )
 
     // 4. Request ID for tracing

@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { requireTenantAccess } from '@/lib/auth';
+import { toApiErrorResponse } from '@/lib/errors';
 
 // =============================================================================
 // LIST POLICIES
@@ -54,14 +55,9 @@ export async function GET(req: NextRequest) {
             }))
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Governance] List policies error:', error);
-        return NextResponse.json({
-            error: {
-                type: 'internal_error',
-                message: error.message
-            }
-        }, { status: 500 });
+        return toApiErrorResponse(error, crypto.randomUUID());
     }
 }
 

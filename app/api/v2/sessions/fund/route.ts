@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { requireTenantAccess } from '@/lib/auth';
+import { toApiErrorResponse } from '@/lib/errors';
 
 export async function POST(req: NextRequest) {
     const access = await requireTenantAccess(req);
@@ -107,14 +108,9 @@ export async function POST(req: NextRequest) {
             tx_hash: tx_hash || null
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Sessions/Fund] Error:', error);
-        return NextResponse.json({
-            error: {
-                type: 'internal_error',
-                message: error.message
-            }
-        }, { status: 500 });
+        return toApiErrorResponse(error, crypto.randomUUID());
     }
 }
 

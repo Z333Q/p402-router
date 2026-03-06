@@ -21,6 +21,7 @@ import {
 } from '@/lib/ai-providers';
 import { requireTenantAccess } from '@/lib/auth';
 import { BillingGuard, BillingGuardError } from '@/lib/providers/openrouter/billing-guard';
+import { toApiErrorResponse } from '@/lib/errors';
 
 // =============================================================================
 // REQUEST TYPES
@@ -187,14 +188,8 @@ export async function POST(req: NextRequest) {
             }, { status: error.statusCode || 500 });
         }
 
-        // Generic error
-        return NextResponse.json({
-            error: {
-                type: 'internal_error',
-                message: error.message || 'An unexpected error occurred',
-                code: 'internal_error'
-            }
-        }, { status: 500 });
+        // Generic error — sanitize before returning
+        return toApiErrorResponse(error, requestId);
     }
 }
 

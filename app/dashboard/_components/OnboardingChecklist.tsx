@@ -1,11 +1,12 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { Card, Button } from './ui';
-import { CheckCircle2, Circle, ArrowRight, X } from 'lucide-react';
+import { CheckCircle2, Circle, X } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import dynamic from 'next/dynamic';
 import clsx from 'clsx';
 import Link from 'next/link';
+import { useAuthState } from '@/lib/hooks/useAuthState';
 
 const CustomConnectButton = dynamic(() => import('./CustomConnectButton'), { ssr: false });
 
@@ -19,6 +20,7 @@ interface Step {
 
 export function OnboardingChecklist() {
     const { isConnected } = useAccount();
+    const { walletAddress } = useAuthState();
     const [dismissed, setDismissed] = useState(false);
     const [hasApiKey, setHasApiKey] = useState(false);
     const [hasFirstCall, setHasFirstCall] = useState(false);
@@ -85,8 +87,9 @@ export function OnboardingChecklist() {
             id: 'wallet',
             label: 'Connect wallet for payments',
             description: 'Required for x402 settlement on Base.',
-            completed: isConnected,
-            action: !isConnected ? <CustomConnectButton /> : undefined,
+            // CDP email users have a session wallet even when wagmi is not connected
+            completed: isConnected || !!walletAddress,
+            action: !isConnected && !walletAddress ? <CustomConnectButton /> : undefined,
         },
         {
             id: 'policy',

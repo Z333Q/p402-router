@@ -78,7 +78,7 @@ export default function ChangelogPage() {
                                 surfaced throughout the product with a clear, low-friction path to the next state.
                             </p>
                             <ul className="list-disc pl-5 text-neutral-900 text-sm flex flex-col gap-2 font-medium">
-                                <li>State is derived from the NextAuth session: CDP email users (<code className="bg-black/10 px-1">@wallet.p402.io</code>) resolve to <code className="bg-black/10 px-1">wallet_linked</code> immediately; Google OAuth users check <code className="bg-black/10 px-1">owner_wallet</code> on the <code className="bg-black/10 px-1">tenants</code> table</li>
+                                <li>State is derived from the NextAuth session: CDP email users resolve to <code className="bg-black/10 px-1">wallet_linked</code> immediately; Google OAuth users are resolved against the account&apos;s linked wallet address</li>
                                 <li>Dashboard banner renders contextually per state — amber for unactivated payments, dark for unfunded wallet, silent when payment-ready</li>
                                 <li>Nav wallet indicator distinguishes Google-only sessions ("Activate Payments") from wallet-linked sessions (address chip) without triggering RainbowKit</li>
                                 <li>Mobile nav no longer surfaces a wallet connect prompt for unauthenticated visitors</li>
@@ -123,7 +123,7 @@ export default function ChangelogPage() {
                             <ul className="list-disc pl-5 text-neutral-900 text-sm flex flex-col gap-2 font-medium">
                                 <li>OTP delivery and wallet creation complete in under 500 ms end-to-end</li>
                                 <li>Private keys are generated and stored inside Coinbase&apos;s AWS Nitro Enclave (TEE) — never transmitted to the P402 server</li>
-                                <li>Session identity: NextAuth email set to <code className="bg-black/10 px-1">{'{address}'}@wallet.p402.io</code> — wallet address is the primary identity token, no separate linking step</li>
+                                <li>Session identity: wallet address is the primary identity token, no separate linking step</li>
                                 <li>First login presents a wallet acknowledgment screen with address and network confirmation</li>
                             </ul>
                         </div>
