@@ -295,8 +295,8 @@ describe('BillingGuard', () => {
         it('should handle Redis connection failures gracefully', async () => {
             vi.mocked(redis.incr).mockRejectedValue(new Error('Redis connection lost'));
 
-            // Should propagate error rather than silently failing
-            await expect(guard.checkRateLimit(mockCtx)).rejects.toThrow();
+            // Should fail-open (not throw) — consistent with layers 2-4
+            await expect(guard.checkRateLimit(mockCtx)).resolves.toBeUndefined();
         });
 
         it('should prevent negative spend values', async () => {

@@ -138,9 +138,9 @@ describe('Middleware — Security Headers', () => {
     expect(res.headers.get('Strict-Transport-Security')).toContain('includeSubDomains');
   });
 
-  it('sets X-Frame-Options SAMEORIGIN', () => {
+  it('sets X-Frame-Options DENY', () => {
     const res = middleware(makeReq('/dashboard'));
-    expect(res.headers.get('X-Frame-Options')).toBe('SAMEORIGIN');
+    expect(res.headers.get('X-Frame-Options')).toBe('DENY');
   });
 
   it('sets X-Content-Type-Options nosniff', () => {
@@ -155,7 +155,7 @@ describe('Middleware — Security Headers', () => {
 
   it('sets Referrer-Policy', () => {
     const res = middleware(makeReq('/dashboard'));
-    expect(res.headers.get('Referrer-Policy')).toBe('origin-when-cross-origin');
+    expect(res.headers.get('Referrer-Policy')).toBe('strict-origin-when-cross-origin');
   });
 
   it('sets Permissions-Policy', () => {
