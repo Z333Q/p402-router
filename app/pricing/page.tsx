@@ -67,6 +67,11 @@ const pricingJsonLd = {
                     name: 'Is there an AI assistant to help with P402 integration?',
                     acceptedAnswer: { '@type': 'Answer', text: 'Yes. The P402 Claude Skill gives Claude Code and Claude.ai deep knowledge of the routing API, billing guard, x402 payment flows, and A2A protocol. Install it from p402.io/docs/skill.' },
                 },
+                {
+                    '@type': 'Question',
+                    name: 'Does the VS Code extension work on the Free plan?',
+                    acceptedAnswer: { '@type': 'Answer', text: 'Yes. The VS Code extension (p402-protocol.p402) is available on all plans including Free. Install it with ext install p402-protocol.p402 in VS Code, Cursor, or Windsurf. The MCP server is bundled with zero config required.' },
+                },
             ],
         },
     ],
@@ -128,6 +133,7 @@ export default function PricingPage() {
                                     <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Basic AP2 Mandate caps</span></li>
                                     <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>5 Integration Audits / mo</span></li>
                                     <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>7-day runtime trend summary</span></li>
+                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>VS Code extension — embedded MCP, zero config</span></li>
                                 </ul>
                                 <Link
                                     href="/login"
@@ -237,6 +243,7 @@ export default function PricingPage() {
                                     <ComparisonRow label="AP2 Mandate Limits" free="Basic Caps" pro="Advanced Rules" enterprise="Multi-stage Approvals" />
                                     <ComparisonRow label="Audit Evidence" free="Locked" pro="Preview" enterprise="Signed Bundles & CSV" />
                                     <ComparisonRow label="Claude Skill" free="Community" pro="Included" enterprise="Included" />
+                                    <ComparisonRow label="VS Code / Cursor / Windsurf" free="Included" pro="Included" enterprise="Included" />
                                 </tbody>
                             </table>
                         </div>
@@ -274,6 +281,10 @@ export default function PricingPage() {
                                 {
                                     q: "Is there an AI assistant to help with P402 integration?",
                                     a: "Yes. The P402 Claude Skill gives Claude Code and Claude.ai deep knowledge of the routing API, billing guard, TypeScript interfaces, x402 payment flows, and A2A protocol. Install it from p402.io/docs/skill and ask Claude to generate integration code, debug routing decisions, set up agent spending controls, or compare model pricing across 300+ models."
+                                },
+                                {
+                                    q: "Does the VS Code extension work on the Free plan?",
+                                    a: "Yes — the extension is available on all plans including Free. Install it with 'ext install p402-protocol.p402' in VS Code, Cursor, or Windsurf. The MCP server is bundled inside the extension; tools appear in Copilot agent mode immediately with no config files required. Run 'P402: Configure API Key' from the command palette to connect your account."
                                 }
                             ].map((faq, i) => (
                                 <div key={i} className="bg-white border-2 border-black p-8 hover:bg-[var(--neutral-100)] transition-all shadow-[4px_4px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#000] cursor-default">
