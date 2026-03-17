@@ -13,7 +13,7 @@ export default function MCPDocPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32">
                     <div>
                         <div className="flex gap-3 mb-6">
-                            <Badge variant="primary">v2.0.0 Ready</Badge>
+                            <Badge variant="primary">@p402/mcp-server@1.0.0</Badge>
                             <Badge variant="default">Agentic Economy</Badge>
                         </div>
                         <h1 className="text-7xl font-black leading-[0.9] tracking-tighter uppercase italic mb-8">
@@ -74,7 +74,7 @@ export default function MCPDocPage() {
                                 <Step num="3" title="Sync MCP Server" desc="Add the P402 MCP server to your client (Claude Desktop or Cursor) to bridge the agent to the web." />
                             </div>
                         </div>
-                        <div className="lg:col-span-3">
+                        <div className="lg:col-span-3 space-y-6">
                             <Card title="claude_desktop_config.json" className="!p-0 border-4">
                                 <CodeBlock
                                     language="json"
@@ -84,16 +84,54 @@ export default function MCPDocPage() {
       "command": "npx",
       "args": ["-y", "@p402/mcp-server"],
       "env": {
-        "P402_API_KEY": "sk_prod_...",
-        "AGENT_WALLET_KEY": "0x...",
-        "P402_ROUTER_MODE": "cost"
+        "P402_API_KEY": "p402_live_...",
+        "P402_ROUTER_URL": "https://p402.io"
       }
     }
   }
 }`}
                                 />
                             </Card>
+                            <Card title="Environment Variables" className="border-2">
+                                <div className="space-y-3 text-sm">
+                                    <div className="flex gap-3">
+                                        <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-2 py-1 shrink-0">P402_API_KEY</code>
+                                        <span className="text-neutral-600">Required. Your P402 API key from the dashboard.</span>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-2 py-1 shrink-0">P402_ROUTER_URL</code>
+                                        <span className="text-neutral-600">Optional. Defaults to <code className="text-xs bg-neutral-100 px-1">https://p402.io</code>. Override for self-hosted deployments.</span>
+                                    </div>
+                                </div>
+                            </Card>
                         </div>
+                    </div>
+                </section>
+
+                {/* MCP Tools Reference */}
+                <section id="tools" className="mb-32">
+                    <h2 className="text-4xl font-black uppercase mb-4 italic">Available Tools</h2>
+                    <p className="text-neutral-600 mb-12">Six tools exposed over stdio MCP transport. Use them from any MCP client.</p>
+                    <div className="space-y-4">
+                        {[
+                            { name: "p402_chat", badge: "Core", desc: "Route a prompt to the best provider. Supports cost / quality / speed / balanced modes. Settles payment per-request in USDC on Base at 1% flat fee.", params: "prompt, mode?, model?, session_token?, max_tokens?" },
+                            { name: "p402_create_session", badge: "Sessions", desc: "Create a budget session with a USD cap. All p402_chat calls referencing this session draw from the shared budget — useful for multi-turn conversations.", params: "budget_usd, label?" },
+                            { name: "p402_get_session", badge: "Sessions", desc: "Retrieve session status: remaining budget, total spent, request count, and expiry.", params: "session_token" },
+                            { name: "p402_list_models", badge: "Discovery", desc: "List all 300+ routable models with provider, context window, cost per token, and availability.", params: "provider?" },
+                            { name: "p402_compare_providers", badge: "Discovery", desc: "Side-by-side cost and latency comparison for a given model across all providers that serve it.", params: "model" },
+                            { name: "p402_health", badge: "Ops", desc: "Router uptime, facilitator settlement status, and provider health summary.", params: "none" },
+                        ].map(t => (
+                            <div key={t.name} className="border-2 border-black p-6 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4">
+                                <div>
+                                    <code className="font-mono text-sm font-black bg-[#B6FF2E] px-2 py-1 border border-black block mb-2">{t.name}</code>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">{t.badge}</span>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-neutral-700 leading-relaxed mb-2">{t.desc}</p>
+                                    <p className="text-xs font-mono text-neutral-400">params: {t.params}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </section>
 

@@ -714,6 +714,24 @@ export default function ApiDocsPage() {
                     </div>
 
                     <div className="mt-8 pt-8 border-t-2 border-black/5">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">MCP Server</h3>
+                        <a
+                            href="#mcp-server"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setActiveSection('mcp-server');
+                                document.getElementById('mcp-server')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className={`block text-xs font-bold mb-3 uppercase tracking-tight transition-colors ${activeSection === 'mcp-server' ? 'text-[#22D3EE]' : 'text-black hover:text-[#22D3EE]'}`}
+                        >
+                            @p402/mcp-server
+                        </a>
+                        <Link href="/docs/mcp" className="block text-xs font-bold mb-3 uppercase tracking-tight text-neutral-400 hover:text-[#22D3EE] transition-colors">
+                            MCP Full Docs ↗
+                        </Link>
+                    </div>
+
+                    <div className="mt-8 pt-8 border-t-2 border-black/5">
                         <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Payment Router (V1)</h3>
                         {ENDPOINTS.filter(ep => ep.path.includes('/api/v1/router')).map(ep => (
                             <a
@@ -778,6 +796,63 @@ export default function ApiDocsPage() {
                                     Always route requests through a secure backend service to keep your credentials safe.
                                 </p>
                             </div>
+                        </section>
+
+                        {/* MCP Server Section */}
+                        <section id="mcp-server" className="p-12 border-b-2 border-black/5">
+                            <Badge variant="primary" className="mb-4">New</Badge>
+                            <h2 className="text-3xl font-black mb-4 uppercase">MCP Server</h2>
+                            <p className="text-neutral-600 mb-8 leading-relaxed max-w-2xl">
+                                <strong>@p402/mcp-server</strong> exposes P402 as a Model Context Protocol (MCP) server over stdio transport. Claude Desktop, Cursor, Windsurf, and any MCP-compatible client can route LLM calls and settle payments without touching the REST API directly.
+                            </p>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                                <div>
+                                    <h3 className="text-sm font-black uppercase tracking-widest mb-4">Installation</h3>
+                                    <div className="bg-neutral-50 p-6 border-2 border-black font-mono text-sm mb-4">
+                                        <div className="text-neutral-400 mb-2"># Zero-install via npx</div>
+                                        <pre className="text-black">{`npx -y @p402/mcp-server`}</pre>
+                                    </div>
+                                    <div className="bg-neutral-50 p-6 border-2 border-black font-mono text-sm">
+                                        <div className="text-neutral-400 mb-2"># claude_desktop_config.json</div>
+                                        <pre className="text-black whitespace-pre">{`{
+  "mcpServers": {
+    "p402": {
+      "command": "npx",
+      "args": ["-y", "@p402/mcp-server"],
+      "env": {
+        "P402_API_KEY": "p402_live_..."
+      }
+    }
+  }
+}`}</pre>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black uppercase tracking-widest mb-4">Tools</h3>
+                                    <div className="space-y-3">
+                                        {[
+                                            ['p402_chat', 'Route a prompt — cost/quality/speed/balanced modes'],
+                                            ['p402_create_session', 'Create a USD-capped budget session'],
+                                            ['p402_get_session', 'Check session balance and spend'],
+                                            ['p402_list_models', 'List all 300+ routable models'],
+                                            ['p402_compare_providers', 'Cost and latency comparison per model'],
+                                            ['p402_health', 'Router and facilitator health status'],
+                                        ].map(([name, desc]) => (
+                                            <div key={name} className="flex gap-3 items-start">
+                                                <code className="font-mono text-xs bg-[#B6FF2E] border border-black px-2 py-1 shrink-0">{name}</code>
+                                                <span className="text-sm text-neutral-600">{desc}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-6 p-4 border-2 border-black/10 bg-neutral-50 text-xs text-neutral-500">
+                                        <strong className="text-black block mb-1">MCP Registry</strong>
+                                        <code>io.github.Z333Q/p402</code> — searchable at registry.modelcontextprotocol.io
+                                    </div>
+                                </div>
+                            </div>
+                            <Link href="/docs/mcp" className="inline-block border-2 border-black px-6 py-3 font-bold uppercase text-sm hover:bg-black hover:text-white transition-colors">
+                                Full MCP Docs →
+                            </Link>
                         </section>
 
                         {/* Error Codes Section */}

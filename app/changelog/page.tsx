@@ -62,6 +62,51 @@ export default function ChangelogPage() {
                 <h1 className="title-1" style={{ marginBottom: 8 }}>Changelog</h1>
                 <p className="mono-id" style={{ marginBottom: 48 }}>Platform and protocol release history.</p>
 
+                {/* ── March 17, 2026 ────────────────────────────────────────────── */}
+                <section style={{ marginBottom: 48 }}>
+                    <div className="flex justify-between items-baseline mb-4 border-b-2 border-black pb-2">
+                        <h2 className="title-2 m-0 text-2xl">MCP Server</h2>
+                        <span className="mono-id text-sm bg-black text-white px-2 py-1">March 17, 2026</span>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                        <div className="card p-6 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-[#B6FF2E]">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">@p402/mcp-server — P402 as an MCP Tool Server</h3>
+                            <p className="text-neutral-900 mb-3 leading-relaxed">
+                                P402 routing and x402 settlement are now accessible via the Model Context Protocol stdio transport. Agent runtimes that speak MCP — Claude Desktop, Cursor, Windsurf, or any custom host — can route LLM requests across 300+ models and settle per-call in USDC on Base without implementing an HTTP client, managing wallet signing, or handling provider credentials directly.
+                            </p>
+                            <ul className="list-disc pl-5 text-neutral-900 text-sm flex flex-col gap-2 font-medium">
+                                <li>Spawned as a stdio subprocess — no open ports, no daemon process required</li>
+                                <li>Requires only <code className="bg-black/10 border border-black/20 px-1 py-0.5">P402_API_KEY</code> — no wallet private key at the MCP layer</li>
+                                <li>All routing logic, billing guard enforcement, and on-chain settlement run on the P402 backend unchanged; the MCP layer is a thin adapter over <code className="bg-black/10 border border-black/20 px-1 py-0.5">POST /api/v2/chat/completions</code> and <code className="bg-black/10 border border-black/20 px-1 py-0.5">POST /api/v2/sessions</code></li>
+                                <li>Budget enforcement is identical to the REST API — a session with a $5.00 cap cannot be exceeded regardless of tool call volume</li>
+                            </ul>
+                        </div>
+
+                        <div className="card p-6 border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-white">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">6 Tools</h3>
+                            <ul className="list-disc pl-5 text-neutral-700 text-sm flex flex-col gap-2">
+                                <li><code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">p402_chat</code> — routes a prompt to the optimal provider by mode (cost / quality / speed / balanced); settles payment atomically if a session token is supplied; returns completion, provider used, cost in USD, and latency</li>
+                                <li><code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">p402_create_session</code> — creates a budget session with a hard USD cap; returns a <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">session_token</code> scoped to that budget</li>
+                                <li><code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">p402_get_session</code> — returns <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">balance_remaining</code>, <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">amount_spent_usd</code>, <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">request_count</code>, and status</li>
+                                <li><code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">p402_list_models</code> — enumerates all routable models with provider, context window, and per-token pricing; filterable by provider</li>
+                                <li><code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">p402_compare_providers</code> — returns all providers serving a given model with cost and p95 latency side-by-side</li>
+                                <li><code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">p402_health</code> — router uptime, facilitator settlement status, and active provider count</li>
+                            </ul>
+                        </div>
+
+                        <div className="card p-6 border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-neutral-50">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">Distribution</h3>
+                            <ul className="list-disc pl-5 text-neutral-700 text-sm flex flex-col gap-2">
+                                <li>Published to npm as <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">@p402/mcp-server</code> — zero-install via <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">npx -y @p402/mcp-server</code></li>
+                                <li>Listed on the official MCP Registry as <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">io.github.Z333Q/p402</code> at <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">registry.modelcontextprotocol.io</code></li>
+                                <li>Indexed in community directories: punkpeye/awesome-mcp-servers (Finance &amp; Fintech), wong2/awesome-mcp-servers, mcp.so, mcpindex.net, mcpserverfinder.com</li>
+                                <li>Source in monorepo at <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">packages/mcp-server/</code> — TypeScript, <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">@modelcontextprotocol/sdk</code></li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
                 {/* ── March 6, 2026 ─────────────────────────────────────────────── */}
                 <section style={{ marginBottom: 48 }}>
                     <div className="flex justify-between items-baseline mb-4 border-b-2 border-black pb-2">

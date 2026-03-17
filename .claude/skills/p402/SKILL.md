@@ -110,6 +110,22 @@ The fastest way to try P402 is to sign in at [p402.io](https://p402.io) with you
 
 For programmatic access, grab your API key from the dashboard after signing in. You can also try P402 via the **Base Mini App** at [mini.p402.io](https://mini.p402.io) — connect a Base Account, fund with USDC via Base Pay, and start chatting with real-time cost and savings tracking.
 
+**MCP Server:** If you use Claude Desktop, Cursor, or Windsurf, add `@p402/mcp-server` to your MCP config — no REST integration needed:
+
+```json
+{
+  "mcpServers": {
+    "p402": {
+      "command": "npx",
+      "args": ["-y", "@p402/mcp-server"],
+      "env": { "P402_API_KEY": "p402_live_..." }
+    }
+  }
+}
+```
+
+The MCP server is listed on the official registry as `io.github.Z333Q/p402`.
+
 ## API Quick Reference
 
 **Base URL:** `https://p402.io`
@@ -131,6 +147,17 @@ For programmatic access, grab your API key from the dashboard after signing in. 
 | `/api/a2a/mandates` | POST | Create AP2 spending mandate |
 | `/api/a2a/mandates/:id/use` | POST | Use a mandate for payment |
 
+**MCP Tools** (via `@p402/mcp-server`, stdio transport):
+
+| Tool | Purpose |
+|------|---------|
+| `p402_chat` | Route a prompt (cost/quality/speed/balanced modes) |
+| `p402_create_session` | Create a USD-capped budget session |
+| `p402_get_session` | Check session balance and spend |
+| `p402_list_models` | List all 300+ routable models |
+| `p402_compare_providers` | Cost and latency comparison per model |
+| `p402_health` | Router and facilitator health status |
+
 For complete request/response schemas and code examples in TypeScript, Python, and curl, read `references/api-reference.md`.
 
 ## Integration Patterns
@@ -151,7 +178,11 @@ Use the JSON-RPC endpoint at `/api/a2a` with Google's A2A protocol. Agents disco
 
 For machine-to-machine payments using the HTTP 402 flow: service responds with payment requirements, client submits payment proof (EIP-3009 signature or transaction hash), service verifies and releases the resource. Three schemes are supported: `exact` (gasless EIP-3009), `onchain` (direct tx verification), and `receipt` (reuse prior payments). Read `references/payment-flows.md` for implementation details.
 
-### Pattern 5: Cost Intelligence Dashboard
+### Pattern 6: MCP Server (Claude Desktop / Cursor / Windsurf)
+
+Add `@p402/mcp-server` to your MCP client config. No REST integration needed — the server runs as a stdio subprocess and exposes all 6 tools natively. The client can call `p402_chat` to route and pay for LLM requests, `p402_create_session` to establish a budget, and `p402_list_models` to discover providers. Registry identifier: `io.github.Z333Q/p402`.
+
+### Pattern 7: Cost Intelligence Dashboard
 
 Use `/api/v2/analytics/spend` for spending data and `/api/v2/analytics/recommendations` for optimization suggestions. The recommendations endpoint identifies cheaper model alternatives and estimates potential savings. Use `/api/v2/providers/compare` to show users real-time pricing comparisons.
 
