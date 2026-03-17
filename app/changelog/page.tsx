@@ -62,6 +62,49 @@ export default function ChangelogPage() {
                 <h1 className="title-1" style={{ marginBottom: 8 }}>Changelog</h1>
                 <p className="mono-id" style={{ marginBottom: 48 }}>Platform and protocol release history.</p>
 
+                {/* ── March 18, 2026 ────────────────────────────────────────────── */}
+                <section style={{ marginBottom: 48 }}>
+                    <div className="flex justify-between items-baseline mb-4 border-b-2 border-black pb-2">
+                        <h2 className="title-2 m-0 text-2xl">VS Code Extension</h2>
+                        <span className="mono-id text-sm bg-black text-white px-2 py-1">March 18, 2026</span>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                        <div className="card p-6 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-[#B6FF2E]">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">p402-protocol.p402 — Embedded MCP Server in VS Code</h3>
+                            <p className="text-neutral-900 mb-3 leading-relaxed">
+                                The P402 VS Code extension ships an embedded MCP server registered via <code className="bg-black/10 border border-black/20 px-1 py-0.5">McpServerDefinitionProvider</code>. Installing the extension is the entire setup — no <code className="bg-black/10 border border-black/20 px-1 py-0.5">mcp.json</code> editing, no manual server start. VS Code spawns <code className="bg-black/10 border border-black/20 px-1 py-0.5">dist/mcp-server.mjs</code> as a child process when Copilot agent mode needs it, and all 6 P402 tools appear immediately.
+                            </p>
+                            <ul className="list-disc pl-5 text-neutral-900 text-sm flex flex-col gap-2 font-medium">
+                                <li>Install: Extensions panel → search <code className="bg-black/10 border border-black/20 px-1 py-0.5">P402</code> — or <code className="bg-black/10 border border-black/20 px-1 py-0.5">ext install p402-protocol.p402</code></li>
+                                <li>Published simultaneously to VS Code Marketplace and Open VSX (Eclipse Theia, Gitpod, VSCodium)</li>
+                                <li>The MCP server binary is bundled into the extension at build time via esbuild — no npm fetch at runtime, no Node version dependency</li>
+                                <li>Requires only <code className="bg-black/10 border border-black/20 px-1 py-0.5">P402_API_KEY</code> set via the <code className="bg-black/10 border border-black/20 px-1 py-0.5">P402: Configure API Key</code> command</li>
+                            </ul>
+                        </div>
+
+                        <div className="card p-6 border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-white">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">Extension Surface</h3>
+                            <ul className="list-disc pl-5 text-neutral-700 text-sm flex flex-col gap-2">
+                                <li><strong>Status bar</strong> — shows current router mode (<code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">⚡ P402: balanced</code>); click to switch modes via quick-pick</li>
+                                <li><strong>Activity bar + sidebar</strong> — three tree views: Sessions (budget remaining, spend, request count), Recent requests (model, cost, latency), Provider status (healthy / degraded / down per provider)</li>
+                                <li><strong>Command palette</strong> — <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">P402: Configure API Key</code>, <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">P402: Switch Router Mode</code>, <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">P402: Create Budget Session</code>, <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">P402: Open Dashboard</code></li>
+                                <li><strong>Settings UI</strong> — <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">p402.apiKey</code>, <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">p402.routerMode</code>, <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">p402.showStatusBar</code></li>
+                            </ul>
+                        </div>
+
+                        <div className="card p-6 border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-neutral-50">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">Distribution</h3>
+                            <ul className="list-disc pl-5 text-neutral-700 text-sm flex flex-col gap-2">
+                                <li>VS Code Marketplace: <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">marketplace.visualstudio.com/items?itemName=p402-protocol.p402</code></li>
+                                <li>Open VSX: <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">open-vsx.org/extension/p402-protocol/p402</code></li>
+                                <li>Source: <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">packages/vscode/</code> in the monorepo; CI publishes to both registries on <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">vscode/v*</code> tags</li>
+                                <li>VS Code&apos;s <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">@mcp</code> gallery search also surfaces P402 via the MCP Registry listing (<code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">io.github.Z333Q/p402</code>) — the extension and registry listing are complementary, not redundant</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
                 {/* ── March 17, 2026 ────────────────────────────────────────────── */}
                 <section style={{ marginBottom: 48 }}>
                     <div className="flex justify-between items-baseline mb-4 border-b-2 border-black pb-2">

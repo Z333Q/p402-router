@@ -69,6 +69,30 @@ export default async function Page() {
                     </div>
                 </section>
 
+                {/* 3b. Client install strip */}
+                <section className="py-10 bg-white border-b-2 border-black">
+                    <div className="container mx-auto px-6 max-w-7xl">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-6">Install in your environment</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-black border-2 border-black">
+                            <div className="bg-white p-6">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-3">VS Code / Cursor / Windsurf</div>
+                                <div className="font-mono text-sm bg-neutral-50 border border-neutral-200 px-3 py-2 mb-2">ext install p402-protocol.p402</div>
+                                <p className="text-xs text-neutral-500 leading-relaxed">Embedded MCP server — tools appear in Copilot agent mode on install. No config files.</p>
+                            </div>
+                            <div className="bg-white p-6">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-3">Claude Desktop / JetBrains</div>
+                                <div className="font-mono text-sm bg-neutral-50 border border-neutral-200 px-3 py-2 mb-2">npx -y @p402/mcp-server</div>
+                                <p className="text-xs text-neutral-500 leading-relaxed">stdio MCP server. Add to your client config with <code className="bg-neutral-100 px-1">P402_API_KEY</code>.</p>
+                            </div>
+                            <div className="bg-[#B6FF2E] p-6">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-3">REST API / SDK</div>
+                                <div className="font-mono text-sm bg-black/10 border border-black/10 px-3 py-2 mb-2">npm install @p402/sdk</div>
+                                <p className="text-xs text-black/60 leading-relaxed">OpenAI-compatible endpoint. Drop-in replacement — change the base URL and API key.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 {/* 4. Product doorway cards — lead to where the work happens */}
                 <section id="product" className="py-20 bg-white border-b-2 border-black">
                     <div className="container mx-auto px-6 max-w-7xl">

@@ -23,7 +23,7 @@ export default function MCPDocPage() {
                             Agents need wallets, not credit cards. <strong>Model Context Protocol (MCP)</strong> on P402 gives Claude, Cursor, and custom agents a secure wallet and an orchestration layer to negotiate, pay, and route data autonomously.
                         </p>
                         <div className="flex gap-4">
-                            <a href="#setup" className="bg-black text-white px-8 py-4 font-bold uppercase hover:bg-[#22D3EE] hover:text-black transition-colors border-2 border-black">
+                            <a href="#install" className="bg-black text-white px-8 py-4 font-bold uppercase hover:bg-[#22D3EE] hover:text-black transition-colors border-2 border-black">
                                 Get Started
                             </a>
                         </div>
@@ -60,6 +60,59 @@ export default function MCPDocPage() {
                                 Prevent agent "hallucination loops" from draining your wallet with semantic analysis and recursive-call kill switches.
                             </p>
                         </Card>
+                    </div>
+                </section>
+
+                {/* Install Paths */}
+                <section id="install" className="mb-32">
+                    <h2 className="text-4xl font-black uppercase mb-4 italic">Install in Your Environment</h2>
+                    <p className="text-neutral-600 mb-12">Three distribution paths. Pick the one that matches your client.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-black border-2 border-black mb-8">
+                        <div className="bg-white p-8">
+                            <div className="flex items-center gap-3 mb-4">
+                                <Badge variant="primary">Zero config</Badge>
+                            </div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-3">VS Code · Cursor · Windsurf</div>
+                            <CodeBlock language="bash" code="ext install p402-protocol.p402" />
+                            <p className="text-sm text-neutral-500 leading-relaxed mt-4">
+                                Embedded MCP server bundled inside the extension. Tools appear in Copilot agent mode immediately on install — no config files, no env vars, no restart.
+                            </p>
+                            <div className="mt-6 space-y-1">
+                                <div className="text-xs font-mono text-neutral-400">McpServerDefinitionProvider — spawns local node process</div>
+                                <div className="text-xs font-mono text-neutral-400">Status bar: spend tracker + mode switcher</div>
+                                <div className="text-xs font-mono text-neutral-400">3 sidebar views: sessions · requests · provider status</div>
+                            </div>
+                        </div>
+                        <div className="bg-neutral-50 p-8">
+                            <div className="flex items-center gap-3 mb-4">
+                                <Badge variant="default">stdio transport</Badge>
+                            </div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-3">Claude Desktop · JetBrains · Any MCP client</div>
+                            <CodeBlock language="bash" code="npx -y @p402/mcp-server" />
+                            <p className="text-sm text-neutral-500 leading-relaxed mt-4">
+                                Standalone stdio MCP server. Add to your client&apos;s config file with <code className="text-xs bg-neutral-200 px-1">P402_API_KEY</code>. See the config snippet below.
+                            </p>
+                            <div className="mt-6 space-y-1">
+                                <div className="text-xs font-mono text-neutral-400">npm: @p402/mcp-server@1.0.0</div>
+                                <div className="text-xs font-mono text-neutral-400">MCP Registry: io.github.Z333Q/p402</div>
+                                <div className="text-xs font-mono text-neutral-400">No daemon, no persistent process</div>
+                            </div>
+                        </div>
+                        <div className="bg-black text-white p-8">
+                            <div className="flex items-center gap-3 mb-4">
+                                <Badge variant="primary">OpenAI-compatible</Badge>
+                            </div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-3">REST API · Node · Python · Any HTTP client</div>
+                            <CodeBlock language="bash" code="npm install @p402/sdk" />
+                            <p className="text-sm text-neutral-400 leading-relaxed mt-4">
+                                Drop-in replacement for direct provider calls. Change the base URL and API key — everything else stays the same.
+                            </p>
+                            <div className="mt-6 space-y-1">
+                                <div className="text-xs font-mono text-neutral-600">POST /api/v2/chat/completions</div>
+                                <div className="text-xs font-mono text-neutral-600">300+ models, 1 key</div>
+                                <div className="text-xs font-mono text-neutral-600">USDC settlement per request</div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
