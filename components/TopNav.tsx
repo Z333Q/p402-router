@@ -10,6 +10,11 @@ const NavConnectButton = dynamic(() => import('./NavConnectButton'), { ssr: fals
 
 const PRODUCT_LINKS = [
     {
+        label: 'AI Routing',
+        desc: 'One endpoint. 300+ models. Automatic cost and quality optimisation.',
+        href: '/product/routing',
+    },
+    {
         label: 'Payments',
         desc: 'Verify, settle, and reuse micropayments via x402.',
         href: '/product/payments',

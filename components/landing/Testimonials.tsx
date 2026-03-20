@@ -75,15 +75,6 @@ export function Testimonials() {
             </div>
 
             {/* Clear Attribution Disclaimer */}
-            <div className="container mx-auto px-6 mt-8">
-                <div className="bg-neutral-100 p-6 border-2 border-black">
-                    <p className="text-sm font-bold text-neutral-700 text-center">
-                        <strong>Disclaimer:</strong> These companies use the A2A protocol that P402 is built upon.
-                        Quotes shown represent support for the A2A ecosystem, not endorsements of P402.
-                    </p>
-                </div>
-            </div>
-
             <style jsx>{`
                 .animate-scroll {
                     animation: scroll 60s linear infinite;

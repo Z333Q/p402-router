@@ -5,7 +5,7 @@ import { HeroAuditor } from "@/components/landing/HeroAuditor"
 import { HowItWorks } from "@/components/landing/HowItWorks"
 import { BazaarLoop } from "@/components/landing/BazaarLoop"
 import { Testimonials } from "@/components/landing/Testimonials"
-import { RequestInspector } from "@/components/landing/RequestInspector"
+import { LiveRoutingDemo } from "@/components/landing/LiveRoutingDemo"
 import { ProductionFeatures } from "@/components/landing/ProductionFeatures"
 import Link from 'next/link'
 import { Badge } from "@/app/dashboard/_components/ui"
@@ -98,9 +98,17 @@ export default async function Page() {
                     <div className="container mx-auto px-6 max-w-7xl">
                         <div className="mb-10">
                             <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">What you get</div>
-                            <h2 className="text-4xl font-black uppercase tracking-tighter">Four capabilities. One protocol.</h2>
+                            <h2 className="text-4xl font-black uppercase tracking-tighter">Five capabilities. One protocol.</h2>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-black border-2 border-black">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-px bg-black border-2 border-black">
+                            <Link href="/product/routing" className="group bg-primary p-8 flex flex-col gap-4 hover:bg-black transition-colors no-underline">
+                                <div className="text-[10px] font-black text-black/60 uppercase tracking-widest group-hover:text-primary/60">AI Routing</div>
+                                <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Route. Optimise. Save.</h3>
+                                <p className="text-sm font-medium text-black/70 group-hover:text-neutral-400 leading-relaxed flex-1">
+                                    One OpenAI-compatible endpoint. 300+ models. P402 routes each request to the optimal provider for your cost and quality target — automatically.
+                                </p>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-black/50 group-hover:text-primary transition-colors mt-auto">AI routing →</span>
+                            </Link>
                             <Link href="/product/payments" className="group bg-white p-8 flex flex-col gap-4 hover:bg-neutral-50 transition-colors no-underline">
                                 <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Payments</div>
                                 <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Verify. Settle. Receipt.</h3>
@@ -125,20 +133,20 @@ export default async function Page() {
                                 </p>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">A2A protocol →</span>
                             </Link>
-                            <Link href="/product/ecosystem" className="group bg-primary p-8 flex flex-col gap-4 hover:bg-black transition-colors no-underline">
-                                <div className="text-[10px] font-black text-black/60 uppercase tracking-widest group-hover:text-primary/60">Ecosystem</div>
+                            <Link href="/product/ecosystem" className="group bg-white p-8 flex flex-col gap-4 hover:bg-neutral-50 transition-colors no-underline">
+                                <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Ecosystem</div>
                                 <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Skills. Bazaar. Verified.</h3>
-                                <p className="text-sm font-medium text-black/70 group-hover:text-neutral-400 leading-relaxed flex-1">
+                                <p className="text-sm font-medium text-neutral-600 leading-relaxed flex-1">
                                     Publish typed skills. List paid agents on the Bazaar. Earn Verified Publisher status. ERC-8004 on-chain reputation — optional, toggleable.
                                 </p>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-black/50 group-hover:text-primary transition-colors mt-auto">Bazaar marketplace →</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">Bazaar marketplace →</span>
                             </Link>
                         </div>
                     </div>
                 </section>
 
                 {/* 4. Live routing demo — show the product working */}
-                <RequestInspector />
+                <LiveRoutingDemo />
 
                 {/* 5. Pricing — surface early before the deep dive */}
                 <PricingStrip />

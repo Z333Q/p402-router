@@ -16,7 +16,7 @@ export function BazaarLoop() {
                             <span className="badge border-neutral-700 bg-neutral-800 text-neutral-100">Runtime health</span>
                             <span className="badge border-neutral-700 bg-neutral-800 text-neutral-100">Policy outcomes</span>
                         </div>
-                        <Link href="/bazaar" className="btn btn-primary">Join Bazaar Waitlist</Link>
+                        <Link href="/bazaar" className="btn btn-primary">Explore the Bazaar →</Link>
                     </div>
                     <div className="card bg-neutral-800 border-2 border-black p-8 text-white">
                         <div className="font-extrabold uppercase text-xs tracking-widest mb-6 text-neutral-400">Bazaar Overlay Preview</div>

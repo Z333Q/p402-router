@@ -5,9 +5,9 @@ import { Terminal, ArrowRight, ArrowDown, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
 const ROUTING_EXAMPLES = [
-    { from: 'claude-opus-4-6', to: 'gemini-2.0-flash', fromCost: '$0.015', toCost: '$0.0003', saved: '98%', reqId: 'req_7f3a9c12' },
-    { from: 'gpt-4o', to: 'deepseek-v3', fromCost: '$0.005', toCost: '$0.0003', saved: '94%', reqId: 'req_2b8e4f19' },
-    { from: 'o3', to: 'claude-haiku-4-5', fromCost: '$0.060', toCost: '$0.0008', saved: '99%', reqId: 'req_9c1d7a55' },
+    { from: 'claude-opus-4-6', to: 'gemini-3.1-flash', fromCost: '$0.015', toCost: '$0.0003', saved: '98%', reqId: 'req_7f3a9c12' },
+    { from: 'gpt-5.4', to: 'deepseek-chat', fromCost: '$0.010', toCost: '$0.0004', saved: '96%', reqId: 'req_2b8e4f19' },
+    { from: 'gpt-5.4-turbo', to: 'claude-haiku-4-6', fromCost: '$0.040', toCost: '$0.0008', saved: '98%', reqId: 'req_9c1d7a55' },
 ];
 
 const MODES = ['Cost', 'Speed', 'Quality', 'Balanced'] as const;
