@@ -4,28 +4,34 @@ import React, { useState, useEffect } from 'react';
 import { Terminal, ArrowRight, ArrowDown, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
-const ROUTING_EXAMPLES = [
-    { from: 'claude-opus-4-6', to: 'gemini-3.1-flash', fromCost: '$0.015', toCost: '$0.0003', saved: '98%', reqId: 'req_7f3a9c12' },
-    { from: 'gpt-5.4', to: 'deepseek-chat', fromCost: '$0.010', toCost: '$0.0004', saved: '96%', reqId: 'req_2b8e4f19' },
-    { from: 'gpt-5.4-turbo', to: 'claude-haiku-4-6', fromCost: '$0.040', toCost: '$0.0008', saved: '98%', reqId: 'req_9c1d7a55' },
-];
+const ROUTING_EXAMPLES: Record<string, {
+    from: string; to: string; fromCost: string; toCost: string; saved: string; reqId: string;
+}> = {
+    Cost:     { from: 'claude-opus-4-6',  to: 'deepseek-chat',     fromCost: '$0.015',  toCost: '$0.0004', saved: '97%', reqId: 'req_7f3a9c12' },
+    Speed:    { from: 'gpt-5.4',          to: 'gemini-3.1-flash',  fromCost: '$0.010',  toCost: '$0.0001', saved: '99%', reqId: 'req_2b8e4f19' },
+    Quality:  { from: 'deepseek-chat',    to: 'claude-opus-4-6',   fromCost: '$0.0004', toCost: '$0.015',  saved: '',    reqId: 'req_4a2c7d31' },
+    Balanced: { from: 'gpt-5.4-turbo',   to: 'claude-sonnet-4-6', fromCost: '$0.040',  toCost: '$0.005',  saved: '87%', reqId: 'req_9c1d7a55' },
+};
 
 const MODES = ['Cost', 'Speed', 'Quality', 'Balanced'] as const;
 type Mode = typeof MODES[number];
 
 export const HeroAuditor = () => {
-    const [routeIdx, setRouteIdx] = useState(0);
     const [mode, setMode] = useState<Mode>('Cost');
+    const [userSelected, setUserSelected] = useState(false);
 
     useEffect(() => {
+        if (userSelected) return;
         const t = setInterval(() => {
-            setRouteIdx(i => (i + 1) % ROUTING_EXAMPLES.length);
+            setMode(m => {
+                const idx = MODES.indexOf(m);
+                return MODES[(idx + 1) % MODES.length]!;
+            });
         }, 3200);
         return () => clearInterval(t);
-    }, []);
+    }, [userSelected]);
 
-    const ex = ROUTING_EXAMPLES[routeIdx];
-    if (!ex) return null;
+    const ex = ROUTING_EXAMPLES[mode]!;
 
     return (
         <section className="w-full bg-white border-b-2 border-black font-sans text-black selection:bg-[#B6FF2E] selection:text-black">
@@ -58,7 +64,7 @@ export const HeroAuditor = () => {
                         {MODES.map(m => (
                             <button
                                 key={m}
-                                onClick={() => setMode(m)}
+                                onClick={() => { setMode(m); setUserSelected(true); }}
                                 className={`h-7 px-3 border-2 border-black text-[10px] font-black uppercase tracking-wider transition-colors ${
                                     mode === m
                                         ? 'bg-[#B6FF2E] text-black'
@@ -156,10 +162,10 @@ export const HeroAuditor = () => {
                             </div>
                             <div className="flex items-center gap-2 text-[10px]">
                                 <span className="text-neutral-600 w-16 shrink-0">→ cost</span>
-                                <span className="text-red-400 line-through opacity-60">{ex.fromCost}</span>
+                                <span className="text-neutral-500 line-through opacity-60">{ex.fromCost}</span>
                                 <ArrowRight size={8} className="text-neutral-600 shrink-0" />
                                 <span className="text-[#B6FF2E]">{ex.toCost}</span>
-                                <span className="text-neutral-500 ml-auto">−{ex.saved}</span>
+                                {ex.saved && <span className="text-neutral-500 ml-auto">−{ex.saved}</span>}
                             </div>
                             <div className="flex items-center gap-2 text-[10px]">
                                 <span className="text-neutral-600 w-16 shrink-0">→ settle</span>
