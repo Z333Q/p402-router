@@ -38,10 +38,12 @@ export const HeroAuditor = () => {
                         <span className="font-mono text-xs font-bold uppercase tracking-wider">Live on Base Mainnet</span>
                     </div>
 
-                    <h1 className="text-5xl lg:text-7xl font-extrabold uppercase leading-[0.95] lg:leading-[0.88] tracking-tighter mb-6">
-                        Pay less<br />
-                        for AI.<br />
-                        <span className="bg-[#B6FF2E] px-2 text-black [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">Smart routing.</span>
+                    <h1 className="text-5xl lg:text-7xl font-extrabold uppercase tracking-tighter mb-6">
+                        <span className="block leading-[0.95] lg:leading-[0.88]">Pay less</span>
+                        <span className="block leading-[0.95] lg:leading-[0.88]">for AI.</span>
+                        <span className="block leading-normal mt-2">
+                            <span className="bg-[#B6FF2E] px-2 py-0.5 text-black [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">Smart routing.</span>
+                        </span>
                     </h1>
 
                     <p className="text-base lg:text-lg font-bold text-neutral-600 max-w-lg mb-6 leading-relaxed border-l-4 border-black pl-5">
