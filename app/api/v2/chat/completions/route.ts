@@ -211,6 +211,19 @@ async function handleNonStreamingResponse(
     // Calculate total latency
     const totalLatencyMs = Date.now() - startTime;
 
+    const inputTokens = response.usage.promptTokens;
+    const outputTokens = response.usage.completionTokens;
+    const costUsd = response.p402?.costUsd ?? 0;
+
+    // Direct cost = what the provider charges at list price for these tokens.
+    // On a cache hit costUsd is near-zero; directCost reflects what a cold call
+    // would have cost, so savings = directCost - costUsd is meaningful.
+    const provider = response.p402?.providerId ? registry.get(response.p402.providerId) : undefined;
+    const directCost = (provider && response.p402?.modelId)
+        ? provider.estimateCost(response.p402.modelId, inputTokens, outputTokens)
+        : costUsd;
+    const savings = Math.max(0, directCost - costUsd);
+
     // Format response with P402 metadata
     const p402Response = {
         id: response.id,
@@ -227,8 +240,8 @@ async function handleNonStreamingResponse(
             finish_reason: c.finishReason
         })),
         usage: {
-            prompt_tokens: response.usage.promptTokens,
-            completion_tokens: response.usage.completionTokens,
+            prompt_tokens: inputTokens,
+            completion_tokens: outputTokens,
             total_tokens: response.usage.totalTokens
         },
         // P402 Extensions
@@ -237,7 +250,11 @@ async function handleNonStreamingResponse(
             tenant_id: tenantId,
             provider: response.p402?.providerId,
             model: response.p402?.modelId,
-            cost_usd: response.p402?.costUsd,
+            cost_usd: costUsd,
+            direct_cost: directCost,
+            savings,
+            input_tokens: inputTokens,
+            output_tokens: outputTokens,
             latency_ms: totalLatencyMs,
             provider_latency_ms: response.p402?.latencyMs,
             cached: response.p402?.cached || false,
@@ -287,7 +304,10 @@ async function handleStreamingResponse(
                     model: request.model || decision.model.id
                 });
 
-                let totalTokens = 0;
+                // Estimate input tokens from message payload (used for cost/savings calc)
+                const estimatedInputTokens = Math.ceil(JSON.stringify(request.messages).length / 4);
+
+                let totalOutputTokens = 0;
                 let firstChunkTime: number | null = null;
 
                 for await (const chunk of generator) {
@@ -295,10 +315,10 @@ async function handleStreamingResponse(
                         firstChunkTime = Date.now();
                     }
 
-                    // Track tokens (rough estimate from content length)
+                    // Track output tokens (rough estimate from content length)
                     const content = chunk.choices[0]?.delta?.content;
                     if (content) {
-                        totalTokens += Math.ceil(content.length / 4);
+                        totalOutputTokens += Math.ceil(content.length / 4);
                     }
 
                     // Format as SSE
@@ -317,11 +337,16 @@ async function handleStreamingResponse(
                 // Send final metadata chunk
                 const totalLatencyMs = Date.now() - startTime;
                 const ttfbMs = firstChunkTime ? firstChunkTime - startTime : totalLatencyMs;
-                const estimatedCost = decision.provider.estimateCost(
+
+                // direct_cost = list-price cost for these tokens at the selected provider.
+                // cost_usd is what P402 actually charged (0 on cache hit, discounted on routing).
+                const directCost = decision.provider.estimateCost(
                     decision.model.id,
-                    Math.ceil(JSON.stringify(request.messages).length / 4),
-                    totalTokens
+                    estimatedInputTokens,
+                    totalOutputTokens
                 );
+                const costUsd = directCost; // streaming: no separate billing yet; equals direct price
+                const savings = Math.max(0, directCost - costUsd);
 
                 const finalChunk = {
                     id: `chatcmpl-${requestId}`,
@@ -334,10 +359,14 @@ async function handleStreamingResponse(
                         tenant_id: tenantId,
                         provider: decision.provider.id,
                         model: decision.model.id,
-                        cost_usd: estimatedCost,
+                        cost_usd: costUsd,
+                        direct_cost: directCost,
+                        savings,
+                        input_tokens: estimatedInputTokens,
+                        output_tokens: totalOutputTokens,
+                        tokens_generated: totalOutputTokens,
                         latency_ms: totalLatencyMs,
                         ttfb_ms: ttfbMs,
-                        tokens_generated: totalTokens,
                         cached: false,
                         routing_mode: options.mode
                     }

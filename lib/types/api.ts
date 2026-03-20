@@ -9,16 +9,14 @@
 // ============================================
 
 export interface P402Session {
-    session_id: string;
+    object: 'session';
+    /** Primary identifier (session_token in DB) */
+    id: string;
     tenant_id: string;
-    agent_identifier?: string;
-    /** Current available balance (budget_remaining) */
-    balance_usdc: number;
-    /** Total budget ever allocated */
-    budget_total: number;
-    /** Total amount spent */
-    budget_spent: number;
-    /** Legacy budget object for backward compatibility */
+    agent_id?: string;
+    wallet_address?: string;
+    wallet_source?: 'cdp' | 'eoa';
+    /** Session budget — use budget.remaining_usd for available balance */
     budget: {
         total_usd: number;
         used_usd: number;
@@ -127,8 +125,20 @@ export interface P402Metadata {
     provider?: string;
     model?: string;
     cost_usd?: number;
+    /** Direct API cost at list price (before P402 routing/caching savings) */
+    direct_cost?: number;
+    /** Amount saved vs direct API access */
+    savings?: number;
     latency_ms: number;
     provider_latency_ms?: number;
+    /** Time to first byte (streaming only) */
+    ttfb_ms?: number;
+    /** Prompt/input token count */
+    input_tokens?: number;
+    /** Completion/output token count */
+    output_tokens?: number;
+    /** Alias for output_tokens — streaming estimate from char count */
+    tokens_generated?: number;
     cached: boolean;
     routing_mode?: string;
 }
