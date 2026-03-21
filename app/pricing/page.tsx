@@ -101,8 +101,8 @@ export default function PricingPage() {
                 <section className="px-6 py-12 bg-white border-y-2 border-black">
                     <div className="container mx-auto max-w-7xl">
                         <div className="text-center mb-4">
-                            <h2 className="text-3xl font-black uppercase tracking-tighter">The Conversion Hook</h2>
-                            <p className="font-mono text-sm text-[var(--neutral-500)] uppercase">Calculate your real-world savings</p>
+                            <h2 className="text-3xl font-black uppercase tracking-tighter">Prove it to yourself.</h2>
+                            <p className="font-mono text-sm text-[var(--neutral-500)] uppercase">Drop in your monthly AI spend. The math does the talking.</p>
                         </div>
                         <UpgradeMathCalculator />
                     </div>
