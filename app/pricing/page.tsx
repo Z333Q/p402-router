@@ -92,8 +92,11 @@ export default function PricingPage() {
                         <span className="heading-accent">that rewards commitment.</span>
                     </h1>
                     <p className="text-lg md:text-xl font-mono text-[var(--neutral-700)] max-w-3xl mx-auto font-bold">
-                        Higher platform fees for experiments. <br className="hidden sm:inline" />
-                        Lower fees and advanced governance for production.
+                        Free: <span className="text-black font-black">1.00%</span> per settled payment.&nbsp;
+                        Pro: <span className="text-black font-black">0.75%</span>.&nbsp;
+                        Enterprise: volume rate.
+                        <br className="hidden sm:block" />
+                        <span className="text-[var(--neutral-500)]">Every basis point is enforced on-chain — not in an SLA.</span>
                     </p>
                 </section>
 
@@ -108,7 +111,37 @@ export default function PricingPage() {
                     </div>
                 </section>
 
-                {/* 3. The Three Neo-Brutalist Tier Cards */}
+                {/* 3. Fee Rate Strip */}
+                <section className="bg-black border-b-2 border-black py-10 px-6">
+                    <div className="max-w-4xl mx-auto">
+                        <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] mb-6">Platform fee per settled payment</p>
+                        <div className="grid grid-cols-3 divide-x-2 divide-[var(--neutral-800)] border-2 border-[var(--neutral-800)]">
+                            <div className="p-8 text-center">
+                                <div className="text-5xl font-black text-white mb-2">1.00<span className="text-2xl">%</span></div>
+                                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] mb-1">Free</div>
+                                <div className="text-[10px] font-bold text-[var(--neutral-600)] font-mono">$0 / mo</div>
+                            </div>
+                            <div className="p-8 text-center bg-[var(--neutral-900)]">
+                                <div className="text-5xl font-black text-[var(--primary)] mb-2">0.75<span className="text-2xl">%</span></div>
+                                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-400)] mb-1">Pro</div>
+                                <div className="text-[10px] font-bold text-[var(--neutral-500)] font-mono">$499 / mo</div>
+                                <div className="mt-3 text-[9px] font-black uppercase tracking-wider text-[var(--neutral-600)] border border-[var(--neutral-700)] px-2 py-1 inline-block">
+                                    Pays for itself at ~$200K / mo
+                                </div>
+                            </div>
+                            <div className="p-8 text-center">
+                                <div className="text-5xl font-black text-[var(--neutral-400)] mb-2">Vol.<span className="text-2xl">rate</span></div>
+                                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] mb-1">Enterprise</div>
+                                <div className="text-[10px] font-bold text-[var(--neutral-600)] font-mono">Custom / mo</div>
+                            </div>
+                        </div>
+                        <p className="text-center text-[10px] font-bold text-[var(--neutral-700)] mt-4 font-mono uppercase tracking-wider">
+                            Fees deducted atomically at settlement — enforced by contract, not policy
+                        </p>
+                    </div>
+                </section>
+
+                {/* 4. The Three Neo-Brutalist Tier Cards */}
                 <section className="px-6 py-24 max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
 
@@ -216,7 +249,7 @@ export default function PricingPage() {
                     </div>
                 </section>
 
-                {/* 4. Plan Comparison */}
+                {/* 5. Plan Comparison */}
                 <section className="py-24 bg-white border-y-2 border-black">
                     <div className="container mx-auto px-6 max-w-5xl">
                         <div className="text-center mb-16">
@@ -238,6 +271,10 @@ export default function PricingPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm">
+                                    <CategoryRow label="Pricing" />
+                                    <ComparisonRow label="Platform fee per settlement" free="1.00%" pro="0.75%" enterprise="Volume rate" />
+                                    <ComparisonRow label="Monthly subscription" free="$0 / mo" pro="$499 / mo" enterprise="Custom" />
+
                                     <CategoryRow label="Routing" />
                                     <ComparisonRow label="Settlement priority" free="Standard" pro="High priority" enterprise="Dedicated cluster" />
 
@@ -260,7 +297,7 @@ export default function PricingPage() {
                     </div>
                 </section>
 
-                {/* 5. Frequently Asked Questions (FAQ) */}
+                {/* 6. Frequently Asked Questions (FAQ) */}
                 <section className="py-24 bg-[var(--neutral-50)]">
                     <div className="container mx-auto px-6 max-w-4xl">
                         <div className="flex items-center justify-center gap-3 mb-12">
