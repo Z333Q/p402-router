@@ -115,22 +115,22 @@ export default function PricingPage() {
                 <section className="bg-black border-b-2 border-black py-10 px-6">
                     <div className="max-w-4xl mx-auto">
                         <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] mb-6">Platform fee per settled payment</p>
-                        <div className="grid grid-cols-3 divide-x-2 divide-[var(--neutral-800)] border-2 border-[var(--neutral-800)]">
-                            <div className="p-8 text-center">
-                                <div className="text-5xl font-black text-white mb-2">1.00<span className="text-2xl">%</span></div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y-2 sm:divide-y-0 sm:divide-x-2 divide-[var(--neutral-800)] border-2 border-[var(--neutral-800)]">
+                            <div className="p-6 sm:p-8 text-center">
+                                <div className="text-4xl sm:text-5xl font-black text-white mb-2">1.00<span className="text-xl sm:text-2xl">%</span></div>
                                 <div className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] mb-1">Free</div>
                                 <div className="text-[10px] font-bold text-[var(--neutral-600)] font-mono">$0 / mo</div>
                             </div>
-                            <div className="p-8 text-center bg-[var(--neutral-900)]">
-                                <div className="text-5xl font-black text-[var(--primary)] mb-2">0.75<span className="text-2xl">%</span></div>
+                            <div className="p-6 sm:p-8 text-center bg-[var(--neutral-900)]">
+                                <div className="text-4xl sm:text-5xl font-black text-[var(--primary)] mb-2">0.75<span className="text-xl sm:text-2xl">%</span></div>
                                 <div className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-400)] mb-1">Pro</div>
                                 <div className="text-[10px] font-bold text-[var(--neutral-500)] font-mono">$499 / mo</div>
-                                <div className="mt-3 text-[9px] font-black uppercase tracking-wider text-[var(--neutral-600)] border border-[var(--neutral-700)] px-2 py-1 inline-block">
+                                <div className="mt-3 text-[9px] font-black uppercase tracking-wider text-[var(--neutral-600)] border border-[var(--neutral-700)] px-2 py-1 inline-block whitespace-nowrap">
                                     Pays for itself at ~$200K / mo
                                 </div>
                             </div>
-                            <div className="p-8 text-center">
-                                <div className="text-5xl font-black text-[var(--neutral-400)] mb-2">Vol.<span className="text-2xl">rate</span></div>
+                            <div className="p-6 sm:p-8 text-center">
+                                <div className="text-4xl sm:text-5xl font-black text-[var(--neutral-400)] mb-2">Vol. <span className="text-xl sm:text-2xl">rate</span></div>
                                 <div className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] mb-1">Enterprise</div>
                                 <div className="text-[10px] font-bold text-[var(--neutral-600)] font-mono">Custom / mo</div>
                             </div>

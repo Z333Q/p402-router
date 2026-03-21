@@ -623,9 +623,9 @@ export default function ApiDocsPage() {
         <div className="min-h-screen bg-white">
             <TopNav />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', height: 'calc(100vh - 64px)' }}>
+            <div className="flex flex-col md:grid md:[grid-template-columns:260px_1fr] md:h-[calc(100vh-64px)] overflow-hidden">
                 {/* 1. Sidebar Navigation */}
-                <aside className="border-r-2 border-black overflow-y-auto p-6 bg-neutral-50">
+                <aside className="hidden md:block border-r-2 border-black overflow-y-auto p-6 bg-neutral-50">
                     <div className="mb-8">
                         <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Introduction</h3>
                         <a
@@ -751,14 +751,14 @@ export default function ApiDocsPage() {
                 </aside>
 
                 {/* 2. Main Content & Code Snippets Grid */}
-                <main className="overflow-y-auto scroll-smooth">
+                <main className="overflow-y-auto scroll-smooth min-w-0">
                     <div className="max-w-[1400px] mx-auto">
 
                         {/* Welcome Header */}
-                        <section id="welcome" className="p-12 border-b-2 border-black/5">
+                        <section id="welcome" className="p-6 md:p-12 border-b-2 border-black/5">
                             <Badge variant="primary" className="mb-4"><span className="font-mono">{">_"}</span> Production API</Badge>
-                            <h1 className="text-6xl font-black mb-6 tracking-tighter uppercase italic"><span className="heading-accent">API Reference.</span></h1>
-                            <p className="text-xl text-neutral-600 max-w-2xl leading-relaxed">
+                            <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tighter uppercase italic"><span className="heading-accent">API Reference.</span></h1>
+                            <p className="text-base md:text-xl text-neutral-600 max-w-2xl leading-relaxed">
                                 Welcome to the P402 production API. Execute gasless USDC payments on Base L2 using EIP-3009
                                 transferWithAuthorization. Global facilitator network with sub-50ms verification times.
                             </p>
@@ -775,7 +775,7 @@ export default function ApiDocsPage() {
                         </section>
 
                         {/* Authentication Section */}
-                        <section id="auth" className="p-12 border-b-2 border-black/5">
+                        <section id="auth" className="p-6 md:p-12 border-b-2 border-black/5">
                             <h2 className="text-3xl font-black mb-6 uppercase">Authentication</h2>
                             <p className="text-neutral-600 mb-8 leading-relaxed max-w-2xl">
                                 All API requests must be authenticated using your P402 API Key.
@@ -901,7 +901,7 @@ export default function ApiDocsPage() {
                                 onMouseEnter={() => setActiveSection(ep.id)}
                             >
                                 {/* Center Pillar: Documentation */}
-                                <div className="p-12 border-r-2 border-black/5">
+                                <div className="p-6 md:p-12 border-r-2 border-black/5">
                                     <div className="flex items-center gap-3 mb-4">
                                         <Badge variant={ep.method === 'POST' ? 'primary' : 'default'} className="!text-[10px] !py-1">
                                             {ep.method}
@@ -935,7 +935,7 @@ export default function ApiDocsPage() {
                                 </div>
 
                                 {/* Right Pillar: Code Examples */}
-                                <div className="p-12 bg-neutral-50 sticky top-0 h-fit">
+                                <div className="p-6 md:p-12 bg-neutral-50 md:sticky md:top-0 md:h-fit">
                                     <div className="mb-8">
                                         <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4">Example Request</h3>
                                         <TabGroup
