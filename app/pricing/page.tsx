@@ -216,34 +216,44 @@ export default function PricingPage() {
                     </div>
                 </section>
 
-                {/* 4. The Feature & Audit Matrix */}
+                {/* 4. Plan Comparison */}
                 <section className="py-24 bg-white border-y-2 border-black">
                     <div className="container mx-auto px-6 max-w-5xl">
                         <div className="text-center mb-16">
-                            <h2 className="text-5xl font-black uppercase tracking-tighter mb-4 italic">Feature & Audit Matrix</h2>
-                            <p className="font-mono text-sm text-[var(--neutral-500)] uppercase tracking-widest font-bold">PLG Funnels & Trust Capabilities</p>
+                            <h2 className="text-5xl font-black uppercase tracking-tighter mb-4 italic">Everything included.</h2>
+                            <p className="font-mono text-sm text-[var(--neutral-500)] uppercase tracking-widest font-bold">Every limit. Every feature. Nothing hidden.</p>
                         </div>
 
                         <div className="overflow-x-auto border-2 border-black">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-[var(--neutral-100)] border-b-2 border-black uppercase text-[10px] font-black tracking-widest">
-                                        <th className="p-6">Capability</th>
-                                        <th className="p-6">Free (Experiment)</th>
-                                        <th className="p-6 bg-[var(--primary)]/20 border-x-2 border-black">Pro (Operate)</th>
-                                        <th className="p-6">Enterprise (Govern)</th>
+                                    <tr className="border-b-2 border-black uppercase text-[10px] font-black tracking-widest">
+                                        <th className="p-5 bg-[var(--neutral-100)] w-2/5"></th>
+                                        <th className="p-5 bg-[var(--neutral-100)] text-center">Free</th>
+                                        <th className="p-5 bg-[var(--primary)] border-x-2 border-black text-center text-black">
+                                            Pro
+                                            <span className="block text-[9px] font-bold normal-case tracking-wide mt-0.5 opacity-70">Most popular</span>
+                                        </th>
+                                        <th className="p-5 bg-[var(--neutral-100)] text-center">Enterprise</th>
                                     </tr>
                                 </thead>
-                                <tbody className="font-bold text-sm">
-                                    <ComparisonRow label="x402 Settlement" free="Standard Priority" pro="High Priority" enterprise="Dedicated Cluster" />
-                                    <ComparisonRow label="Integration Audits" free="5 On-Demand / mo" pro="Unlimited" enterprise="Unlimited" />
-                                    <ComparisonRow label="Runtime Trends" free="7-day Summary" pro="90-day Route-level" enterprise="365-day Org-wide" />
-                                    <ComparisonRow label="Scheduled Audits" free="Locked" pro="Daily / Weekly" enterprise="Policy-Linked" />
-                                    <ComparisonRow label="Trust & Publisher" free="Public Scanner" pro="Verified Workflow" enterprise="Moderation Queue" />
-                                    <ComparisonRow label="AP2 Mandate Limits" free="Basic Caps" pro="Advanced Rules" enterprise="Multi-stage Approvals" />
-                                    <ComparisonRow label="Audit Evidence" free="Locked" pro="Preview" enterprise="Signed Bundles & CSV" />
-                                    <ComparisonRow label="Claude Skill" free="Community" pro="Included" enterprise="Included" />
-                                    <ComparisonRow label="VS Code / Cursor / Windsurf" free="Included" pro="Included" enterprise="Included" />
+                                <tbody className="text-sm">
+                                    <CategoryRow label="Routing" />
+                                    <ComparisonRow label="Settlement priority" free="Standard" pro="High priority" enterprise="Dedicated cluster" />
+
+                                    <CategoryRow label="Analytics" />
+                                    <ComparisonRow label="Usage history" free="7 days" pro="90 days" enterprise="1 year" />
+                                    <ComparisonRow label="Integration audits" free="5 / month" pro="Unlimited" enterprise="Unlimited" />
+                                    <ComparisonRow label="Scheduled audits" free="—" pro="Daily or weekly" enterprise="Policy-linked" />
+
+                                    <CategoryRow label="Governance" />
+                                    <ComparisonRow label="Spend mandate rules" free="Basic caps" pro="Advanced rules" enterprise="Multi-stage approvals" />
+                                    <ComparisonRow label="Compliance export" free="—" pro="Preview" enterprise="Signed bundles + CSV" />
+                                    <ComparisonRow label="Agent trust & publishing" free="Public scanner" pro="Verified workflow" enterprise="Moderation queue" />
+
+                                    <CategoryRow label="Developer tools" />
+                                    <ComparisonRow label="Claude Skill" free="✓" pro="✓" enterprise="✓" />
+                                    <ComparisonRow label="VS Code / Cursor / Windsurf" free="✓" pro="✓" enterprise="✓" />
                                 </tbody>
                             </table>
                         </div>
@@ -326,15 +336,30 @@ export default function PricingPage() {
     );
 }
 
+function CategoryRow({ label }: { label: string }) {
+    return (
+        <tr className="border-b border-black bg-black">
+            <td colSpan={4} className="px-5 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">{label}</td>
+        </tr>
+    );
+}
+
 function ComparisonRow({ label, free, pro, enterprise }: { label: string; free: string; pro: string; enterprise: string }) {
-    const isLocked = (val: string) => val.toLowerCase() === 'locked';
+    const isDash = (val: string) => val === '—';
+    const isCheck = (val: string) => val === '✓';
+
+    const renderCell = (val: string) => {
+        if (isDash(val)) return <span className="text-[var(--neutral-300)] text-lg leading-none">—</span>;
+        if (isCheck(val)) return <Check className="w-5 h-5 text-[var(--success)] mx-auto" strokeWidth={3} />;
+        return <span className="font-bold text-black">{val}</span>;
+    };
 
     return (
-        <tr className="border-b-2 border-black">
-            <td className="p-6 font-black uppercase tracking-tight italic bg-[var(--neutral-100)] border-r-2 border-black">{label}</td>
-            <td className={`p-6 font-bold ${isLocked(free) ? 'text-[var(--neutral-400)] italic' : 'text-black'}`}>{free}</td>
-            <td className="p-6 bg-[var(--primary)]/10 border-x-2 border-black font-black">{pro}</td>
-            <td className="p-6 font-bold">{enterprise}</td>
+        <tr className="border-b border-[var(--neutral-200)] hover:bg-[var(--neutral-100)] transition-colors">
+            <td className="p-5 font-medium text-[var(--neutral-600)] border-r-2 border-black">{label}</td>
+            <td className="p-5 text-center">{renderCell(free)}</td>
+            <td className="p-5 bg-[var(--primary)]/10 border-x-2 border-black text-center">{renderCell(pro)}</td>
+            <td className="p-5 text-center">{renderCell(enterprise)}</td>
         </tr>
     );
 }
