@@ -12,9 +12,9 @@ export default function V2SpecPage() {
 
                 {/* Visual Header */}
                 <div className="mb-32 border-b-8 border-black pb-24">
-                    <Badge variant="primary" className="mb-6">Protocol Specification</Badge>
+                    <Badge variant="primary" className="mb-6"><span className="font-mono">{">_"}</span> Protocol Specification</Badge>
                     <h1 className="text-[10rem] font-black leading-[0.8] tracking-tighter uppercase italic mb-12">
-                        V2.0.0
+                        <span className="heading-accent">V2.0.0.</span>
                     </h1>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-end">
                         <p className="text-3xl font-bold leading-tight uppercase tracking-tight">

@@ -14,7 +14,7 @@ export default function A2ADocs() {
             <TopNav />
             <main className="max-w-4xl mx-auto py-24 px-6">
                 <div className="mb-12 border-b-4 border-black pb-8">
-                    <h1 className="text-6xl font-black uppercase italic tracking-tighter mb-4">A2A Protocol</h1>
+                    <h1 className="text-6xl font-black uppercase italic tracking-tighter mb-4"><span className="heading-accent">A2A Protocol.</span></h1>
                     <p className="text-xl font-bold text-neutral-600 uppercase tracking-tight">
                         The universal language for autonomous agents.
                     </p>

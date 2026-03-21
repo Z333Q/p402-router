@@ -17,7 +17,7 @@ export default function MCPDocPage() {
                             <Badge variant="default">Agentic Economy</Badge>
                         </div>
                         <h1 className="text-7xl font-black leading-[0.9] tracking-tighter uppercase italic mb-8">
-                            The Economic Layer for AI Agents
+                            <span className="heading-accent">The Economic Layer for AI Agents.</span>
                         </h1>
                         <p className="text-xl text-neutral-600 leading-relaxed mb-8">
                             Agents need wallets, not credit cards. <strong>Model Context Protocol (MCP)</strong> on P402 gives Claude, Cursor, and custom agents a secure wallet and an orchestration layer to negotiate, pay, and route data autonomously.

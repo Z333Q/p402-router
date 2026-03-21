@@ -17,8 +17,8 @@ export default function WdkDocsIndex() {
       <TopNav />
       <main className="max-w-5xl mx-auto py-20 px-6">
         <div className="mb-8 border-b-2 border-black pb-6">
-          <p className="text-xs font-black uppercase tracking-widest text-neutral-500">P402 Documentation</p>
-          <h1 className="text-5xl font-black tracking-tighter uppercase italic">WDK + USDT0 Integration Docs</h1>
+          <p className="text-xs font-black uppercase tracking-widest text-neutral-500"><span className="font-mono">{">_"}</span> P402 Documentation</p>
+          <h1 className="text-5xl font-black tracking-tighter uppercase italic"><span className="heading-accent">WDK + USDT0 Integration Docs.</span></h1>
           <p className="text-neutral-700 font-semibold mt-3 max-w-3xl">Public-facing integration guides for developers building agentic payments with Tether WDK wallets and P402 settlement rails.</p>
         </div>
 

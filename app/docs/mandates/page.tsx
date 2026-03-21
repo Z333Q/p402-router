@@ -14,7 +14,7 @@ export default function MandatesDocs() {
             <TopNav />
             <main className="max-w-4xl mx-auto py-24 px-6">
                 <div className="mb-12 border-b-4 border-black pb-8">
-                    <h1 className="text-6xl font-black uppercase italic tracking-tighter mb-4">AP2 Mandates</h1>
+                    <h1 className="text-6xl font-black uppercase italic tracking-tighter mb-4"><span className="heading-accent">AP2 Mandates.</span></h1>
                     <p className="text-xl font-bold text-neutral-600 uppercase tracking-tight">
                         Cryptographic spending constraints for agents.
                     </p>

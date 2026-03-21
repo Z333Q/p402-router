@@ -72,6 +72,15 @@ h6 {
   font-family: var(--font-mono);
 }
 
+/* Heading Accent — marker stroke highlight */
+.heading-accent {
+  display: inline;
+  background: linear-gradient(to top, #B6FF2E 65%, transparent 65%);
+  padding: 0 6px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;

@@ -756,8 +756,8 @@ export default function ApiDocsPage() {
 
                         {/* Welcome Header */}
                         <section id="welcome" className="p-12 border-b-2 border-black/5">
-                            <Badge variant="primary" className="mb-4">Production API</Badge>
-                            <h1 className="text-6xl font-black mb-6 tracking-tighter uppercase italic">API Reference</h1>
+                            <Badge variant="primary" className="mb-4"><span className="font-mono">{">_"}</span> Production API</Badge>
+                            <h1 className="text-6xl font-black mb-6 tracking-tighter uppercase italic"><span className="heading-accent">API Reference.</span></h1>
                             <p className="text-xl text-neutral-600 max-w-2xl leading-relaxed">
                                 Welcome to the P402 production API. Execute gasless USDC payments on Base L2 using EIP-3009
                                 transferWithAuthorization. Global facilitator network with sub-50ms verification times.

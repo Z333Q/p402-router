@@ -43,7 +43,7 @@ export default function IntelligencePage() {
             {/* Header */}
             <header className="border-b-2 border-neutral-800 p-8 lg:p-12">
                 <div className="max-w-7xl mx-auto">
-                    <Badge variant="primary" className="mb-6">Knowledge Base</Badge>
+                    <Badge variant="primary" className="mb-6"><span className="font-mono">{">_"}</span> Knowledge Base</Badge>
                     <h1 className="text-6xl lg:text-8xl font-black uppercase tracking-tighter leading-[0.9] mb-8">
                         Intelligence<br />Engine
                     </h1>

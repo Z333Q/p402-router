@@ -26,10 +26,10 @@ export default function PaymentsPage() {
                 {/* Header */}
                 <section className="border-b-2 border-black py-16 bg-white">
                     <div className="container mx-auto px-6 max-w-5xl">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-3">Product / Payments</div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-3"><span className="font-mono">{">_"}</span> Product / Payments</div>
                         <h1 className="text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-none mb-5">
                             Verify. Settle.<br />
-                            <span className="bg-primary px-2">Issue receipts.</span>
+                            <span className="heading-accent">Issue receipts.</span>
                         </h1>
                         <p className="text-lg font-medium text-neutral-600 max-w-2xl leading-relaxed border-l-4 border-black pl-5">
                             The x402 payment protocol turns any HTTP endpoint into a paid resource.

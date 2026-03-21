@@ -86,10 +86,10 @@ export default function PricingPage() {
             <main className="flex-grow">
                 {/* 1. Hero Section */}
                 <section className="pt-32 pb-16 px-6 max-w-7xl mx-auto text-center">
-                    <Badge variant="primary" className="mb-6 mx-auto">Protocol Economics v2.0</Badge>
+                    <Badge variant="primary" className="mb-6 mx-auto"><span className="font-mono">{">_"}</span> Protocol Economics v2.0</Badge>
                     <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-6 leading-tight">
                         Agent commerce pricing <br className="hidden md:block" />
-                        <span className="bg-[var(--primary)] px-4 mt-2 inline-block -rotate-1 border-2 border-black">that rewards commitment</span>
+                        <span className="heading-accent">that rewards commitment.</span>
                     </h1>
                     <p className="text-lg md:text-xl font-mono text-[var(--neutral-700)] max-w-3xl mx-auto font-bold">
                         Higher platform fees for experiments. <br className="hidden sm:inline" />

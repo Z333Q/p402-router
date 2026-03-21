@@ -144,10 +144,10 @@ export default function TrustPage() {
                 {/* Header */}
                 <section className="border-b-2 border-black py-16 bg-white">
                     <div className="container mx-auto px-6 max-w-5xl">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-3">Trust Center</div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-3"><span className="font-mono">{">_"}</span> Trust Center</div>
                         <h1 className="text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-none mb-5">
                             Verify our<br />
-                            infrastructure.
+                            <span className="heading-accent">infrastructure.</span>
                         </h1>
                         <p className="text-lg font-medium text-neutral-600 max-w-2xl leading-relaxed border-l-4 border-black pl-5">
                             Every contract address, custody role, security check, and evidence artifact is documented here.

@@ -26,8 +26,8 @@ export default function WdkSecurityOpsPage() {
       <TopNav />
       <main className="max-w-5xl mx-auto py-16 px-6">
         <div className="border-b-2 border-black pb-6 mb-8">
-          <p className="text-xs font-black uppercase tracking-widest text-neutral-500">WDK Docs</p>
-          <h1 className="text-5xl font-black uppercase italic tracking-tighter">Privacy & Security Operations</h1>
+          <p className="text-xs font-black uppercase tracking-widest text-neutral-500"><span className="font-mono">{">_"}</span> WDK Docs</p>
+          <h1 className="text-5xl font-black uppercase italic tracking-tighter"><span className="heading-accent">Privacy & Security Operations.</span></h1>
           <p className="mt-3 font-semibold text-neutral-700">
             Public-facing operational guidance for running WDK + USDT0 integrations safely in production.
           </p>

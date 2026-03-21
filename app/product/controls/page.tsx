@@ -29,10 +29,10 @@ export default function ControlsPage() {
                 {/* Header */}
                 <section className="border-b-2 border-black py-16 bg-white">
                     <div className="container mx-auto px-6 max-w-5xl">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-3">Product / Controls</div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-3"><span className="font-mono">{">_"}</span> Product / Controls</div>
                         <h1 className="text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-none mb-5">
                             Constrain spend.<br />
-                            <span className="bg-primary px-2">Export evidence.</span>
+                            <span className="heading-accent">Export evidence.</span>
                         </h1>
                         <p className="text-lg font-medium text-neutral-600 max-w-2xl leading-relaxed border-l-4 border-black pl-5">
                             AP2 mandates set cryptographic spend budgets for each agent.

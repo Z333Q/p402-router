@@ -60,7 +60,7 @@ export default async function PublicBazaarPage() {
                     <div className="mb-16 text-center">
                         <h1 className="text-6xl md:text-8xl font-black uppercase leading-[0.85] mb-8 tracking-tight text-black">
                             Decentralized<br />
-                            <span className="bg-[var(--primary)] px-4 border-2 border-black">Discovery</span>
+                            <span className="heading-accent">Discovery.</span>
                         </h1>
                         <p className="text-xl md:text-2xl text-[var(--neutral-600)] max-w-2xl mx-auto font-medium mb-12">
                             Find, verify, and route to <span className="text-black border-b-4 border-[var(--primary)] font-bold">standard x402</span> payment-protected APIs.

@@ -16,8 +16,8 @@ export default function FacilitatorDocs() {
 
       <main className="max-w-4xl mx-auto py-24 px-6">
         <div className="mb-12 border-b-4 border-black pb-8">
-          <Badge variant="primary" className="mb-4">x402 Protocol</Badge>
-          <h1 className="text-6xl font-black uppercase italic tracking-tighter mb-4">Facilitator Discovery</h1>
+          <Badge variant="primary" className="mb-4"><span className="font-mono">{">_"}</span> x402 Protocol</Badge>
+          <h1 className="text-6xl font-black uppercase italic tracking-tighter mb-4"><span className="heading-accent">Facilitator Discovery.</span></h1>
           <p className="text-xl font-bold text-neutral-600 uppercase tracking-tight">
             Find and connect to P402's production facilitator network.
           </p>

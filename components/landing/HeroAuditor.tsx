@@ -48,7 +48,7 @@ export const HeroAuditor = () => {
                         <span className="block leading-[0.95] lg:leading-[0.88]">Pay less</span>
                         <span className="block leading-[0.95] lg:leading-[0.88]">for AI.</span>
                         <span className="block leading-normal mt-2">
-                            <span className="bg-[#B6FF2E] px-2 py-0.5 text-black [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">Smart routing.</span>
+                            <span className="heading-accent">Smart routing.</span>
                         </span>
                     </h1>
 

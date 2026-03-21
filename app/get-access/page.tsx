@@ -64,7 +64,7 @@ export default function GetAccessPage() {
             <TopNav />
             <main className="flex-1 flex items-center justify-center p-6">
                 <div className="bg-white border-2 border-black p-8 max-w-md w-full shadow-[8px_8px_0px_#000] relative">
-                    <h1 className="text-2xl font-black uppercase mb-4 text-black border-b-2 border-black pb-2">Request Access</h1>
+                    <h1 className="text-2xl font-black uppercase mb-4 text-black border-b-2 border-black pb-2"><span className="heading-accent">Request Access.</span></h1>
                     <p className="text-neutral-600 mb-8 text-sm leading-relaxed font-medium">
                         Join the router validation network. We are onboarding teams building paid agent workflows.
                     </p>

@@ -59,7 +59,7 @@ export default function ChangelogPage() {
             <TopNav />
 
             <main style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px', flex: 1 }}>
-                <h1 className="title-1" style={{ marginBottom: 8 }}>Changelog</h1>
+                <h1 className="title-1" style={{ marginBottom: 8 }}><span className="heading-accent">Changelog.</span></h1>
                 <p className="mono-id" style={{ marginBottom: 48 }}>Platform and protocol release history.</p>
 
                 {/* ── March 18, 2026 ────────────────────────────────────────────── */}

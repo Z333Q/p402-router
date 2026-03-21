@@ -17,7 +17,7 @@ export default function DocsIndex() {
 
             <main className="max-w-4xl mx-auto py-24 px-6">
                 <div className="mb-16 border-b-4 border-black pb-12">
-                    <h1 className="text-6xl font-black mb-4 tracking-tighter uppercase italic">Documentation</h1>
+                    <h1 className="text-6xl font-black mb-4 tracking-tighter uppercase italic"><span className="heading-accent">Documentation.</span></h1>
                     <p className="text-xl font-bold text-neutral-600 uppercase tracking-tight">
                         The Operating System for the Agentic Economy.
                     </p>
