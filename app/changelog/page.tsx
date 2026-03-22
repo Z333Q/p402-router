@@ -62,6 +62,54 @@ export default function ChangelogPage() {
                 <h1 className="title-1" style={{ marginBottom: 8 }}><span className="heading-accent">Changelog.</span></h1>
                 <p className="mono-id" style={{ marginBottom: 48 }}>Platform and protocol release history.</p>
 
+                {/* ── March 23, 2026 ───────────────────────────────────────────── */}
+                <section style={{ marginBottom: 48 }}>
+                    <div className="flex justify-between items-baseline mb-4 border-b-2 border-black pb-2">
+                        <h2 className="title-2 m-0 text-2xl">P402Escrow — Conditional Settlement on Base</h2>
+                        <span className="mono-id text-sm bg-black text-white px-2 py-1">March 23, 2026</span>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                        <div className="card p-6 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-[#B6FF2E]">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">P402Escrow.sol — Live on Base Mainnet</h3>
+                            <p className="text-neutral-900 mb-3 leading-relaxed">
+                                Conditional USDC escrow contract deployed to Base mainnet at <code className="bg-black/10 border border-black/20 px-1 py-0.5">0x4596c0e69d08e4ca6f02c7a129fc2bff8a6905ac</code>. Funds lock on-chain at job creation and release only when the payer confirms delivery — or P402 resolves a dispute. Protocol fee: 1% to treasury on settlement. Dispute window: 48 hours after provider marks delivery.
+                            </p>
+                            <ul className="list-disc pl-5 text-neutral-900 text-sm flex flex-col gap-2 font-medium">
+                                <li>State machine: <code className="bg-black/10 border border-black/20 px-1 py-0.5">CREATED → FUNDED → ACCEPTED → IN_PROGRESS → DELIVERED → SETTLED</code> — with <code className="bg-black/10 border border-black/20 px-1 py-0.5">DISPUTED → RESOLVED</code> and <code className="bg-black/10 border border-black/20 px-1 py-0.5">EXPIRED / CANCELLED</code> exit paths</li>
+                                <li>REST API: <code className="bg-black/10 border border-black/20 px-1 py-0.5">POST /api/v2/escrow</code> (create), <code className="bg-black/10 border border-black/20 px-1 py-0.5">GET /api/v2/escrow/[id]</code> (detail + event log), <code className="bg-black/10 border border-black/20 px-1 py-0.5">POST /api/v2/escrow/[id]</code> (transition: fund | accept | start | deliver | release | dispute)</li>
+                                <li>DB: <code className="bg-black/10 border border-black/20 px-1 py-0.5">escrows</code> and <code className="bg-black/10 border border-black/20 px-1 py-0.5">escrow_events</code> tables via migration <code className="bg-black/10 border border-black/20 px-1 py-0.5">v2_020_escrow.sql</code>; evidence bundle endpoint at <code className="bg-black/10 border border-black/20 px-1 py-0.5">GET /api/v1/analytics/evidence-bundle/[escrow_id]</code></li>
+                            </ul>
+                        </div>
+
+                        <div className="card p-6 border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-white">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">Bazaar Auto-Escrow — Phase 3.2</h3>
+                            <p className="text-neutral-700 mb-3 leading-relaxed">
+                                Any A2A task submitted via the Bazaar with <code className="bg-neutral-100 border border-neutral-200 px-1 py-0.5">price_usd ≥ $1.00</code> and a <code className="bg-neutral-100 border border-neutral-200 px-1 py-0.5">provider_address</code> automatically creates an escrow — no extra API calls required. The <code className="bg-neutral-100 border border-neutral-200 px-1 py-0.5">escrow_id</code> is returned in task <code className="bg-neutral-100 border border-neutral-200 px-1 py-0.5">metadata</code> and stored in task <code className="bg-neutral-100 border border-neutral-200 px-1 py-0.5">configuration</code> JSONB. Escrow creation is non-blocking — task proceeds even if escrow fails.
+                            </p>
+                            <ul className="list-disc pl-5 text-neutral-700 text-sm flex flex-col gap-2">
+                                <li>Dashboard: Bazaar SETTLE button now routes to escrow creation (≥$1 + provider wallet) or direct EIP-3009 settlement (&lt;$1)</li>
+                                <li>My Escrows panel in <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">/dashboard/bazaar</code> — live state with action buttons (Fund → Accept → Start → Deliver → Release / Dispute)</li>
+                                <li><code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">bazaar_resources.provider_wallet_address</code> added — populated from <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">payTo</code> in x402 manifests during ingest; powers escrow recipient resolution</li>
+                                <li>New <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">useEscrow</code> hook — polls <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">/api/v2/escrow</code>, exposes <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">createEscrow()</code> and <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">transition()</code></li>
+                            </ul>
+                        </div>
+
+                        <div className="card p-6 border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-white">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">Platform & Docs</h3>
+                            <p className="text-neutral-700 mb-3 leading-relaxed">
+                                Escrow surfaced across the full product surface. Models page now falls back to local registry (13 providers, all with live pricing) when OpenRouter is unavailable, eliminating the &ldquo;Error loading live prices&rdquo; state entirely.
+                            </p>
+                            <ul className="list-disc pl-5 text-neutral-700 text-sm flex flex-col gap-2">
+                                <li>New <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">/docs/escrow</code> — state machine table, quick start code, full API reference, dispute window details</li>
+                                <li>New <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">/product/escrow</code> — Lock / Deliver / Release overview with agent commerce, creative work, and API access use cases</li>
+                                <li>Landing page updated to six capabilities: Routing, Payments, Escrow, Controls, Orchestration, Ecosystem</li>
+                                <li><code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">GET /api/v2/models</code> falls back to <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">getProviderRegistry().getAllModels()</code> on OpenRouter failure — models page always renders</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
                 {/* ── March 22, 2026 ───────────────────────────────────────────── */}
                 <section style={{ marginBottom: 48 }}>
                     <div className="flex justify-between items-baseline mb-4 border-b-2 border-black pb-2">

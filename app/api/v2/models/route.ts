@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import redis from '@/lib/redis';
+import { getProviderRegistry } from '@/lib/ai-providers/registry';
 
 const CACHE_KEY = 'p402:models:openrouter';
 const CACHE_TTL = 3600; // 1 hour
@@ -69,9 +70,10 @@ export async function GET(req: NextRequest) {
         if (!apiKey) {
             return NextResponse.json({
                 object: 'list',
-                data: [],
-                error: 'OpenRouter API key not configured'
-            }, { status: 503 });
+                data: fallbackModels(),
+                source: 'registry',
+                provider: 'p402'
+            });
         }
 
         const response = await fetch('https://openrouter.ai/api/v1/models', {
@@ -107,13 +109,30 @@ export async function GET(req: NextRequest) {
 
     } catch (error: any) {
         console.error('[V2/models] Error:', error);
+        // Fall back to local registry — never show an error page
         return NextResponse.json({
-            error: {
-                type: 'internal_error',
-                message: error.message || 'Failed to fetch models'
-            }
-        }, { status: 500 });
+            object: 'list',
+            data: fallbackModels(),
+            source: 'registry',
+            provider: 'p402'
+        });
     }
+}
+
+/** Serve local registry models when OpenRouter is unavailable. */
+function fallbackModels(): NormalizedModel[] {
+    return getProviderRegistry().getAllModels().map(({ provider, model }) => ({
+        id: model.id,
+        name: model.name,
+        provider,
+        context_window: model.contextWindow ?? 0,
+        max_output_tokens: 4096,
+        pricing: {
+            input_per_1k: model.inputCostPer1k,
+            output_per_1k: model.outputCostPer1k,
+        },
+        capabilities: model.capabilities ?? ['chat'],
+    }));
 }
 
 function normalizeModels(rawModels: OpenRouterModel[]): NormalizedModel[] {

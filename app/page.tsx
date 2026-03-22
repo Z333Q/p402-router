@@ -98,9 +98,9 @@ export default async function Page() {
                     <div className="container mx-auto px-6 max-w-7xl">
                         <div className="mb-10">
                             <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">What you get</div>
-                            <h2 className="text-4xl font-black uppercase tracking-tighter">Five capabilities. One protocol.</h2>
+                            <h2 className="text-4xl font-black uppercase tracking-tighter">Six capabilities. One protocol.</h2>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-px bg-black border-2 border-black">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-px bg-black border-2 border-black">
                             <Link href="/product/routing" className="group bg-primary p-8 flex flex-col gap-4 hover:bg-black transition-colors no-underline">
                                 <div className="text-[10px] font-black text-black/60 uppercase tracking-widest group-hover:text-primary/60">AI Routing</div>
                                 <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Route. Optimise. Save.</h3>
@@ -116,6 +116,14 @@ export default async function Page() {
                                     EIP-3009 gasless USDC settlement on Base. Sign once, facilitator executes. Receipts for repeat access without re-payment.
                                 </p>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">x402 protocol →</span>
+                            </Link>
+                            <Link href="/product/escrow" className="group bg-white p-8 flex flex-col gap-4 hover:bg-neutral-50 transition-colors no-underline">
+                                <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Escrow</div>
+                                <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Lock. Deliver. Release.</h3>
+                                <p className="text-sm font-medium text-neutral-600 leading-relaxed flex-1">
+                                    Conditional USDC escrow on Base. Funds lock on-chain, release only on confirmed delivery. 48-hour dispute window with on-chain resolution.
+                                </p>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">Escrow protocol →</span>
                             </Link>
                             <Link href="/product/controls" className="group bg-white p-8 flex flex-col gap-4 hover:bg-neutral-50 transition-colors no-underline">
                                 <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Controls</div>

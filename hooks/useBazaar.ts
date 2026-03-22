@@ -13,7 +13,10 @@ export type BazaarResource = {
     pricing: {
         min_amount: number;
         currency: string;
+        payTo?: string;
     };
+    /** EVM wallet address of the provider (from x402 payTo) — required for escrow */
+    provider_wallet_address?: string;
     health_status?: 'healthy' | 'degraded' | 'down' | 'unknown';
     last_crawled_at?: string;
     success_rate_ledger?: number;

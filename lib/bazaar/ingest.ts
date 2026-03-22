@@ -61,14 +61,19 @@ export class BazaarIngest {
                         continue;
                     }
 
+                    // Extract payTo wallet address from x402 pricing/accepts manifest
+                    const providerWallet: string | null =
+                        r.pricing?.payTo ?? r.accepts?.payTo ?? r.providerWalletAddress ?? null;
+
                     // Approved — upsert with safety metadata
                     await pool.query(
                         `INSERT INTO bazaar_resources (
                             resource_id, source_facilitator_id, canonical_route_id, provider_base_url,
                             route_path, methods, title, pricing,
                             safety_score, safety_scanned_at, safety_flags,
+                            provider_wallet_address,
                             last_crawled_at, updated_at
-                         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, NOW(), NOW())
+                         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11, NOW(), NOW())
                          ON CONFLICT (source_facilitator_id, canonical_route_id)
                          DO UPDATE SET
                             provider_base_url = EXCLUDED.provider_base_url,
@@ -77,6 +82,7 @@ export class BazaarIngest {
                             safety_score = EXCLUDED.safety_score,
                             safety_scanned_at = EXCLUDED.safety_scanned_at,
                             safety_flags = EXCLUDED.safety_flags,
+                            provider_wallet_address = COALESCE(EXCLUDED.provider_wallet_address, bazaar_resources.provider_wallet_address),
                             last_crawled_at = NOW(),
                             updated_at = NOW()`,
                         [
@@ -90,6 +96,7 @@ export class BazaarIngest {
                             JSON.stringify(r.pricing),
                             scanResult.riskScore,
                             scanResult.flags,
+                            providerWallet,
                         ]
                     )
                     result.updated++

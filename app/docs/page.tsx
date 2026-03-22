@@ -112,6 +112,18 @@ export default function DocsIndex() {
                         <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Install Skill &rarr;</span>
                     </Link>
 
+                    {/* Escrow */}
+                    <Link href="/docs/escrow" className="group block p-10 border-4 border-black bg-white hover:bg-primary transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
+                        <div className="flex items-center gap-4 mb-6">
+                            <span className="text-4xl">🔒</span>
+                            <h2 className="text-2xl font-black uppercase italic group-hover:text-black">Escrow</h2>
+                        </div>
+                        <p className="text-sm font-bold text-neutral-600 mb-8 min-h-[48px] uppercase tracking-tight">
+                            Conditional USDC escrow on Base. Lock funds on-chain, release on confirmed delivery. 48-hour dispute window, 1% protocol fee.
+                        </p>
+                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Escrow Guide &rarr;</span>
+                    </Link>
+
                     {/* ERC-8004 Trustless Agents */}
                     <Link href="/docs/erc8004" className="group block p-10 border-4 border-black bg-neutral-900 hover:bg-emerald-600 transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(16,185,129,1)]">
                         <div className="flex items-center justify-between mb-6">

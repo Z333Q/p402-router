@@ -1,18 +1,27 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, Button, Badge, EmptyState, ErrorState, MetricBox } from '../_components/ui'
 import { TrustBadge } from '../_components/TrustBadge'
 import { WalletRequired } from '../_components/WalletRequired';
 import { ProTip } from '../_components/ProTip'
 import { useBazaar, BazaarResource } from '@/hooks/useBazaar'
+import { useEscrow, Escrow } from '@/hooks/useEscrow'
 import { clsx } from 'clsx'
 import { useSession } from 'next-auth/react'
+import { useAccount } from 'wagmi'
 import { SettlementModal } from './_components/SettlementModal'
+import { Lock, CheckCircle2, AlertTriangle, Clock, Loader2 } from 'lucide-react'
 
 export default function BazaarIndexPage() {
     const { data: session } = useSession();
-    // Safe cast for tenantId which we extended in auth options
     const tenantId = (session?.user as any)?.tenantId;
+    const { address } = useAccount();
+
+    const { escrows, loading: escrowsLoading, fetchEscrows, transition, transitioning } = useEscrow();
+
+    useEffect(() => {
+        if (address) fetchEscrows(address);
+    }, [address, fetchEscrows]);
 
     const {
         resources,
@@ -293,10 +302,38 @@ export default function BazaarIndexPage() {
                 )}
             </div>
 
+            {/* My Escrows Panel */}
+            {(escrows.length > 0 || escrowsLoading) && (
+                <div className="space-y-4">
+                    <div className="flex items-center gap-3 border-b-2 border-black pb-3">
+                        <Lock size={16} className="text-primary" />
+                        <h2 className="text-sm font-black uppercase tracking-widest">My Escrows</h2>
+                        <Badge className="text-[9px]">{escrows.length}</Badge>
+                    </div>
+                    {escrowsLoading ? (
+                        <div className="h-24 bg-neutral-100 border-2 border-dashed border-black/10 animate-pulse" />
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {escrows.map(e => (
+                                <EscrowCard
+                                    key={e.id}
+                                    escrow={e}
+                                    onTransition={transition}
+                                    transitioning={transitioning === e.id}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
             {settlementResource && tenantId && (
                 <SettlementModal
                     isOpen={!!settlementResource}
-                    onClose={() => setSettlementResource(null)}
+                    onClose={() => {
+                        setSettlementResource(null);
+                        if (address) fetchEscrows(address);
+                    }}
                     resource={settlementResource}
                     tenantId={tenantId}
                 />
@@ -392,6 +429,68 @@ function BazaarCard({ r, onImport, onSimulate, onSettle, isImporting }: { r: Baz
             </div>
         </Card>
     )
+}
+
+const ESCROW_STATE_CONFIG: Record<string, { tone: 'ok' | 'bad' | 'neutral' | 'warn'; icon: React.ReactNode; nextAction?: string; actionLabel?: string }> = {
+    CREATED:     { tone: 'neutral', icon: <Clock size={14} />, nextAction: 'fund',    actionLabel: 'Fund Escrow' },
+    FUNDED:      { tone: 'neutral', icon: <Lock size={14} />,  nextAction: 'accept',  actionLabel: 'Accept Job' },
+    ACCEPTED:    { tone: 'neutral', icon: <Lock size={14} />,  nextAction: 'start',   actionLabel: 'Start Work' },
+    IN_PROGRESS: { tone: 'warn',    icon: <Clock size={14} />, nextAction: 'deliver', actionLabel: 'Mark Delivered' },
+    DELIVERED:   { tone: 'warn',    icon: <CheckCircle2 size={14} />, nextAction: 'release', actionLabel: 'Release Payment' },
+    SETTLED:     { tone: 'ok',      icon: <CheckCircle2 size={14} /> },
+    DISPUTED:    { tone: 'bad',     icon: <AlertTriangle size={14} /> },
+    RESOLVED:    { tone: 'ok',      icon: <CheckCircle2 size={14} /> },
+    EXPIRED:     { tone: 'bad',     icon: <AlertTriangle size={14} /> },
+    CANCELLED:   { tone: 'bad',     icon: <AlertTriangle size={14} /> },
+};
+
+function EscrowCard({ escrow, onTransition, transitioning }: {
+    escrow: Escrow;
+    onTransition: (id: string, action: any) => void;
+    transitioning: boolean;
+}) {
+    const cfg = ESCROW_STATE_CONFIG[escrow.state] ?? { tone: 'neutral' as const, icon: null };
+
+    return (
+        <div className="bg-white border-2 border-black p-5 space-y-4">
+            <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                    <div className="font-mono text-[10px] text-neutral-400 uppercase">
+                        {escrow.id.slice(0, 20)}…
+                    </div>
+                    <div className="text-2xl font-black">${escrow.amount_usd.toFixed(4)}</div>
+                    <div className="text-[10px] text-neutral-400 font-mono">
+                        {escrow.provider_address.slice(0, 6)}…{escrow.provider_address.slice(-4)}
+                    </div>
+                </div>
+                <Badge tone={cfg.tone} className="flex items-center gap-1.5 text-[10px]">
+                    {cfg.icon} {escrow.state}
+                </Badge>
+            </div>
+
+            {cfg.nextAction && cfg.actionLabel && (
+                <Button
+                    onClick={() => onTransition(escrow.id, cfg.nextAction)}
+                    disabled={transitioning}
+                    variant="dark"
+                    className="w-full text-[10px] font-black"
+                >
+                    {transitioning ? <Loader2 size={12} className="animate-spin mx-auto" /> : cfg.actionLabel}
+                </Button>
+            )}
+
+            {escrow.state === 'DELIVERED' && (
+                <Button
+                    onClick={() => onTransition(escrow.id, 'dispute')}
+                    disabled={transitioning}
+                    variant="secondary"
+                    className="w-full text-[10px] font-black text-error border-error/30"
+                >
+                    Raise Dispute
+                </Button>
+            )}
+        </div>
+    );
 }
 
 function ModelCard({ m }: { m: any }) {

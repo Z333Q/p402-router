@@ -12,6 +12,8 @@ export type BazaarResource = {
     accepts?: any
     inputSchema?: any
     outputSchema?: any
+    /** EVM wallet address from x402 PaymentRequirements.payTo — used as escrow recipient */
+    providerWalletAddress?: string
     updatedAt: string
     rankScore: number
 }
