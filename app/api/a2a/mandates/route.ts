@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { verifyTypedData } from 'viem';
 import { query } from '@/lib/db';
 import { AP2Mandate } from '@/lib/a2a-types';
+import { checkAgentkitAccess } from '@/lib/identity/agentkit';
 
 const AP2_MANDATE_DOMAIN = {
     name: 'P402 AP2 Mandates',
@@ -83,13 +84,22 @@ export async function POST(req: NextRequest) {
             }, { status: 400 });
         }
 
+        // Optionally link to grantor's World ID (non-blocking)
+        let humanIdHash: string | null = null;
+        if (process.env.AGENTKIT_ENABLED === 'true') {
+            const agentkit = await checkAgentkitAccess(req, '/api/a2a/mandates').catch(() => null);
+            if (agentkit?.humanId) {
+                humanIdHash = agentkit.humanId;
+            }
+        }
+
         const mandateId = `mnd_${uuidv4()}`;
 
         await query(
             `INSERT INTO ap2_mandates (
             id, tenant_id, type, user_did, agent_did, constraints,
-            signature, public_key, status
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active')`,
+            signature, public_key, human_id_hash, status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active')`,
             [
                 mandateId,
                 null,
@@ -98,7 +108,8 @@ export async function POST(req: NextRequest) {
                 mandate.agent_did,
                 JSON.stringify(mandate.constraints),
                 mandate.signature || null,
-                mandate.public_key || null
+                mandate.public_key || null,
+                humanIdHash
             ]
         );
 
@@ -106,6 +117,7 @@ export async function POST(req: NextRequest) {
             id: mandateId,
             status: 'active',
             signed: !!mandate.signature,
+            human_verified: humanIdHash !== null,
         });
 
     } catch (error) {

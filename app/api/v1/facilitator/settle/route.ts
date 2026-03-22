@@ -114,8 +114,8 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // ── Legacy format: { txHash, amount, authorization, ... } ──
-        const { txHash, amount, asset, network, decisionId, authorization } = body;
+        // ── Legacy format: { txHash, amount, authorization, receiptId, ... } ──
+        const { txHash, amount, asset, network, decisionId, authorization, receiptId } = body;
 
         // Resolve Tenant
         const access = await requireTenantAccess(req);
@@ -127,9 +127,29 @@ export async function POST(req: NextRequest) {
         }
         const tenantId = access.tenantId;
 
+        // ── Receipt scheme: reuse a prior settlement receipt ──
+        if (receiptId) {
+            if (!amount) {
+                return NextResponse.json(
+                    buildSettleResponse(false, "", null, "amount is required for receipt settlement"),
+                    { status: 400 },
+                );
+            }
+            const receiptResult = await SettlementService.settleWithReceipt(requestId, {
+                tenantId,
+                decisionId,
+                receiptId,
+                amount,
+                asset: asset || 'USDC',
+            });
+            return NextResponse.json(
+                buildSettleResponse(true, receiptResult.receipt.txHash, receiptResult.payer ?? null),
+            );
+        }
+
         if (!txHash && !authorization) {
             return NextResponse.json(
-                buildSettleResponse(false, "", null, "Either txHash or authorization is required"),
+                buildSettleResponse(false, "", null, "Either txHash, authorization, or receiptId is required"),
                 { status: 400 },
             );
         }

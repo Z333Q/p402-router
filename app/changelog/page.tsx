@@ -62,6 +62,68 @@ export default function ChangelogPage() {
                 <h1 className="title-1" style={{ marginBottom: 8 }}><span className="heading-accent">Changelog.</span></h1>
                 <p className="mono-id" style={{ marginBottom: 48 }}>Platform and protocol release history.</p>
 
+                {/* ── March 22, 2026 ───────────────────────────────────────────── */}
+                <section style={{ marginBottom: 48 }}>
+                    <div className="flex justify-between items-baseline mb-4 border-b-2 border-black pb-2">
+                        <h2 className="title-2 m-0 text-2xl">World ID, Credits & Model Catalog</h2>
+                        <span className="mono-id text-sm bg-black text-white px-2 py-1">March 22, 2026</span>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                        <div className="card p-6 border-4 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-[#B6FF2E]">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">Human-Anchored Credits — World ID Free Trial</h3>
+                            <p className="text-neutral-900 mb-3 leading-relaxed">
+                                World ID verification now unlocks 500 free credits ($5.00) on the first verified request. Credits are a first-class billing primitive — 1 credit equals $0.01 USD, consumed atomically via <code className="bg-black/10 border border-black/20 px-1 py-0.5">UPDATE ... WHERE balance &gt;= amount</code> — no overdraft is possible. When credits are exhausted, sessions fall through to standard USDC billing with no disruption.
+                            </p>
+                            <ul className="list-disc pl-5 text-neutral-900 text-sm flex flex-col gap-2 font-medium">
+                                <li><code className="bg-black/10 border border-black/20 px-1 py-0.5">p402_metadata</code> extended: <code className="bg-black/10 border border-black/20 px-1 py-0.5">human_verified</code>, <code className="bg-black/10 border border-black/20 px-1 py-0.5">human_usage_remaining</code>, <code className="bg-black/10 border border-black/20 px-1 py-0.5">reputation_score</code>, <code className="bg-black/10 border border-black/20 px-1 py-0.5">credits_spent</code>, <code className="bg-black/10 border border-black/20 px-1 py-0.5">credits_balance</code> — returned on every <code className="bg-black/10 border border-black/20 px-1 py-0.5">POST /api/v2/chat/completions</code> response</li>
+                                <li>New credit API surface: <code className="bg-black/10 border border-black/20 px-1 py-0.5">GET /api/v2/credits/balance</code>, <code className="bg-black/10 border border-black/20 px-1 py-0.5">POST /api/v2/credits/purchase</code> (<code className="bg-black/10 border border-black/20 px-1 py-0.5">mode: &apos;test&apos; | &apos;paid&apos;</code>), <code className="bg-black/10 border border-black/20 px-1 py-0.5">GET /api/v2/credits/history</code></li>
+                                <li>CLI: <code className="bg-black/10 border border-black/20 px-1 py-0.5">p402 credits balance</code> and <code className="bg-black/10 border border-black/20 px-1 py-0.5">p402 credits buy &lt;amount_usd&gt;</code></li>
+                                <li>MCP: new <code className="bg-black/10 border border-black/20 px-1 py-0.5">p402_agent_status</code> tool — checks AgentBook registration and returns live <code className="bg-black/10 border border-black/20 px-1 py-0.5">credits_remaining</code> for any wallet address</li>
+                            </ul>
+                        </div>
+
+                        <div className="card p-6 border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-white">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">World Mini App — world.p402.io</h3>
+                            <p className="text-neutral-700 mb-3 leading-relaxed">
+                                A standalone Next.js 15 mini app purpose-built for the World App ecosystem. Deployed separately from the Base Mini App at <code className="bg-neutral-100 border border-neutral-200 px-1 py-0.5">world.p402.io</code> — different SDK, different store, same P402 backend linked via <code className="bg-neutral-100 border border-neutral-200 px-1 py-0.5">human_id_hash</code>.
+                            </p>
+                            <ul className="list-disc pl-5 text-neutral-700 text-sm flex flex-col gap-2">
+                                <li>Auth via <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">MiniKit.commandsAsync.walletAuth</code> — SIWE-style session, returns scoped HMAC bearer token tied to the World wallet address</li>
+                                <li>Credit purchases via <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">MiniKit.commandsAsync.pay()</code> — four tiers ($5 / $10 / $50 / $100 USDC); World App handles the transaction, P402 credits the balance on confirmation</li>
+                                <li>4 tabs: Chat (streaming, cost display), Agents (A2A registry browser), Credits (balance + history), Settings (routing mode, identity, reputation)</li>
+                                <li>Session endpoint at <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">POST /api/v1/world-mini/session</code> — derives tenant from wallet address, auto-grants free trial credit for newly verified humans</li>
+                            </ul>
+                        </div>
+
+                        <div className="card p-6 border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-white">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">Base Mini App — World ID Integration</h3>
+                            <p className="text-neutral-700 mb-3 leading-relaxed">
+                                The existing Farcaster mini app at <code className="bg-neutral-100 border border-neutral-200 px-1 py-0.5">mini.p402.io</code> is updated to surface World ID verification state and credit balance inline — no new screens, state flows in from <code className="bg-neutral-100 border border-neutral-200 px-1 py-0.5">p402_metadata</code> on every chat response.
+                            </p>
+                            <ul className="list-disc pl-5 text-neutral-700 text-sm flex flex-col gap-2">
+                                <li>Header: <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">[VERIFIED]</code> badge appears when <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">humanVerified</code> is true — shows free-uses remaining or credit count</li>
+                                <li>Chat input: tri-state indicator — free trial active (lime), credit balance available (neutral), low USDC funds warning (amber) — each mutually exclusive</li>
+                                <li>Settings modal: World ID section with deep link to <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">worldapp://verify</code> for unverified users; verified state shows FREE USES / CREDITS / REP SCORE grid</li>
+                                <li>Agents panel: inline <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">VERIFIED</code> trust badge on agents where <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">human_verified: true</code></li>
+                            </ul>
+                        </div>
+
+                        <div className="card p-6 border-2 border-black shadow-[4px_4px_0_0_rgba(0,0,0,1)] bg-neutral-50">
+                            <h3 className="font-black uppercase tracking-tighter text-xl mb-3">Model Catalog — /models</h3>
+                            <p className="text-neutral-700 mb-3 leading-relaxed">
+                                Live model comparison page added to the main nav. Pulls from <code className="bg-neutral-100 border border-neutral-200 px-1 py-0.5">GET /api/v2/models</code> which is now backed by an hourly cron sync from OpenRouter into a <code className="bg-neutral-100 border border-neutral-200 px-1 py-0.5">model_prices</code> table — pricing is current within 1 hour of provider changes.
+                            </p>
+                            <ul className="list-disc pl-5 text-neutral-700 text-sm flex flex-col gap-2">
+                                <li>300+ models filterable by provider and capability; sortable by input cost, context window, or name</li>
+                                <li>Cost calculator: input token count × output token count × daily requests → direct API cost vs P402 (22% blended savings via caching and routing)</li>
+                                <li>DB: <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">model_prices</code> table with <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">model_price_history</code> for trend tracking; Redis cache key <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">p402:models:openrouter</code> (TTL 1hr)</li>
+                                <li>Sync cron at <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">POST /api/internal/cron/models/sync</code> — marks models dropped by OpenRouter as <code className="font-mono text-xs bg-neutral-100 border border-neutral-200 px-1 py-0.5">is_active = FALSE</code> rather than deleting them</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
                 {/* ── March 18, 2026 ────────────────────────────────────────────── */}
                 <section style={{ marginBottom: 48 }}>
                     <div className="flex justify-between items-baseline mb-4 border-b-2 border-black pb-2">

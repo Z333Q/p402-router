@@ -48,6 +48,7 @@
     "@react-native-async-storage/async-storage": "^2.0.0",
     "@tanstack/react-query": "^5.25.0",
     "@types/pg": "^8.16.0",
+    "@worldcoin/agentkit": "^0.1.5",
     "@x402/core": "^2.5.0",
     "@x402/evm": "^2.5.0",
     "@x402/fetch": "^2.5.0",

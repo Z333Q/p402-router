@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import db from '@/lib/db';
 import { ApiKeyManager, WebhookManager } from '../_components/settings/ApiKeyManager';
+import { WorldIdPanel } from '../_components/settings/WorldIdPanel';
 import { Settings } from 'lucide-react';
 
 export const metadata = {
@@ -55,6 +56,8 @@ export default async function SettingsPage() {
             </div>
 
             {/* Client Components for Interactive Management */}
+            <WorldIdPanel />
+
             <ApiKeyManager existingKeys={existingKeys} />
 
             <WebhookManager currentWebhook={webhookUrl} webhookSecret={webhookSecret} />

@@ -3,6 +3,18 @@
 import db from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { basePublicClient } from '@/lib/blockchain/client';
+import { BASE_USDC_ADDRESS } from '@/lib/constants';
+
+const NONCES_ABI = [
+    {
+        inputs: [{ internalType: 'address', name: 'owner', type: 'address' }],
+        name: 'nonces',
+        outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+        stateMutability: 'view',
+        type: 'function',
+    },
+] as const;
 
 export interface WalletInitResult {
     success: boolean;
@@ -38,9 +50,21 @@ export async function initializeWalletSubscription(
             return { success: false, error: 'Already on a paid plan.' };
         }
 
-        // TODO: In production, fetch the actual USDC nonce from the on-chain contract
-        // via: const nonce = await usdcContract.nonces(walletAddress);
-        const nonce = '0';
+        // Fetch the EIP-2612 permit nonce from the USDC contract on Base.
+        // This is required for the SubscriptionFacilitator permit() call — if the user
+        // has previously signed a permit the nonce will be > 0.
+        let nonce = '0';
+        try {
+            const onchainNonce = await basePublicClient.readContract({
+                address: BASE_USDC_ADDRESS,
+                abi: NONCES_ABI,
+                functionName: 'nonces',
+                args: [walletAddress as `0x${string}`],
+            });
+            nonce = onchainNonce.toString();
+        } catch (nonceErr) {
+            console.warn('[BILLING] Failed to fetch USDC nonce on-chain, falling back to 0:', nonceErr);
+        }
 
         // 12-month allowance: $499 × 12 = $5,988 USDC (6 decimals)
         const allowanceAmount = (5988_000000n).toString();

@@ -21,11 +21,15 @@ import pool from '@/lib/db';
 
 const CONFIG = {
     RATE_LIMIT_REQUESTS: 1000,
+    /** World ID-verified humans: 2× the standard rate limit (Sentinel Enhancement 2.3) */
+    RATE_LIMIT_REQUESTS_VERIFIED: 2000,
     RATE_LIMIT_WINDOW_SECONDS: 3600,
     DAILY_SPEND_LIMIT_USD: 1000,
     MAX_CONCURRENT_RESERVATIONS: 10,
     MAX_SINGLE_REQUEST_USD: 50,
+    /** Verified agents: looser anomaly sensitivity (lower Z-score threshold = earlier alert) */
     ANOMALY_ZSCORE_THRESHOLD: 3.0,
+    ANOMALY_ZSCORE_THRESHOLD_VERIFIED: 4.0,
     RESERVATION_TTL_SECONDS: 300, // 5 minutes
 };
 
@@ -37,6 +41,11 @@ export interface BillingContext {
     userId: string;
     sessionId?: string;
     tenantId?: string;
+    /**
+     * True if the request is from a World ID-verified human (AgentBook-registered).
+     * Grants 2× rate limit and lower anomaly sensitivity. (Phase 2.3 Sentinel Enhancement)
+     */
+    humanVerified?: boolean;
 }
 
 export interface CostEstimate {
@@ -76,13 +85,17 @@ export class BillingGuard {
     async checkRateLimit(ctx: BillingContext): Promise<void> {
         const key = `p402:ratelimit:${ctx.userId}`;
 
+        const limit = ctx.humanVerified
+            ? CONFIG.RATE_LIMIT_REQUESTS_VERIFIED
+            : CONFIG.RATE_LIMIT_REQUESTS;
+
         try {
             const count = await redis.incr(key);
             if (count === 1) {
                 await redis.expire(key, CONFIG.RATE_LIMIT_WINDOW_SECONDS);
             }
 
-            if (count > CONFIG.RATE_LIMIT_REQUESTS) {
+            if (count > limit) {
                 const ttl = await redis.ttl(key);
                 throw new BillingGuardError(
                     `Rate limit exceeded. Try again in ${ttl} seconds.`,
@@ -169,8 +182,13 @@ export class BillingGuard {
 
             const zScore = (estimatedCost - mean) / stdDev;
 
-            if (zScore > CONFIG.ANOMALY_ZSCORE_THRESHOLD) {
-                console.warn(`[BillingGuard] Anomaly detected for ${ctx.userId}: z-score=${zScore.toFixed(2)}, cost=$${estimatedCost}`);
+            const threshold = ctx.humanVerified
+                ? CONFIG.ANOMALY_ZSCORE_THRESHOLD_VERIFIED
+                : CONFIG.ANOMALY_ZSCORE_THRESHOLD;
+
+            if (zScore > threshold) {
+                const tag = ctx.humanVerified ? '[human-verified]' : '[unverified]';
+                console.warn(`[BillingGuard] Anomaly detected ${tag} for ${ctx.userId}: z-score=${zScore.toFixed(2)}, cost=$${estimatedCost}`);
             }
         } catch (err) {
             // Anomaly detection is a soft guard — never block a request due to Redis failure

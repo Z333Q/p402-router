@@ -46,6 +46,11 @@ export default function PlaygroundPage() {
 
     const [taskSuccess, setTaskSuccess] = useState(false);
 
+    // World AgentKit state (populated from p402_metadata after each chat response)
+    const [humanVerified, setHumanVerified] = useState<boolean | null>(null);
+    const [humanUsageRemaining, setHumanUsageRemaining] = useState<number | null>(null);
+    const [reputationScore, setReputationScore] = useState<number | null>(null);
+
     const handleChat = async () => {
         const text = chatInput.trim();
         if (!text) return;
@@ -65,6 +70,14 @@ export default function PlaygroundPage() {
             if (res.choices?.[0]?.message) {
                 setMessages([...newHistory, res.choices[0].message]);
                 setTaskSuccess(true);
+
+                // Extract World AgentKit metadata
+                const meta = (res as any).p402_metadata;
+                if (meta) {
+                    if (typeof meta.human_verified === 'boolean') setHumanVerified(meta.human_verified);
+                    if (meta.human_usage_remaining != null) setHumanUsageRemaining(meta.human_usage_remaining);
+                    if (meta.reputation_score != null) setReputationScore(meta.reputation_score);
+                }
             } else {
                 throw new Error('No response from AI');
             }
@@ -121,7 +134,25 @@ export default function PlaygroundPage() {
                 <div className="lg:col-span-2 space-y-8">
                     {/* Chat Card */}
                     <Card className="p-6 space-y-4 border-2 border-black shadow-[4px_4px_0_0_#000]">
-                        <h2 className="text-lg font-bold uppercase">AI Chat</h2>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-bold uppercase">AI Chat</h2>
+                            {humanVerified === true && (
+                                <span className="badge badge-primary text-xs font-bold ml-1">VERIFIED HUMAN</span>
+                            )}
+                            {humanVerified === true && humanUsageRemaining !== null && humanUsageRemaining > 0 && (
+                                <span className="text-xs font-mono text-[var(--primary)] ml-auto">
+                                    {humanUsageRemaining} free {humanUsageRemaining === 1 ? 'request' : 'requests'} remaining
+                                </span>
+                            )}
+                            {humanVerified === true && humanUsageRemaining === 0 && (
+                                <span className="text-xs font-mono text-[var(--neutral-400)] ml-auto">Free trial used</span>
+                            )}
+                            {reputationScore !== null && (
+                                <span className="text-xs font-mono text-[var(--neutral-400)] ml-1">
+                                    Rep: {(reputationScore * 100).toFixed(0)}
+                                </span>
+                            )}
+                        </div>
                         <div className="h-[300px] overflow-y-auto bg-neutral-100 p-4 border border-black font-mono text-xs space-y-2">
                             {messages.filter(m => m.role !== 'system').map((m, i) => (
                                 <div key={i} className={m.role === 'user' ? 'text-right' : 'text-left'}>

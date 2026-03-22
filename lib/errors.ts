@@ -35,6 +35,9 @@ export type ApiErrorCode =
     | 'CDP_PROVISION_FAILED'
     | 'CDP_AUTH_INVALID'
     | 'CDP_POLICY_DENIED'
+    | 'RECEIPT_NOT_FOUND'
+    | 'RECEIPT_EXPIRED'
+    | 'RECEIPT_INSUFFICIENT_BALANCE'
 
 export class ApiError extends Error {
     public readonly code: ApiErrorCode

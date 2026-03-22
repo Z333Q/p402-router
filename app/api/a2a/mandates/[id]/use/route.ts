@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AP2PolicyEngine } from '@/lib/ap2-policy-engine';
 import { pushNotificationService } from '@/lib/push-service';
+import { query } from '@/lib/db';
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = await params;
@@ -19,6 +20,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         const policyResult = await AP2PolicyEngine.verifyMandate(id, Number(amount_usd), category, agent_did);
 
         if (!policyResult.valid) {
+            // Log violation against grantor's World ID reputation (non-blocking)
+            const VIOLATION_CODES = new Set(['BUDGET_EXCEEDED', 'MANDATE_EXPIRED', 'CATEGORY_NOT_ALLOWED', 'MANDATE_INACTIVE']);
+            if (policyResult.error && VIOLATION_CODES.has(policyResult.error.code)) {
+                Promise.resolve().then(async () => {
+                    try {
+                        const res = await query(
+                            'SELECT human_id_hash FROM ap2_mandates WHERE id = $1',
+                            [id]
+                        );
+                        const row = res.rows[0] as { human_id_hash: string | null } | undefined;
+                        if (row?.human_id_hash) {
+                            const { recordDispute } = await import('@/lib/identity/reputation');
+                            await recordDispute(row.human_id_hash);
+                        }
+                    } catch { /* non-blocking */ }
+                });
+            }
+
             // Map common policy errors to HTTP/JSON-RPC-like responses
             // Since this is REST, we return JSON with the error structure as requested
             // Specially format SECURITY_PACK_BLOCKED to match JSON-RPC -32005 pattern

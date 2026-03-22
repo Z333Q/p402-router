@@ -99,13 +99,19 @@ OpenAI-compatible chat completion with P402 orchestration. Supports streaming, m
   p402_metadata: {
     request_id: string,
     tenant_id: string,
-    provider: string,                // e.g., 'openai', 'anthropic', 'groq'
-    model: string,                   // e.g., 'gpt-4o-mini', 'claude-sonnet-4-6'
-    cost_usd: number,               // Actual cost of this request
-    latency_ms: number,             // Total latency including routing overhead
-    provider_latency_ms: number,    // Provider-only latency
-    cached: boolean,                // Whether response came from semantic cache
-    routing_mode: string            // Mode that was applied
+    provider: string,                    // e.g., 'openai', 'anthropic', 'groq'
+    model: string,                       // e.g., 'gpt-4o-mini', 'claude-sonnet-4-6'
+    cost_usd: number,                   // Actual cost of this request
+    latency_ms: number,                 // Total latency including routing overhead
+    provider_latency_ms: number,        // Provider-only latency
+    cached: boolean,                    // Whether response came from semantic cache
+    routing_mode: string,               // Mode that was applied
+    // World AgentKit / Credits fields (present when applicable)
+    human_verified?: boolean,           // True if request came from a World ID-verified human
+    human_usage_remaining?: number | null, // Remaining free-trial uses for this human
+    reputation_score?: number | null,   // Human-anchored reputation [0.0–1.0]
+    credits_spent?: number | null,      // Credits deducted this request (1 credit = $0.01)
+    credits_balance?: number | null     // Remaining credit balance after this request
   }
 }
 ```

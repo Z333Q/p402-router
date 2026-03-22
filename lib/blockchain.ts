@@ -111,10 +111,8 @@ export class BlockchainService {
                     // Topic 1: sender
                     // Topic 2: recipient
                     // Topic 3: token
-                    const paymentSettledSig = '0xc7a040b10e9f6048d8888b88b341dccac08e3ba5df598f62a4d34190240d12e6'; // Mocked or pre-calculated
-                    // Actually, let's use the real hash of PaymentSettled(address,address,address,uint256,uint256,string)
                     // keccak256("PaymentSettled(address,address,address,uint256,uint256,string)")
-                    const sig = '0xc7a040b10e9f6048d8888b88b341dccac08e3ba5df598f62a4d34190240d12e6'; // TODO: double check this if verify fails
+                    const sig = '0xc7a040b10e9f6048d8888b88b341dccac08e3ba5df598f62a4d34190240d12e6';
 
                     if (log.topics[0] !== sig) return false;
 

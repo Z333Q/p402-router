@@ -89,7 +89,22 @@ const response = await fetch('https://p402.io/api/v2/chat/completions', {
 });
 ```
 
-The response includes `p402_metadata` with the actual provider used, cost in USD, latency breakdown, and whether the response came from cache. Response headers also expose this: `X-P402-Provider`, `X-P402-Cost-USD`, `X-P402-Latency-MS`, `X-P402-Request-ID`.
+The response includes `p402_metadata` with routing and cost telemetry. Key fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `provider` | string | Provider that served the request |
+| `model` | string | Exact model used |
+| `cost_usd` | number | Actual cost charged |
+| `latency_ms` | number | Total round-trip latency |
+| `cached` | boolean | Whether result came from semantic cache |
+| `human_verified` | boolean | True if request was World ID-verified |
+| `human_usage_remaining` | number \| null | Free-trial uses remaining for this human |
+| `reputation_score` | number \| null | Human-anchored reputation [0.0–1.0] |
+| `credits_spent` | number \| null | Credits deducted this request (1 credit = $0.01) |
+| `credits_balance` | number \| null | Remaining credit balance after this request |
+
+Response headers also expose: `X-P402-Provider`, `X-P402-Cost-USD`, `X-P402-Latency-MS`, `X-P402-Request-ID`.
 
 ### Semantic Cache
 
@@ -110,6 +125,22 @@ The fastest way to try P402 is to sign in at [p402.io](https://p402.io) with you
 
 For programmatic access, grab your API key from the dashboard after signing in. You can also try P402 via the **Base Mini App** at [mini.p402.io](https://mini.p402.io) — connect a Base Account, fund with USDC via Base Pay, and start chatting with real-time cost and savings tracking.
 
+**MCP Server:** If you use Claude Desktop, Cursor, or Windsurf, add `@p402/mcp-server` to your MCP config — no REST integration needed:
+
+```json
+{
+  "mcpServers": {
+    "p402": {
+      "command": "npx",
+      "args": ["-y", "@p402/mcp-server"],
+      "env": { "P402_API_KEY": "p402_live_..." }
+    }
+  }
+}
+```
+
+The MCP server is listed on the official registry as `io.github.Z333Q/p402`.
+
 ## API Quick Reference
 
 **Base URL:** `https://p402.io`
@@ -126,10 +157,26 @@ For programmatic access, grab your API key from the dashboard after signing in. 
 | `/api/v2/analytics/spend` | GET | Spending analytics |
 | `/api/v2/analytics/recommendations` | GET | Cost optimization suggestions |
 | `/api/v2/cache/stats` | GET | Cache hit rate and savings |
+| `/api/v2/credits/balance` | GET | Current credit balance (1 credit = $0.01) |
+| `/api/v2/credits/purchase` | POST | Buy credits (test or paid mode) |
+| `/api/v2/credits/history` | GET | Credit transaction history |
 | `/api/a2a` | POST | A2A JSON-RPC endpoint |
 | `/.well-known/agent.json` | GET | Agent discovery card |
 | `/api/a2a/mandates` | POST | Create AP2 spending mandate |
 | `/api/a2a/mandates/:id/use` | POST | Use a mandate for payment |
+| `/models` | GET (page) | Live model comparison with cost calculator |
+
+**MCP Tools** (via `@p402/mcp-server`, stdio transport):
+
+| Tool | Purpose |
+|------|---------|
+| `p402_chat` | Route a prompt (cost/quality/speed/balanced modes) |
+| `p402_create_session` | Create a USD-capped budget session |
+| `p402_get_session` | Check session balance and spend |
+| `p402_list_models` | List all 300+ routable models |
+| `p402_compare_providers` | Cost and latency comparison per model |
+| `p402_agent_status` | Check World AgentKit registration and credit balance for a wallet |
+| `p402_health` | Router and facilitator health status |
 
 For complete request/response schemas and code examples in TypeScript, Python, and curl, read `references/api-reference.md`.
 
@@ -151,7 +198,27 @@ Use the JSON-RPC endpoint at `/api/a2a` with Google's A2A protocol. Agents disco
 
 For machine-to-machine payments using the HTTP 402 flow: service responds with payment requirements, client submits payment proof (EIP-3009 signature or transaction hash), service verifies and releases the resource. Three schemes are supported: `exact` (gasless EIP-3009), `onchain` (direct tx verification), and `receipt` (reuse prior payments). Read `references/payment-flows.md` for implementation details.
 
-### Pattern 5: Cost Intelligence Dashboard
+### Pattern 5: Credits-Based Free Trial (World ID)
+
+Human-verified users receive **500 free credits ($5.00)** when they first verify with World ID. Credits are consumed automatically on every chat completion request for verified humans (`credits_spent` in `p402_metadata`). When credits run out, the session falls back to standard USDC billing. Check balance via `GET /api/v2/credits/balance`. Purchase additional credits via `POST /api/v2/credits/purchase` with `{ amount_usd, mode: 'test' | 'paid' }`.
+
+```typescript
+// Check credit balance
+const res = await fetch('https://p402.io/api/v2/credits/balance', {
+  headers: { Authorization: `Bearer ${P402_KEY}` }
+});
+const { balance } = await res.json();  // e.g. 487 (= $4.87)
+
+// After a request: read credits_balance from p402_metadata
+console.log(response.p402_metadata.credits_spent);   // 3 (= $0.03)
+console.log(response.p402_metadata.credits_balance);  // 484
+```
+
+### Pattern 6: MCP Server (Claude Desktop / Cursor / Windsurf)
+
+Add `@p402/mcp-server` to your MCP client config. No REST integration needed — the server runs as a stdio subprocess and exposes all 6 tools natively. The client can call `p402_chat` to route and pay for LLM requests, `p402_create_session` to establish a budget, and `p402_list_models` to discover providers. Registry identifier: `io.github.Z333Q/p402`.
+
+### Pattern 7: Cost Intelligence Dashboard
 
 Use `/api/v2/analytics/spend` for spending data and `/api/v2/analytics/recommendations` for optimization suggestions. The recommendations endpoint identifies cheaper model alternatives and estimates potential savings. Use `/api/v2/providers/compare` to show users real-time pricing comparisons.
 
@@ -166,6 +233,74 @@ Read these when you need deeper detail than this overview provides:
 - **`references/payment-flows.md`** -- x402 protocol implementation: the 3-step payment flow, EIP-3009 gasless transfers, onchain verification, receipt reuse, USDC contract addresses, and the settlement lifecycle. Read this when the user is integrating payment settlement.
 
 - **`references/a2a-protocol.md`** -- Google A2A protocol integration: JSON-RPC methods, task lifecycle, agent discovery, AP2 mandates, the x402 payment extension, and the Bazaar service marketplace. Read this when the user is building agent-to-agent systems.
+
+## World AgentKit (Proof-of-Human Free Trial)
+
+World AgentKit (`@worldcoin/agentkit`) is integrated into P402 as an identity layer. Agents registered in the AgentBook contract on Base mainnet with a World ID ZK proof-of-human receive free-trial access to `/api/v2/chat/completions` (default: 5 requests per unique human per endpoint), bypassing the standard billing guard.
+
+### Prerequisites for World AgentKit
+
+1. **Server**: `AGENTKIT_ENABLED=true` must be set in the P402 router environment. DB migration `v2_017_agentkit.sql` must be applied.
+2. **Agent wallet**: Must be registered in AgentBook on Base mainnet (`0xE1D1D3526A6FAa37eb36bD10B933C1b77f4561a4`). Registration requires World ID verification via the World App.
+3. **SIWE challenge signing**: On each request, the agent must sign a CAIP-122 / EIP-4361 SIWE challenge from the server. The signed payload goes in the `agentkit` request header (base64-encoded JSON).
+
+### SDK Integration (transparent retry)
+
+```typescript
+const client = new P402Client({
+  apiKey: 'p402_live_...',
+  worldId: {
+    signer: {
+      address: '0xYourAgentWallet',
+      chainId: 'eip155:8453',
+      signMessage: (msg) => walletClient.signMessage({ message: msg }),
+    },
+  },
+});
+
+// SDK automatically signs the SIWE challenge and retries when the server
+// signals free-trial availability via agentkit_challenge in a 429 response.
+const response = await client.chat({ messages: [...] });
+console.log(response.p402_metadata.human_verified);      // true
+console.log(response.p402_metadata.human_usage_remaining); // 4 (uses left)
+```
+
+### CLI Commands
+
+```bash
+# Check if a wallet is registered in AgentBook
+p402 agent register 0xYourAgentWallet
+
+# Show AgentKit status for the configured agent
+P402_AGENT_ADDRESS=0xYourAgentWallet p402 agent status
+```
+
+### MCP Tool
+
+The `p402_agent_status` MCP tool checks AgentBook registration for any wallet address. Set `P402_WORLD_ID_ENABLED=true` in the MCP server environment to enable World AgentKit awareness.
+
+### Cost Optimization with World AgentKit
+
+- Check `human_verified` in `p402_metadata` before deciding whether to use a session budget
+- If `human_verified: true`, the request was free — no budget was consumed
+- Use `human_usage_remaining` to monitor free-trial exhaustion and switch to paid sessions proactively
+- Never assume the free trial is unlimited — it defaults to 5 uses per human per endpoint
+
+### Human-Anchored Reputation (Phase 2, live)
+
+`reputation_score` in `p402_metadata` is a float [0.0–1.0], Redis-cached per World ID nullifier hash. Starts at 0.5 (neutral) for new verified humans.
+
+Score components (weights): `settlement_score` (0.4), `session_score` (0.3), `dispute_score` (0.2), `sentinel_score` (0.1).
+
+Events that affect score:
+- **+settlement**: `recordSettlement()` — sigmoid increase toward 0.95 over 50+ payments
+- **+session**: `recordSession(true/false)` — regularized completion rate
+- **–dispute**: `recordDispute()` — mandate violations; each costs ~10%, floor 0.2
+- **–sentinel**: `recordAnomalyFlag()` — anomaly flags; each costs ~5%, floor 0.3
+
+Query a wallet's reputation publicly: `GET /api/v2/agents/{address}/reputation`
+
+AP2 mandates: if grantor sends `agentkit:` header, the mandate row stores `human_id_hash`. Violations automatically call `recordDispute()` for that human.
 
 ## Tech Stack Context
 
@@ -275,13 +410,19 @@ OpenAI-compatible chat completion with P402 orchestration. Supports streaming, m
   p402_metadata: {
     request_id: string,
     tenant_id: string,
-    provider: string,                // e.g., 'openai', 'anthropic', 'groq'
-    model: string,                   // e.g., 'gpt-4o-mini', 'claude-sonnet-4-6'
-    cost_usd: number,               // Actual cost of this request
-    latency_ms: number,             // Total latency including routing overhead
-    provider_latency_ms: number,    // Provider-only latency
-    cached: boolean,                // Whether response came from semantic cache
-    routing_mode: string            // Mode that was applied
+    provider: string,                    // e.g., 'openai', 'anthropic', 'groq'
+    model: string,                       // e.g., 'gpt-4o-mini', 'claude-sonnet-4-6'
+    cost_usd: number,                   // Actual cost of this request
+    latency_ms: number,                 // Total latency including routing overhead
+    provider_latency_ms: number,        // Provider-only latency
+    cached: boolean,                    // Whether response came from semantic cache
+    routing_mode: string,               // Mode that was applied
+    // World AgentKit / Credits fields (present when applicable)
+    human_verified?: boolean,           // True if request came from a World ID-verified human
+    human_usage_remaining?: number | null, // Remaining free-trial uses for this human
+    reputation_score?: number | null,   // Human-anchored reputation [0.0–1.0]
+    credits_spent?: number | null,      // Credits deducted this request (1 credit = $0.01)
+    credits_balance?: number | null     // Remaining credit balance after this request
   }
 }
 ```

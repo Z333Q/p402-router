@@ -39,6 +39,7 @@ Install the P402 skill to give Claude Code and Claude.ai deep integration knowle
 - [AP2 Mandates](https://p402.io/docs/mandates): Bounded spending authority for AI agents
 - [MCP Server](https://p402.io/docs/mcp): Model Context Protocol integration for Claude and other agents
 - [ERC-8004 Agents](https://p402.io/docs/erc8004): On-chain agent identity and reputation on Base
+- [Model Comparison](https://p402.io/models): Live 300+ model pricing with cost calculator
 - [Full Documentation](https://p402.io/llms-full.txt): Complete technical reference (1,900+ lines)
 
 ## Skill Reference Files
@@ -55,6 +56,10 @@ Install the P402 skill to give Claude Code and Claude.ai deep integration knowle
 - `GET  /api/v2/sessions/:id` — Check session budget and status
 - `POST /api/v2/providers/compare` — Compare pricing across 300+ models in real time
 - `GET  /api/v2/analytics/recommendations` — AI-generated cost optimization suggestions
+- `GET  /api/v2/credits/balance` — Credit balance (1 credit = $0.01; World ID-verified users get 500 free)
+- `POST /api/v2/credits/purchase` — Buy credits (test or paid USDC mode)
+- `GET  /api/v2/credits/history` — Credit transaction history
+- `GET  /api/v2/agents/:address/reputation` — Human-anchored reputation score [0.0–1.0]
 - `POST /api/v1/facilitator/verify` — Verify x402 EIP-3009 payment authorization
 - `POST /api/v1/facilitator/settle` — Execute USDC transfer on Base L2
 - `POST /api/a2a` — Google A2A JSON-RPC with x402 payment extension

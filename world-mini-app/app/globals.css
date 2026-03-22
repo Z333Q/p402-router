@@ -1,0 +1,93 @@
+/* World Mini App — Neo-Brutalist design system (subset) */
+:root {
+    --primary: #B6FF2E;
+    --neutral-900: #000000;
+    --neutral-800: #141414;
+    --neutral-700: #2B2B2B;
+    --neutral-400: #A8A8A8;
+    --neutral-50: #FFFFFF;
+    --success: #22C55E;
+    --error: #EF4444;
+    --warn: #F59E0B;
+    --border-width: 2px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
+
+html, body {
+    background: var(--neutral-900);
+    color: var(--neutral-50);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    /* Safe areas for iOS notch + home indicator */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: var(--neutral-900);
+    font-weight: 900;
+    text-transform: uppercase;
+    padding: 12px 20px;
+    border: 2px solid var(--primary);
+    cursor: pointer;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+}
+.btn-primary:active { opacity: 0.85; }
+
+.btn-secondary {
+    background: transparent;
+    color: var(--neutral-50);
+    font-weight: 900;
+    text-transform: uppercase;
+    padding: 12px 20px;
+    border: 2px solid var(--neutral-700);
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.card {
+    background: var(--neutral-800);
+    border: 2px solid var(--neutral-700);
+    padding: 16px;
+}
+
+.badge-verified {
+    background: var(--primary);
+    color: var(--neutral-900);
+    font-weight: 900;
+    font-size: 10px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    letter-spacing: 0.08em;
+}
+
+/* Bottom nav */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    bottom: env(safe-area-inset-bottom);
+    background: var(--neutral-900);
+    border-top: 2px solid var(--neutral-700);
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0 12px;
+}
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: var(--neutral-400);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 4px 16px;
+}
+.nav-item.active { color: var(--primary); }

@@ -269,6 +269,114 @@ export async function verifyTransaction(
 }
 
 // ---------------------------------------------------------------------------
+// Receipt verification
+// ---------------------------------------------------------------------------
+
+/**
+ * Verify a receipt ID against the appropriate DB table.
+ *
+ * Receipt ID prefixes:
+ *   sr_  → settlement_receipts (EIP-3009 session reuse)
+ *   rec_ → x402_receipts      (A2A payment flow)
+ */
+async function verifyReceipt(receiptId: string): Promise<VerificationResult> {
+    try {
+        const { createHmac, timingSafeEqual } = await import('crypto');
+        const db = (await import('@/lib/db')).default;
+        const secret = process.env.P402_RECEIPT_SECRET ?? process.env.NEXTAUTH_SECRET ?? '';
+
+        if (receiptId.startsWith('sr_')) {
+            // EIP-3009 settlement receipt
+            const res = await db.query(
+                `SELECT payer_address, original_amount_atomic, consumed_amount_atomic,
+                        facilitator_signature, tx_hash, expires_at
+                 FROM settlement_receipts WHERE receipt_id = $1`,
+                [receiptId]
+            );
+            if (!res.rows[0]) {
+                return { valid: false, error: 'Receipt not found' };
+            }
+            const r = res.rows[0] as {
+                payer_address: string;
+                original_amount_atomic: string;
+                consumed_amount_atomic: string;
+                facilitator_signature: string;
+                tx_hash: string;
+                expires_at: string;
+            };
+            if (new Date(r.expires_at) < new Date()) {
+                return { valid: false, error: 'Receipt has expired' };
+            }
+            const remaining = BigInt(r.original_amount_atomic) - BigInt(r.consumed_amount_atomic);
+            if (remaining <= 0n) {
+                return { valid: false, error: 'Receipt balance exhausted' };
+            }
+            // Verify HMAC
+            const expected = createHmac('sha256', secret)
+                .update(`${receiptId}:${r.tx_hash}:${r.original_amount_atomic}:${r.payer_address}`)
+                .digest('hex');
+            let sigValid = false;
+            try {
+                sigValid = timingSafeEqual(Buffer.from(r.facilitator_signature, 'hex'), Buffer.from(expected, 'hex'));
+            } catch { sigValid = false; }
+            if (!sigValid) {
+                return { valid: false, error: 'Receipt signature invalid' };
+            }
+            return {
+                valid: true,
+                amount: remaining,
+                sender: r.payer_address as Hex,
+            };
+        }
+
+        // A2A x402_receipts
+        const res = await db.query(
+            `SELECT use_count, max_uses, valid_until, status, signature, receipt_data
+             FROM x402_receipts WHERE receipt_id = $1`,
+            [receiptId]
+        );
+        if (!res.rows[0]) {
+            return { valid: false, error: 'Receipt not found' };
+        }
+        const r = res.rows[0] as {
+            use_count: number;
+            max_uses: number | null;
+            valid_until: string | null;
+            status: string;
+            signature: string;
+            receipt_data: { tx_hash?: string; amount?: number; asset?: string };
+        };
+        if (r.status !== 'active') {
+            return { valid: false, error: `Receipt is ${r.status}` };
+        }
+        if (r.valid_until && new Date(r.valid_until) < new Date()) {
+            return { valid: false, error: 'Receipt has expired' };
+        }
+        if (r.max_uses !== null && r.use_count >= r.max_uses) {
+            return { valid: false, error: 'Receipt use limit reached' };
+        }
+        // Verify HMAC (rec_ receipts are signed as "receiptId:tx_hash:amount:asset")
+        const expected = createHmac('sha256', secret)
+            .update(`${receiptId}:${r.receipt_data.tx_hash ?? ''}:${r.receipt_data.amount ?? 0}:${r.receipt_data.asset ?? 'USDC'}`)
+            .digest('hex');
+        let sigValid = false;
+        try {
+            sigValid = timingSafeEqual(Buffer.from(r.signature, 'hex'), Buffer.from(expected, 'hex'));
+        } catch { sigValid = false; }
+        if (!sigValid) {
+            return { valid: false, error: 'Receipt signature invalid' };
+        }
+        return { valid: true };
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : '';
+        return {
+            valid: false,
+            error: msg || 'Receipt verification failed',
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Unified verifyX402Payment — checks both header names
 // ---------------------------------------------------------------------------
 
@@ -320,7 +428,7 @@ export async function verifyX402Payment(
     }
 
     if (parsed.receiptId) {
-        return { valid: false, error: 'Receipt verification not yet implemented' };
+        return verifyReceipt(parsed.receiptId);
     }
 
     if (parsed.signature) {

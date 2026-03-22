@@ -245,18 +245,18 @@ describe('x402 Payment Verification', () => {
             expect(result.error).toBeTruthy();
         });
 
-        it('should return error for receipt reuse (not yet implemented)', async () => {
+        it('should return invalid for unknown receipt ID', async () => {
             const request = new Request('https://api.p402.io/v2/chat', {
                 method: 'POST',
                 headers: {
-                    'X-402-Payment': 'x402-v1;network=8453;receipt=rcpt_123'
+                    'X-402-Payment': 'x402-v1;network=8453;receipt=sr_unknown123'
                 }
             });
 
             const result = await verifyX402Payment(request, mockRecipient, 1.0);
 
+            // Receipt verification hits the DB; in test env it returns invalid (not found or connection error)
             expect(result.valid).toBe(false);
-            expect(result.error).toContain('implemented');
         });
     });
 

@@ -1,0 +1,29 @@
+{
+  "name": "world-p402",
+  "version": "1.0.0",
+  "private": true,
+  "description": "P402 World Mini App — AI routing + credits for World App users",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "15.3.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "@worldcoin/minikit-js": "^1.7.1",
+    "zustand": "^5.0.3",
+    "lucide-react": "^0.511.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

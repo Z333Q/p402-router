@@ -1,3 +1,4 @@
+import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import pool from '@/lib/db'
 import { BlockchainService } from '@/lib/blockchain'
 import { getTokenConfig } from '@/lib/tokens'
@@ -11,6 +12,28 @@ import { queueFeedback as queueERC8004Feedback } from '@/lib/erc8004/feedback-se
 import { AP2PolicyEngine } from '@/lib/ap2-policy-engine'
 import { getFacilitatorWallet } from '@/lib/x402/facilitator-wallet'
 import { isCdpEnabled } from '@/lib/cdp-client'
+
+// ---------------------------------------------------------------------------
+// Receipt helpers (EIP-3009 receipt reuse scheme)
+// ---------------------------------------------------------------------------
+
+/** Sign receipt data with HMAC-SHA256 using the configured receipt secret. */
+function signReceipt(receiptId: string, txHash: string, originalAmountAtomic: string, payer: string): string {
+    const secret = process.env.P402_RECEIPT_SECRET ?? process.env.NEXTAUTH_SECRET ?? 'dev-fallback';
+    return createHmac('sha256', secret)
+        .update(`${receiptId}:${txHash}:${originalAmountAtomic}:${payer.toLowerCase()}`)
+        .digest('hex');
+}
+
+/** Verify an HMAC receipt signature in constant time. */
+function verifyReceiptSig(receiptId: string, txHash: string, originalAmountAtomic: string, payer: string, sig: string): boolean {
+    const expected = signReceipt(receiptId, txHash, originalAmountAtomic, payer);
+    try {
+        return timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'));
+    } catch {
+        return false;
+    }
+}
 
 export interface SettleRequest {
     tenantId?: string;
@@ -32,6 +55,7 @@ export interface SettleResponse {
         verifiedAmount?: string;
         asset?: string;
         timestamp: string;
+        receiptId?: string;  // present when receipt scheme is supported
     };
 }
 
@@ -394,6 +418,49 @@ export class SettlementService {
             }).catch(err => console.error('[ERC8004] Feedback queue failed:', err));
         }
 
+        // World AgentKit Human-Anchored Reputation (async, non-blocking)
+        // If the payer is a World ID-verified human in AgentBook, update their
+        // reputation score to reflect the successful settlement.
+        if (process.env.AGENTKIT_ENABLED === 'true') {
+            Promise.resolve().then(async () => {
+                try {
+                    const { createAgentBookVerifier } = await import('@worldcoin/agentkit');
+                    const { recordSettlement } = await import('@/lib/identity/reputation');
+                    const agentBook = createAgentBookVerifier({ network: 'base' });
+                    const humanId = await agentBook.lookupHuman(authorization.from, 'eip155:8453');
+                    if (humanId) {
+                        await recordSettlement(humanId);
+                    }
+                } catch (err) {
+                    console.warn('[Reputation] Settlement update failed (non-blocking):', (err as Error).message);
+                }
+            });
+        }
+
+        // Generate and store a reusable receipt for this settlement
+        const receiptId = `sr_${randomBytes(6).toString('hex')}`;
+        const originalAmountAtomic = BigInt(authorization.value).toString();
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        const receiptSig = signReceipt(receiptId, txHash, originalAmountAtomic, authorization.from);
+
+        await pool.query(
+            `INSERT INTO settlement_receipts
+             (receipt_id, payer_address, original_amount_atomic, consumed_amount_atomic,
+              facilitator_signature, tx_hash, asset, network, expires_at)
+             VALUES ($1, $2, $3, 0, $4, $5, $6, $7, $8)
+             ON CONFLICT (receipt_id) DO NOTHING`,
+            [
+                receiptId,
+                authorization.from.toLowerCase(),
+                originalAmountAtomic,
+                receiptSig,
+                txHash,
+                tokenConfig.symbol,
+                'eip155:8453',
+                expiresAt,
+            ]
+        );
+
         return {
             settled: true,
             facilitatorId: 'p402-eip3009',
@@ -402,13 +469,16 @@ export class SettlementService {
                 txHash,
                 verifiedAmount: amountHuman,
                 asset: tokenConfig.symbol,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                receiptId,
             }
         };
     }
 
     /**
      * Settle using a previously created receipt (reuse prior payment).
+     * Atomically consumes from the receipt's remaining balance — no new
+     * EIP-3009 signature required from the user.
      */
     static async settleWithReceipt(
         requestId: string,
@@ -423,35 +493,94 @@ export class SettlementService {
         const { tenantId, decisionId, receiptId, amount, asset } = input;
         const targetTenantId = tenantId || '00000000-0000-0000-0000-000000000001';
 
-        // Verify receipt exists and is valid
-        // In production, look up receipt from database
-        // For now, accept the receipt and log it
-        const txHash = `receipt:${receiptId}`;
+        // 1. Look up receipt
+        const res = await pool.query(
+            `SELECT receipt_id, payer_address, original_amount_atomic, consumed_amount_atomic,
+                    facilitator_signature, tx_hash, expires_at, asset AS receipt_asset, network
+             FROM settlement_receipts WHERE receipt_id = $1`,
+            [receiptId]
+        );
 
-        // Replay protection on the receipt ID
-        const claimResult = await ReplayProtection.claimTxHash({
-            txHash,
-            requestId,
-            tenantId: targetTenantId,
-            amountUsd: parseFloat(amount),
-            asset,
-            settlementType: 'receipt'
-        });
-
-        if (!claimResult.claimed) {
+        if (!res.rows[0]) {
             throw new ApiError({
-                code: 'REPLAY_DETECTED',
-                status: 409,
-                message: 'This receipt has already been used for settlement.',
-                details: {
-                    originalRequestId: claimResult.existingRequestId,
-                    processedAt: claimResult.existingProcessedAt
-                },
-                requestId
+                code: 'RECEIPT_NOT_FOUND',
+                status: 404,
+                message: `Receipt ${receiptId} not found`,
+                requestId,
             });
         }
 
-        // Record event
+        const receipt = res.rows[0] as {
+            payer_address: string;
+            original_amount_atomic: string;
+            consumed_amount_atomic: string;
+            facilitator_signature: string;
+            tx_hash: string;
+            expires_at: string;
+            receipt_asset: string;
+            network: string;
+        };
+
+        // 2. Expiry check
+        if (new Date(receipt.expires_at) < new Date()) {
+            throw new ApiError({
+                code: 'RECEIPT_EXPIRED',
+                status: 409,
+                message: 'Receipt has expired',
+                requestId,
+            });
+        }
+
+        // 3. Signature verification (prevents forged receipts)
+        const sigValid = verifyReceiptSig(
+            receiptId,
+            receipt.tx_hash,
+            receipt.original_amount_atomic,
+            receipt.payer_address,
+            receipt.facilitator_signature
+        );
+        if (!sigValid) {
+            throw new ApiError({
+                code: 'INVALID_SIGNATURE',
+                status: 400,
+                message: 'Receipt signature invalid',
+                requestId,
+            });
+        }
+
+        // 4. Balance check
+        const requestedAtomic = BigInt(Math.round(parseFloat(amount) * 1e6));
+        const remaining = BigInt(receipt.original_amount_atomic) - BigInt(receipt.consumed_amount_atomic);
+        if (requestedAtomic > remaining) {
+            throw new ApiError({
+                code: 'RECEIPT_INSUFFICIENT_BALANCE',
+                status: 402,
+                message: `Insufficient receipt balance: ${Number(remaining) / 1e6} ${receipt.receipt_asset} remaining, ${amount} requested`,
+                requestId,
+            });
+        }
+
+        // 5. Atomic consumption — the WHERE clause re-checks the balance to handle
+        //    concurrent requests (optimistic concurrency without a SELECT FOR UPDATE).
+        const updateRes = await pool.query(
+            `UPDATE settlement_receipts
+             SET consumed_amount_atomic = consumed_amount_atomic + $2
+             WHERE receipt_id = $1
+               AND consumed_amount_atomic + $2 <= original_amount_atomic
+             RETURNING consumed_amount_atomic`,
+            [receiptId, requestedAtomic.toString()]
+        );
+
+        if (!updateRes.rowCount) {
+            throw new ApiError({
+                code: 'RECEIPT_INSUFFICIENT_BALANCE',
+                status: 402,
+                message: 'Concurrent receipt consumption failed — please retry',
+                requestId,
+            });
+        }
+
+        // 6. Record event
         await pool.query(
             `INSERT INTO events (
                 event_id, tenant_id, trace_id, outcome, steps, raw_payload, amount, asset, created_at
@@ -464,12 +593,13 @@ export class SettlementService {
                 JSON.stringify([{
                     stepId: 'settle_receipt',
                     at: new Date().toISOString(),
-                    type: 'receipt_verified',
-                    receiptId
+                    type: 'receipt_consumed',
+                    receiptId,
+                    requestedAtomic: requestedAtomic.toString(),
                 }]),
                 JSON.stringify({ receiptId, amount, asset }),
                 amount,
-                asset
+                asset,
             ]
         );
 
@@ -486,11 +616,13 @@ export class SettlementService {
         return {
             settled: true,
             facilitatorId: 'p402-receipt',
+            payer: receipt.payer_address,
             receipt: {
-                txHash,
+                txHash: receipt.tx_hash,
                 verifiedAmount: amount,
                 asset,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                receiptId,
             }
         };
     }

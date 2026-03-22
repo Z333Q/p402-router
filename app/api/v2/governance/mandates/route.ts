@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { requireTenantAccess } from '@/lib/auth';
 import { toApiErrorResponse } from '@/lib/errors';
+import { checkAgentkitAccess } from '@/lib/identity/agentkit';
 
 // =============================================================================
 // LIST MANDATES
@@ -109,6 +110,15 @@ export async function POST(req: NextRequest) {
             }, { status: 400 });
         }
 
+        // Optionally verify grantor World ID (non-blocking — mandate proceeds either way)
+        let humanIdHash: string | null = null;
+        if (process.env.AGENTKIT_ENABLED === 'true') {
+            const agentkit = await checkAgentkitAccess(req, '/api/v2/governance/mandates').catch(() => null);
+            if (agentkit?.humanId) {
+                humanIdHash = agentkit.humanId;
+            }
+        }
+
         const mandateId = `mnd_${crypto.randomUUID().replace(/-/g, '').slice(0, 20)}`;
 
         const insertQuery = `
@@ -123,9 +133,10 @@ export async function POST(req: NextRequest) {
                 status,
                 signature,
                 public_key,
+                human_id_hash,
                 created_at,
                 updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, 0, 'active', $7, $8, NOW(), NOW())
+            ) VALUES ($1, $2, $3, $4, $5, $6, 0, 'active', $7, $8, $9, NOW(), NOW())
             RETURNING *
         `;
 
@@ -137,7 +148,8 @@ export async function POST(req: NextRequest) {
             agent_did,
             JSON.stringify(constraints),
             signature || null,
-            public_key || null
+            public_key || null,
+            humanIdHash
         ]);
 
         const row = result.rows[0];
@@ -150,6 +162,7 @@ export async function POST(req: NextRequest) {
             agent_did: row.agent_did,
             constraints: row.constraints,
             status: row.status,
+            human_verified: humanIdHash !== null,
             created_at: row.created_at
         }, { status: 201 });
 

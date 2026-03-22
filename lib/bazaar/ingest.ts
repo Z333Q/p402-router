@@ -14,19 +14,27 @@ export class BazaarIngest {
 
             const { endpoint } = res.rows[0]
 
-            // 2. Fetch discovery resources
-            // Real implementation would fetch from `${endpoint}/discovery/resources`
-            // For now, mock the fetch
-            const fetchedResources: Partial<BazaarResource>[] = [
-                {
-                    canonicalRouteId: 'rt_mock_gpt4',
-                    title: 'GPT-4 Inference (Mock)',
-                    routePath: '/v1/chat/completions',
-                    methods: ['POST'],
-                    providerBaseUrl: endpoint,
-                    pricing: { model: 'usage_based', unit: 'USD', amount: '0.03' }
+            // 2. Fetch discovery resources from the facilitator's discovery endpoint
+            let fetchedResources: Partial<BazaarResource>[] = [];
+            try {
+                const discoveryRes = await fetch(`${endpoint}/discovery/resources`, {
+                    headers: { 'Accept': 'application/json' },
+                    signal: AbortSignal.timeout(5000),
+                });
+                if (!discoveryRes.ok) {
+                    console.warn(`[BazaarIngest] Discovery endpoint returned ${discoveryRes.status} for facilitator ${facilitatorId}`);
+                    return result;
                 }
-            ]
+                const parsed = await discoveryRes.json();
+                if (!Array.isArray(parsed)) {
+                    console.warn(`[BazaarIngest] Unexpected response format from ${endpoint}/discovery/resources`);
+                    return result;
+                }
+                fetchedResources = parsed as Partial<BazaarResource>[];
+            } catch (fetchErr) {
+                console.warn(`[BazaarIngest] Failed to fetch resources from ${endpoint}:`, fetchErr);
+                return result;
+            }
 
             // 3. Safety scan + upsert
             for (const r of fetchedResources) {

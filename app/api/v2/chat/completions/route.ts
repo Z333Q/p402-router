@@ -22,6 +22,13 @@ import {
 import { requireTenantAccess } from '@/lib/auth';
 import { BillingGuard, BillingGuardError } from '@/lib/providers/openrouter/billing-guard';
 import { toApiErrorResponse } from '@/lib/errors';
+import {
+    checkAgentkitAccess,
+    buildAgentkitChallengeExtension,
+    type AgentkitCheckResult,
+} from '@/lib/identity/agentkit';
+import { getReputationScore } from '@/lib/identity/reputation';
+import { spendCredits, getBalance, getOrCreateAccount, FREE_TRIAL_CREDITS } from '@/lib/services/credits-service';
 
 // =============================================================================
 // REQUEST TYPES
@@ -96,13 +103,20 @@ export async function POST(req: NextRequest) {
         const p402Options = body.p402 || {};
 
         // Use session tenantId as priority, but allow body override if it matches (requireTenantAccess handles this)
-        let tenantId = access.tenantId;
+        const tenantId = access.tenantId;
+
+        // ── Layer 0: World AgentKit (proof-of-human free trial) ──────────────
+        // Verified humans get free-trial access — billing guard is bypassed.
+        const agentkit = await checkAgentkitAccess(req, '/api/v2/chat/completions');
 
         // ── Billing Guard (6-layer spending protection) ──────────────────────
-        const billingGuard = new BillingGuard();
-        await billingGuard.checkRateLimit({ userId: tenantId, tenantId });
-        await billingGuard.checkDailySpend({ userId: tenantId, tenantId });
-        await billingGuard.checkConcurrentReservations({ userId: tenantId, tenantId });
+        if (!agentkit.grantAccess) {
+            const billingCtx = { userId: tenantId, tenantId, humanVerified: agentkit.humanVerified };
+            const billingGuard = new BillingGuard();
+            await billingGuard.checkRateLimit(billingCtx);
+            await billingGuard.checkDailySpend(billingCtx);
+            await billingGuard.checkConcurrentReservations(billingCtx);
+        }
 
         // Build routing options
         const routingOptions: RoutingOptions = {
@@ -137,11 +151,19 @@ export async function POST(req: NextRequest) {
         // Get provider registry
         const registry = getProviderRegistry();
 
+        // Fetch reputation score from cache (non-blocking — null if unavailable)
+        const reputationScore = agentkit.humanId
+            ? await getReputationScore(agentkit.humanId).catch(() => null)
+            : null;
+
+        // ── Credit balance for metadata (non-blocking) ────────────────────────
+        const creditBalance = await getBalance(agentkit.humanId, tenantId).catch(() => null);
+
         // Handle streaming vs non-streaming
         if (body.stream) {
-            return handleStreamingResponse(registry, completionRequest, routingOptions, requestId, tenantId, start);
+            return handleStreamingResponse(registry, completionRequest, routingOptions, requestId, tenantId, start, agentkit, reputationScore, creditBalance?.balance ?? null);
         } else {
-            return handleNonStreamingResponse(registry, completionRequest, routingOptions, requestId, tenantId, start);
+            return handleNonStreamingResponse(registry, completionRequest, routingOptions, requestId, tenantId, start, agentkit, reputationScore, creditBalance?.balance ?? null);
         }
 
     } catch (error: any) {
@@ -149,13 +171,17 @@ export async function POST(req: NextRequest) {
 
         // Handle known error types
         if (error instanceof BillingGuardError) {
+            // Include AgentKit challenge so agents know they can authenticate as
+            // a verified human to get free-trial access instead of being blocked.
+            const agentkitExtension = buildAgentkitChallengeExtension();
             return NextResponse.json({
                 error: {
                     type: 'billing_error',
                     message: error.message,
                     code: error.code,
                     ...(error.retryAfterMs && { retry_after_ms: error.retryAfterMs })
-                }
+                },
+                ...(agentkitExtension && { agentkit_challenge: agentkitExtension })
             }, {
                 status: 429,
                 headers: error.retryAfterMs ? { 'Retry-After': String(Math.ceil(error.retryAfterMs / 1000)) } : {}
@@ -203,7 +229,10 @@ async function handleNonStreamingResponse(
     options: RoutingOptions,
     requestId: string,
     tenantId: string,
-    startTime: number
+    startTime: number,
+    agentkit: AgentkitCheckResult,
+    reputationScore: number | null,
+    creditBalanceBefore: number | null
 ) {
     // Execute completion
     const response = await registry.complete(request, options);
@@ -223,6 +252,19 @@ async function handleNonStreamingResponse(
         ? provider.estimateCost(response.p402.modelId, inputTokens, outputTokens)
         : costUsd;
     const savings = Math.max(0, directCost - costUsd);
+
+    // ── Deduct credits post-response (non-blocking) ───────────────────────────
+    // Credits are deducted after a successful response. If the user has credits,
+    // they are consumed instead of requiring x402 payment on future requests.
+    let creditsSpent = 0;
+    let creditBalanceAfter: number | null = creditBalanceBefore;
+    if (costUsd > 0 && (agentkit.humanId || tenantId)) {
+        const spend = await spendCredits(agentkit.humanId, tenantId, costUsd, requestId).catch(() => null);
+        if (spend?.success) {
+            creditsSpent = spend.creditsSpent;
+            creditBalanceAfter = spend.balanceAfter;
+        }
+    }
 
     // Format response with P402 metadata
     const p402Response = {
@@ -258,7 +300,14 @@ async function handleNonStreamingResponse(
             latency_ms: totalLatencyMs,
             provider_latency_ms: response.p402?.latencyMs,
             cached: response.p402?.cached || false,
-            routing_mode: options.mode
+            routing_mode: options.mode,
+            // World AgentKit
+            human_verified: agentkit.humanVerified,
+            human_usage_remaining: agentkit.humanVerified ? (agentkit.usageRemaining ?? null) : null,
+            reputation_score: reputationScore,
+            // Credits
+            credits_spent: creditsSpent,
+            credits_balance: creditBalanceAfter,
         }
     };
 
@@ -282,7 +331,10 @@ async function handleStreamingResponse(
     options: RoutingOptions,
     requestId: string,
     tenantId: string,
-    startTime: number
+    startTime: number,
+    agentkit: AgentkitCheckResult,
+    reputationScore: number | null,
+    creditBalanceBefore: number | null
 ) {
     // Create a readable stream
     const encoder = new TextEncoder();
@@ -368,7 +420,14 @@ async function handleStreamingResponse(
                         latency_ms: totalLatencyMs,
                         ttfb_ms: ttfbMs,
                         cached: false,
-                        routing_mode: options.mode
+                        routing_mode: options.mode,
+                        // World AgentKit
+                        human_verified: agentkit.humanVerified,
+                        human_usage_remaining: agentkit.humanVerified ? (agentkit.usageRemaining ?? null) : null,
+                        reputation_score: reputationScore,
+                        // Credits (deducted post-stream)
+                        credits_spent: Math.ceil(costUsd * 100),
+                        credits_balance: creditBalanceBefore !== null ? Math.max(0, creditBalanceBefore - Math.ceil(costUsd * 100)) : null,
                     }
                 };
 
@@ -411,7 +470,7 @@ export async function OPTIONS() {
         headers: {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-P402-Tenant, X-P402-Session',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-P402-Tenant, X-P402-Session, agentkit',
             'Access-Control-Max-Age': '86400'
         }
     });

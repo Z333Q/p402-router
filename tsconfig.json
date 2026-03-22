@@ -55,6 +55,7 @@
     "p402-protocol",
     "cli",
     "dune",
-    "p402-animation-demo"
+    "p402-animation-demo",
+    "world-mini-app"
   ]
 }

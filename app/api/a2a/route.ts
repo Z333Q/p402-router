@@ -1,3 +1,4 @@
+import { createHmac } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { A2AMessage, A2ATask, A2ATaskState, A2ATaskStatus } from '../../../lib/a2a-types';
@@ -9,6 +10,9 @@ import { findActiveMandate } from '../../../lib/ap2-policy-engine';
 import { EIP3009Authorization } from '../../../lib/x402/eip3009';
 import { validateAgentTrust } from '../../../lib/erc8004/validation-guard';
 import { ApiError } from '../../../lib/errors';
+import { createEscrow, getEscrowByReference } from '../../../lib/services/escrow-service';
+
+const BAZAAR_ESCROW_THRESHOLD_USD = 1.00;
 
 export async function POST(req: NextRequest) {
     try {
@@ -120,6 +124,32 @@ async function handleMessageSend(params: any, id: string | number, tenantId: str
             ]
         };
 
+        // 3b. Auto-escrow for priced Bazaar tasks (> $1.00)
+        let escrowId: string | null = null;
+        const priceUsd: number | undefined = params.price_usd ?? params.configuration?.price_usd;
+        const providerAddress: string | undefined = params.provider_address ?? params.configuration?.provider_address;
+        const payerAddress: string | undefined = params.payer_address ?? tenantUuid;
+
+        if (priceUsd && priceUsd >= BAZAAR_ESCROW_THRESHOLD_USD && providerAddress && payerAddress) {
+            try {
+                const escrow = await createEscrow({
+                    referenceId: taskId,
+                    payer: payerAddress,
+                    provider: providerAddress,
+                    netAmountUsd: priceUsd,
+                });
+                escrowId = escrow.id;
+            } catch (escrowErr) {
+                // Non-blocking — task proceeds even if escrow creation fails
+                console.warn('[A2A] Auto-escrow failed (non-blocking):', (escrowErr as Error).message);
+            }
+        }
+
+        const configuration = {
+            ...(params.configuration || {}),
+            ...(escrowId ? { escrow_id: escrowId, price_usd: priceUsd } : {}),
+        };
+
         await query(
             `INSERT INTO a2a_tasks (
             id, tenant_id, context_id, request_message, configuration, state, result_message, completed_at
@@ -129,7 +159,7 @@ async function handleMessageSend(params: any, id: string | number, tenantId: str
                 tenantUuid,
                 contextId,
                 JSON.stringify(message),
-                JSON.stringify(params.configuration || {}),
+                JSON.stringify(configuration),
                 'completed',
                 JSON.stringify(resultMessage)
             ]
@@ -151,6 +181,9 @@ async function handleMessageSend(params: any, id: string | number, tenantId: str
                 state: 'completed',
                 message: resultMessage,
                 timestamp: new Date().toISOString()
+            },
+            metadata: {
+                ...(escrowId ? { escrow_id: escrowId, price_usd: priceUsd } : {}),
             }
         };
 
@@ -446,10 +479,11 @@ async function handleX402PaymentSubmitted(params: any, id: string | number, tena
             [payment_id, settledTxHash, settled_at, effectiveScheme]
         );
 
-        // Generate receipt
+        // Generate receipt with real HMAC-SHA256 signature
         const newReceiptId = `rec_${uuidv4().substring(0, 8)}`;
-        // Placeholder signature for now
-        const receiptSignature = `sig_${uuidv4()}`;
+        const receiptSecret = process.env.P402_RECEIPT_SECRET ?? process.env.NEXTAUTH_SECRET ?? 'dev-fallback';
+        const receiptSigInput = `${newReceiptId}:${settledTxHash}:${payment.amount_usd ?? 0}:${payment.asset ?? 'USDC'}`;
+        const receiptSignature = createHmac('sha256', receiptSecret).update(receiptSigInput).digest('hex');
 
         await query(
             `INSERT INTO x402_receipts
