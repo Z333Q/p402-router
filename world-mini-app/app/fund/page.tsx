@@ -55,8 +55,8 @@ export default function FundPage() {
                 reference: referenceId,
                 to: TREASURY,
                 tokens: [{
-                    symbol: Tokens.USDCE,
-                    token_amount: tokenToDecimals(tier.usd, Tokens.USDCE).toString(),
+                    symbol: Tokens.USDC,
+                    token_amount: tokenToDecimals(tier.usd, Tokens.USDC).toString(),
                 }],
                 description: `P402 credits: ${tier.credits} (${tier.label})`,
             };
