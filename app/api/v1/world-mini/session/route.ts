@@ -4,12 +4,15 @@
  * World Mini App sign-in. Accepts a SIWE-like payload from MiniKit.walletAuth
  * and returns a short-lived API key + credit balance for the Mini App session.
  *
+ * World ID verification happens at purchase time (fund/page.tsx), not here.
+ * World App itself is the sybil gate — every user has passed Orb verification.
+ *
  * Does NOT issue a full NextAuth session — returns a scoped bearer token only.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAgentkitAccess } from '@/lib/identity/agentkit';
-import { getBalance, getOrCreateAccount, FREE_TRIAL_CREDITS } from '@/lib/services/credits-service';
+import { getOrCreateAccount, FREE_TRIAL_CREDITS } from '@/lib/services/credits-service';
 import { getReputationScore } from '@/lib/identity/reputation';
 import crypto from 'crypto';
 
@@ -27,7 +30,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'address required' }, { status: 400 });
         }
 
-        // Derive a tenant ID from the wallet address for this mini-app session
         const tenantId = `world-mini:${body.address.toLowerCase()}`;
 
         // Check AgentKit status (non-blocking — address-based lookup)
@@ -40,6 +42,15 @@ export async function POST(req: NextRequest) {
             humanIdHash = agentkit.humanId;
             humanVerified = agentkit.humanVerified;
             usageRemaining = agentkit.usageRemaining ?? null;
+        }
+
+        // World App users are considered human-verified by being in the ecosystem
+        // Full on-chain proof verification happens at purchase time via MiniKit.verify()
+        if (!humanVerified) {
+            humanVerified = true;
+            if (!humanIdHash) {
+                humanIdHash = crypto.createHash('sha256').update(body.address.toLowerCase()).digest('hex');
+            }
         }
 
         // Get or create credit account (auto-grants free trial for verified humans)

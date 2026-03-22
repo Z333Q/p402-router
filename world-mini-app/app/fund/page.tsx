@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { MiniKit, tokenToDecimals, Tokens, PayCommandInput } from '@worldcoin/minikit-js';
+import { MiniKit, tokenToDecimals, Tokens, PayCommandInput, VerificationLevel } from '@worldcoin/minikit-js';
 import { useWorldStore } from '@/lib/store';
 import { BottomNav } from '../components/BottomNav';
 import { StatusBar } from '../components/StatusBar';
@@ -36,6 +36,19 @@ export default function FundPage() {
         setError(null);
 
         try {
+            // World ID verify — at purchase intent, not at login.
+            // Contextually clear: "confirm you're human to process this payment."
+            const { finalPayload: verifyPayload } = await MiniKit.commandsAsync.verify({
+                action: process.env.NEXT_PUBLIC_WORLD_ACTION_ID ?? 'p402-free-credits',
+                signal: tier.credits.toString(),
+                verification_level: VerificationLevel.Orb,
+            });
+            if (verifyPayload.status !== 'success') {
+                setError('World ID verification required to purchase credits.');
+                setLoading(false);
+                return;
+            }
+
             // Get payment initiation from P402 backend
             const initRes = await fetch(`${P402_URL}/api/v2/credits/purchase`, {
                 method: 'POST',

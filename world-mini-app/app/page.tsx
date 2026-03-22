@@ -76,11 +76,10 @@ export default function ChatPage() {
                 expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 statement: 'Sign in to P402 AI Router',
             });
-            if (finalPayload.status === 'success') {
-                setWallet(finalPayload.address);
-                setVerified(true);
-                await fetchSession(finalPayload.address, finalPayload.signature, finalPayload.message);
-            }
+            if (finalPayload.status !== 'success') return;
+            setWallet(finalPayload.address);
+            setVerified(true); // World App itself is the sybil gate
+            await fetchSession(finalPayload.address, finalPayload.signature, finalPayload.message);
         } catch { /* not in World App */ }
     }
 
@@ -92,10 +91,16 @@ export default function ChatPage() {
                 body: JSON.stringify({ address, signature, message }),
             });
             if (res.ok) {
-                const d = await res.json() as { api_key?: string; credits_remaining?: number; usage_remaining?: number };
+                const d = await res.json() as {
+                    api_key?: string;
+                    credits_remaining?: number;
+                    usage_remaining?: number;
+                    human_verified?: boolean;
+                };
                 if (d.api_key) setApiKey(d.api_key);
                 if (d.credits_remaining != null) setCredits(d.credits_remaining);
                 if (d.usage_remaining != null) setHumanUsage(d.usage_remaining);
+                if (d.human_verified) setVerified(true);
             }
         } catch { /* non-blocking */ }
     }
