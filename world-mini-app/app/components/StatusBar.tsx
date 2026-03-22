@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useWorldStore } from '@/lib/store';
 
 export function StatusBar() {
@@ -20,9 +21,12 @@ export function StatusBar() {
             justifyContent: 'space-between',
             alignItems: 'center',
         }}>
-            <span style={{ fontWeight: 900, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                P402
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Image src="/logo.png" alt="P402" width={24} height={24} style={{ display: 'block' }} />
+                <span style={{ fontWeight: 900, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    P402
+                </span>
+            </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 {humanVerified && (
                     <span className="badge-verified">VERIFIED</span>

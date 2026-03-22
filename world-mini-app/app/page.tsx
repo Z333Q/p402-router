@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { MiniKit } from '@worldcoin/minikit-js';
 import { useWorldStore } from '@/lib/store';
 import { BottomNav } from './components/BottomNav';
@@ -124,19 +125,67 @@ export default function ChatPage() {
             {/* Messages area */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 80px' }}>
                 {messages.length === 0 && (
-                    <div style={{ textAlign: 'center', marginTop: '20%', color: 'var(--neutral-400)' }}>
-                        <div style={{ fontSize: 32, marginBottom: 8 }}>⚡</div>
-                        <div style={{ fontWeight: 900, fontSize: 18, color: 'var(--neutral-50)', textTransform: 'uppercase', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 32, paddingBottom: 16 }}>
+                        {/* Logo + brand */}
+                        <Image src="/logo.png" alt="P402" width={64} height={64} style={{ marginBottom: 12 }} />
+                        <div style={{ fontWeight: 900, fontSize: 22, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
                             P402 AI Router
                         </div>
-                        <div style={{ fontSize: 13 }}>
-                            Route across 300+ AI models. Free trial included.
+                        <div style={{ fontSize: 13, color: 'var(--neutral-400)', marginBottom: 20, textAlign: 'center', maxWidth: 260 }}>
+                            300+ AI models. One endpoint.<br />Your World ID unlocks free credits.
                         </div>
+
+                        {/* Balance strip */}
                         {balanceDisplay && (
-                            <div style={{ marginTop: 12, color: 'var(--primary)', fontWeight: 700, fontSize: 13 }}>
-                                {balanceDisplay} available
+                            <div style={{
+                                width: '100%',
+                                background: 'var(--neutral-800)',
+                                border: '2px solid var(--primary)',
+                                padding: '12px 16px',
+                                marginBottom: 24,
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                            }}>
+                                <span style={{ fontSize: 12, color: 'var(--neutral-400)', textTransform: 'uppercase', fontWeight: 700 }}>Available</span>
+                                <span style={{ fontSize: 16, color: 'var(--primary)', fontWeight: 900, fontFamily: 'monospace' }}>{balanceDisplay}</span>
                             </div>
                         )}
+
+                        {/* Suggested prompts */}
+                        <div style={{ width: '100%', marginBottom: 8 }}>
+                            <div style={{ fontSize: 11, color: 'var(--neutral-400)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 10, letterSpacing: '0.06em' }}>
+                                Try asking
+                            </div>
+                            {[
+                                'Review this Solidity contract for security issues',
+                                'Explain how Base L2 reduces gas costs',
+                                'Write a Python script to call the P402 API',
+                                'Compare Claude Opus 4.6 vs ChatGPT 5.4',
+                            ].map(prompt => (
+                                <button
+                                    key={prompt}
+                                    onClick={() => setInput(prompt)}
+                                    style={{
+                                        display: 'block',
+                                        width: '100%',
+                                        textAlign: 'left',
+                                        background: 'var(--neutral-800)',
+                                        border: '2px solid var(--neutral-700)',
+                                        color: 'var(--neutral-50)',
+                                        padding: '11px 14px',
+                                        fontSize: 13,
+                                        cursor: 'pointer',
+                                        marginBottom: 8,
+                                        lineHeight: 1.4,
+                                    }}
+                                    onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--primary)')}
+                                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--neutral-700)')}
+                                >
+                                    {prompt}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
 
