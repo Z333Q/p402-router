@@ -363,6 +363,49 @@ export async function markResolved(id: string, toProvider: boolean): Promise<Esc
     return (await getEscrow(id))!;
 }
 
+/**
+ * System-initiated release after successful AI task completion.
+ * Advances FUNDED | ACCEPTED | IN_PROGRESS → DELIVERED → SETTLED in one call.
+ * No dispute window enforcement — the AI response IS the delivery proof.
+ * Returns null if no escrow exists for the referenceId (not all tasks have escrow).
+ */
+export async function autoReleaseEscrow(
+    referenceId: string,
+    proofHash: string,
+    actor = 'system'
+): Promise<EscrowRecord | null> {
+    const esc = await getEscrowByReference(referenceId);
+    if (!esc) return null;
+
+    // Already in a terminal or disputed state — nothing to do
+    if (['SETTLED', 'CANCELLED', 'RESOLVED', 'EXPIRED'].includes(esc.state)) return esc;
+
+    const fromState = esc.state;
+
+    // Advance to DELIVERED if not already there
+    if (esc.state !== 'DELIVERED') {
+        const deliverableStates: EscrowState[] = ['FUNDED', 'ACCEPTED', 'IN_PROGRESS'];
+        if (!deliverableStates.includes(esc.state)) {
+            // CREATED without funding — can't release yet
+            return esc;
+        }
+        await db.query(
+            `UPDATE escrows SET state='DELIVERED', delivered_at=NOW(), proof_hash=$2 WHERE id=$1`,
+            [esc.id, proofHash]
+        );
+        await logEvent(esc.id, fromState, 'DELIVERED', actor, undefined, { proof_hash: proofHash, auto: true });
+    }
+
+    // Settle (bypass dispute window for automated flows)
+    await db.query(
+        `UPDATE escrows SET state='SETTLED', settled_at=NOW() WHERE id=$1`,
+        [esc.id]
+    );
+    await logEvent(esc.id, 'DELIVERED', 'SETTLED', actor, undefined, { auto: true });
+
+    return (await getEscrow(esc.id))!;
+}
+
 export async function getEscrowEvents(escrowId: string) {
     const res = await db.query(
         'SELECT * FROM escrow_events WHERE escrow_id = $1 ORDER BY created_at ASC',

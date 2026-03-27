@@ -38,6 +38,13 @@ export type ApiErrorCode =
     | 'RECEIPT_NOT_FOUND'
     | 'RECEIPT_EXPIRED'
     | 'RECEIPT_INSUFFICIENT_BALANCE'
+    // Execute / Intelligence Layer
+    | 'BUDGET_INSUFFICIENT'
+    | 'BUDGET_RESERVATION_FAILED'
+    | 'PLAN_GENERATION_FAILED'
+    | 'NO_VALID_PLAN'
+    | 'IDEMPOTENCY_CONFLICT'
+    | 'EXECUTION_FAILED'
 
 export class ApiError extends Error {
     public readonly code: ApiErrorCode

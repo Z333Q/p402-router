@@ -22,6 +22,9 @@ const envSchema = z.object({
     P402_SIGNER_ADDRESS: z.string().min(1),
     P402_FACILITATOR_PRIVATE_KEY: z.string().optional(),
     CDP_SERVER_WALLET_ENABLED: z.string().optional(),
+    // Receipt signing — required so receipt signatures are always verifiable.
+    // Must be at least 32 chars. Generate with: openssl rand -hex 32
+    P402_RECEIPT_SECRET: z.string().min(32),
 });
 
 /**

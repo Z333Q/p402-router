@@ -6,6 +6,7 @@ export function FAQ() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FAQItem q="I still get 402 after attaching the payment header. Why?" a="1) Use PAYMENT-SIGNATURE, not legacy X-PAYMENT. 2) Signature could be invalid. 3) Amount too low. 4) Address lacks USDC or KYT flagged." />
                     <FAQItem q="What does Bazaar do?" a="Bazaar lists payable endpoints using machine-readable metadata, so developers and agents discover pricing and routes." />
+                    <FAQItem q="Why is the Bazaar escrow fee 2%?" a="Escrow covers two on-chain transactions and a 48-hour dispute window. It is enforced by the P402Escrow contract at release — not the platform layer — so it applies uniformly across all plans. You can disable it in Developer Settings and fall back to direct x402 settlement at your plan's standard rate." />
                     <FAQItem q="Do different facilitators exist?" a="Yes. The ecosystem lists multiple facilitators with different network, token, and feature profiles." />
                     <FAQItem q="What changes in v2 matter for Router?" a="V2 adds lifecycle hooks for custom logic at key points in the flow, plus an extension system for discovery." />
                 </div>

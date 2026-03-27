@@ -50,6 +50,28 @@ export async function revokeApiKeyAction(keyId: string) {
     revalidatePath('/dashboard/settings');
 }
 
+export async function updateEscrowEnabledAction(enabled: boolean): Promise<{ success: boolean; error?: string }> {
+    try {
+        const session = await getServerSession(authOptions);
+        const tenantId = (session?.user as any)?.tenantId;
+        if (!tenantId) throw new Error("Unauthorized");
+
+        await db.query(
+            `INSERT INTO tenant_settings (tenant_id, escrow_enabled)
+       VALUES ($1, $2)
+       ON CONFLICT (tenant_id) DO UPDATE SET
+         escrow_enabled = EXCLUDED.escrow_enabled,
+         updated_at = NOW()`,
+            [tenantId, enabled]
+        );
+
+        revalidatePath('/dashboard/settings');
+        return { success: true };
+    } catch {
+        return { success: false, error: 'Failed to update escrow setting.' };
+    }
+}
+
 export async function saveWebhookAction(prevState: any, formData: FormData) {
     try {
         const session = await getServerSession(authOptions);

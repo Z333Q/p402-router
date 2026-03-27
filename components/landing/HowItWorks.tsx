@@ -25,7 +25,7 @@ const STEPS = [
         number: '03',
         title: 'Watch costs drop',
         timeLabel: 'Automatic',
-        description: 'P402 routes each request to the optimal model. Every call is logged with cost, latency, and savings. Payments settle on Base.',
+        description: 'P402 routes each request to the optimal model. Every request is traced end-to-end — cost vs baseline, latency, quality score, and provider attribution — all live in your Intelligence Layer dashboard.',
         action: { label: 'Run quickstart', href: '/developers/quickstart' },
         code: null,
         accent: '#22C55E',

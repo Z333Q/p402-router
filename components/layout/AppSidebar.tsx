@@ -8,17 +8,25 @@ import {
     Network,
     ShieldCheck,
     DatabaseZap,
-    LineChart,
     Store,
     Bot,
     Settings,
-    LogOut,
     Unplug,
     Activity,
     X,
     Shield,
     CreditCard,
-    Zap
+    Zap,
+    FileText,
+    GitBranch,
+    TrendingDown,
+    BookOpen,
+    Wrench,
+    FlaskConical,
+    Play,
+    Layers,
+    ChevronDown,
+    ChevronRight,
 } from "lucide-react"
 import { useSession, signOut } from "next-auth/react"
 import { useDisconnect } from 'wagmi'
@@ -38,6 +46,17 @@ const NAV_ITEMS = [
     { name: "Settings & API Keys", href: "/dashboard/settings", icon: Settings },
 ]
 
+const INTELLIGENCE_ITEMS = [
+    { name: "Execute", href: "/dashboard/playground", icon: Play },
+    { name: "Sessions", href: "/dashboard/sessions", icon: Layers },
+    { name: "Requests", href: "/dashboard/requests", icon: FileText },
+    { name: "Traces", href: "/dashboard/traces", icon: GitBranch },
+    { name: "Savings", href: "/dashboard/savings", icon: TrendingDown },
+    { name: "Evals", href: "/dashboard/evals", icon: FlaskConical },
+    { name: "Knowledge", href: "/dashboard/knowledge", icon: BookOpen },
+    { name: "Tools", href: "/dashboard/tools", icon: Wrench },
+]
+
 const ADMIN_ITEMS = [
     { name: "Global Sync", href: "#", icon: Activity, adminOnly: true, action: 'sync' },
 ]
@@ -50,6 +69,8 @@ export function AppSidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
     const isAdmin = (session?.user as any)?.isAdmin
 
     const [isUpgrading, setIsUpgrading] = useState(false)
+    const intelligenceActive = INTELLIGENCE_ITEMS.some(i => pathname === i.href || pathname.startsWith(i.href + '/'))
+    const [intelligenceOpen, setIntelligenceOpen] = useState(intelligenceActive)
 
     const handleUpgrade = async (e: React.MouseEvent) => {
         e.preventDefault()
@@ -77,6 +98,7 @@ export function AppSidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
     return (
         <aside className={`
             fixed left-0 top-0 z-40 h-screen w-64 border-r-2 border-black bg-white transition-transform duration-300 ease-in-out lg:translate-x-0
+            flex flex-col
             ${isOpen ? 'translate-x-0' : '-translate-x-full'}
             selection:bg-primary selection:text-black shadow-[4px_0_0_0_rgba(0,0,0,0.05)]
         `}>
@@ -121,6 +143,43 @@ export function AppSidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
                             </Link>
                         )
                     })}
+                </div>
+
+                <div className="space-y-0">
+                    <button
+                        onClick={() => setIntelligenceOpen(v => !v)}
+                        className={`w-full flex items-center justify-between px-3 py-2 mb-1 text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${intelligenceActive ? 'text-black' : 'text-neutral-500 hover:text-black'}`}
+                    >
+                        <span>Intelligence Layer</span>
+                        {intelligenceOpen
+                            ? <ChevronDown size={12} />
+                            : <ChevronRight size={12} />
+                        }
+                    </button>
+                    {intelligenceOpen && (
+                        <div className="space-y-0.5">
+                            {INTELLIGENCE_ITEMS.map((item) => {
+                                const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        onClick={() => setIsOpen(false)}
+                                        className={`
+                                            group flex items-center gap-3 rounded-none border-l-4 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all
+                                            ${isActive
+                                                ? "border-black bg-primary text-black shadow-[4px_0_0_0_rgba(0,0,0,1)]"
+                                                : "border-transparent text-neutral-400 hover:bg-neutral-50 hover:text-black hover:border-neutral-200"
+                                            }
+                                        `}
+                                    >
+                                        <item.icon className={`h-3.5 w-3.5 transition-transform group-hover:scale-110 ${isActive ? "text-black" : "text-neutral-500 group-hover:text-neutral-700"}`} />
+                                        {item.name}
+                                    </Link>
+                                )
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {isAdmin && (

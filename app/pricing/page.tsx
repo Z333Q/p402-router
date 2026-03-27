@@ -72,6 +72,11 @@ const pricingJsonLd = {
                     name: 'Does the VS Code extension work on the Free plan?',
                     acceptedAnswer: { '@type': 'Answer', text: 'Yes. The VS Code extension (p402-protocol.p402) is available on all plans including Free. Install it with ext install p402-protocol.p402 in VS Code, Cursor, or Windsurf. The MCP server is bundled with zero config required.' },
                 },
+                {
+                    '@type': 'Question',
+                    name: 'Why is the escrow fee 2% instead of my plan rate?',
+                    acceptedAnswer: { '@type': 'Answer', text: 'Escrow involves two on-chain transactions and a dispute window. The 2% fee is enforced by the P402Escrow smart contract at release and applies uniformly across all plans. You can disable escrow in Developer Settings to use direct x402 settlement at your plan\'s standard rate.' },
+                },
             ],
         },
     ],
@@ -137,6 +142,9 @@ export default function PricingPage() {
                         </div>
                         <p className="text-center text-[10px] font-bold text-[var(--neutral-700)] mt-4 font-mono uppercase tracking-wider">
                             Fees deducted atomically at settlement — enforced by contract, not policy
+                        </p>
+                        <p className="text-center text-[10px] font-bold text-[var(--neutral-600)] mt-2 font-mono uppercase tracking-wider">
+                            Escrow-protected payments (Bazaar): <span className="text-[var(--primary)]">2% flat</span> — enforced on-chain at escrow release · <span className="text-[var(--neutral-500)]">toggleable per account</span>
                         </p>
                     </div>
                 </section>
@@ -273,6 +281,7 @@ export default function PricingPage() {
                                 <tbody className="text-sm">
                                     <CategoryRow label="Pricing" />
                                     <ComparisonRow label="Platform fee per settlement" free="1.00%" pro="0.75%" enterprise="Volume rate" />
+                                    <ComparisonRow label="Escrow-protected payments (Bazaar)" free="2% flat" pro="2% flat" enterprise="2% flat" />
                                     <ComparisonRow label="Monthly subscription" free="$0 / mo" pro="$499 / mo" enterprise="Custom" />
 
                                     <CategoryRow label="Routing" />
@@ -332,6 +341,10 @@ export default function PricingPage() {
                                 {
                                     q: "Does the VS Code extension work on the Free plan?",
                                     a: "Yes — the extension is available on all plans including Free. Install it with 'ext install p402-protocol.p402' in VS Code, Cursor, or Windsurf. The MCP server is bundled inside the extension; tools appear in Copilot agent mode immediately with no config files required. Run 'P402: Configure API Key' from the command palette to connect your account."
+                                },
+                                {
+                                    q: "Why is the escrow fee 2% instead of my plan rate?",
+                                    a: "Escrow involves two on-chain transactions (deposit + release) and a 48-hour dispute window. The 2% fee covers settlement gas and dispute infrastructure. It is enforced directly by the P402Escrow smart contract at release — not by the platform layer — so it applies uniformly across all plans. You can disable escrow in Developer Settings and fall back to direct x402 settlement at your plan's standard rate."
                                 }
                             ].map((faq, i) => (
                                 <div key={i} className="bg-white border-2 border-black p-8 hover:bg-[var(--neutral-100)] transition-all shadow-[4px_4px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#000] cursor-default">

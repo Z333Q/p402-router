@@ -55,7 +55,7 @@ export const HeroAuditor = () => {
                     <p className="text-base lg:text-lg font-bold text-neutral-600 max-w-lg mb-6 leading-relaxed border-l-4 border-black pl-5">
                         We route each request to the cheapest model that meets your quality bar,
                         optimizing continuously across 300+ models. Payments settle gaslessly on Base.
-                        Full audit trail.
+                        Every request traced, evaluated, and attributed.
                     </p>
 
                     {/* Mode selector preview */}
@@ -95,6 +95,7 @@ export const HeroAuditor = () => {
                         <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />300+ models</span>
                         <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />Zero gas fees</span>
                         <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />USDC on Base</span>
+                        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />Live intelligence dashboard</span>
                     </div>
 
                     {/* Compatibility note */}
