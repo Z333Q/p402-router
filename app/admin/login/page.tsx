@@ -1,57 +1,92 @@
 import { Suspense } from 'react';
 import { AdminLoginForm } from './_components/AdminLoginForm';
 
-export const metadata = { title: 'Admin Login — P402', robots: 'noindex,nofollow' };
+export const metadata = { title: 'Admin — P402', robots: 'noindex,nofollow' };
 
 export default function AdminLoginPage() {
     return (
-        <div className="min-h-screen bg-black flex items-center justify-center p-4">
-            {/* Subtle grid background */}
-            <div
-                className="fixed inset-0 opacity-[0.03] pointer-events-none"
-                style={{
-                    backgroundImage: 'linear-gradient(#FF3B30 1px, transparent 1px), linear-gradient(90deg, #FF3B30 1px, transparent 1px)',
-                    backgroundSize: '40px 40px',
-                }}
-            />
-
-            <div className="relative w-full max-w-sm">
-                {/* Header */}
-                <div className="mb-10">
-                    <div className="flex items-center gap-3 mb-6">
+        <div className="min-h-screen bg-white flex">
+            {/* Left — branding panel */}
+            <div className="hidden lg:flex flex-col justify-between w-[420px] shrink-0 bg-black border-r-2 border-black p-12">
+                <div>
+                    <div className="flex items-center gap-3 mb-16">
                         <div className="w-8 h-8 bg-[#FF3B30] border-2 border-[#FF3B30] flex items-center justify-center">
                             <span className="text-white font-black text-xs">P4</span>
                         </div>
-                        <span className="text-white font-black text-xs uppercase tracking-[0.3em]">
-                            Admin Console
+                        <span className="text-white font-black text-[11px] uppercase tracking-[0.3em]">
+                            P402.io
                         </span>
                     </div>
-                    <h1 className="text-3xl font-black text-white leading-none tracking-tight">
-                        Restricted<br />Access
+
+                    <h1 className="text-5xl font-black text-white leading-[1] tracking-tight uppercase mb-6">
+                        Admin<br />Console
                     </h1>
-                    <p className="mt-3 text-xs text-neutral-500 font-mono">
-                        P402 platform administration. Unauthorized access is prohibited.
+                    <p className="text-sm text-neutral-500 font-mono leading-relaxed">
+                        Platform governance, analytics, and operational control.
                     </p>
                 </div>
 
-                {/* Login card */}
-                <div className="border-2 border-neutral-800 bg-neutral-950 p-8">
-                    <Suspense>
-                        <AdminLoginForm />
-                    </Suspense>
+                <div className="space-y-3">
+                    {[
+                        'KPI Command Center',
+                        'User & Safety Management',
+                        'Revenue Analytics',
+                        'Full Audit Trail',
+                    ].map(item => (
+                        <div key={item} className="flex items-center gap-3">
+                            <div className="w-1.5 h-1.5 bg-[#FF3B30] shrink-0" />
+                            <span className="text-[11px] font-mono text-neutral-500 uppercase tracking-wider">{item}</span>
+                        </div>
+                    ))}
+                    <div className="pt-6 border-t border-neutral-800">
+                        <p className="text-[10px] font-mono text-neutral-700 uppercase tracking-widest">
+                            All actions are logged and audited
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Right — login form */}
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
+                {/* Mobile logo */}
+                <div className="flex items-center gap-3 mb-10 lg:hidden">
+                    <div className="w-8 h-8 bg-black border-2 border-black flex items-center justify-center">
+                        <span className="text-white font-black text-xs">P4</span>
+                    </div>
+                    <span className="font-black text-[11px] uppercase tracking-[0.3em] text-black">
+                        Admin Console
+                    </span>
                 </div>
 
-                {/* Footer */}
-                <div className="mt-6 flex items-center justify-between">
-                    <span className="text-[10px] text-neutral-700 font-mono uppercase tracking-widest">
-                        All actions are logged
-                    </span>
-                    <a
-                        href="/dashboard"
-                        className="text-[10px] text-neutral-600 hover:text-neutral-400 font-mono transition-colors"
-                    >
-                        ← Back to app
-                    </a>
+                <div className="w-full max-w-sm">
+                    {/* Heading */}
+                    <div className="mb-10">
+                        <h2 className="text-2xl font-black text-black uppercase tracking-tight leading-none mb-3">
+                            Sign In
+                        </h2>
+                        <p className="text-xs font-mono text-neutral-500">
+                            Restricted access. Unauthorized entry is prohibited.
+                        </p>
+                    </div>
+
+                    {/* Form card — neo-brutalist: 2px border, no radius, no shadow */}
+                    <div className="border-2 border-black bg-white p-8">
+                        <Suspense>
+                            <AdminLoginForm />
+                        </Suspense>
+                    </div>
+
+                    <div className="mt-6 flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest">
+                            zeshan@p402.io
+                        </span>
+                        <a
+                            href="/dashboard"
+                            className="text-[10px] font-mono text-neutral-400 hover:text-black transition-colors uppercase tracking-widest"
+                        >
+                            ← App
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
