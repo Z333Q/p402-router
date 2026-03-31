@@ -1,4 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server'
+import { hashSessionToken } from '@/lib/admin/crypto'
 
 // Allowed origins for CORS (P402 mini-app and development)
 const ALLOWED_ORIGINS = [
@@ -8,6 +9,9 @@ const ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:3001',
 ];
+
+// Admin paths — require admin session cookie
+const ADMIN_PUBLIC_PATHS = ['/admin/login', '/api/admin/auth'];
 
 // API paths that require session authentication
 const PROTECTED_API_PATHS = [
@@ -22,6 +26,36 @@ export function middleware(request: NextRequest) {
     const origin = request.headers.get('origin');
     const host = request.headers.get('host');
 
+    // ── Admin path guard ──────────────────────────────────────────────────────
+    // All /admin/* paths (except login + auth API) require the admin session cookie.
+    // Full DB session validation happens inside each route via requireAdminAccess().
+    // Middleware only does structural validation + IP allowlisting (Edge-safe).
+    if (pathname.startsWith('/admin') && !ADMIN_PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+        const rawToken = request.cookies.get('p402-admin-session')?.value;
+
+        if (!rawToken || rawToken.length < 64) {
+            const loginUrl = new URL('/admin/login', request.url);
+            if (pathname !== '/admin' && pathname !== '/admin/') {
+                loginUrl.searchParams.set('redirect', pathname);
+            }
+            return NextResponse.redirect(loginUrl);
+        }
+
+        // IP allowlisting (optional — only enforced if ADMIN_ALLOWED_IPS is set)
+        const allowedIPs = process.env.ADMIN_ALLOWED_IPS?.split(',').map(ip => ip.trim()).filter(Boolean);
+        if (allowedIPs && allowedIPs.length > 0) {
+            const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+                ?? request.headers.get('x-real-ip');
+            if (clientIP && !allowedIPs.includes(clientIP)) {
+                return new NextResponse('Forbidden', { status: 403 });
+            }
+        }
+
+        // Pass token hash in header so API routes can skip re-hashing
+        const res = NextResponse.next();
+        res.headers.set('x-admin-token-hash', hashSessionToken(rawToken));
+        return res;
+    }
 
     // Handle CORS preflight for API routes
     if (request.method === 'OPTIONS' && pathname.startsWith('/api/')) {

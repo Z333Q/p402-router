@@ -7,6 +7,9 @@ const envSchema = z.object({
     GOOGLE_CLIENT_ID: z.string().min(1),
     GOOGLE_CLIENT_SECRET: z.string().min(1),
     ADMIN_EMAILS: z.string().optional(),
+    ADMIN_ENCRYPTION_KEY: z.string().length(64).optional(), // 32-byte hex for AES-256-GCM TOTP encryption
+    ADMIN_JWT_SECRET: z.string().min(32).optional(),        // separate from NEXTAUTH_SECRET
+    ADMIN_ALLOWED_IPS: z.string().optional(),               // comma-separated CIDR allowlist
     RESEND_API_KEY: z.string().optional(),
     NEXT_PUBLIC_APP_URL: z.string().url().optional().default('http://localhost:3000'),
     POLL_SECRET: z.string().optional(),
