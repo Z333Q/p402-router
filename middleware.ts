@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server'
-import { hashSessionToken } from '@/lib/admin/crypto'
 
 // Allowed origins for CORS (P402 mini-app and development)
 const ALLOWED_ORIGINS = [
@@ -51,10 +50,7 @@ export function middleware(request: NextRequest) {
             }
         }
 
-        // Pass token hash in header so API routes can skip re-hashing
-        const res = NextResponse.next();
-        res.headers.set('x-admin-token-hash', hashSessionToken(rawToken));
-        return res;
+        return NextResponse.next();
     }
 
     // Handle CORS preflight for API routes
