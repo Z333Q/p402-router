@@ -447,8 +447,8 @@ export async function delegateWithAutoPay(
 
     // Audit log payment into traffic_events
     pool.query(
-        `INSERT INTO traffic_events (tenant_id, event_type, metadata, created_at)
-         VALUES ($1, 'a2a_auto_pay', $2::jsonb, NOW())`,
+        `INSERT INTO traffic_events (tenant_id, path, method, status_code, event_type, metadata, created_at)
+         VALUES ($1, '/api/a2a', 'POST', 200, 'a2a_auto_pay', $2::jsonb, NOW())`,
         [
             tenantId,
             JSON.stringify({

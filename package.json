@@ -25,7 +25,13 @@
     "test:e2e:ui": "playwright test --ui",
     "build:skill": "chmod +x scripts/build-skill.sh && ./scripts/build-skill.sh",
     "prebuild": "npm run build:skill",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "test:e2e:live": "playwright test --project=live-smoke --project=live-api --project=live-dashboard --project=live-admin",
+    "test:e2e:live:setup": "playwright test --project=live-user-setup --project=live-admin-setup",
+    "test:e2e:live:smoke": "playwright test --project=live-smoke",
+    "test:e2e:live:api": "playwright test --project=live-api",
+    "test:e2e:live:dashboard": "playwright test --project=live-dashboard",
+    "test:e2e:live:admin": "playwright test --project=live-admin"
   },
   "lint-staged": {
     "**/*.{ts,tsx}": [

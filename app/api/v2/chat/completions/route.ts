@@ -29,6 +29,41 @@ import {
 } from '@/lib/identity/agentkit';
 import { getReputationScore } from '@/lib/identity/reputation';
 import { spendCredits, getBalance, getOrCreateAccount, FREE_TRIAL_CREDITS } from '@/lib/services/credits-service';
+import db from '@/lib/db';
+
+// Fire-and-forget traffic event logger — never throws, never blocks response
+function logTrafficEvent(event: {
+    tenantId: string;
+    requestId: string;
+    provider: string;
+    model: string;
+    latencyMs: number;
+    tokensIn: number;
+    tokensOut: number;
+    costUsd: number;
+    cacheHit: boolean;
+    statusCode: number;
+}) {
+    db.query(
+        `INSERT INTO traffic_events
+            (tenant_id, path, method, status_code, latency_ms, model, provider,
+             tokens_in, tokens_out, cost_usd, cache_hit, request_id, event_type, created_at)
+         VALUES ($1, $2, 'POST', $3, $4, $5, $6, $7, $8, $9, $10, $11, 'chat_completion', NOW())`,
+        [
+            event.tenantId,
+            '/api/v2/chat/completions',
+            event.statusCode,
+            event.latencyMs,
+            event.model,
+            event.provider,
+            event.tokensIn,
+            event.tokensOut,
+            event.costUsd,
+            event.cacheHit,
+            event.requestId,
+        ]
+    ).catch(() => { /* best-effort — never block response */ });
+}
 
 // =============================================================================
 // REQUEST TYPES
@@ -311,6 +346,19 @@ async function handleNonStreamingResponse(
         }
     };
 
+    logTrafficEvent({
+        tenantId,
+        requestId,
+        provider: response.p402?.providerId ?? 'unknown',
+        model: response.p402?.modelId ?? request.model ?? 'unknown',
+        latencyMs: totalLatencyMs,
+        tokensIn: inputTokens,
+        tokensOut: outputTokens,
+        costUsd,
+        cacheHit: response.p402?.cached ?? false,
+        statusCode: 200,
+    });
+
     return NextResponse.json(p402Response, {
         headers: {
             'X-P402-Request-ID': requestId,
@@ -434,6 +482,19 @@ async function handleStreamingResponse(
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify(finalChunk)}\n\n`));
                 controller.enqueue(encoder.encode('data: [DONE]\n\n'));
                 controller.close();
+
+                logTrafficEvent({
+                    tenantId,
+                    requestId,
+                    provider: decision.provider.id,
+                    model: decision.model.id,
+                    latencyMs: totalLatencyMs,
+                    tokensIn: estimatedInputTokens,
+                    tokensOut: totalOutputTokens,
+                    costUsd,
+                    cacheHit: false,
+                    statusCode: 200,
+                });
 
             } catch (error: any) {
                 // Send error as SSE
