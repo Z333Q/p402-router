@@ -1,6 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { config as loadDotenv } from 'dotenv';
+
+// Load live test credentials — must come before defineConfig so env vars are
+// available when setup files run. Safe to call even if file doesn't exist.
+loadDotenv({ path: '.env.test.local', override: true });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
