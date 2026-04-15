@@ -1,166 +1,200 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { TopNav } from "@/components/TopNav";
-import { Footer } from "@/components/Footer";
-import { ProTierBadge } from '../dashboard/_components/ui';
+import { TopNav } from '@/components/TopNav';
+import { Footer } from '@/components/Footer';
 
-export const metadata = {
-    title: 'Developer Docs | P402 Router',
-    description: 'P402 developer documentation hub. API reference, SDK quickstart, routing guide, x402 payment protocol, A2A agent integration, AP2 mandates, and ERC-8004 trustless agents.',
-    alternates: { canonical: 'https://p402.io/docs' },
-    openGraph: { title: 'P402 Developer Docs', description: 'Everything you need to route AI calls and settle payments at scale — API, SDK, x402, A2A, and Claude Skill.', url: 'https://p402.io/docs' },
+export const metadata: Metadata = {
+  title: 'Documentation | P402',
+  description:
+    'Tutorials, guides, reference, and explanations for integrating P402 AI routing and payment infrastructure.',
+  alternates: { canonical: 'https://p402.io/docs' },
+  openGraph: {
+    title: 'P402 Documentation',
+    description:
+      'Everything you need to integrate P402: tutorials to get started, guides for specific tasks, reference for lookup, and explanations of how it all works.',
+    url: 'https://p402.io/docs',
+  },
 };
 
-export default function DocsIndex() {
+// ─── QUADRANT DATA ───────────────────────────────────────────────────────────
+
+interface DocLink {
+  label: string;
+  href?: string; // undefined = coming soon
+}
+
+interface Quadrant {
+  id: string;
+  title: string;
+  subtitle: string;
+  links: DocLink[];
+}
+
+const QUADRANTS: Quadrant[] = [
+  {
+    id: 'tutorials',
+    title: 'Tutorials',
+    subtitle: 'Learn by doing.',
+    links: [
+      { label: 'Quickstart (5 min)', href: '/docs/quickstart' },
+      { label: 'Build a Budget Agent' },
+    ],
+  },
+  {
+    id: 'howto',
+    title: 'How-To Guides',
+    subtitle: 'Solve a specific problem.',
+    links: [
+      { label: 'Connect an Agent', href: '/docs/guides/agents' },
+      { label: 'Set Up MCP Server' },
+      { label: 'Manage Sessions' },
+      { label: 'Fund with USDC' },
+      { label: 'Choose Routing Modes' },
+      { label: 'Configure Caching' },
+      { label: 'Manage API Keys' },
+    ],
+  },
+  {
+    id: 'reference',
+    title: 'Reference',
+    subtitle: 'Look up facts.',
+    links: [
+      { label: 'API Reference', href: '/docs/api' },
+      { label: 'SDK Reference', href: '/docs/sdk' },
+      { label: 'CLI Reference' },
+      { label: 'MCP Tools', href: '/docs/mcp' },
+      { label: 'Model Catalog', href: '/models' },
+      { label: 'Billing Guard' },
+      { label: 'Error Codes' },
+    ],
+  },
+  {
+    id: 'explanation',
+    title: 'Understanding P402',
+    subtitle: 'Learn why it works.',
+    links: [
+      { label: 'Architecture' },
+      { label: 'x402 Protocol', href: '/docs/facilitator' },
+      { label: 'Routing Engine', href: '/docs/router' },
+      { label: 'Security Model' },
+    ],
+  },
+];
+
+// ─── LINK ITEM ───────────────────────────────────────────────────────────────
+
+function DocLinkItem({ link }: { link: DocLink }) {
+  if (link.href) {
     return (
-        <div className="min-h-screen bg-white text-black font-sans selection:bg-primary selection:text-black">
-            <TopNav />
-
-            <main className="max-w-4xl mx-auto py-24 px-6">
-                <div className="mb-16 border-b-4 border-black pb-12">
-                    <h1 className="text-6xl font-black mb-4 tracking-tighter uppercase italic"><span className="heading-accent">Documentation.</span></h1>
-                    <p className="text-xl font-bold text-neutral-600 uppercase tracking-tight">
-                        The Operating System for the Agentic Economy.
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* A2A Protocol */}
-                    <Link href="/docs/a2a" className="group block p-10 border-4 border-black bg-white hover:bg-primary transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-                        <div className="flex items-center gap-4 mb-6">
-                            <span className="text-4xl">🤖</span>
-                            <h2 className="text-2xl font-black uppercase italic group-hover:text-black">A2A Protocol</h2>
-                        </div>
-                        <p className="text-sm font-bold text-neutral-600 mb-8 min-h-[48px] uppercase tracking-tight">
-                            Implement the Agent-to-Agent protocol for discovery, messaging, and task management. Now with **x402 Extension** support.
-                        </p>
-                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Read Guide &rarr;</span>
-                    </Link>
-
-                    {/* AP2 Mandates */}
-                    <Link href="/docs/mandates" className="group block p-10 border-4 border-black bg-white hover:bg-primary transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-                        <div className="flex items-center gap-4 mb-6">
-                            <span className="text-4xl">💳</span>
-                            <h2 className="text-2xl font-black uppercase italic group-hover:text-black">AP2 Mandates</h2>
-                        </div>
-                        <p className="text-sm font-bold text-neutral-600 mb-8 min-h-[48px] uppercase tracking-tight">
-                            Secure agent spending with policy-driven, cryptographic mandates on the x402 standard.
-                        </p>
-                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Learn Standards &rarr;</span>
-                    </Link>
-
-                    {/* AI Router */}
-                    <Link href="/docs/router" className="group block p-10 border-4 border-black bg-white hover:bg-primary transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-                        <div className="flex items-center gap-4 mb-6">
-                            <span className="text-4xl">🧠</span>
-                            <h2 className="text-2xl font-black uppercase italic group-hover:text-black">AI Router</h2>
-                        </div>
-                        <p className="text-sm font-bold text-neutral-600 mb-8 min-h-[48px] uppercase tracking-tight">
-                            Route LLM requests by cost, speed, or quality. Semantic caching and auto-failover built-in. Enhanced by **Protocol Economist**.
-                        </p>
-                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Explore Logic &rarr;</span>
-                    </Link>
-
-                    {/* Intelligence Quadplex */}
-                    <Link href="/docs/api#intelligence-status" className="group block p-10 border-4 border-black bg-neutral-900 hover:bg-purple-600 transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(168,85,247,1)]">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-4">
-                                <span className="text-4xl text-white">⚡</span>
-                                <h2 className="text-2xl font-black uppercase italic text-white group-hover:text-white">Intelligence Layer</h2>
-                            </div>
-                            <ProTierBadge className="border-primary/40" />
-                        </div>
-                        <p className="text-sm font-bold text-purple-200 mb-8 min-h-[48px] uppercase tracking-tight">
-                            v3.0 Autonomous Governance. Protocol Economist, Sentinel Monitor, and Semantic Shield powered by **Gemini 3**.
-                        </p>
-                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-white text-white inline-block">View Quadplex &rarr;</span>
-                    </Link>
-
-
-                    {/* WDK + USDT0 */}
-                    <Link href="/docs/wdk" className="group block p-10 border-4 border-black bg-white hover:bg-primary transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-                        <div className="flex items-center gap-4 mb-6">
-                            <span className="text-4xl">💸</span>
-                            <h2 className="text-2xl font-black uppercase italic group-hover:text-black">WDK + USDT0</h2>
-                        </div>
-                        <p className="text-sm font-bold text-neutral-600 mb-8 min-h-[48px] uppercase tracking-tight">
-                            Public integration docs for quote-based routing, WDK signing, settlement receipts, and migration from USDC-only flows.
-                        </p>
-                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Read Integration Guides &rarr;</span>
-                    </Link>
-
-                    {/* SDK & Tools */}
-                    <Link href="/docs/sdk" className="group block p-10 border-4 border-black bg-white hover:bg-primary transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-                        <div className="flex items-center gap-4 mb-6">
-                            <span className="text-4xl">📦</span>
-                            <h2 className="text-2xl font-black uppercase italic group-hover:text-black">SDKs & Tools</h2>
-                        </div>
-                        <p className="text-sm font-bold text-neutral-600 mb-8 min-h-[48px] uppercase tracking-tight">
-                            JavaScript SDKs, MCP Server integration, and CLI tools for autonomous developers.
-                        </p>
-                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Get Started &rarr;</span>
-                    </Link>
-
-                    {/* Claude Skill */}
-                    <Link href="/docs/skill" className="group block p-10 border-4 border-black bg-white hover:bg-primary transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-                        <div className="flex items-center gap-4 mb-6">
-                            <span className="text-4xl">🧩</span>
-                            <h2 className="text-2xl font-black uppercase italic group-hover:text-black">Claude Skill</h2>
-                        </div>
-                        <p className="text-sm font-bold text-neutral-600 mb-8 min-h-[48px] uppercase tracking-tight">
-                            Install P402 in Claude Code or Claude.ai. Get AI-assisted integration, routing guidance, and code generation.
-                        </p>
-                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Install Skill &rarr;</span>
-                    </Link>
-
-                    {/* Escrow */}
-                    <Link href="/docs/escrow" className="group block p-10 border-4 border-black bg-white hover:bg-primary transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-                        <div className="flex items-center gap-4 mb-6">
-                            <span className="text-4xl">🔒</span>
-                            <h2 className="text-2xl font-black uppercase italic group-hover:text-black">Escrow</h2>
-                        </div>
-                        <p className="text-sm font-bold text-neutral-600 mb-8 min-h-[48px] uppercase tracking-tight">
-                            Conditional USDC escrow on Base. Lock funds on-chain, release on confirmed delivery. 48-hour dispute window, 1% protocol fee.
-                        </p>
-                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-black inline-block">Escrow Guide &rarr;</span>
-                    </Link>
-
-                    {/* ERC-8004 Trustless Agents */}
-                    <Link href="/docs/erc8004" className="group block p-10 border-4 border-black bg-neutral-900 hover:bg-emerald-600 transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(16,185,129,1)]">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-4">
-                                <span className="text-4xl text-white">🛡️</span>
-                                <h2 className="text-2xl font-black uppercase italic text-white group-hover:text-white">Trustless Agents</h2>
-                            </div>
-                            <ProTierBadge className="border-primary/40" />
-                        </div>
-                        <p className="text-sm font-bold text-emerald-200 mb-8 min-h-[48px] uppercase tracking-tight">
-                            ERC-8004 on-chain identity, reputation, and validation. The trust layer for the agentic economy.
-                        </p>
-                        <span className="font-black text-xs uppercase tracking-widest border-b-2 border-white text-white inline-block">Explore Trust &rarr;</span>
-                    </Link>
-                </div>
-
-                <div className="mt-24 p-12 border-4 border-black bg-neutral-50 relative overflow-hidden">
-                    <div className="relative z-10">
-                        <h3 className="text-2xl font-black uppercase italic mb-8">Resource Hub</h3>
-                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <li><Link href="/intelligence" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2 text-primary">📊 Intelligence Hub (Research & Case Studies)</Link></li>
-                            <li><Link href="/docs/api#intelligence-status" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">🛡️ Governance Status API</Link></li>
-                            <li><Link href="/WHITEPAPER_V3.md" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">📄 V3 Protocol Whitepaper</Link></li>
-                            <li><Link href="/docs/api" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">🔌 API Reference</Link></li>
-                            <li><Link href="/docs/sdk" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">📦 SDK & Tools</Link></li>
-                            <li><Link href="/docs/erc8004" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2 text-emerald-600">🛡️ ERC-8004 Trustless Agents Guide</Link></li>
-                            <li><a href="https://github.com/Z333Q/p402-protocol" target="_blank" rel="noopener noreferrer" className="text-sm font-bold uppercase hover:text-primary flex items-center gap-2">⭐ p402-protocol on GitHub (open source)</a></li>
-                        </ul>
-                    </div>
-                    {/* Decorative Background Element */}
-                    <div className="absolute top-0 right-0 p-4 opacity-5 font-black text-8xl italic pointer-events-none select-none">
-                        DOCS
-                    </div>
-                </div>
-            </main>
-
-            <Footer />
-        </div>
+      <li>
+        <Link
+          href={link.href}
+          className="flex items-start gap-2 text-[15px] font-medium text-neutral-800 hover:text-black no-underline group"
+        >
+          <span className="text-neutral-400 group-hover:text-primary transition-colors shrink-0">
+            →
+          </span>
+          <span className="border-b border-transparent group-hover:border-black transition-colors">
+            {link.label}
+          </span>
+        </Link>
+      </li>
     );
+  }
+  return (
+    <li className="flex items-start gap-2 text-[15px] font-medium text-neutral-400 cursor-not-allowed">
+      <span className="shrink-0">→</span>
+      <span>
+        {link.label}
+        <span className="text-[11px] font-normal ml-2">(coming soon)</span>
+      </span>
+    </li>
+  );
+}
+
+// ─── QUADRANT CARD ───────────────────────────────────────────────────────────
+
+function QuadrantCard({ q }: { q: Quadrant }) {
+  return (
+    <div className="border-2 border-black p-8 bg-white h-full">
+      <h2 className="text-[18px] font-black uppercase tracking-tight text-neutral-900 mb-1">
+        {q.title}
+      </h2>
+      <p className="text-[14px] font-medium text-neutral-500 mb-6">{q.subtitle}</p>
+      <ul className="space-y-3">
+        {q.links.map(link => (
+          <DocLinkItem key={link.label} link={link} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ─── PAGE ────────────────────────────────────────────────────────────────────
+
+export default function DocsIndex() {
+  return (
+    <div className="min-h-screen bg-white text-black selection:bg-primary selection:text-black">
+      <TopNav />
+
+      <main className="max-w-[1200px] mx-auto px-6 py-20">
+
+        {/* Heading */}
+        <div className="border-b-2 border-black pb-16 mb-16">
+          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-neutral-500 font-mono mb-5">
+            {'>_'} DOCS
+          </p>
+          <h1 className="text-5xl md:text-6xl font-black uppercase italic tracking-tight leading-tight mb-6">
+            READ LESS.<br />
+            <span className="heading-accent">BUILD MORE.</span>
+          </h1>
+          <div className="border-l-[4px] border-black pl-5 max-w-2xl">
+            <p className="text-lg text-neutral-600 leading-relaxed">
+              Everything you need to integrate P402: tutorials to get started, guides for specific
+              tasks, reference for lookup, and explanations of how it all works.
+            </p>
+          </div>
+        </div>
+
+        {/* Four-quadrant grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-black border-2 border-black mb-20">
+          {QUADRANTS.map(q => (
+            <QuadrantCard key={q.id} q={q} />
+          ))}
+        </div>
+
+        {/* Legacy reference strip — existing in-depth docs */}
+        <div className="border-2 border-black p-8">
+          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-neutral-500 font-mono mb-5">
+            {'>_'} MORE DOCUMENTATION
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { label: 'A2A Protocol', href: '/docs/a2a' },
+              { label: 'AP2 Mandates', href: '/docs/mandates' },
+              { label: 'WDK + USDT0', href: '/docs/wdk' },
+              { label: 'Claude Skill', href: '/docs/skill' },
+              { label: 'Escrow', href: '/docs/escrow' },
+              { label: 'ERC-8004 Trustless Agents', href: '/docs/erc8004' },
+              { label: 'Intelligence Layer', href: '/docs/api#intelligence-status' },
+              { label: 'V2 API Spec', href: '/docs/v2-spec' },
+              { label: 'AgentKit', href: '/docs/agentkit' },
+            ].map(item => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-2 px-4 py-3 border-2 border-black text-[13px] font-black uppercase tracking-wider text-black hover:bg-primary no-underline transition-colors"
+              >
+                <span className="text-neutral-400">→</span>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+      </main>
+
+      <Footer />
+    </div>
+  );
 }

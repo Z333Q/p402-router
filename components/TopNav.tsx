@@ -138,7 +138,7 @@ export function TopNav() {
                         )}
                     </div>
 
-                    <Link href="/docs/api" className="text-black no-underline hover:text-primary transition-colors">Docs</Link>
+                    <Link href="/docs" className="text-black no-underline hover:text-primary transition-colors">Docs</Link>
                     <Link href="/models" className="text-black no-underline hover:text-primary transition-colors">Models</Link>
                     <Link href="/pricing" className="text-black no-underline hover:text-primary transition-colors">Pricing</Link>
                     <Link href="/trust" className="text-black no-underline hover:text-primary transition-colors">Trust</Link>
@@ -243,7 +243,7 @@ export function TopNav() {
 
                         {/* Secondary links */}
                         <nav className="flex flex-col gap-4 px-6 py-4 font-black text-sm uppercase">
-                            <Link href="/docs/api" onClick={() => setIsMenuOpen(false)} className="text-black no-underline hover:text-primary">Docs</Link>
+                            <Link href="/docs" onClick={() => setIsMenuOpen(false)} className="text-black no-underline hover:text-primary">Docs</Link>
                             <Link href="/models" onClick={() => setIsMenuOpen(false)} className="text-black no-underline hover:text-primary">Models</Link>
                             <Link href="/pricing" onClick={() => setIsMenuOpen(false)} className="text-black no-underline hover:text-primary">Pricing</Link>
                             <Link href="/trust" onClick={() => setIsMenuOpen(false)} className="text-black no-underline hover:text-primary">Trust</Link>
