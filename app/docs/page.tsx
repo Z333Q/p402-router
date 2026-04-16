@@ -37,7 +37,7 @@ const QUADRANTS: Quadrant[] = [
     subtitle: 'Learn by doing.',
     links: [
       { label: 'Quickstart (5 min)', href: '/docs/quickstart' },
-      { label: 'Build a Budget Agent' },
+      { label: 'Build a Budget Agent', href: '/docs/guides/budget-agent' },
     ],
   },
   {
@@ -46,12 +46,12 @@ const QUADRANTS: Quadrant[] = [
     subtitle: 'Solve a specific problem.',
     links: [
       { label: 'Connect an Agent', href: '/docs/guides/agents' },
-      { label: 'Set Up MCP Server' },
-      { label: 'Manage Sessions' },
-      { label: 'Fund with USDC' },
-      { label: 'Choose Routing Modes' },
-      { label: 'Configure Caching' },
-      { label: 'Manage API Keys' },
+      { label: 'Set Up MCP Server', href: '/docs/guides/mcp-server' },
+      { label: 'Manage Sessions', href: '/docs/guides/sessions' },
+      { label: 'Fund with USDC', href: '/docs/guides/fund-usdc' },
+      { label: 'Choose Routing Modes', href: '/docs/guides/routing-modes' },
+      { label: 'Configure Caching', href: '/docs/guides/caching' },
+      { label: 'Manage API Keys', href: '/docs/guides/api-keys' },
     ],
   },
   {
@@ -61,11 +61,11 @@ const QUADRANTS: Quadrant[] = [
     links: [
       { label: 'API Reference', href: '/docs/api' },
       { label: 'SDK Reference', href: '/docs/sdk' },
-      { label: 'CLI Reference' },
+      { label: 'CLI Reference', href: '/docs/reference/cli' },
       { label: 'MCP Tools', href: '/docs/mcp' },
       { label: 'Model Catalog', href: '/models' },
-      { label: 'Billing Guard' },
-      { label: 'Error Codes' },
+      { label: 'Billing Guard', href: '/docs/reference/billing-guard' },
+      { label: 'Error Codes', href: '/docs/reference/error-codes' },
     ],
   },
   {
@@ -73,10 +73,10 @@ const QUADRANTS: Quadrant[] = [
     title: 'Understanding P402',
     subtitle: 'Learn why it works.',
     links: [
-      { label: 'Architecture' },
+      { label: 'Architecture', href: '/docs/explanation/architecture' },
       { label: 'x402 Protocol', href: '/docs/facilitator' },
       { label: 'Routing Engine', href: '/docs/router' },
-      { label: 'Security Model' },
+      { label: 'Security Model', href: '/docs/explanation/security' },
     ],
   },
 ];
