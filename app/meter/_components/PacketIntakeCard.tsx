@@ -65,11 +65,79 @@ export function PacketIntakeCard() {
     if (file) void handleFileSelect(file);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Safe mode fast-path ──────────────────────────────────────────────────
+  // Bypasses all Gemini API calls — injects a pre-built work order + session
+  // so the demo works without any API keys configured.
+
+  function handleSubmitSafeMode() {
+    const content = packetText.trim() || DEMO_PACKET_CONTENT;
+    const sessionId = `safe_${crypto.randomUUID().slice(0, 8)}`;
+    const workOrderId = `wo_safe_${crypto.randomUUID().slice(0, 8)}`;
+
+    setPacket(
+      {
+        id: crypto.randomUUID(),
+        tenantId: 'demo',
+        assetType: 'text',
+        sourceLabel: 'demo-safe-mode',
+        deidentified: true,
+        packetType: 'prior_auth_packet',
+        previewText: content.slice(0, 300),
+        createdAt: new Date().toISOString(),
+      },
+      content,
+    );
+
+    setWorkOrder(
+      {
+        id: workOrderId,
+        tenantId: 'demo',
+        sessionId,
+        requestId: `req_${crypto.randomUUID().slice(0, 8)}`,
+        workflowType: 'prior_auth_review',
+        packetFormat: 'text',
+        packetSummary: content.slice(0, 800),
+        policySummary: 'Standard utilization management criteria for outpatient diagnostic services.',
+        budgetCapUsd: parseFloat(budgetCap) || 0.50,
+        approvalRequired: true,
+        deidentified: true,
+        reviewMode: 'safe',
+        executionMode: 'safe',
+        toolTrace: ['parsePriorAuthDocument', 'createReviewSession', 'addLedgerEstimate'],
+        status: 'session_open',
+        geminiModel: 'gemini-2.0-flash',
+        healthcareExtract: {
+          requestId: `req_${crypto.randomUUID().slice(0, 8)}`,
+          payerName: 'Demo Payer Organization',
+          memberIdMasked: '***-**-7842',
+          providerName: 'Demo Medical Group',
+          procedureRequested: 'Outpatient Advanced Diagnostic Imaging',
+          diagnosisSummary: 'Outpatient diagnostic imaging — standard prior auth category',
+          urgencyLevel: 'routine',
+          caseType: 'prior_auth',
+          extractedConfidence: 0.94,
+          attachmentCount: 4,
+          requiresSpecialistReview: false,
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      false,
+    );
+
+    setSession(sessionId, parseFloat(budgetCap) || 0.50);
+  }
+
   // ── Submit ───────────────────────────────────────────────────────────────
 
   async function handleSubmit() {
     const hasInput = mode === 'text' ? packetText.trim().length > 0 : fileData !== null;
     if (!hasInput) return;
+
+    if (safeMode) {
+      handleSubmitSafeMode();
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -159,6 +227,11 @@ export function PacketIntakeCard() {
     setPacketText(DEMO_PACKET_CONTENT);
     setFileData(null);
     setFileName(null);
+    // In safe mode, auto-submit immediately — no Gemini call needed
+    if (safeMode) {
+      // Use setTimeout so state update for packetText settles first
+      setTimeout(() => handleSubmitSafeMode(), 0);
+    }
   }
 
   const canSubmit = isIdle && !loading && (mode === 'text' ? packetText.trim().length > 0 : fileData !== null);
