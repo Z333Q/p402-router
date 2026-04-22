@@ -22,16 +22,31 @@ const nextConfig = {
   },
 
   async rewrites() {
-    return [
-      {
-        source: '/skill/p402.skill',
-        destination: '/downloads/p402.skill',
-      },
-      {
-        source: '/skill/p402.zip',
-        destination: '/downloads/p402.zip',
-      },
-    ];
+    return {
+      beforeFiles: [
+        // meter.p402.io → serve /meter at root
+        {
+          source: '/',
+          has: [{ type: 'host', value: 'meter.p402.io' }],
+          destination: '/meter',
+        },
+        {
+          source: '/:path((?!meter|api|_next|favicon).*)',
+          has: [{ type: 'host', value: 'meter.p402.io' }],
+          destination: '/meter',
+        },
+      ],
+      fallback: [
+        {
+          source: '/skill/p402.skill',
+          destination: '/downloads/p402.skill',
+        },
+        {
+          source: '/skill/p402.zip',
+          destination: '/downloads/p402.zip',
+        },
+      ],
+    };
   },
 
   async headers() {
