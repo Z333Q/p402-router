@@ -1,0 +1,500 @@
+'use server';
+// lib/meter/work-order-parser.ts
+// Gemini-powered healthcare packet → structured work order
+// Supports text, image, and PDF intake (multimodal)
+
+import { GoogleGenerativeAI, FunctionDeclaration, SchemaType, FunctionCallingMode, ChatSession, GenerateContentResult } from '@google/generative-ai';
+import type { WorkOrder, PacketFormat, HealthcareExtract, UrgencyLevel, CaseType } from './types';
+import crypto from 'crypto';
+
+const genai = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY ?? '');
+
+// ============================================================================
+// Gemini tool definitions — what Flash calls during orchestration
+// All enum constraints expressed via description string only (SDK requirement)
+// ============================================================================
+
+const workflowTools: FunctionDeclaration[] = [
+  {
+    name: 'parsePriorAuthDocument',
+    description:
+      'Parse a de-identified prior authorization document and extract structured healthcare administrative fields. ' +
+      'caseType must be one of: prior_auth, utilization_review, appeals, specialist_consult. ' +
+      'urgencyLevel must be one of: routine, urgent, emergent. ' +
+      'Do not include PHI. memberIdMasked should show only last 4 digits.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        payerName: { type: SchemaType.STRING, description: 'Name of the payer organization (e.g. Molina Healthcare)' },
+        memberIdMasked: { type: SchemaType.STRING, description: 'Masked member ID showing last 4 only, e.g. ***-**-1234' },
+        providerName: { type: SchemaType.STRING, description: 'Requesting provider or facility name (no patient PHI)' },
+        procedureRequested: { type: SchemaType.STRING, description: 'Administrative procedure or service description' },
+        diagnosisSummary: { type: SchemaType.STRING, description: 'Non-clinical administrative diagnosis category summary' },
+        urgencyLevel: { type: SchemaType.STRING, description: 'Urgency: routine, urgent, or emergent' },
+        caseType: { type: SchemaType.STRING, description: 'Case type: prior_auth, utilization_review, appeals, or specialist_consult' },
+        extractedConfidence: { type: SchemaType.NUMBER, description: 'Confidence score 0-1 for extraction quality' },
+        requiresSpecialistReview: { type: SchemaType.BOOLEAN, description: 'True if case complexity warrants specialist agent escalation' },
+        summary: { type: SchemaType.STRING, description: '2-3 sentence administrative summary, no PHI' },
+      },
+      required: ['caseType', 'urgencyLevel', 'summary', 'extractedConfidence'],
+    },
+  },
+  {
+    name: 'createReviewSession',
+    description:
+      'Determine the appropriate budget cap, routing mode, and policy reference for this work order. ' +
+      'routingMode must be one of: cost, quality, balanced.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        budgetCapUsd: { type: SchemaType.NUMBER, description: 'Budget ceiling in USD (e.g. 0.50)' },
+        approvalRequired: { type: SchemaType.BOOLEAN, description: 'Whether human reviewer must approve before release' },
+        routingMode: { type: SchemaType.STRING, description: 'Routing preference: cost, quality, or balanced' },
+        policySummary: { type: SchemaType.STRING, description: 'Administrative policy reference (non-clinical, non-PHI)' },
+      },
+      required: ['budgetCapUsd', 'approvalRequired', 'routingMode'],
+    },
+  },
+  {
+    name: 'addLedgerEstimate',
+    description: 'Record the initial cost estimate for this session opening. Returns a ledger entry for governance tracking.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        estimatedCostUsd: { type: SchemaType.NUMBER, description: 'Estimated cost in USD for the intake step' },
+        eventKind: { type: SchemaType.STRING, description: 'Event kind: extraction_estimate' },
+      },
+      required: ['estimatedCostUsd', 'eventKind'],
+    },
+  },
+];
+
+// ============================================================================
+// System prompt
+// ============================================================================
+
+const SYSTEM_INSTRUCTION = `You are a healthcare payer operations workflow orchestrator for Molina-style managed care.
+
+Process de-identified prior authorization and utilization review documents and produce structured administrative work orders.
+
+Rules:
+- ADMINISTRATIVE only — no clinical decisions, no diagnosis recommendations.
+- Document is de-identified — do not reference any PHI.
+- Output goes to a payer operations analyst for review.
+- If the document contains clinical language, summarize only administrative and process aspects.
+- If parsing confidence is low, set extractedConfidence below 0.6, set approvalRequired to true.
+- Complex cases (specialist consult, appeals, emergent urgency) should set requiresSpecialistReview to true.
+
+You MUST call ALL THREE workflow tools in sequence:
+1. parsePriorAuthDocument — extract structured case fields and administrative summary
+2. createReviewSession — determine budget ceiling, routing mode, and policy reference
+3. addLedgerEstimate — record the intake cost estimate for governance
+
+Call all three tools before providing any text response.`;
+
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface WorkOrderParseResult {
+  workOrder: Omit<WorkOrder, 'id' | 'createdAt' | 'updatedAt' | 'tenantId'>;
+  toolTrace: string[];
+  degraded: boolean;
+  degradedReason?: string;
+}
+
+// ============================================================================
+// Main parser — text intake
+// ============================================================================
+
+export async function parsePacketToWorkOrder(
+  packetText: string,
+  options: {
+    tenantId?: string;
+    sessionId?: string;
+    budgetHintUsd?: number;
+    packetFormat?: PacketFormat;
+  } = {}
+): Promise<WorkOrderParseResult> {
+  const requestId = crypto.randomUUID();
+  const toolTrace: string[] = [];
+  const truncated = packetText.slice(0, 8000);
+
+  try {
+    const model = genai.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      systemInstruction: SYSTEM_INSTRUCTION,
+      tools: [{ functionDeclarations: workflowTools }],
+      toolConfig: { functionCallingConfig: { mode: FunctionCallingMode.AUTO } },
+    });
+
+    const chat = model.startChat();
+
+    const userMessage =
+      `Process this de-identified prior authorization document and produce a structured work order.\n\nDOCUMENT:\n${truncated}\n\n` +
+      (options.budgetHintUsd != null
+        ? `Suggested budget cap: $${options.budgetHintUsd.toFixed(2)}`
+        : 'Use a conservative budget cap of $0.50 USD.');
+
+    const result1 = await chat.sendMessage(userMessage);
+    return await processFunctionCalls(result1, chat, requestId, toolTrace, options);
+  } catch (err: unknown) {
+    return buildDegradedResult(requestId, options, err instanceof Error ? err.message : String(err));
+  }
+}
+
+// ============================================================================
+// Multimodal parser — image or PDF intake (Gemini Vision)
+// ============================================================================
+
+export async function parseDocumentMultimodal(
+  fileData: {
+    mimeType: string;       // e.g. "image/jpeg", "image/png", "application/pdf"
+    base64Data: string;     // base64-encoded file content
+  },
+  options: {
+    tenantId?: string;
+    sessionId?: string;
+    budgetHintUsd?: number;
+    packetFormat?: PacketFormat;
+  } = {}
+): Promise<WorkOrderParseResult> {
+  const requestId = crypto.randomUUID();
+  const toolTrace: string[] = [];
+
+  try {
+    const model = genai.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      systemInstruction: SYSTEM_INSTRUCTION,
+      tools: [{ functionDeclarations: workflowTools }],
+      toolConfig: { functionCallingConfig: { mode: FunctionCallingMode.AUTO } },
+    });
+
+    const chat = model.startChat();
+
+    // Multimodal message: inline image/PDF data alongside text prompt
+    const userMessage = [
+      {
+        inlineData: {
+          mimeType: fileData.mimeType,
+          data: fileData.base64Data,
+        },
+      },
+      {
+        text:
+          `Process this de-identified prior authorization document image and produce a structured work order.\n\n` +
+          (options.budgetHintUsd != null
+            ? `Suggested budget cap: $${options.budgetHintUsd.toFixed(2)}`
+            : 'Use a conservative budget cap of $0.50 USD.'),
+      },
+    ];
+
+    const result1 = await chat.sendMessage(userMessage);
+    return await processFunctionCalls(result1, chat, requestId, toolTrace, options);
+  } catch (err: unknown) {
+    return buildDegradedResult(requestId, options, err instanceof Error ? err.message : String(err));
+  }
+}
+
+// ============================================================================
+// Shared function-call processor
+// ============================================================================
+
+type FnCallInfo = { name: string; args: Record<string, unknown>; response: Record<string, unknown> };
+
+async function processFunctionCalls(
+  result1: GenerateContentResult,
+  chat: ChatSession,
+  requestId: string,
+  toolTrace: string[],
+  options: { sessionId?: string; budgetHintUsd?: number; packetFormat?: PacketFormat }
+): Promise<WorkOrderParseResult> {
+  const parts1 = result1.response.candidates?.[0]?.content?.parts ?? [];
+  const fnResults: FnCallInfo[] = [];
+
+  for (const part of parts1) {
+    if (!part.functionCall) continue;
+    const fc = part.functionCall;
+    const args = (fc.args ?? {}) as Record<string, unknown>;
+
+    let responseData: Record<string, unknown> = {};
+    let traceLabel = fc.name;
+
+    if (fc.name === 'parsePriorAuthDocument') {
+      responseData = { status: 'parsed', ...args };
+      const ct = args['caseType'] as string | undefined;
+      const ul = args['urgencyLevel'] as string | undefined;
+      const conf = args['extractedConfidence'];
+      traceLabel = `document parsed (${ct ?? 'prior_auth'}, ${ul ?? 'routine'}, conf ${typeof conf === 'number' ? conf.toFixed(2) : '?'})`;
+    } else if (fc.name === 'createReviewSession') {
+      responseData = { status: 'session_created', sessionId: options.sessionId ?? `session_${requestId.slice(0, 8)}`, ...args };
+      const cap = args['budgetCapUsd'];
+      traceLabel = `session created ($${typeof cap === 'number' ? cap.toFixed(2) : '0.50'} cap, ${args['routingMode'] ?? 'balanced'} routing)`;
+    } else if (fc.name === 'addLedgerEstimate') {
+      responseData = { status: 'ledger_entry_created', ...args };
+      const est = args['estimatedCostUsd'];
+      traceLabel = `ledger estimate ($${typeof est === 'number' ? est.toFixed(6) : '0.000006'})`;
+    }
+
+    toolTrace.push(traceLabel);
+    fnResults.push({ name: fc.name, args, response: responseData });
+  }
+
+  if (fnResults.length === 0) {
+    return buildDegradedResult(requestId, options, 'Gemini returned no workflow tool calls');
+  }
+
+  // Send function responses back
+  const fnResponseParts = fnResults.map((r) => ({
+    functionResponse: { name: r.name, response: r.response },
+  }));
+  await chat.sendMessage(fnResponseParts);
+
+  // Extract structured data
+  const parseArgs  = fnResults.find((r) => r.name === 'parsePriorAuthDocument')?.args ?? {};
+  const sessionArgs = fnResults.find((r) => r.name === 'createReviewSession')?.args ?? {};
+
+  const budgetCapUsd =
+    typeof sessionArgs['budgetCapUsd'] === 'number'
+      ? sessionArgs['budgetCapUsd']
+      : (options.budgetHintUsd ?? 0.50);
+
+  if (sessionArgs['approvalRequired'] === true) toolTrace.push('approval required');
+  toolTrace.push('review execution ready');
+
+  // Build HealthcareExtract from parsed fields
+  const healthcareExtract: HealthcareExtract = {
+    requestId,
+    payerName: typeof parseArgs['payerName'] === 'string' ? parseArgs['payerName'] : undefined,
+    memberIdMasked: typeof parseArgs['memberIdMasked'] === 'string' ? parseArgs['memberIdMasked'] : undefined,
+    providerName: typeof parseArgs['providerName'] === 'string' ? parseArgs['providerName'] : undefined,
+    procedureRequested: typeof parseArgs['procedureRequested'] === 'string' ? parseArgs['procedureRequested'] : undefined,
+    diagnosisSummary: typeof parseArgs['diagnosisSummary'] === 'string' ? parseArgs['diagnosisSummary'] : undefined,
+    urgencyLevel: (['routine', 'urgent', 'emergent'].includes(parseArgs['urgencyLevel'] as string)
+      ? parseArgs['urgencyLevel'] as UrgencyLevel
+      : 'routine'),
+    caseType: (['prior_auth', 'utilization_review', 'appeals', 'specialist_consult'].includes(parseArgs['caseType'] as string)
+      ? parseArgs['caseType'] as CaseType
+      : 'prior_auth'),
+    extractedConfidence: typeof parseArgs['extractedConfidence'] === 'number' ? parseArgs['extractedConfidence'] : 0.85,
+    requiresSpecialistReview: parseArgs['requiresSpecialistReview'] === true,
+  };
+
+  const workOrder: Omit<WorkOrder, 'id' | 'createdAt' | 'updatedAt' | 'tenantId'> = {
+    sessionId: options.sessionId,
+    requestId,
+    workflowType: 'prior_auth_review',
+    packetFormat: options.packetFormat ?? 'text',
+    packetSummary: typeof parseArgs['summary'] === 'string' ? parseArgs['summary'] : undefined,
+    policySummary: typeof sessionArgs['policySummary'] === 'string' ? sessionArgs['policySummary'] : undefined,
+    budgetCapUsd,
+    approvalRequired: sessionArgs['approvalRequired'] !== false,
+    deidentified: true,
+    reviewMode: 'live',
+    executionMode: 'live',
+    toolTrace,
+    status: 'session_open',
+    geminiModel: 'gemini-2.0-flash',
+    healthcareExtract,
+  };
+
+  return { workOrder, toolTrace, degraded: false };
+}
+
+// ============================================================================
+// Degraded mode
+// ============================================================================
+
+function buildDegradedResult(
+  requestId: string,
+  options: { sessionId?: string; budgetHintUsd?: number; packetFormat?: PacketFormat },
+  reason: string
+): WorkOrderParseResult {
+  const healthcareExtract: HealthcareExtract = {
+    requestId,
+    caseType: 'prior_auth',
+    urgencyLevel: 'routine',
+    extractedConfidence: 0,
+    requiresSpecialistReview: false,
+  };
+
+  return {
+    workOrder: {
+      sessionId: options.sessionId,
+      requestId,
+      workflowType: 'prior_auth_review',
+      packetFormat: options.packetFormat ?? 'text',
+      packetSummary: 'Administrative packet review — manual classification required',
+      policySummary: undefined,
+      budgetCapUsd: options.budgetHintUsd ?? 0.50,
+      approvalRequired: true,
+      deidentified: true,
+      reviewMode: 'safe',
+      executionMode: 'safe',
+      toolTrace: [
+        'document parsed (degraded)',
+        'session created (default)',
+        'approval required',
+        'ledger estimate (default)',
+      ],
+      status: 'created',
+      geminiModel: 'gemini-2.0-flash',
+      healthcareExtract,
+    },
+    toolTrace: [
+      'document parsed (degraded)',
+      'session created (default)',
+      'approval required',
+      'ledger estimate (default)',
+    ],
+    degraded: true,
+    degradedReason: reason,
+  };
+}
+
+// ============================================================================
+// Final approval recommendation (Gemini Flash — fast path)
+// ============================================================================
+
+export interface ApprovalRecommendationResult {
+  insideBudget: boolean;
+  policyCompliant: boolean;
+  outputInScope: boolean;
+  recommendation: 'approve_for_manual_review' | 'hold_for_escalation' | 'revise_output';
+  reasonSummary: string;
+}
+
+export async function generateApprovalRecommendation(params: {
+  workOrder: Pick<WorkOrder, 'budgetCapUsd' | 'packetSummary' | 'policySummary'>;
+  reviewSummaryText: string;
+  actualCostUsd: number;
+}): Promise<ApprovalRecommendationResult> {
+  const { workOrder, reviewSummaryText, actualCostUsd } = params;
+  const insideBudget = actualCostUsd <= workOrder.budgetCapUsd;
+
+  try {
+    const model = genai.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      generationConfig: { responseMimeType: 'application/json' },
+    });
+
+    const prompt = `You are a payer operations quality evaluator. Evaluate this AI-assisted prior authorization review and provide an operational recommendation.
+
+WORK ORDER SUMMARY: ${workOrder.packetSummary ?? 'Prior authorization review'}
+POLICY REFERENCE: ${workOrder.policySummary ?? 'Standard utilization management criteria'}
+BUDGET CAP: $${workOrder.budgetCapUsd.toFixed(4)} USD
+ACTUAL COST: $${actualCostUsd.toFixed(4)} USD
+INSIDE BUDGET: ${insideBudget}
+
+GENERATED REVIEW SUMMARY (first 1000 chars):
+${reviewSummaryText.slice(0, 1000)}
+
+Respond with JSON only:
+{
+  "policyCompliant": boolean,
+  "outputInScope": boolean,
+  "recommendation": "approve_for_manual_review" | "hold_for_escalation" | "revise_output",
+  "reasonSummary": "1-2 sentence operational rationale, no PHI, no diagnosis language"
+}`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    const parsed = JSON.parse(text) as {
+      policyCompliant?: boolean;
+      outputInScope?: boolean;
+      recommendation?: 'approve_for_manual_review' | 'hold_for_escalation' | 'revise_output';
+      reasonSummary?: string;
+    };
+
+    return {
+      insideBudget,
+      policyCompliant: parsed.policyCompliant ?? true,
+      outputInScope: parsed.outputInScope ?? true,
+      recommendation: parsed.recommendation ?? (insideBudget ? 'approve_for_manual_review' : 'hold_for_escalation'),
+      reasonSummary: parsed.reasonSummary ?? 'Review completed within policy scope.',
+    };
+  } catch {
+    return {
+      insideBudget,
+      policyCompliant: true,
+      outputInScope: true,
+      recommendation: insideBudget ? 'approve_for_manual_review' : 'hold_for_escalation',
+      reasonSummary: insideBudget
+        ? 'Review completed within budget. Ready for manual approval.'
+        : 'Review exceeded budget cap. Escalation recommended.',
+    };
+  }
+}
+
+// ============================================================================
+// Gemini Pro economic audit (post-run deep summary)
+// ============================================================================
+
+import type { EconomicAudit } from './types';
+import { ARC_TYPICAL_GAS_COST_USDC } from '@/lib/chains/arc';
+
+export async function generateEconomicAudit(params: {
+  sessionId: string;
+  totalCostUsd: number;
+  arcTxCount: number;
+  aiTokenCostUsd: number;
+  routingFeeUsd: number;
+  escrowCostUsd?: number;
+}): Promise<EconomicAudit> {
+  const { sessionId, totalCostUsd, arcTxCount, aiTokenCostUsd, routingFeeUsd, escrowCostUsd = 0 } = params;
+
+  const arcGasCostUsd = arcTxCount * ARC_TYPICAL_GAS_COST_USDC;
+  const avgCostPerActionUsd = arcTxCount > 0 ? totalCostUsd / arcTxCount : totalCostUsd;
+
+  // Stripe minimum: $0.30 base + 2.9% — fails at sub-$10 transaction sizes
+  const comparisonStripeUsd = 0.30 + totalCostUsd * 0.029;
+  // ETH mainnet at 30 gwei, ~65k gas per ERC-20 transfer: ~$2.85/tx
+  const comparisonEthMainnetUsd = arcTxCount * 2.85;
+  const savingVsEthMainnetPct = comparisonEthMainnetUsd > 0
+    ? Math.round(((comparisonEthMainnetUsd - totalCostUsd) / comparisonEthMainnetUsd) * 100)
+    : 99;
+
+  let recommendation = `This session completed ${arcTxCount} economic events at an average of $${avgCostPerActionUsd.toFixed(6)} per action. Arc settlement at $${ARC_TYPICAL_GAS_COST_USDC}/tx enabled sub-cent billing that would be economically impossible on Ethereum mainnet ($${comparisonEthMainnetUsd.toFixed(2)} equivalent) or via Stripe ($${comparisonStripeUsd.toFixed(2)} minimum).`;
+
+  // Attempt Gemini Pro enrichment
+  try {
+    const model = genai.getGenerativeModel({
+      model: 'gemini-2.0-pro-exp',
+      generationConfig: { maxOutputTokens: 200 },
+    });
+
+    const prompt = `You are a healthcare AI economics auditor. Write one concise paragraph (under 150 words) explaining the economic value of this session.
+
+Session: ${arcTxCount} onchain events, $${totalCostUsd.toFixed(6)} total cost, $${avgCostPerActionUsd.toFixed(6)} per action.
+Arc settlement: $${arcGasCostUsd.toFixed(4)} gas cost total.
+AI tokens: $${aiTokenCostUsd.toFixed(6)}.
+P402 routing: $${routingFeeUsd.toFixed(6)}.
+Equivalent cost on ETH mainnet: $${comparisonEthMainnetUsd.toFixed(2)}.
+Stripe minimum fee: $${comparisonStripeUsd.toFixed(2)}.
+
+Explain why Arc makes this healthcare workflow economically viable. No PHI. No jargon. Write for a business audience.`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    if (text.length > 20) recommendation = text;
+  } catch { /* use computed fallback */ }
+
+  return {
+    sessionId,
+    totalCostUsd,
+    costBreakdown: {
+      aiTokenCostUsd,
+      routingFeeUsd,
+      arcGasCostUsd,
+      escrowCostUsd,
+    },
+    arcTxCount,
+    avgCostPerActionUsd,
+    comparisonStripeUsd,
+    comparisonEthMainnetUsd,
+    savingVsEthMainnetPct,
+    recommendation,
+    model: 'gemini-2.0-pro',
+    createdAt: new Date().toISOString(),
+  };
+}
