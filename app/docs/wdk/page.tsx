@@ -5,7 +5,7 @@ import { CommandPaletteBar } from './_components/CommandPaletteBar';
 
 const sections = [
   { href: '/docs/wdk/quickstart', emoji: '🚀', title: 'Quickstart', desc: 'Integrate a WDK signer with P402 in ~15 minutes using quote -> sign -> settle -> receipt.' },
-  { href: '/docs/wdk/api-reference', emoji: '🧾', title: 'API Reference (Skeleton)', desc: 'Implementation-ready endpoint contracts for quote, settle, and receipt flows.' },
+  { href: '/docs/wdk/api-reference', emoji: '🧾', title: 'API Reference', desc: 'Complete endpoint contracts for quote, settle, and receipt flows with full request/response schemas.' },
   { href: '/docs/wdk/errors', emoji: '⚠️', title: 'Error Codes', desc: 'Stable error taxonomy for backend, SDK, and UI recovery handling.' },
   { href: '/docs/wdk/migration', emoji: '🔁', title: 'Migration Guide', desc: 'Move from USDC-only EIP-3009 to WDK + USDT0 routing with minimal breakage.' },
   { href: '/docs/wdk/security', emoji: '🛡️', title: 'Privacy & Security Ops', desc: 'Operational privacy and security baselines for production WDK integrations.' }

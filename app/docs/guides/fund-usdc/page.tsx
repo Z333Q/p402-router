@@ -208,6 +208,47 @@ export default function FundUsdcPage() {
           </div>
         </div>
 
+        {/* ── EIP-3009 PRIMER ── */}
+        <div className="mb-16">
+          <h2 className="text-xl font-black uppercase italic tracking-tight mb-4">What is EIP-3009?</h2>
+          <p className="text-sm text-neutral-600 leading-relaxed mb-4">
+            EIP-3009 is an Ethereum standard implemented by USDC. It defines a function called{' '}
+            <span className="font-mono">transferWithAuthorization</span> that lets a token holder
+            pre-authorize a transfer off-chain by signing a typed message (EIP-712). A third party
+            (the facilitator) can then submit that authorization to the USDC contract on-chain,
+            triggering the transfer and paying the gas themselves.
+          </p>
+          <p className="text-sm text-neutral-600 leading-relaxed mb-4">
+            The result: you sign once in your browser (free), and P402 pays the gas to execute
+            the transfer. You never need ETH in your wallet to move USDC.
+          </p>
+          <div className="border-2 border-black overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-black bg-neutral-50">
+                  <th className="text-left px-4 py-3 font-black uppercase text-[11px] tracking-widest">Authorization Field</th>
+                  <th className="text-left px-4 py-3 font-black uppercase text-[11px] tracking-widest">What it means</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ['from', 'Your wallet address — the sender of the USDC'],
+                  ['to', 'Recipient address — P402\'s treasury (0xFa772...)'],
+                  ['value', 'Amount in atomic units. USDC has 6 decimals: 10 USDC = 10,000,000'],
+                  ['validAfter', 'Unix timestamp: authorization is not valid before this time (use now - 60s to allow clock skew)'],
+                  ['validBefore', 'Unix timestamp: authorization expires at this time (set to now + 3600s for 1 hour)'],
+                  ['nonce', '32-byte random hex string. Used once — P402 rejects any replay of the same nonce'],
+                ].map(([field, meaning]) => (
+                  <tr key={field} className="border-b border-neutral-200 last:border-0">
+                    <td className="px-4 py-3 font-mono text-[12px] font-bold">{field}</td>
+                    <td className="px-4 py-3 text-sm text-neutral-600">{meaning}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         {/* ── PROGRAMMATIC: SIGN + SUBMIT ── */}
         <div className="mb-16">
           <h2 className="text-xl font-black uppercase italic tracking-tight mb-4">Programmatic Funding (EIP-3009)</h2>
@@ -229,7 +270,9 @@ const P402_TREASURY = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
 const account = privateKeyToAccount(process.env.WALLET_PRIVATE_KEY as \`0x\${string}\`);
 const client  = createWalletClient({ account, chain: base, transport: http() });
 
-const nonce       = \`0x\${crypto.randomUUID().replace(/-/g, '').padEnd(64, '0')}\`;
+// Nonce must be a 32-byte (64 hex char) random value, unique per wallet, never reused.
+const nonce       = '0x' + crypto.getRandomValues(new Uint8Array(32))
+                      .reduce((hex, b) => hex + b.toString(16).padStart(2, '0'), '');
 const value       = parseUnits('10', 6);    // 10 USDC (6 decimals)
 const validAfter  = BigInt(Math.floor(Date.now() / 1000) - 60);
 const validBefore = BigInt(Math.floor(Date.now() / 1000) + 3600);  // 1 hour

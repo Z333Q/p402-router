@@ -20,8 +20,8 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { useSignInWithEmail, useVerifyEmailOTP } from '@coinbase/cdp-hooks';
-import { useAccount, useSignMessage } from 'wagmi';
+import { useSignInWithEmail, useVerifyEmailOTP, useEvmAddress, useSignEvmMessage } from '@coinbase/cdp-hooks';
+import { useAccount } from 'wagmi';
 import { signIn, useSession } from 'next-auth/react';
 
 interface Props {
@@ -45,16 +45,20 @@ export function CDPEmailAuth({ onSuccess, initialEmail }: Props) {
 
     const { signInWithEmail } = useSignInWithEmail();
     const { verifyEmailOTP } = useVerifyEmailOTP();
-    const { address } = useAccount();
-    const { signMessageAsync } = useSignMessage();
+    const { address: wagmiAddress } = useAccount();
+    const { evmAddress } = useEvmAddress();
+    const { signEvmMessage } = useSignEvmMessage();
     const { status: sessionStatus } = useSession();
 
-    // Once wagmi reports a connected address during 'connecting', move to 'confirmed'
+    // Prefer wagmi address (for connector bridge), fall back to CDP-native
+    const address = wagmiAddress ?? (evmAddress as `0x${string}` | null | undefined) ?? undefined;
+
+    // Once either wagmi or CDP-native reports an address during 'connecting', move to 'confirmed'
     useEffect(() => {
-        if (step === 'connecting' && address) {
+        if (step === 'connecting' && (wagmiAddress || evmAddress)) {
             setStep('confirmed');
         }
-    }, [step, address]);
+    }, [step, wagmiAddress, evmAddress]);
 
     // Fallback: if wagmi doesn't connect within 2s, show confirmed anyway
     useEffect(() => {
@@ -119,8 +123,7 @@ export function CDPEmailAuth({ onSuccess, initialEmail }: Props) {
             return;
         }
         if (!address) {
-            // Fallback: no address yet — proceed anyway (dashboard may redirect)
-            onSuccess?.();
+            setError('Wallet not ready yet. Please wait a moment and try again.');
             return;
         }
         setIsSigningIn(true);
@@ -128,7 +131,11 @@ export function CDPEmailAuth({ onSuccess, initialEmail }: Props) {
         try {
             const timestamp = Math.floor(Date.now() / 1000);
             const message = `Sign in to P402\nAddress: ${address}\nTimestamp: ${timestamp}`;
-            const signature = await signMessageAsync({ message });
+            // Use CDP-native signing — works regardless of wagmi connector state
+            const { signature } = await signEvmMessage({
+                evmAccount: address as `0x${string}`,
+                message,
+            });
             const result = await signIn('cdp-wallet', {
                 address,
                 signature,
@@ -149,7 +156,7 @@ export function CDPEmailAuth({ onSuccess, initialEmail }: Props) {
         } finally {
             setIsSigningIn(false);
         }
-    }, [address, sessionStatus, signMessageAsync, onSuccess]);
+    }, [address, sessionStatus, signEvmMessage, onSuccess]);
 
     // ── Email step ────────────────────────────────────────────────────────
     if (step === 'email') {

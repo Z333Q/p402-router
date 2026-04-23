@@ -10,7 +10,7 @@ export function Footer() {
     return (
         <footer className="border-t-2 border-black py-12 bg-white">
             <div className="container mx-auto px-6 max-w-7xl">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-12">
                     <div>
                         <div className="flex items-center gap-3 font-black uppercase tracking-tighter mb-4 text-black italic">
                             <img src="/favicon.png" alt="P402 Logo" className="w-12 h-12 border-2 border-black" />
@@ -52,6 +52,13 @@ export function Footer() {
                         { label: 'Get Access', href: '/get-access' },
                         { label: 'Privacy', href: '/privacy' },
                         { label: 'Terms', href: '/terms' },
+                    ]} />
+                    <FooterCol title="Partners" links={[
+                        { label: 'Partner Program', href: '/partners' },
+                        { label: 'Apply', href: '/partners/apply' },
+                        { label: 'Dashboard', href: '/partner' },
+                        { label: 'Docs', href: '/partner/docs' },
+                        { label: 'Assets', href: '/partner/assets' },
                     ]} />
                 </div>
 

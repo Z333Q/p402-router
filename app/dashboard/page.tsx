@@ -18,6 +18,7 @@ import { TrustMini } from './_components/TrustMini';
 import { TrustOverview } from './_components/TrustOverview';
 import { SafetyOverview, SafetyMini } from './_components/SafetyOverview';
 import { OnboardingChecklist } from './_components/OnboardingChecklist';
+import { IntelligenceSummary } from './_components/IntelligenceSummary';
 
 import { useSWRConfig } from 'swr';
 import { useEffect, useState } from 'react';
@@ -112,6 +113,9 @@ export default function DashboardPage() {
                 </div>
                 <TrustOverview />
             </div>
+
+            {/* Intelligence Layer Summary */}
+            <IntelligenceSummary />
 
             {/* Safety Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

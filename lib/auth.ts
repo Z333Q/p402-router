@@ -140,13 +140,48 @@ export const authOptions: NextAuthOptions = {
                 }
             }
 
+            // Partner context — resolved once per session from partner_memberships.
+            // Stored in the signed JWT so API routes need no extra DB call.
+            if (token.tenantId && !token.partnerId) {
+                try {
+                    const partnerRes = await pool.query(
+                        `SELECT
+                            pm.partner_id,
+                            pm.role,
+                            COALESCE(
+                                array_agg(pga.partner_group_id::text)
+                                    FILTER (WHERE pga.partner_group_id IS NOT NULL),
+                                '{}'::text[]
+                            ) AS group_ids
+                         FROM partner_memberships pm
+                         LEFT JOIN partner_group_assignments pga ON pga.partner_id = pm.partner_id
+                         WHERE pm.tenant_id = $1
+                           AND pm.status = 'active'
+                         GROUP BY pm.partner_id, pm.role
+                         LIMIT 1`,
+                        [token.tenantId]
+                    );
+                    if (partnerRes.rows[0]) {
+                        token.partnerId      = partnerRes.rows[0].partner_id;
+                        token.partnerRole    = partnerRes.rows[0].role;
+                        token.partnerGroupIds = partnerRes.rows[0].group_ids ?? [];
+                    }
+                } catch (e) {
+                    // partner_memberships table may not exist yet — fail-open
+                    console.error("JWT partner fetch failed", e)
+                }
+            }
+
             return token
         },
         async session({ session, token }) {
             if (session.user) {
-                (session.user as any).tenantId = token.tenantId;
-                (session.user as any).isAdmin = token.isAdmin;
-                (session.user as any).id = token.sub;
+                (session.user as any).tenantId        = token.tenantId;
+                (session.user as any).isAdmin         = token.isAdmin;
+                (session.user as any).id              = token.sub;
+                (session.user as any).partnerId       = token.partnerId;
+                (session.user as any).partnerRole     = token.partnerRole;
+                (session.user as any).partnerGroupIds = token.partnerGroupIds;
             }
             return session
         }

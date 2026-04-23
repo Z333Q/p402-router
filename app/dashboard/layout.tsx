@@ -8,6 +8,7 @@ import { Footer } from '@/components/Footer'
 import { FundWalletProvider, useFundWallet } from './_components/FundWalletModal'
 import { useAuthState } from '@/lib/hooks/useAuthState'
 import Link from 'next/link'
+import { AttributionAttach } from '@/components/partner/AttributionAttach'
 
 // =============================================================================
 // Auth State Banner — surfaces the user's authorization state prominently
@@ -152,6 +153,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return (
         <FundWalletProvider>
+            {/* Fire attribution attach silently on first authenticated load */}
+            <AttributionAttach />
             <div className="flex min-h-screen bg-neutral-50 font-sans text-black selection:bg-primary selection:text-black">
                 {/* Sidebar Shell */}
                 <AppSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />

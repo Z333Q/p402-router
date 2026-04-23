@@ -12,6 +12,12 @@ declare module "next-auth" {
             isAdmin?: boolean
             /** The user's database ID or sub. */
             id?: string
+            /** Partner program: partner entity ID (if the user is an approved partner). */
+            partnerId?: string
+            /** Partner program: the user's role within their partner entity. */
+            partnerRole?: string
+            /** Partner program: group IDs the partner belongs to (offer segmentation). */
+            partnerGroupIds?: string[]
         } & DefaultSession["user"]
     }
 }
@@ -23,5 +29,11 @@ declare module "next-auth/jwt" {
         tenantId?: string
         /** Whether the user has admin privileges. */
         isAdmin?: boolean
+        /** Partner program: partner entity ID. */
+        partnerId?: string
+        /** Partner program: role within the partner entity. */
+        partnerRole?: string
+        /** Partner program: group IDs (offer segmentation). */
+        partnerGroupIds?: string[]
     }
 }

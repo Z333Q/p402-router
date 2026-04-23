@@ -1,6 +1,7 @@
 import db from '@/lib/db';
 import { WebhookEventPayload } from './provider';
 import Stripe from 'stripe'; // Needed for type casting if payload is from Stripe
+import { generateCommission } from '@/lib/partner/commissions';
 
 /**
  * Orchestrates synchronization between external billing providers (Stripe, On-Chain)
@@ -18,6 +19,9 @@ export class SubscriptionService {
         switch (event.type) {
             case 'checkout.session.completed':
                 await this.handleCheckoutSessionCompleted(event.data);
+                break;
+            case 'invoice.payment_succeeded':
+                await this.handleInvoicePaymentSucceeded(event.data);
                 break;
             case 'customer.subscription.updated':
             case 'customer.subscription.deleted':
@@ -48,7 +52,7 @@ export class SubscriptionService {
                 provider_subscription_id, provider_customer_id
             ) VALUES (
                 $1, $2, 'active', NOW(), NOW() + INTERVAL '1 month', $3, $4
-            ) ON CONFLICT (tenant_id) DO UPDATE SET 
+            ) ON CONFLICT (tenant_id) DO UPDATE SET
                 plan_id = EXCLUDED.plan_id,
                 status = 'active',
                 provider_subscription_id = EXCLUDED.provider_subscription_id,
@@ -62,6 +66,66 @@ export class SubscriptionService {
             `UPDATE tenants SET plan = $2, updated_at = NOW() WHERE id = $1`,
             [tenantId, planId]
         );
+
+        // 3. Generate commission for first-month subscription (non-blocking)
+        const amountTotal = typeof session.amount_total === 'number'
+            ? session.amount_total / 100  // Stripe uses cents
+            : 0;
+        if (amountTotal > 0) {
+            generateCommission({
+                tenantId,
+                sourceEventType: 'checkout.session.completed',
+                sourceEventId: session.id,
+                invoiceAmountUsd: amountTotal,
+                planId,
+            }).then(result => {
+                if (result.created) {
+                    console.log(`[SubscriptionService] Commission created: ${result.entryId} ($${result.commissionAmount})`);
+                } else if (result.skippedReason && result.skippedReason !== 'no_active_attribution') {
+                    console.log(`[SubscriptionService] Commission skipped: ${result.skippedReason}`);
+                }
+            }).catch(err => {
+                console.error('[SubscriptionService] Commission generation error (non-blocking):', err);
+            });
+        }
+    }
+
+    private static async handleInvoicePaymentSucceeded(invoice: any) {
+        // Recurring invoice payment — find tenant via provider_subscription_id
+        const providerSubId = invoice.subscription;
+        if (!providerSubId) return;
+
+        // Skip $0 invoices (trial, etc.)
+        const amountPaid = typeof invoice.amount_paid === 'number' ? invoice.amount_paid / 100 : 0;
+        if (amountPaid <= 0) return;
+
+        const subRes = await db.query(
+            `SELECT tenant_id, plan_id FROM billing_subscriptions WHERE provider_subscription_id = $1`,
+            [providerSubId]
+        ) as { rows: { tenant_id: string; plan_id: string }[] };
+
+        const sub = subRes.rows[0];
+        if (!sub) {
+            console.warn(`[SubscriptionService] Invoice ${invoice.id}: subscription ${providerSubId} not found in DB`);
+            return;
+        }
+
+        // Generate commission (non-blocking, idempotent)
+        generateCommission({
+            tenantId: sub.tenant_id,
+            sourceEventType: 'invoice.payment_succeeded',
+            sourceEventId: invoice.id,
+            invoiceAmountUsd: amountPaid,
+            planId: sub.plan_id,
+        }).then(result => {
+            if (result.created) {
+                console.log(`[SubscriptionService] Recurring commission created: ${result.entryId} ($${result.commissionAmount})`);
+            } else if (result.skippedReason && result.skippedReason !== 'no_active_attribution') {
+                console.log(`[SubscriptionService] Recurring commission skipped: ${result.skippedReason}`);
+            }
+        }).catch(err => {
+            console.error('[SubscriptionService] Commission generation error (non-blocking):', err);
+        });
     }
 
     private static async handleSubscriptionUpdated(subscription: any) {

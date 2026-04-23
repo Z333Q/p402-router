@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto';
+import { createHmac, createHash } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { A2AMessage, A2ATask, A2ATaskState, A2ATaskStatus } from '../../../lib/a2a-types';
@@ -10,7 +10,8 @@ import { findActiveMandate } from '../../../lib/ap2-policy-engine';
 import { EIP3009Authorization } from '../../../lib/x402/eip3009';
 import { validateAgentTrust } from '../../../lib/erc8004/validation-guard';
 import { ApiError } from '../../../lib/errors';
-import { createEscrow, getEscrowByReference } from '../../../lib/services/escrow-service';
+import { createEscrow, getEscrowByReference, autoReleaseEscrow } from '../../../lib/services/escrow-service';
+import { complete as aiComplete, type CompletionRequest, type RoutingOptions } from '../../../lib/ai-providers';
 
 const BAZAAR_ESCROW_THRESHOLD_USD = 1.00;
 
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
 
         // Dispatch methods
         if (method === 'message/send') {
-            return handleMessageSend(params, id, tenantIdHeader);
+            return handleMessageSend(params, id, tenantIdHeader, req);
         }
 
         if (method === 'x402/payment-submitted') {
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
     }
 }
 
-async function handleMessageSend(params: any, id: string | number, tenantId: string | null) {
+async function handleMessageSend(params: any, id: string | number, tenantId: string | null, req: NextRequest) {
     if (!params || !params.message) {
         return NextResponse.json({
             jsonrpc: '2.0',
@@ -85,22 +86,47 @@ async function handleMessageSend(params: any, id: string | number, tenantId: str
     const taskId = `task_${uuidv4()}`;
     const contextId = params.contextId || `ctx_${uuidv4()}`;
 
-    // Tenant Resolution
-    let tenantUuid: string | undefined;
-
-    if (tenantId) {
-        tenantUuid = tenantId;
-    } else {
-        const tRes = await query('SELECT id FROM tenants LIMIT 1');
-        if (tRes && tRes.rowCount && tRes.rowCount > 0) tenantUuid = tRes.rows[0].id;
-    }
-
-    if (!tenantUuid) {
+    // Tenant Resolution — X-P402-Tenant header required; no fallback to random tenant
+    if (!tenantId) {
         return NextResponse.json({
             jsonrpc: '2.0',
             error: A2A_ERRORS.UNAUTHORIZED,
             id
         });
+    }
+    const tenantUuid: string = tenantId;
+
+    // 1b. Idempotency check — return cached result if same key was seen before
+    const idempotencyKey = req.headers.get('Idempotency-Key');
+    if (idempotencyKey) {
+        try {
+            const existing = await query(
+                `SELECT id, result_message, configuration, cost_usd, latency_ms
+                 FROM a2a_tasks WHERE tenant_id = $1 AND idempotency_key = $2 LIMIT 1`,
+                [tenantUuid, idempotencyKey]
+            );
+            if (existing.rowCount && existing.rowCount > 0) {
+                const cached = existing.rows[0];
+                const cachedTask: A2ATask = {
+                    id: cached.id as string,
+                    contextId,
+                    status: {
+                        state: 'completed',
+                        message: cached.result_message as A2AMessage,
+                        timestamp: new Date().toISOString()
+                    },
+                    metadata: {
+                        idempotent_replay: true,
+                        cost_usd: cached.cost_usd,
+                        latency_ms: cached.latency_ms,
+                        ...(cached.configuration as Record<string, unknown>),
+                    }
+                };
+                return NextResponse.json({ jsonrpc: '2.0', result: { task: cachedTask }, id });
+            }
+        } catch {
+            // Column may not exist pre-migration — fall through and process normally
+        }
     }
 
     try {
@@ -110,18 +136,69 @@ async function handleMessageSend(params: any, id: string | number, tenantId: str
             [contextId, tenantUuid]
         );
 
-        // 3. Insert Task
+        // 3. Route message to AI provider
         const message: A2AMessage = params.message;
 
-        // Mock processing result
-        const firstPart = message.parts && message.parts.length > 0 ? message.parts[0] : null;
-        const textContent = firstPart && 'text' in firstPart ? firstPart.text : "";
+        const userText = (message.parts ?? [])
+            .map(p => (p.type === 'text' && p.text ? p.text : ''))
+            .filter(Boolean)
+            .join('\n');
+
+        const routingStart = Date.now();
+        let aiText = '';
+        let costUsd = 0;
+        let providerId = 'none';
+
+        if (userText) {
+            try {
+                const completionReq: CompletionRequest = {
+                    messages: [{ role: 'user', content: userText }],
+                    model: params.model as string | undefined,
+                    temperature: params.temperature as number | undefined,
+                    maxTokens: params.max_tokens as number | undefined,
+                };
+                const routingOpts: RoutingOptions = {
+                    mode: (params.routing_mode as 'cost' | 'quality' | 'speed' | 'balanced') ?? 'balanced',
+                    failover: { enabled: true, maxRetries: 2 },
+                };
+                const completion = await aiComplete(completionReq, routingOpts);
+                const choice = completion.choices[0];
+                aiText = choice
+                    ? (typeof choice.message.content === 'string'
+                        ? choice.message.content
+                        : (choice.message.content as Array<{ text?: string }>)
+                              .map(c => c.text ?? '')
+                              .join('')
+                      )
+                    : '';
+                costUsd = completion.p402?.costUsd ?? 0;
+                providerId = completion.p402?.providerId ?? completion.model;
+            } catch (aiErr) {
+                console.warn('[A2A] AI routing failed:', (aiErr as Error).message);
+                // Surface AI errors as task failures instead of silently echoing
+                await query(
+                    `INSERT INTO a2a_tasks (
+                        id, tenant_id, context_id, request_message, configuration,
+                        state, result_message, completed_at, idempotency_key
+                     ) VALUES ($1, $2, $3, $4, $5, 'failed', $6, NOW(), $7)`,
+                    [taskId, tenantUuid, contextId, JSON.stringify(message),
+                     JSON.stringify(params.configuration ?? {}),
+                     JSON.stringify({ role: 'agent', parts: [{ type: 'text', text: `AI routing failed: ${(aiErr as Error).message}` }] }),
+                     idempotencyKey ?? null]
+                );
+                return NextResponse.json({
+                    jsonrpc: '2.0',
+                    error: { ...A2A_ERRORS.INTERNAL_ERROR, message: 'AI provider unavailable' },
+                    id
+                });
+            }
+        }
+
+        const latencyMs = Date.now() - routingStart;
 
         const resultMessage: A2AMessage = {
             role: 'agent',
-            parts: [
-                { type: 'text', text: "I have received your message: " + (textContent || "") }
-            ]
+            parts: [{ type: 'text', text: aiText }]
         };
 
         // 3b. Auto-escrow for priced Bazaar tasks (> $1.00)
@@ -130,7 +207,14 @@ async function handleMessageSend(params: any, id: string | number, tenantId: str
         const providerAddress: string | undefined = params.provider_address ?? params.configuration?.provider_address;
         const payerAddress: string | undefined = params.payer_address ?? tenantUuid;
 
-        if (priceUsd && priceUsd >= BAZAAR_ESCROW_THRESHOLD_USD && providerAddress && payerAddress) {
+        // Check per-tenant escrow toggle (defaults true if no row exists)
+        const escrowSettingRes = await query(
+            `SELECT escrow_enabled FROM tenant_settings WHERE tenant_id = $1`,
+            [tenantUuid]
+        );
+        const escrowEnabled: boolean = escrowSettingRes.rows[0]?.escrow_enabled ?? true;
+
+        if (escrowEnabled && priceUsd && priceUsd >= BAZAAR_ESCROW_THRESHOLD_USD && providerAddress && payerAddress) {
             try {
                 const escrow = await createEscrow({
                     referenceId: taskId,
@@ -152,20 +236,31 @@ async function handleMessageSend(params: any, id: string | number, tenantId: str
 
         await query(
             `INSERT INTO a2a_tasks (
-            id, tenant_id, context_id, request_message, configuration, state, result_message, completed_at
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+                id, tenant_id, context_id, request_message, configuration,
+                state, result_message, completed_at, cost_usd, latency_ms, idempotency_key
+             ) VALUES ($1, $2, $3, $4, $5, 'completed', $6, NOW(), $7, $8, $9)`,
             [
                 taskId,
                 tenantUuid,
                 contextId,
                 JSON.stringify(message),
                 JSON.stringify(configuration),
-                'completed',
-                JSON.stringify(resultMessage)
+                JSON.stringify(resultMessage),
+                costUsd,
+                latencyMs,
+                idempotencyKey ?? null,
             ]
         );
 
-        // 4. Notify via Push
+        // 4a. Auto-release escrow now that the task delivered successfully
+        if (escrowId) {
+            const proofHash = createHash('sha256').update(aiText).digest('hex');
+            autoReleaseEscrow(taskId, proofHash).catch(
+                (err: Error) => console.warn('[A2A] autoReleaseEscrow failed (non-blocking):', err.message)
+            );
+        }
+
+        // 4b. Notify via Push
         pushNotificationService.notifyTaskStateChange({
             task_id: taskId,
             context_id: contextId,
@@ -183,6 +278,9 @@ async function handleMessageSend(params: any, id: string | number, tenantId: str
                 timestamp: new Date().toISOString()
             },
             metadata: {
+                cost_usd: costUsd,
+                latency_ms: latencyMs,
+                provider_id: providerId,
                 ...(escrowId ? { escrow_id: escrowId, price_usd: priceUsd } : {}),
             }
         };
@@ -481,7 +579,7 @@ async function handleX402PaymentSubmitted(params: any, id: string | number, tena
 
         // Generate receipt with real HMAC-SHA256 signature
         const newReceiptId = `rec_${uuidv4().substring(0, 8)}`;
-        const receiptSecret = process.env.P402_RECEIPT_SECRET ?? process.env.NEXTAUTH_SECRET ?? 'dev-fallback';
+        const receiptSecret = process.env.P402_RECEIPT_SECRET!;
         const receiptSigInput = `${newReceiptId}:${settledTxHash}:${payment.amount_usd ?? 0}:${payment.asset ?? 'USDC'}`;
         const receiptSignature = createHmac('sha256', receiptSecret).update(receiptSigInput).digest('hex');
 

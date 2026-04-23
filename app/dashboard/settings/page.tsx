@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import db from '@/lib/db';
 import { ApiKeyManager, WebhookManager } from '../_components/settings/ApiKeyManager';
 import { WorldIdPanel } from '../_components/settings/WorldIdPanel';
+import { EscrowToggle } from '../_components/settings/EscrowToggle';
 import { Settings } from 'lucide-react';
 
 export const metadata = {
@@ -25,19 +26,21 @@ export default async function SettingsPage() {
     );
     const existingKeys = keysRes.rows;
 
-    // 2. Fetch Tenant Settings for Webhooks
+    // 2. Fetch Tenant Settings for Webhooks + Escrow
     let webhookUrl = '';
     let webhookSecret = '';
+    let escrowEnabled = true;
     try {
         const settingsRes = await db.query(
-            `SELECT webhook_url, webhook_secret 
-       FROM tenant_settings 
+            `SELECT webhook_url, webhook_secret, escrow_enabled
+       FROM tenant_settings
        WHERE tenant_id = $1`,
             [tenantId]
         );
         if (settingsRes.rows.length > 0) {
             webhookUrl = settingsRes.rows[0].webhook_url || '';
             webhookSecret = settingsRes.rows[0].webhook_secret || '';
+            escrowEnabled = settingsRes.rows[0].escrow_enabled ?? true;
         }
     } catch (error) {
         console.error('Failed to fetch tenant settings', error);
@@ -57,6 +60,8 @@ export default async function SettingsPage() {
 
             {/* Client Components for Interactive Management */}
             <WorldIdPanel />
+
+            <EscrowToggle initialEnabled={escrowEnabled} />
 
             <ApiKeyManager existingKeys={existingKeys} />
 
