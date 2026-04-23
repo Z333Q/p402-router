@@ -42,7 +42,7 @@ export default function MeterPage() {
         <button className="btn btn-secondary text-xs" onClick={reset}>Reset</button>
       </div>
 
-      <div className="flex-1 px-6 py-8 flex flex-col gap-8 max-w-[1400px] mx-auto w-full">
+      <div className="meter-dark flex-1 px-6 py-8 flex flex-col gap-8 max-w-[1400px] mx-auto w-full">
         {/* Story block — first screen, one job per row */}
         <div className="max-w-2xl">
           <h1 className="text-4xl lg:text-5xl font-bold leading-tight text-neutral-50 mb-4">

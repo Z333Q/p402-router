@@ -235,3 +235,46 @@ textarea:focus {
     transform: translateX(400%);
   }
 }
+
+/* ── Meter dark-surface override ────────────────────────────────────────────
+   .card and .section-header default to white (Neo-Brutalist).
+   .meter-dark has higher specificity (0,2,0 vs 0,1,0) so it wins without
+   !important, and only affects the meter page subtree.
+   ─────────────────────────────────────────────────────────────────────────── */
+.meter-dark .card {
+  background: #141414;
+  color: #FFFFFF;
+  border-color: #2B2B2B;
+}
+
+.meter-dark .section-header {
+  background: #141414;
+  border-bottom-color: #2B2B2B;
+  color: #FFFFFF;
+  margin-bottom: 0;
+}
+
+.meter-dark .badge {
+  border-color: #4A4A4A;
+  color: #FFFFFF;
+}
+
+.meter-dark .badge-primary {
+  background: var(--primary);
+  color: #000000;
+  border-color: #000000;
+}
+
+.meter-dark input[type="text"],
+.meter-dark input[type="email"],
+.meter-dark textarea,
+.meter-dark select {
+  background: #141414;
+  color: #FFFFFF;
+  border-color: #4A4A4A;
+}
+
+.meter-dark input::placeholder,
+.meter-dark textarea::placeholder {
+  color: #7A7A7A;
+}

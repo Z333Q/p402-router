@@ -321,11 +321,7 @@ function streamSafeModeResponse(
     'No clinical determination has been made.',
   ];
 
-  // Pre-captured Arc proof references (real testnet tx from prior run)
-  const SAFE_PROOF_REFS = [
-    '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab',
-    '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12',
-  ];
+  // Safe mode: no real Arc tx hashes — proofRef only (avoids 422 on ArcScan)
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -359,7 +355,7 @@ function streamSafeModeResponse(
             costUsd: chunkCost,
             costUsdcE6: Math.round(chunkCost * 1_000_000),
             provisional: true,
-            proofRef: SAFE_PROOF_REFS[0],
+            proofRef: `safe:${sessionId}:chunk:${chunkIndex}`,
             createdAt: new Date().toISOString(),
           },
         });
@@ -379,8 +375,7 @@ function streamSafeModeResponse(
           costUsd: finalCost,
           costUsdcE6: Math.round(finalCost * 1_000_000),
           provisional: false,
-          proofRef: `proof:${sessionId}:reconcile`,
-          arcTxHash: SAFE_PROOF_REFS[0],
+          proofRef: `safe:${sessionId}:reconcile`,
           createdAt: new Date().toISOString(),
         },
       });
@@ -411,7 +406,6 @@ function streamSafeModeResponse(
           reasonSummary: 'Review completed within budget. Administrative documentation complete. Ready for manual approval.',
         },
         safeMode: true,
-        proofRefs: SAFE_PROOF_REFS,
       });
 
       controller.close();
