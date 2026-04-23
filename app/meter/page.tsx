@@ -20,105 +20,86 @@ import { EconomicAuditPanel } from './_components/EconomicAuditPanel';
 import { useMeterStore } from './_store/useMeterStore';
 
 export default function MeterPage() {
-  const { error, setError, reset } = useMeterStore();
+  const { error, setError, reset, safeMode } = useMeterStore();
 
   return (
     <div className="min-h-screen bg-neutral-900 flex flex-col">
-      {/* Safe Mode banner — always first */}
+      {/* Safe Mode banner — thin bar, always first */}
       <SafeModeBanner />
 
-      {/* Top bar */}
+      {/* Compact utility bar */}
       <div className="border-b-2 border-neutral-700 px-6 py-3 flex items-center justify-between bg-neutral-900">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-mono text-neutral-400 uppercase tracking-widest">P402 Meter</span>
+          <span className="text-sm font-bold text-neutral-50">P402 Meter</span>
           <span className="text-neutral-700">·</span>
-          <span className="text-xs font-mono text-neutral-500 uppercase tracking-widest">
-            Real-Time AI Billing · Arc × Circle × Gemini
+          <span className="border border-neutral-700 px-2 py-0.5 text-[10px] font-mono text-neutral-400 uppercase tracking-wide">
+            Arc Testnet
+          </span>
+          <span className={`text-[10px] font-mono uppercase px-2 py-0.5 border ${safeMode ? 'border-warning text-warning' : 'border-success text-success'}`}>
+            {safeMode ? 'Demo' : 'Live'}
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="border border-neutral-700 px-2 py-0.5 text-[10px] font-mono text-neutral-500 uppercase">
-            Arc Testnet
-          </div>
-          <button
-            className="btn btn-secondary text-[10px]"
-            onClick={reset}
-          >
-            Reset
-          </button>
-        </div>
+        <button className="btn btn-secondary text-xs" onClick={reset}>Reset</button>
       </div>
 
-      <div className="flex-1 px-6 py-6 flex flex-col gap-6 max-w-[1400px] mx-auto w-full">
-        {/* Hero heading */}
-        <div>
-          <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-2">
-            {'>'} _ ARC HACKATHON · USAGE-BASED COMPUTE BILLING · GEMINI PRIZE
-          </div>
-          {/* Problem statement — one sentence before the thesis */}
-          <p className="text-sm font-mono text-neutral-400 border-l-2 border-warning pl-3 mb-3 max-w-2xl">
-            Prior authorization delays care for days and costs payers $150+ per case in manual review.
-            AI can do it in seconds — but only if per-token settlement keeps up. Stripe can&apos;t. Ethereum can&apos;t. Arc can.
-          </p>
-          <h1 className="text-3xl lg:text-4xl font-bold uppercase tracking-tight leading-none">
-            AI Thinking Has a Price.
-            <br />
-            <span className="text-primary">Watch It Settle on Arc.</span>
+      <div className="flex-1 px-6 py-8 flex flex-col gap-8 max-w-[1400px] mx-auto w-full">
+        {/* Story block — first screen, one job per row */}
+        <div className="max-w-2xl">
+          <h1 className="text-4xl lg:text-5xl font-bold leading-tight text-neutral-50 mb-4">
+            Real-time AI billing<br />
+            <span className="text-primary">for payer operations</span>
           </h1>
-          <p className="mt-2 text-sm text-neutral-400 font-mono max-w-2xl">
-            P402 Meter prices every AI token in USDC and settles it on Arc in real time.
-            Prior authorization review is the proof — 55+ onchain billing events per run, sub-$0.01 per action,
-            governed by Gemini multimodal extraction and Gemini Pro policy reasoning.
-          </p>
-          {/* Top-fold CTAs */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            <a
-              href="/meter/about"
-              className="btn btn-secondary text-[10px]"
-            >
-              About This Build
-            </a>
-            <a
-              href="https://p402.io/docs/router"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-secondary text-[10px]"
-            >
-              API Docs ↗
-            </a>
-            <a
-              href="https://p402.io/trust"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-secondary text-[10px]"
-            >
-              Trust Center ↗
-            </a>
-            <a
-              href="https://explorer.arc.network"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-secondary text-[10px]"
-            >
-              ArcScan ↗
-            </a>
+          <div className="flex flex-col gap-1.5 mb-6">
+            <p className="text-base text-neutral-300 leading-relaxed">
+              Each AI step is priced in USDC and settled on Arc.
+            </p>
+            <p className="text-base text-neutral-300 leading-relaxed">
+              Gemini handles document intake and review.
+            </p>
+            <p className="text-base text-neutral-300 leading-relaxed">
+              The ledger stays visible from start to finish.
+            </p>
           </div>
+          {/* Proof chips */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            <span className="border-2 border-primary text-primary text-xs font-bold font-mono px-3 py-1.5">
+              55+ Arc transactions per run
+            </span>
+            <span className="border-2 border-neutral-600 text-neutral-300 text-xs font-mono px-3 py-1.5">
+              $0.006 per settlement
+            </span>
+            <span className="border-2 border-neutral-600 text-neutral-300 text-xs font-mono px-3 py-1.5">
+              Gemini multimodal intake
+            </span>
+          </div>
+          {/* Action cluster */}
+          <div className="flex flex-wrap gap-3 items-center">
+            <a href="#demo" className="btn btn-primary text-sm px-5">Run Demo →</a>
+            <a href="/meter/about" className="btn btn-secondary text-sm">About</a>
+            <a href="https://p402.io/docs/router" target="_blank" rel="noopener noreferrer" className="btn btn-secondary text-sm">Docs ↗</a>
+            <a href="https://testnet.arcscan.app" target="_blank" rel="noopener noreferrer" className="btn btn-secondary text-sm">ArcScan ↗</a>
+          </div>
+        </div>
+
+        {/* One-click demo — primary action, anchor target */}
+        <div id="demo">
+          <GuidedDemoStrip />
         </div>
 
         {/* Compliance boundary */}
         <ComplianceBoundaryBanner />
 
-        {/* Session bar */}
+        {/* Metrics scoreboard */}
         <SessionBar />
-
-        {/* Frequency counter — always visible */}
         <FrequencyCounter />
 
-        {/* Circle + Arc infrastructure strip — load-bearing component proof */}
+        {/* Circle + Arc stack proof */}
         <CircleInfraStrip />
 
-        {/* One-click guided demo — video recording helper */}
-        <GuidedDemoStrip />
+        {/* Hackathon context — moved below product content */}
+        <div className="border border-neutral-800 px-4 py-2 text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
+          Arc Hackathon · April 2026 · Usage-Based Compute Billing · Gemini Prize Track
+        </div>
 
         {/* Error banner */}
         {error && (

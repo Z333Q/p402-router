@@ -59,18 +59,21 @@ export function LedgerPane() {
       {/* Ledger table */}
       <div className="flex-1 overflow-y-auto max-h-[320px]">
         {displayEvents.length === 0 ? (
-          <div className="flex items-center justify-center h-24 text-xs font-mono text-neutral-600 uppercase tracking-wider">
-            Awaiting economic events
+          <div className="p-6 flex flex-col gap-2">
+            <p className="text-sm font-bold text-neutral-200">Each billed AI event will appear here in order.</p>
+            <p className="text-sm text-neutral-400 leading-relaxed">
+              Running cost and Arc settlement proof are shown per event. Start a review to begin.
+            </p>
           </div>
         ) : (
           <table className="w-full text-[10px] font-mono">
             <thead className="sticky top-0 bg-neutral-900">
               <tr className="border-b border-neutral-700">
-                <th className="text-left px-3 py-2 text-neutral-500 uppercase tracking-wider font-normal">Time</th>
-                <th className="text-left px-3 py-2 text-neutral-500 uppercase tracking-wider font-normal">Event</th>
-                <th className="text-right px-3 py-2 text-neutral-500 uppercase tracking-wider font-normal">Tokens</th>
-                <th className="text-right px-3 py-2 text-neutral-500 uppercase tracking-wider font-normal">Cost</th>
-                <th className="text-right px-3 py-2 text-neutral-500 uppercase tracking-wider font-normal">Proof</th>
+                <th className="text-left px-3 py-2 text-neutral-400 uppercase tracking-wider font-normal">Time</th>
+                <th className="text-left px-3 py-2 text-neutral-400 uppercase tracking-wider font-normal">Event</th>
+                <th className="text-right px-3 py-2 text-neutral-400 uppercase tracking-wider font-normal">Tokens</th>
+                <th className="text-right px-3 py-2 text-neutral-400 uppercase tracking-wider font-normal">Cost</th>
+                <th className="text-right px-3 py-2 text-neutral-400 uppercase tracking-wider font-normal">Proof</th>
               </tr>
             </thead>
             <tbody>
@@ -85,7 +88,7 @@ export function LedgerPane() {
       {/* Reconcile footer */}
       {streamDone && (
         <div className="border-t-2 border-primary px-4 py-3 flex items-center justify-between bg-neutral-900">
-          <div className="flex items-center gap-4 text-[10px] font-mono text-neutral-500 uppercase">
+          <div className="flex items-center gap-4 text-[10px] font-mono text-neutral-300 uppercase">
             <span>{ledgerEvents.length} events reconciled</span>
             <span className="text-warning">{aiEvents} AI</span>
             <span className="text-primary">{settleEvents} Arc tx</span>
@@ -98,7 +101,7 @@ export function LedgerPane() {
 
       {/* Budget cap */}
       <div className="border-t border-neutral-700 px-4 py-2 flex items-center justify-between">
-        <span className="text-[10px] font-mono uppercase text-neutral-600 tracking-wider">Budget Cap</span>
+        <span className="text-[10px] font-mono uppercase text-neutral-400 tracking-wider">Budget Cap</span>
         <span className="text-[10px] font-mono text-neutral-400">${budgetCapUsd.toFixed(2)}</span>
       </div>
     </div>
@@ -125,12 +128,12 @@ function LedgerRow({ event }: { event: LedgerEvent }) {
 
   return (
     <tr className="border-b border-neutral-800 hover:bg-neutral-800/40 transition-colors">
-      <td className="px-3 py-2 text-neutral-600 tabular-nums whitespace-nowrap">{time}</td>
+      <td className="px-3 py-2 text-neutral-400 tabular-nums whitespace-nowrap">{time}</td>
       <td className={`px-3 py-2 ${color} uppercase tracking-wider`}>{label}</td>
-      <td className="px-3 py-2 text-right text-neutral-600 tabular-nums">
+      <td className="px-3 py-2 text-right text-neutral-400 tabular-nums">
         {event.tokensEstimate != null ? event.tokensEstimate.toString() : '—'}
       </td>
-      <td className={`px-3 py-2 text-right tabular-nums ${event.provisional ? 'text-neutral-500' : 'text-neutral-200'}`}>
+      <td className={`px-3 py-2 text-right tabular-nums ${event.provisional ? 'text-neutral-400' : 'text-neutral-200'}`}>
         ${event.costUsd.toFixed(6)}
       </td>
       <td className="px-3 py-2 text-right">

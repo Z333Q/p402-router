@@ -50,24 +50,24 @@ export function FrequencyCounter() {
       <div className="flex divide-x-2 divide-neutral-800 text-xs font-mono uppercase">
         <CounterCell
           label="AI Events"
-          sublabel="Token-priced units"
+          sublabel={signedAuths > 0 ? 'Token-priced units' : 'Not started yet'}
           value={signedAuths > 0 ? signedAuths.toString() : '—'}
           highlight={signedAuths > 0}
         />
         <CounterCell
           label="Signed Auths"
-          sublabel="Payment authorizations"
+          sublabel={signedAuths > 0 ? 'Payment authorizations' : 'Not started yet'}
           value={signedAuths > 0 ? signedAuths.toString() : '—'}
           highlight={signedAuths > 0}
         />
         <CounterCell
           label="Arc Tx"
-          sublabel={arcTxCount > 0 ? `${arcTxCount} settled` : `$${ARC_TYPICAL_GAS_COST_USDC}/tx gas`}
+          sublabel={arcTxCount > 0 ? `${arcTxCount} settled` : signedAuths > 0 ? `$${ARC_TYPICAL_GAS_COST_USDC}/tx gas` : 'Not started yet'}
           value={arcTxCount > 0 ? arcTxCount.toString() : settlementBatches > 0 ? settlementBatches.toString() : '—'}
         />
         <CounterCell
           label="Avg / Event"
-          sublabel="must be ≤ $0.01"
+          sublabel={signedAuths > 0 ? 'target ≤ $0.01' : 'Not started yet'}
           value={signedAuths > 0 ? `$${avgCostPerAction.toFixed(6)}` : '—'}
           pass={costThresholdMet ? true : signedAuths > 0 ? false : undefined}
         />
@@ -128,7 +128,7 @@ function CounterCell({
     <div className="flex-1 px-3 py-3">
       <div className="text-neutral-400 text-[9px] tracking-widest">{label}</div>
       <div className={`text-base font-bold tabular-nums mt-0.5 ${valueColor}`}>{value}</div>
-      <div className="text-[9px] text-neutral-600 tracking-wider mt-0.5 leading-tight">{sublabel}</div>
+      <div className="text-[9px] text-neutral-400 tracking-wider mt-0.5 leading-tight">{sublabel}</div>
     </div>
   );
 }

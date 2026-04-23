@@ -41,11 +41,11 @@ export function SessionBar() {
       <div className="px-4 py-2 border-b border-neutral-700 flex flex-wrap items-center gap-4 text-[10px] font-mono">
         <KpiCell label="Budget Spent" value={`$${budgetSpentUsd.toFixed(6)}`} color={overBudget ? 'text-error' : isStreaming ? 'text-primary' : 'text-neutral-300'} />
         <KpiCell label="Remaining" value={`$${budgetRemaining.toFixed(4)}`} color={overBudget ? 'text-error' : 'text-neutral-400'} />
-        <KpiCell label="AI Events" value={frequencyStats.authorizations > 0 ? `${frequencyStats.authorizations}` : '—'} color={thresholdMet ? 'text-success' : 'text-neutral-400'} />
-        <KpiCell label="Arc Tx" value={arcTxCount > 0 ? arcTxCount.toString() : '—'} color="text-neutral-400" />
-        <KpiCell label="Avg / Event" value={avgCostPerTx != null ? `$${avgCostPerTx.toFixed(6)}` : '—'} color={costMet ? 'text-success' : 'text-neutral-400'} />
+        <KpiCell label="AI Events" value={frequencyStats.authorizations > 0 ? `${frequencyStats.authorizations}` : 'Not started'} color={thresholdMet ? 'text-success' : frequencyStats.authorizations > 0 ? 'text-neutral-300' : 'text-neutral-500'} />
+        <KpiCell label="Arc Tx" value={arcTxCount > 0 ? arcTxCount.toString() : 'Not started'} color={arcTxCount > 0 ? 'text-neutral-300' : 'text-neutral-500'} />
+        <KpiCell label="Avg / Event" value={avgCostPerTx != null ? `$${avgCostPerTx.toFixed(6)}` : 'Not started'} color={costMet ? 'text-success' : avgCostPerTx != null ? 'text-neutral-300' : 'text-neutral-500'} />
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-neutral-600 uppercase tracking-wider">Proof</span>
+          <span className="text-neutral-400 uppercase tracking-wider">Proof</span>
           <span className={`border px-2 py-0.5 font-bold uppercase tracking-widest ${proofColor}`}>
             {proofStatus}
           </span>
@@ -55,21 +55,21 @@ export function SessionBar() {
 
       {/* Budget progress bar */}
       <div className="px-4 py-2 flex items-center gap-3">
-        <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider whitespace-nowrap">
+        <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider whitespace-nowrap">
           Session
         </span>
         <span className="text-[10px] font-mono text-primary font-bold">
-          {sessionId ?? '—'}
+          {sessionId ?? 'Not started'}
         </span>
         <div className="flex-1 flex items-center gap-2 ml-2">
-          <span className="text-[10px] font-mono text-neutral-600 uppercase whitespace-nowrap">Budget</span>
+          <span className="text-[10px] font-mono text-neutral-400 uppercase whitespace-nowrap">Budget</span>
           <div className="flex-1 h-1.5 border border-neutral-700 bg-neutral-900">
             <div
               className={`h-full transition-all duration-300 ${overBudget ? 'bg-error' : 'bg-primary'}`}
               style={{ width: `${pct}%` }}
             />
           </div>
-          <span className="text-[10px] font-mono text-neutral-600 tabular-nums whitespace-nowrap">
+          <span className="text-[10px] font-mono text-neutral-400 tabular-nums whitespace-nowrap">
             ${budgetSpentUsd.toFixed(4)} / ${budgetCapUsd.toFixed(2)}
           </span>
         </div>
@@ -86,7 +86,7 @@ export function SessionBar() {
 function KpiCell({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-neutral-600 uppercase tracking-widest text-[9px]">{label}</span>
+      <span className="text-neutral-400 uppercase tracking-widest text-[9px]">{label}</span>
       <span className={`font-bold tabular-nums ${color}`}>{value}</span>
     </div>
   );

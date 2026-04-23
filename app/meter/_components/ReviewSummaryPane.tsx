@@ -121,21 +121,28 @@ export function ReviewSummaryPane() {
       {/* Stream content */}
       <div
         ref={contentRef}
-        className="flex-1 overflow-y-auto p-4 font-mono text-xs text-neutral-300 leading-relaxed min-h-[200px] max-h-[320px] bg-neutral-900"
+        className="flex-1 overflow-y-auto p-4 min-h-[200px] max-h-[320px] bg-neutral-900"
       >
         {!streamText && !executing && (
-          <span className="text-neutral-600 uppercase tracking-widest">
-            Review summary will appear here during execution
-          </span>
+          <div className="flex flex-col gap-2 pt-1">
+            <p className="text-sm font-bold text-neutral-200">Start the review to see the payer-ops summary.</p>
+            <p className="text-sm text-neutral-400 leading-relaxed">
+              Gemini will produce a utilization management summary with rationale, policy reference, and recommendation.
+            </p>
+          </div>
         )}
-        {streamText}
+        {streamText && (
+          <p className="text-sm text-neutral-200 leading-relaxed whitespace-pre-wrap">
+            {streamText}
+          </p>
+        )}
         {executing && !streamDone && <span className="inline-block w-2 h-3 bg-primary animate-pulse ml-1" />}
       </div>
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-neutral-700 flex items-center justify-between">
-        <div className="text-[10px] font-mono text-neutral-400 uppercase">
-          {workOrder ? `Model: gemini-2.0-flash` : 'No work order'}
+        <div className="text-xs text-neutral-400">
+          {workOrder ? 'gemini-2.0-flash' : 'No work order'}
         </div>
         {canExecute && !streamDone && (
           <button
@@ -169,5 +176,5 @@ function StreamStateBadge({
   if (executing) return <span className="text-[10px] font-mono text-warning uppercase animate-pulse">Streaming...</span>;
   if (state === 'work_order_ready' || state === 'session_opening')
     return <span className="text-[10px] font-mono text-info uppercase">Ready</span>;
-  return <span className="text-[10px] font-mono text-neutral-600 uppercase">Waiting</span>;
+  return <span className="text-[10px] font-mono text-neutral-400 uppercase">Waiting for work order</span>;
 }

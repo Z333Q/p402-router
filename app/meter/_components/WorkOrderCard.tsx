@@ -22,13 +22,16 @@ export function WorkOrderCard() {
 
   if (isEmpty) {
     return (
-      <div className="card p-0 flex flex-col opacity-40">
+      <div className="card p-0 flex flex-col">
         <div className="section-header px-4 py-3 flex items-center gap-2">
           <span className="badge text-[10px]">02</span>
-          <span className="text-sm font-bold tracking-wider uppercase">Gemini Extraction</span>
+          <span className="text-sm font-bold text-neutral-50 uppercase tracking-wider">Gemini Extraction</span>
         </div>
-        <div className="flex-1 flex items-center justify-center p-8 text-xs font-mono text-neutral-600 uppercase tracking-wider">
-          Awaiting Document
+        <div className="p-6 flex flex-col gap-2">
+          <p className="text-sm font-bold text-neutral-200">Upload a packet or load the demo packet.</p>
+          <p className="text-sm text-neutral-400 leading-relaxed">
+            Gemini will extract payer, procedure, urgency level, and review flags here.
+          </p>
         </div>
       </div>
     );
