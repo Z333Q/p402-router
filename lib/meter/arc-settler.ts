@@ -75,7 +75,9 @@ export async function settleOnArc(params: {
   // Convert USD to USDC-e6 (floor at 1 to avoid zero-value transfers)
   const amountE6 = BigInt(Math.max(1, Math.round(params.amountUsd * 1_000_000)));
 
-  const tx = await (usdc.getFunction('transfer')(params.toAddress, amountE6) as Promise<ethers.ContractTransactionResponse>);
+  // Explicit gasLimit avoids estimation failure on Arc's USDC-as-native-gas setup
+  const tx = await (usdc.getFunction('transfer').populateTransaction(params.toAddress, amountE6)
+    .then((populated) => signer.sendTransaction({ ...populated, gasLimit: 100000n })) as Promise<ethers.TransactionResponse>);
   const receipt = await tx.wait(1);
 
   if (!receipt) throw new Error('Arc tx receipt was null');

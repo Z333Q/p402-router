@@ -74,13 +74,14 @@ export function ReviewSummaryPane() {
           if (!raw) continue;
 
           try {
-            const frame = JSON.parse(raw) as SseFrame & { approval?: ApprovalRecord; proofRefs?: string[]; quotaFallback?: boolean };
+            const frame = JSON.parse(raw) as SseFrame & { approval?: ApprovalRecord; proofRefs?: string[]; quotaFallback?: boolean; arcSettleError?: string };
 
             if (frame.type === 'text_delta') {
               appendStreamText(frame.delta);
             } else if (frame.type === 'ledger_event') {
               appendLedgerEvent(frame.event as LedgerEvent);
             } else if (frame.type === 'stream_done') {
+              if (frame.arcSettleError) console.error('[Arc settler]', frame.arcSettleError);
               if (frame.quotaFallback) setQuotaFallback(true);
               setStreamDone(frame.totalCostUsd, frame.totalTokens);
               if (frame.approval) {

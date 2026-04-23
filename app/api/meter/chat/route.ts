@@ -164,20 +164,24 @@ Follow the administrative format strictly. No PHI. No clinical decisions.`;
           // ── Reconciliation event + real Arc settlement ───────────────────
           // When ARC_PRIVATE_KEY is set, submit a real USDC transfer on Arc testnet.
           // This produces a verifiable tx hash visible in ArcScan.
+          // Use P402 treasury as recipient (not self — some precompiles reject self-transfers).
+          const ARC_DEMO_RECIPIENT = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
           let arcTxHash: string | undefined;
           let arcBlock: number | undefined;
+          let arcSettleError: string | undefined;
           if (isArcSettlerEnabled()) {
             try {
-              const signerAddr = await getSignerAddress();
               const result = await settleOnArcWithFallback({
-                toAddress: signerAddr, // self-transfer as proof (no recipient required for demo)
-                amountUsd: finalCostUsd,
+                toAddress: ARC_DEMO_RECIPIENT,
+                amountUsd: Math.max(finalCostUsd, 0.000001), // floor at 1 USDC-e6 unit
               });
               if (result) {
                 arcTxHash = result.txHash;
                 arcBlock = result.blockNumber;
               }
-            } catch { /* non-fatal — degrade gracefully */ }
+            } catch (err) {
+              arcSettleError = err instanceof Error ? err.message : String(err);
+            }
           }
 
           const reconcileEvent: Omit<LedgerEvent, 'id' | 'createdAt'> = {
@@ -240,7 +244,8 @@ Follow the administrative format strictly. No PHI. No clinical decisions.`;
             totalTokens: outputTokens,
             reconciled: true,
             ...(approvalResult ? { approval: approvalResult } : {}),
-          } as SseFrame & { approval?: unknown });
+            ...(arcSettleError ? { arcSettleError } : {}),
+          } as SseFrame & { approval?: unknown; arcSettleError?: string });
 
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : 'stream failed';
