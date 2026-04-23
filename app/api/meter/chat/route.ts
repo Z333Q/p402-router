@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { insertLedgerEvent, updateWorkOrderStatus } from '@/lib/meter/queries';
 import { generateApprovalRecommendation } from '@/lib/meter/work-order-parser';
+import { isArcSettlerEnabled, settleOnArcWithFallback, getSignerAddress } from '@/lib/meter/arc-settler';
 import type { SseFrame, LedgerEvent } from '@/lib/meter/types';
 import crypto from 'crypto';
 
@@ -145,7 +146,25 @@ Follow the administrative format strictly. No PHI. No clinical decisions.`;
             emit({ type: 'ledger_event', event: { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...specialistEvent } });
           }
 
-          // ── Reconciliation event ─────────────────────────────────────────
+          // ── Reconciliation event + real Arc settlement ───────────────────
+          // When ARC_PRIVATE_KEY is set, submit a real USDC transfer on Arc testnet.
+          // This produces a verifiable tx hash visible in ArcScan.
+          let arcTxHash: string | undefined;
+          let arcBlock: number | undefined;
+          if (isArcSettlerEnabled()) {
+            try {
+              const signerAddr = await getSignerAddress();
+              const result = await settleOnArcWithFallback({
+                toAddress: signerAddr, // self-transfer as proof (no recipient required for demo)
+                amountUsd: finalCostUsd,
+              });
+              if (result) {
+                arcTxHash = result.txHash;
+                arcBlock = result.blockNumber;
+              }
+            } catch { /* non-fatal — degrade gracefully */ }
+          }
+
           const reconcileEvent: Omit<LedgerEvent, 'id' | 'createdAt'> = {
             sessionId,
             workOrderId,
@@ -155,6 +174,7 @@ Follow the administrative format strictly. No PHI. No clinical decisions.`;
             costUsdcE6: Math.round(finalCostUsd * 1_000_000),
             provisional: false,
             proofRef: `proof:${sessionId}:reconcile`,
+            ...(arcTxHash ? { arcTxHash, arcBlock } : {}),
           };
           insertLedgerEvent(reconcileEvent).catch(() => null);
           emit({ type: 'ledger_event', event: { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...reconcileEvent } });

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { ERC_8183_AGENTIC_COMMERCE, arcExplorerTxUrl, ARC_TYPICAL_GAS_COST_USDC } from '@/lib/chains/arc';
 import { insertLedgerEvent } from '@/lib/meter/queries';
+import { isArcSettlerEnabled, createErc8183Job, getSignerAddress } from '@/lib/meter/arc-settler';
 import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
@@ -33,14 +34,30 @@ export async function POST(req: NextRequest) {
     // contract at ERC_8183_AGENTIC_COMMERCE. For the demo, returns a structured
     // stub with real contract address for video proof.
 
-    const arcWalletConfigured = Boolean(process.env.ARC_PRIVATE_KEY);
     let arcTxHash: string | undefined;
     let deliverableHash: string | undefined;
+    let onChainJobId: string | undefined;
 
-    if (arcWalletConfigured) {
-      // Real Arc tx path — implemented in Day 3 when wallet key is available
-      // Placeholder: wire ethers.js call to ERC_8183_AGENTIC_COMMERCE.createJob()
-      arcTxHash = undefined;
+    // Build deliverable hash before ERC-8183 call so it can be passed to createJob
+    const reviewOutputForHash = JSON.stringify({ jobId, sessionId, workOrderId, reason, specialist: 'arc-specialist-agent-v1' });
+    deliverableHash = `0x${crypto.createHash('sha256').update(reviewOutputForHash).digest('hex')}`;
+
+    // ── ERC-8183 real on-chain job (when ARC_PRIVATE_KEY is set) ────────────
+    if (isArcSettlerEnabled()) {
+      try {
+        const signerAddr = await getSignerAddress();
+        const result = await createErc8183Job({
+          providerAddress: signerAddr,    // P402 as both provider and evaluator for demo
+          evaluatorAddress: signerAddr,
+          escrowAmountUsd,
+          deliverableHash,
+        });
+        arcTxHash = result.txHash;
+        onChainJobId = result.jobId;
+      } catch (err) {
+        // Non-fatal — degrade to simulation with real contract address shown
+        console.error('[escrow] ERC-8183 createJob failed:', err instanceof Error ? err.message : err);
+      }
     }
 
     // Specialist review output (simulated for demo)
@@ -54,8 +71,6 @@ export async function POST(req: NextRequest) {
       rationale: 'Administrative documentation reviewed. Case complexity within standard parameters. Recommend approval for manual reviewer confirmation.',
       reviewedAt: new Date().toISOString(),
     });
-
-    deliverableHash = `0x${crypto.createHash('sha256').update(reviewOutput).digest('hex')}`;
 
     const escrowAmountUsdcE6 = Math.round(escrowAmountUsd * 1_000_000);
 
@@ -73,7 +88,7 @@ export async function POST(req: NextRequest) {
     insertLedgerEvent(escrowEvent).catch(() => null);
 
     return Response.json({
-      jobId,
+      jobId: onChainJobId ?? jobId,
       sessionId,
       workOrderId,
       reason,
@@ -83,6 +98,7 @@ export async function POST(req: NextRequest) {
       arcContractAddress: ERC_8183_AGENTIC_COMMERCE,
       arcTxHash,
       arcExplorerUrl: arcTxHash ? arcExplorerTxUrl(arcTxHash) : undefined,
+      liveSettlement: arcTxHash != null,
       status: 'complete',
       reviewOutput: {
         recommendation: 'specialist_review_complete',

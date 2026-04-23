@@ -6,7 +6,6 @@ import { useMeterStore } from '../_store/useMeterStore';
 export function SafeModeBanner() {
   const { safeMode, setSafeMode } = useMeterStore();
 
-  // Activate safe mode from URL param (?safe=1) or env var at runtime
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('safe') === '1' || process.env.NEXT_PUBLIC_DEMO_MODE === 'safe') {
@@ -16,28 +15,33 @@ export function SafeModeBanner() {
 
   if (safeMode) {
     return (
-      <div className="w-full bg-warning text-neutral-900 text-xs font-mono font-bold uppercase px-4 py-2 text-center border-b-2 border-neutral-900 tracking-wider flex items-center justify-center gap-4">
-        <span>⚡ SAFE MODE — RECORDED STREAM · REAL ARC TX REFS · NO API KEYS NEEDED</span>
+      <div className="w-full bg-neutral-800 border-b border-neutral-700 px-4 py-1.5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] font-mono text-neutral-600 uppercase tracking-widest">Mode:</span>
+          <span className="text-[9px] font-mono font-bold text-warning uppercase tracking-wider">
+            Simulation · Gemini API bypassed · Arc tx refs real
+          </span>
+        </div>
         <button
-          className="text-[10px] border-2 border-neutral-900 px-2 py-0.5 hover:bg-neutral-900 hover:text-warning transition-colors"
+          className="text-[9px] font-mono uppercase tracking-wider text-neutral-400 hover:text-info border border-neutral-700 hover:border-info px-2 py-0.5 transition-colors"
           onClick={() => setSafeMode(false)}
         >
-          DISABLE
+          Switch to Live →
         </button>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-neutral-800 border-b border-neutral-700 px-4 py-1.5 flex items-center justify-end gap-3">
-      <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">
+    <div className="w-full bg-neutral-900 border-b border-neutral-800 px-4 py-1.5 flex items-center justify-end gap-3">
+      <span className="text-[9px] font-mono text-neutral-600 uppercase tracking-wider">
         No Gemini API key?
       </span>
       <button
-        className="text-[10px] font-mono font-bold uppercase tracking-wider border border-warning text-warning px-3 py-1 hover:bg-warning hover:text-neutral-900 transition-colors"
+        className="text-[9px] font-mono uppercase tracking-wider border border-neutral-700 text-neutral-500 hover:text-warning hover:border-warning px-2 py-0.5 transition-colors"
         onClick={() => setSafeMode(true)}
       >
-        Enable Safe Mode
+        Simulation Mode
       </button>
     </div>
   );

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useMeterStore } from '../_store/useMeterStore';
-import { DEMO_PACKET_CONTENT } from '../_demo/packets/prior-auth-demo';
+import { DEMO_PACKET_CONTENT, DEMO_PACKET_CONTENT_2 } from '../_demo/packets/prior-auth-demo';
 
 type IntakeMode = 'text' | 'file';
 
@@ -16,10 +16,22 @@ export function PacketIntakeCard() {
   const [loading, setLoading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState<number | null>(null);
   const [fileData, setFileData] = useState<{ base64Data: string; mimeType: string } | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [packetExpanded, setPacketExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const isIdle = sessionState === 'idle';
+
+  // Auto-resize textarea as content changes
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.max(280, el.scrollHeight)}px`;
+  }, [packetText]);
 
   // ── File handling ────────────────────────────────────────────────────────
 
@@ -28,7 +40,6 @@ export function PacketIntakeCard() {
       const reader = new FileReader();
       reader.onload = () => {
         const result = reader.result as string;
-        // Strip the data URI prefix: "data:image/jpeg;base64,..."
         const base64Data = result.split(',')[1] ?? '';
         resolve({ base64Data, mimeType: file.type });
       };
@@ -50,7 +61,16 @@ export function PacketIntakeCard() {
     const data = await readFileAsBase64(file);
     setFileData(data);
     setFileName(file.name);
+    setFileSize(file.size);
     setError(null);
+
+    // Image preview via data URL
+    if (file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setImagePreview(url);
+    } else {
+      setImagePreview(null);
+    }
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -63,14 +83,25 @@ export function PacketIntakeCard() {
   const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) void handleFileSelect(file);
+    // Reset input so same file can be re-selected
+    e.target.value = '';
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Safe mode fast-path ──────────────────────────────────────────────────
-  // Bypasses all Gemini API calls — injects a pre-built work order + session
-  // so the demo works without any API keys configured.
+  function clearFile() {
+    setFileData(null);
+    setFileName(null);
+    setFileSize(null);
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+      setImagePreview(null);
+    }
+  }
 
-  function handleSubmitSafeMode() {
-    const content = packetText.trim() || DEMO_PACKET_CONTENT;
+  // ── Safe mode fast-path ──────────────────────────────────────────────────
+
+  function handleSubmitSafeMode(overrideText?: string) {
+    const content = overrideText ?? (packetText.trim() || DEMO_PACKET_CONTENT);
+    const isFile = mode === 'file' && fileName != null;
     const sessionId = `safe_${crypto.randomUUID().slice(0, 8)}`;
     const workOrderId = `wo_safe_${crypto.randomUUID().slice(0, 8)}`;
 
@@ -78,11 +109,11 @@ export function PacketIntakeCard() {
       {
         id: crypto.randomUUID(),
         tenantId: 'demo',
-        assetType: 'text',
-        sourceLabel: 'demo-safe-mode',
+        assetType: isFile ? (fileData?.mimeType.includes('pdf') ? 'pdf' : 'image') : 'text',
+        sourceLabel: isFile ? `upload:${fileName}` : 'demo-safe-mode',
         deidentified: true,
         packetType: 'prior_auth_packet',
-        previewText: content.slice(0, 300),
+        previewText: isFile ? `[${fileName}] — simulated extraction in safe mode` : content.slice(0, 300),
         createdAt: new Date().toISOString(),
       },
       content,
@@ -95,15 +126,19 @@ export function PacketIntakeCard() {
         sessionId,
         requestId: `req_${crypto.randomUUID().slice(0, 8)}`,
         workflowType: 'prior_auth_review',
-        packetFormat: 'text',
-        packetSummary: content.slice(0, 800),
+        packetFormat: isFile ? (fileData?.mimeType.includes('pdf') ? 'pdf' : 'image') : 'text',
+        packetSummary: isFile
+          ? `Uploaded document: ${fileName} (${formatBytes(fileSize ?? 0)}) — extracted via Gemini multimodal [safe mode simulation]`
+          : content.slice(0, 800),
         policySummary: 'Standard utilization management criteria for outpatient diagnostic services.',
         budgetCapUsd: parseFloat(budgetCap) || 0.50,
         approvalRequired: true,
         deidentified: true,
         reviewMode: 'safe',
         executionMode: 'safe',
-        toolTrace: ['parsePriorAuthDocument', 'createReviewSession', 'addLedgerEstimate'],
+        toolTrace: isFile
+          ? ['parseMultimodalDocument', 'geminiVisionExtract', 'createReviewSession', 'addLedgerEstimate']
+          : ['parsePriorAuthDocument', 'createReviewSession', 'addLedgerEstimate'],
         status: 'session_open',
         geminiModel: 'gemini-2.0-flash',
         healthcareExtract: {
@@ -111,12 +146,12 @@ export function PacketIntakeCard() {
           payerName: 'Demo Payer Organization',
           memberIdMasked: '***-**-7842',
           providerName: 'Demo Medical Group',
-          procedureRequested: 'Outpatient Advanced Diagnostic Imaging',
+          procedureRequested: isFile ? `Document Analysis: ${fileName}` : 'Outpatient Advanced Diagnostic Imaging',
           diagnosisSummary: 'Outpatient diagnostic imaging — standard prior auth category',
           urgencyLevel: 'routine',
           caseType: 'prior_auth',
-          extractedConfidence: 0.94,
-          attachmentCount: 4,
+          extractedConfidence: isFile ? 0.91 : 0.94,
+          attachmentCount: isFile ? 1 : 4,
           requiresSpecialistReview: false,
         },
         createdAt: new Date().toISOString(),
@@ -143,7 +178,6 @@ export function PacketIntakeCard() {
     setError(null);
 
     try {
-      // 1. Persist packet asset
       const packetRes = await fetch('/api/meter/packet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -172,7 +206,6 @@ export function PacketIntakeCard() {
       );
       setSessionState('work_order_extracting');
 
-      // 2. Gemini work-order extraction (text or multimodal)
       const woRes = await fetch('/api/meter/work-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -193,7 +226,6 @@ export function PacketIntakeCard() {
 
       setWorkOrder(woData.workOrder, woData.degraded ?? false, woData.degradedReason);
 
-      // 3. Create session + Circle wallet
       const sessRes = await fetch('/api/meter/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -206,7 +238,6 @@ export function PacketIntakeCard() {
       if (!sessRes.ok) throw new Error(sessData.error ?? 'session creation failed');
       setSession(sessData.sessionId ?? `sess_demo`, sessData.budgetCapUsd ?? 0.50);
 
-      // 4. Open Circle wallet + nanopayment channel (fire-and-forget for UI speed)
       if (sessData.sessionId) {
         fetch('/api/meter/fund', {
           method: 'POST',
@@ -222,19 +253,22 @@ export function PacketIntakeCard() {
     }
   }
 
-  function loadDemo() {
+  function loadDemo(variant: 1 | 2 = 1) {
+    const content = variant === 2 ? DEMO_PACKET_CONTENT_2 : DEMO_PACKET_CONTENT;
     setMode('text');
-    setPacketText(DEMO_PACKET_CONTENT);
+    setPacketText(content);
     setFileData(null);
     setFileName(null);
-    // In safe mode, auto-submit immediately — no Gemini call needed
+    setFileSize(null);
+    setImagePreview(null);
     if (safeMode) {
-      // Use setTimeout so state update for packetText settles first
-      setTimeout(() => handleSubmitSafeMode(), 0);
+      setTimeout(() => handleSubmitSafeMode(content), 0);
     }
   }
 
   const canSubmit = isIdle && !loading && (mode === 'text' ? packetText.trim().length > 0 : fileData !== null);
+  const lineCount = packetText.split('\n').length;
+  const charCount = packetText.length;
 
   return (
     <div className="card p-0 flex flex-col">
@@ -249,7 +283,7 @@ export function PacketIntakeCard() {
         </div>
       </div>
 
-      <div className="p-4 flex flex-col gap-3 flex-1">
+      <div className="p-4 flex flex-col gap-3">
         {/* De-identified notice */}
         <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider border-l-2 border-info pl-2">
           De-identified · Administrative only · No PHI
@@ -275,49 +309,131 @@ export function PacketIntakeCard() {
 
         {/* Input area */}
         {mode === 'text' ? (
-          <textarea
-            className="w-full bg-neutral-900 border-2 border-neutral-700 text-xs font-mono text-neutral-50 p-3 resize-none focus:border-primary focus:outline-none transition-colors"
-            rows={10}
-            placeholder="Paste de-identified prior authorization case packet here..."
-            value={packetText}
-            onChange={(e) => setPacketText(e.target.value)}
-            disabled={!isIdle || loading}
-          />
-        ) : (
-          <div
-            className={`relative border-2 border-dashed transition-colors flex flex-col items-center justify-center gap-2 py-8 cursor-pointer ${dragOver ? 'border-primary bg-neutral-800' : 'border-neutral-700 hover:border-neutral-500'} ${!isIdle || loading ? 'opacity-50 pointer-events-none' : ''}`}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              className="hidden"
-              onChange={handleFileInputChange}
+          <div className="flex flex-col gap-1">
+            <textarea
+              ref={textareaRef}
+              className="w-full bg-neutral-900 border-2 border-neutral-700 text-xs font-mono text-neutral-50 p-3 focus:border-primary focus:outline-none transition-colors resize-y overflow-y-auto"
+              style={{ height: 'auto', minHeight: '280px' }}
+              placeholder="Paste de-identified prior authorization case packet here..."
+              value={packetText}
+              onChange={(e) => setPacketText(e.target.value)}
+              disabled={!isIdle || loading}
             />
-            {fileName ? (
-              <>
+            {packetText.length > 0 && (
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-mono text-neutral-500">
+                  {lineCount} lines · {charCount} chars
+                </div>
+                <button
+                  className="text-[10px] font-mono text-neutral-400 hover:text-primary uppercase tracking-wider transition-colors"
+                  onClick={() => setPacketExpanded(!packetExpanded)}
+                >
+                  {packetExpanded ? '▲ Collapse' : '▼ Show full packet'}
+                </button>
+              </div>
+            )}
+            {/* Full packet preview — expands below */}
+            {packetExpanded && packetText.length > 0 && (
+              <div className="border-2 border-neutral-700 bg-neutral-900 p-3 max-h-[400px] overflow-y-auto">
+                <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider mb-2 border-b border-neutral-700 pb-1">
+                  Full Packet Content
+                </div>
+                <pre className="text-[10px] font-mono text-neutral-300 whitespace-pre-wrap leading-relaxed">
+                  {packetText}
+                </pre>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {/* Drop zone */}
+            <div
+              className={`relative border-2 border-dashed transition-colors flex flex-col items-center justify-center gap-2 py-6 cursor-pointer ${dragOver ? 'border-primary bg-neutral-800' : 'border-neutral-700 hover:border-neutral-500'} ${!isIdle || loading ? 'opacity-50 pointer-events-none' : ''}`}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                className="hidden"
+                onChange={handleFileInputChange}
+              />
+              {!fileName ? (
+                <>
+                  <div className="text-2xl text-neutral-600">↑</div>
+                  <div className="text-xs font-mono text-neutral-400 uppercase tracking-wider">
+                    Drop or click to upload
+                  </div>
+                  <div className="text-[10px] font-mono text-neutral-600">
+                    JPEG · PNG · WebP · PDF · max 10 MB
+                  </div>
+                  {safeMode && (
+                    <div className="text-[10px] font-mono text-warning border border-warning px-2 py-0.5 mt-1">
+                      Safe mode · Gemini multimodal simulated
+                    </div>
+                  )}
+                </>
+              ) : (
                 <div className="text-xs font-mono text-primary font-bold">{fileName}</div>
-                <div className="text-[10px] font-mono text-neutral-400">Ready for Gemini multimodal extraction</div>
-              </>
-            ) : (
-              <>
-                <div className="text-xs font-mono text-neutral-400 uppercase tracking-wider">
-                  Drop or click to upload
+              )}
+            </div>
+
+            {/* File preview card — shown after selection */}
+            {fileName && fileData && (
+              <div className="border-2 border-primary bg-neutral-900 p-3 flex gap-3">
+                {/* Image thumbnail */}
+                {imagePreview ? (
+                  <div className="flex-shrink-0 w-20 h-20 border-2 border-neutral-700 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imagePreview}
+                      alt="preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex-shrink-0 w-20 h-20 border-2 border-neutral-700 bg-neutral-800 flex flex-col items-center justify-center gap-1">
+                    <div className="text-lg font-bold text-neutral-400">PDF</div>
+                    <div className="text-[9px] font-mono text-neutral-600 uppercase">document</div>
+                  </div>
+                )}
+
+                {/* File details */}
+                <div className="flex flex-col gap-1 flex-1 min-w-0">
+                  <div className="text-xs font-mono text-primary font-bold truncate">{fileName}</div>
+                  <div className="text-[10px] font-mono text-neutral-400 uppercase">
+                    {fileData.mimeType} · {formatBytes(fileSize ?? 0)}
+                  </div>
+                  <div className="text-[10px] font-mono text-neutral-500 mt-1">
+                    {safeMode
+                      ? 'Ready · Safe mode simulation'
+                      : 'Ready for Gemini multimodal extraction'}
+                  </div>
+                  {safeMode && (
+                    <div className="text-[9px] font-mono text-warning mt-0.5">
+                      Gemini API bypassed — demo extraction injected
+                    </div>
+                  )}
                 </div>
-                <div className="text-[10px] font-mono text-neutral-600">
-                  JPEG · PNG · WebP · PDF · max 10 MB
-                </div>
-              </>
+
+                {/* Remove button */}
+                <button
+                  className="flex-shrink-0 text-[10px] font-mono text-neutral-500 hover:text-error uppercase tracking-wider self-start transition-colors"
+                  onClick={(e) => { e.stopPropagation(); clearFile(); }}
+                  disabled={!isIdle || loading}
+                >
+                  ✕ Remove
+                </button>
+              </div>
             )}
           </div>
         )}
 
         {/* Budget row */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <label className="text-[10px] font-mono uppercase text-neutral-400 tracking-wider whitespace-nowrap">
             Budget Cap (USD)
           </label>
@@ -326,7 +442,8 @@ export function PacketIntakeCard() {
             step="0.10"
             min="0.10"
             max="5.00"
-            className="w-24 bg-neutral-900 border-2 border-neutral-700 text-xs font-mono text-neutral-50 px-2 py-1 focus:border-primary focus:outline-none"
+            className="w-24 bg-neutral-900 border-2 border-neutral-700 text-xs font-mono text-neutral-50 px-2 focus:border-primary focus:outline-none"
+            style={{ height: '32px' }}
             value={budgetCap}
             onChange={(e) => setBudgetCap(e.target.value)}
             disabled={!isIdle || loading}
@@ -335,24 +452,44 @@ export function PacketIntakeCard() {
           <div className="w-4 h-4 border-2 border-primary bg-primary" />
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-2 mt-auto pt-2">
-          <button
-            className="btn btn-secondary text-xs flex-1"
-            onClick={loadDemo}
-            disabled={!isIdle || loading}
-          >
-            Load Demo Packet
-          </button>
-          <button
-            className="btn btn-primary text-xs flex-1"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-          >
-            {loading ? 'Extracting...' : 'Submit →'}
-          </button>
+        {/* Demo packet options */}
+        <div className="border-t border-neutral-700 pt-3 flex flex-col gap-2">
+          <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">Demo Packets</div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              className="btn btn-secondary text-[10px] text-left flex flex-col gap-0.5 py-2 px-3 !items-start"
+              onClick={() => loadDemo(1)}
+              disabled={!isIdle || loading}
+            >
+              <span className="font-bold uppercase">Prior Auth</span>
+              <span className="text-neutral-500 normal-case font-normal">Outpatient imaging request</span>
+            </button>
+            <button
+              className="btn btn-secondary text-[10px] text-left flex flex-col gap-0.5 py-2 px-3 !items-start"
+              onClick={() => loadDemo(2)}
+              disabled={!isIdle || loading}
+            >
+              <span className="font-bold uppercase">Util Review</span>
+              <span className="text-neutral-500 normal-case font-normal">Inpatient extension request</span>
+            </button>
+          </div>
         </div>
+
+        {/* Submit */}
+        <button
+          className="btn btn-primary text-xs w-full"
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+        >
+          {loading ? 'Extracting...' : 'Submit to Gemini →'}
+        </button>
       </div>
     </div>
   );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

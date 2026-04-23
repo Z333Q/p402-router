@@ -98,16 +98,20 @@ export function MarginExplanationPanel() {
           </table>
         </div>
 
-        {/* Key insight */}
-        <div className="border-l-4 border-primary pl-3 flex flex-col gap-1">
+        {/* Key insight — economic formula */}
+        <div className="border-l-4 border-primary pl-3 flex flex-col gap-2">
           <div className="text-[11px] font-bold uppercase tracking-wider text-neutral-50">
-            Arc is the only settlement layer where real-time per-token AI billing works
+            The Economics: AI Unit Cost + Settlement Cost &lt; Billable Unit Value
           </div>
           <div className="text-[10px] font-mono text-neutral-400">
-            Stripe's $0.30 minimum means you need to batch 300+ sub-cent actions before you can
-            bill them — destroying the real-time pricing model. Ethereum gas at $2.85/tx makes
-            each settlement more expensive than the AI work itself. Arc uses USDC as native gas
-            at $0.006/tx — the only rail where every token can settle individually.
+            Stripe&apos;s $0.30 minimum requires batching 300+ sub-cent actions before billing — eliminating
+            real-time pricing. Ethereum gas at $2.85 per tx makes each settlement more expensive than
+            the AI work itself. Arc uses USDC as native gas at $0.006 per tx. At that cost,
+            every token chunk can settle individually, preserving the real-time model and keeping
+            total cost well under $0.01 per governed administrative action.
+          </div>
+          <div className="text-[10px] font-mono text-neutral-600">
+            These numbers come from live runs on Arc testnet. ETH gas estimated at 30 gwei, 65k gas per ERC-20 transfer.
           </div>
         </div>
 

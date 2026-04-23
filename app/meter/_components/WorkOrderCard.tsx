@@ -2,6 +2,19 @@
 
 import { useMeterStore } from '../_store/useMeterStore';
 
+// Maps Gemini tool call names → what Circle/Arc action they trigger
+const TOOL_TARGETS: Record<string, string> = {
+  parsePriorAuthDocument:      'Gemini Flash multimodal → structured HealthcareExtract JSON',
+  parseMultimodalDocument:     'Gemini Flash vision → inlineData base64 decode + field extraction',
+  geminiVisionExtract:         'Gemini Flash multimodal → image/PDF structured extraction',
+  createReviewSession:         'Circle DCW → session wallet provisioned on ARC-TESTNET',
+  addLedgerEstimate:           'Arc nanopayment authorization → USDC ledger event recorded',
+  fundSession:                 'Circle Gateway x402 → payment verified, session funded',
+  writeWorkOrder:              'DB write → WorkOrder persisted with budget cap',
+  reconcileSession:            'Arc settlement → final USDC batch tx on chain 5042002',
+  releaseEscrow:               'ERC-8183 → escrow release tx on Arc, deliverable hash anchored',
+};
+
 export function WorkOrderCard() {
   const { workOrder, workOrderDegraded, sessionState } = useMeterStore();
   const isExtracting = sessionState === 'work_order_extracting';
@@ -125,19 +138,45 @@ export function WorkOrderCard() {
           </div>
         )}
 
-        {/* Tool action trace */}
+        {/* Tool action trace + function call targets */}
         {workOrder.toolTrace.length > 0 && (
           <div className="mt-3 border-t border-neutral-700 pt-3">
-            <div className="text-[10px] font-mono uppercase text-neutral-400 tracking-widest mb-2">
-              Gemini Tool Calls
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[10px] font-mono uppercase text-neutral-400 tracking-widest">
+                Gemini Function Calls
+              </div>
+              <div className="text-[9px] font-mono border border-warning text-warning px-2 py-0.5 uppercase">
+                {workOrder.geminiModel ?? 'gemini-2.0-flash'}
+              </div>
             </div>
-            <div className="flex flex-col gap-1">
-              {workOrder.toolTrace.map((trace, i) => (
-                <div key={i} className="flex items-center gap-2 text-[11px] font-mono">
-                  <span className="text-primary">✓</span>
-                  <span className="text-neutral-300">{trace}</span>
-                </div>
-              ))}
+            <div className="flex flex-col gap-1.5">
+              {workOrder.toolTrace.map((trace, i) => {
+                const target = TOOL_TARGETS[trace];
+                return (
+                  <div key={i} className="flex items-start gap-2 text-[11px] font-mono">
+                    <span className="text-primary mt-0.5 shrink-0">✓</span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-neutral-300">{trace}</span>
+                      {target && (
+                        <span className="text-[9px] text-neutral-600">→ {target}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Gemini role note */}
+            <div className="mt-3 border-t border-neutral-800 pt-2 flex flex-col gap-1">
+              <div className="text-[9px] font-mono text-neutral-600 uppercase tracking-wider">
+                Gemini roles in this workflow
+              </div>
+              <div className="text-[9px] font-mono text-neutral-500">
+                <span className="text-warning">Flash</span> — multimodal extraction, structured function calling, live review stream
+              </div>
+              <div className="text-[9px] font-mono text-neutral-500">
+                <span className="text-warning">Pro</span> — post-run economic audit, cost breakdown narrative (see Gemini Audit panel)
+              </div>
             </div>
           </div>
         )}
