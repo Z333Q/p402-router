@@ -21,6 +21,7 @@ export function ReviewSummaryPane() {
   } = useMeterStore();
 
   const [executing, setExecuting] = useState(false);
+  const [quotaFallback, setQuotaFallback] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll during stream
@@ -73,13 +74,14 @@ export function ReviewSummaryPane() {
           if (!raw) continue;
 
           try {
-            const frame = JSON.parse(raw) as SseFrame & { approval?: ApprovalRecord; proofRefs?: string[] };
+            const frame = JSON.parse(raw) as SseFrame & { approval?: ApprovalRecord; proofRefs?: string[]; quotaFallback?: boolean };
 
             if (frame.type === 'text_delta') {
               appendStreamText(frame.delta);
             } else if (frame.type === 'ledger_event') {
               appendLedgerEvent(frame.event as LedgerEvent);
             } else if (frame.type === 'stream_done') {
+              if (frame.quotaFallback) setQuotaFallback(true);
               setStreamDone(frame.totalCostUsd, frame.totalTokens);
               if (frame.approval) {
                 setApproval({
@@ -117,6 +119,15 @@ export function ReviewSummaryPane() {
         </div>
         <StreamStateBadge state={sessionState} done={streamDone} executing={executing} />
       </div>
+
+      {/* Quota fallback notice */}
+      {quotaFallback && (
+        <div className="px-4 py-2 border-b border-warning bg-neutral-900 flex items-center gap-2">
+          <span className="text-[10px] font-mono text-warning uppercase tracking-wider">
+            Gemini free-tier quota hit — running pre-captured demo
+          </span>
+        </div>
+      )}
 
       {/* Stream content */}
       <div

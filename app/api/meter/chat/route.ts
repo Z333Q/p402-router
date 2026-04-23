@@ -49,6 +49,33 @@ export async function POST(req: NextRequest) {
       return streamSafeModeResponse(sessionId, workOrderId, budgetCapUsd);
     }
 
+    // Attempt the Gemini call before opening the stream so 429/quota errors
+    // can redirect cleanly to safe mode without a broken partial stream.
+    const model = genai.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      systemInstruction: REVIEW_SYSTEM_INSTRUCTION,
+    });
+
+    const prompt = `Produce a utilization management review summary for this de-identified prior authorization packet.
+
+${policySummary ? `POLICY REFERENCE: ${policySummary}\n\n` : ''}PACKET:
+${packetContent.slice(0, 6000)}
+
+Follow the administrative format strictly. No PHI. No clinical decisions.`;
+
+    let geminiStream: Awaited<ReturnType<typeof model.generateContentStream>>;
+    try {
+      geminiStream = await model.generateContentStream(prompt);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isQuota = msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('too many requests');
+      if (isQuota) {
+        // Free-tier quota hit — fall back to safe mode so demo stays live
+        return streamSafeModeResponse(sessionId, workOrderId, budgetCapUsd, true);
+      }
+      throw err;
+    }
+
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
@@ -62,19 +89,7 @@ export async function POST(req: NextRequest) {
         let totalCostUsd = 0;
 
         try {
-          const model = genai.getGenerativeModel({
-            model: 'gemini-2.0-flash',
-            systemInstruction: REVIEW_SYSTEM_INSTRUCTION,
-          });
-
-          const prompt = `Produce a utilization management review summary for this de-identified prior authorization packet.
-
-${policySummary ? `POLICY REFERENCE: ${policySummary}\n\n` : ''}PACKET:
-${packetContent.slice(0, 6000)}
-
-Follow the administrative format strictly. No PHI. No clinical decisions.`;
-
-          const result = await model.generateContentStream(prompt);
+          const result = geminiStream;
 
           // ── Stream chunks ─────────────────────────────────────────────────
           // Emit a ledger event on every chunk — required for 50+ onchain tx proof
@@ -258,7 +273,8 @@ Follow the administrative format strictly. No PHI. No clinical decisions.`;
 function streamSafeModeResponse(
   sessionId: string,
   workOrderId: string | undefined,
-  budgetCapUsd: number
+  budgetCapUsd: number,
+  quotaFallback = false
 ) {
   const encoder = new TextEncoder();
 
@@ -406,6 +422,7 @@ function streamSafeModeResponse(
           reasonSummary: 'Review completed within budget. Administrative documentation complete. Ready for manual approval.',
         },
         safeMode: true,
+        ...(quotaFallback ? { quotaFallback: true } : {}),
       });
 
       controller.close();
