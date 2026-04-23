@@ -85,9 +85,11 @@ interface MeterState {
   releaseDrawerOpen: boolean;
   error: string | null;
   safeMode: boolean;
+  lightMode: boolean;
 
   // ── Actions ───────────────────────────────────────────────────────────────
   setSafeMode: (v: boolean) => void;
+  setLightMode: (v: boolean) => void;
   setSessionState: (s: SessionState) => void;
   setSession: (id: string, budget: number) => void;
   setPacket: (p: PacketAsset, content: string) => void;
@@ -153,9 +155,11 @@ export const useMeterStore = create<MeterState>()(
       releaseDrawerOpen: false,
       error: null,
       safeMode: process.env.NEXT_PUBLIC_DEMO_MODE === 'safe',
+      lightMode: false,
 
       // ── Actions ─────────────────────────────────────────────────────────────
       setSafeMode: (v) => set({ safeMode: v }),
+      setLightMode: (v) => set({ lightMode: v }),
       setSessionState: (s) => set({ sessionState: s }),
 
       setSession: (id, budget) =>

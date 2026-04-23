@@ -278,3 +278,73 @@ textarea:focus {
 .meter-dark textarea::placeholder {
   color: #7A7A7A;
 }
+
+/* ── Meter light-surface override ────────────────────────────────────────────
+   .meter-light has specificity 0,2,0 vs Tailwind utilities at 0,1,0,
+   so these all win without !important. Covers every dark-mode Tailwind class
+   used in meter components to make the subtree fully readable on white.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Cards and section headers restore to Neo-Brutalist defaults */
+.meter-light .card {
+  background: #FFFFFF;
+  color: #000000;
+  border-color: #000000;
+}
+
+.meter-light .section-header {
+  background: #FFFFFF;
+  border-bottom-color: #000000;
+  color: #000000;
+  margin-bottom: 0;
+}
+
+.meter-light .badge {
+  border-color: #000000;
+  color: #000000;
+}
+
+.meter-light .badge-primary {
+  background: var(--primary);
+  color: #000000;
+  border-color: #000000;
+}
+
+/* Dark backgrounds → white / near-white */
+.meter-light .bg-neutral-900 { background-color: #FFFFFF; }
+.meter-light .bg-neutral-800 { background-color: #F5F5F5; }
+
+/* Dark borders → light gray */
+.meter-light .border-neutral-700 { border-color: #D4D4D4; }
+.meter-light .border-neutral-800 { border-color: #E6E6E6; }
+
+/* Light text on dark → readable dark text on white */
+.meter-light .text-neutral-50  { color: #000000; }
+.meter-light .text-neutral-200 { color: #141414; }
+.meter-light .text-neutral-300 { color: #2B2B2B; }
+.meter-light .text-neutral-400 { color: #4A4A4A; }
+.meter-light .text-neutral-500 { color: #7A7A7A; }
+.meter-light .text-neutral-600 { color: #4A4A4A; }
+
+/* Divide utilities (FrequencyCounter, LedgerPane) */
+.meter-light .divide-neutral-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #E6E6E6;
+}
+
+/* Hover states */
+.meter-light .hover\:bg-neutral-800:hover { background-color: #F0F0F0; }
+
+/* Inputs — restore white bg with dark text */
+.meter-light input[type="text"],
+.meter-light input[type="email"],
+.meter-light textarea,
+.meter-light select {
+  background: #FFFFFF;
+  color: #000000;
+  border-color: #000000;
+}
+
+.meter-light input::placeholder,
+.meter-light textarea::placeholder {
+  color: #A8A8A8;
+}

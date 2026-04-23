@@ -20,29 +20,40 @@ import { EconomicAuditPanel } from './_components/EconomicAuditPanel';
 import { useMeterStore } from './_store/useMeterStore';
 
 export default function MeterPage() {
-  const { error, setError, reset, safeMode } = useMeterStore();
+  const { error, setError, reset, safeMode, lightMode, setLightMode } = useMeterStore();
+
+  const themeClass = lightMode ? 'meter-light' : 'meter-dark';
 
   return (
-    <div className="min-h-screen bg-neutral-900 flex flex-col">
+    <div className={`min-h-screen flex flex-col ${lightMode ? 'bg-neutral-50' : 'bg-neutral-900'}`}>
       {/* Safe Mode banner — thin bar, always first */}
       <SafeModeBanner />
 
       {/* Compact utility bar */}
-      <div className="border-b-2 border-neutral-700 px-6 py-3 flex items-center justify-between bg-neutral-900">
+      <div className={`border-b-2 px-6 py-3 flex items-center justify-between ${lightMode ? 'border-neutral-300 bg-white' : 'border-neutral-700 bg-neutral-900'}`}>
         <div className="flex items-center gap-3">
-          <span className="text-sm font-bold text-neutral-50">P402 Meter</span>
-          <span className="text-neutral-700">·</span>
-          <span className="border border-neutral-700 px-2 py-0.5 text-[10px] font-mono text-neutral-400 uppercase tracking-wide">
+          <span className={`text-sm font-bold ${lightMode ? 'text-neutral-900' : 'text-neutral-50'}`}>P402 Meter</span>
+          <span className={lightMode ? 'text-neutral-400' : 'text-neutral-700'}>·</span>
+          <span className={`border px-2 py-0.5 text-[10px] font-mono uppercase tracking-wide ${lightMode ? 'border-neutral-400 text-neutral-600' : 'border-neutral-700 text-neutral-400'}`}>
             Arc Testnet
           </span>
           <span className={`text-[10px] font-mono uppercase px-2 py-0.5 border ${safeMode ? 'border-warning text-warning' : 'border-success text-success'}`}>
             {safeMode ? 'Demo' : 'Live'}
           </span>
         </div>
-        <button className="btn btn-secondary text-xs" onClick={reset}>Reset</button>
+        <div className="flex items-center gap-2">
+          {/* Light / dark toggle */}
+          <button
+            onClick={() => setLightMode(!lightMode)}
+            className={`text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 border-2 transition-none ${lightMode ? 'border-neutral-900 bg-neutral-900 text-neutral-50' : 'border-neutral-600 bg-transparent text-neutral-400 hover:border-neutral-400 hover:text-neutral-200'}`}
+          >
+            {lightMode ? '◐ Dark' : '◑ Light'}
+          </button>
+          <button className="btn btn-secondary text-xs" onClick={reset}>Reset</button>
+        </div>
       </div>
 
-      <div className="meter-dark flex-1 px-6 py-8 flex flex-col gap-8 max-w-[1400px] mx-auto w-full">
+      <div className={`${themeClass} flex-1 px-6 py-8 flex flex-col gap-8 max-w-[1400px] mx-auto w-full`}>
         {/* Story block — first screen, one job per row */}
         <div className="max-w-2xl">
           <h1 className="text-4xl lg:text-5xl font-bold leading-tight text-neutral-50 mb-4">
