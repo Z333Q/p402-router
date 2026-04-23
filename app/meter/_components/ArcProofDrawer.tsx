@@ -1,7 +1,7 @@
 'use client';
 
 import { useMeterStore } from '../_store/useMeterStore';
-import { arcExplorerTxUrl } from '@/lib/chains/arc';
+import { arcExplorerTxUrl, arcExplorerAddressUrl, ARC_SIGNER_ADDRESS } from '@/lib/chains/arc';
 
 const ARC_CHAIN_ID = 5042002;
 const ARC_NETWORK = 'Arc Testnet';
@@ -48,6 +48,20 @@ export function ArcProofDrawer() {
         <ProofStat label="Arc Tx" value={txEvents.length > 0 ? txEvents.length.toString() : batchEvents.length > 0 ? batchEvents.length.toString() : '—'} />
       </div>
 
+      {/* Wallet verify link — always visible, no expansion needed */}
+      <a
+        href={arcExplorerAddressUrl(ARC_SIGNER_ADDRESS)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="px-4 py-2 border-b border-neutral-700 flex items-center justify-between hover:bg-neutral-800 transition-colors group"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-wider">Verify on ArcScan →</span>
+          <span className="text-[10px] font-mono text-info group-hover:text-primary truncate max-w-[200px]">{ARC_SIGNER_ADDRESS}</span>
+        </div>
+        <span className="text-[9px] font-mono text-primary font-bold uppercase tracking-wider flex-shrink-0">↗ Open</span>
+      </a>
+
       {/* Expandable proof detail */}
       {proofDrawerOpen && (
         <div className="p-4 flex flex-col gap-4">
@@ -90,11 +104,30 @@ export function ArcProofDrawer() {
             </div>
           )}
 
-          {/* Explorer links */}
+          {/* Funded wallet — always visible, verifiable before/after any run */}
+          <div>
+            <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-2">
+              Settlement Wallet
+            </div>
+            <a
+              href={arcExplorerAddressUrl(ARC_SIGNER_ADDRESS)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between border-2 border-primary px-3 py-2 hover:bg-neutral-800 transition-colors group"
+            >
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[9px] font-mono text-neutral-400 uppercase tracking-wider">Funded Arc Testnet USDC wallet</span>
+                <span className="text-[10px] font-mono text-info group-hover:text-primary break-all">{ARC_SIGNER_ADDRESS}</span>
+              </div>
+              <span className="text-primary flex-shrink-0 ml-3 font-bold text-xs">↗ ArcScan</span>
+            </a>
+          </div>
+
+          {/* Per-tx links — only present in live mode when Arc settles */}
           {txEvents.length > 0 ? (
             <div>
               <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-2">
-                Arc Explorer Links ({txEvents.length})
+                Settlement Transactions ({txEvents.length})
               </div>
               <div className="flex flex-col gap-1 max-h-[160px] overflow-y-auto">
                 {txEvents.slice(0, 10).map((e) => (
@@ -106,7 +139,7 @@ export function ArcProofDrawer() {
                     className="flex items-center justify-between text-[10px] font-mono hover:bg-neutral-800 px-2 py-1 transition-colors group"
                   >
                     <span className="text-info group-hover:text-primary truncate">{e.arcTxHash}</span>
-                    <span className="text-neutral-600 flex-shrink-0 ml-2 uppercase">↗</span>
+                    <span className="text-neutral-400 flex-shrink-0 ml-2 uppercase">↗</span>
                   </a>
                 ))}
                 {txEvents.length > 10 && (
@@ -116,11 +149,11 @@ export function ArcProofDrawer() {
                 )}
               </div>
             </div>
-          ) : (
-            <div className="text-[10px] font-mono text-neutral-600 uppercase">
-              {streamDone ? 'Arc settlement transactions will appear here' : 'No Arc transactions yet — run a review first'}
+          ) : streamDone ? (
+            <div className="text-[10px] font-mono text-neutral-500 border border-neutral-700 px-3 py-2 leading-relaxed">
+              Live mode produces per-tx hashes here. Demo mode uses the wallet above for on-chain verification.
             </div>
-          )}
+          ) : null}
 
           {/* Work order reference */}
           {workOrder && (

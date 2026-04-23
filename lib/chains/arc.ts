@@ -84,6 +84,14 @@ export const GATEWAY_DOMAIN_ARC_TESTNET = 26;
 export const CIRCLE_WALLETS_BLOCKCHAIN_ARC_TESTNET = "ARC-TESTNET";
 
 // ============================================================================
+// Funded signer wallet address — readable by the client so ArcScan links
+// can point to it regardless of whether individual tx hashes are available.
+// Set NEXT_PUBLIC_ARC_SIGNER_ADDRESS in env to override.
+// ============================================================================
+export const ARC_SIGNER_ADDRESS: string =
+  process.env.NEXT_PUBLIC_ARC_SIGNER_ADDRESS ?? '0x05c209e0208Fee87e1fE974789ebc3aD5B317c1D';
+
+// ============================================================================
 // Gas cost reference (informational — used by FrequencyCounter)
 // "On Arc, gas is approximately 0.006 USDC-TESTNET per transaction."
 // Source: Arc register-your-first-ai-agent quickstart Step 4
