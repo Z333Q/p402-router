@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'P402 Meter — Healthcare Payer-Ops on Arc',
+  title: 'P402 Meter, Healthcare Payer-Ops on Arc',
   description:
     'De-identified prior authorization spend control. Gemini-governed. Circle-settled. Proof on Arc.',
 };

@@ -1,0 +1,66 @@
+BEHAVIORAL HEALTH INPATIENT AUTHORIZATION REQUEST
+Administrative Review Document — De-Identified
+[P402 Meter Demo | Scenario 5 of 6 | De-identified · No PHI]
+
+Review Category: Behavioral Health / Acute Psychiatric Admission
+
+================================
+REQUEST INFORMATION
+================================
+Request Type: Prior Authorization — Acute Inpatient Behavioral Health
+Line of Business: Government-sponsored plan — behavioral health carve-out
+Case Reference: DEMO-2026-0005 (de-identified)
+Urgency Classification: Urgent — same-day admission review
+Review Level: Initial admission authorization (Day 1)
+
+================================
+ADMISSION CONTEXT
+================================
+Facility Type: Acute inpatient psychiatric unit — licensed facility
+Admission Category: Voluntary — acute stabilization
+Clinical Setting Level: Acute inpatient (highest level of care)
+Expected Length of Stay Request: 5 days initial (concurrent review to follow)
+Treatment Team: Attending psychiatrist + multidisciplinary team
+
+================================
+CLINICAL DOCUMENTATION SUMMARY
+================================
+Presenting Concern Category: Acute psychiatric decompensation (de-identified)
+Safety Assessment: Documented — meets criteria for acute inpatient level of care per managed care guidelines
+Outpatient Treatment History: Active outpatient treatment documented, recent level-of-care escalation indicated
+Less Restrictive Alternatives Considered: Documented — intensive outpatient and partial hospitalization considered and ruled out with clinical rationale
+Medication Status: Current medications documented (de-identified)
+Functional Impairment Level: Documented — unable to safely maintain at lower level of care
+
+================================
+LEVEL OF CARE CRITERIA
+================================
+Applicable Criteria Set: Managed care behavioral health level-of-care criteria (standard commercial criteria)
+Safety Criteria Met: Yes — documented in clinical attestation
+Intensity Criteria Met: Yes — acute presentation documented
+Outpatient Failure Documented: Yes — clinical progression documented
+Medical Stability: Confirmed — medically stable for psychiatric treatment setting
+
+================================
+DOCUMENTATION SUBMITTED
+================================
+- Admission request with clinical attestation (de-identified)
+- Prescriber attestation of medical necessity
+- Level-of-care criteria checklist — all applicable criteria checked
+- Less restrictive alternatives assessment
+- Facility treatment plan summary (de-identified)
+- Safety assessment summary (de-identified, no identifiers)
+
+================================
+TARGET OUTPUT
+================================
+Required Output: Administrative authorization summary — acute inpatient behavioral health
+Review Standard: Administrative and process-oriented, non-clinical
+Reviewer Action Required: Approve initial days, hold for concurrent review setup, or refer to behavioral health clinical reviewer
+
+---
+NOTE: This is a synthetic, de-identified demonstration document created for the
+P402 Meter hackathon demo. It contains no real patient data, no PHI, and no
+identifiable clinical information. For demonstration purposes only.
+Upload this file via the Image/PDF tab in the Document Intake section to test
+Gemini multimodal file extraction.

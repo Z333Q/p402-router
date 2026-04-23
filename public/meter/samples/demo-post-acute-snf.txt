@@ -1,0 +1,78 @@
+POST-ACUTE CARE PLACEMENT REVIEW
+Administrative Review Document — De-Identified
+[P402 Meter Demo | Scenario 6 of 6 | De-identified · No PHI]
+
+Review Category: Discharge Planning / Post-Acute Care Authorization
+
+================================
+REQUEST INFORMATION
+================================
+Request Type: Post-Acute Care Authorization — Skilled Nursing Facility
+Line of Business: Medicare Advantage — Standard Plan
+Case Reference: DEMO-2026-0006 (de-identified)
+Inpatient Admit: [date removed]
+Discharge Planning Initiated: Day 2 of admission
+Urgency: Standard discharge planning review
+
+================================
+CLINICAL CONTEXT
+================================
+Admitting Diagnosis Category: Acute fracture — lower extremity (de-identified)
+Surgical Intervention: Completed — operative repair, day of admission
+Current Inpatient Day: Day 3 of acute admission
+Functional Status: Requires physical and occupational therapy for mobility and ADL restoration
+Medical Stability: Stable — wound management and anticoagulation management ongoing
+Social Context: Home environment assessed — patient lives alone, home modifications needed
+
+================================
+POST-ACUTE LEVEL OF CARE REQUEST
+================================
+Requested Level: Skilled Nursing Facility (SNF) — Medicare Part A benefit
+Requested Duration: 21 days (standard Medicare SNF benefit period — first 20 covered at 100%)
+Skilled Services Required:
+  - Physical therapy: daily, ambulation and transfer training
+  - Occupational therapy: daily, ADL restoration
+  - Skilled nursing: wound care, anticoagulation monitoring
+  - Social work: discharge planning to home
+SNF Facility: In-network facility — bed available, admission confirmed
+
+================================
+MEDICARE SKILLED CRITERIA
+================================
+Three-Day Qualifying Stay: Met — Day 3 of acute admission
+Skilled Service Need: Documented — PT, OT, skilled nursing all required
+Qualifying Condition: Related to admitting diagnosis
+Coverage Level: Days 1–20 at 100%; Days 21–100 at co-insurance rate
+
+================================
+ALTERNATIVE LEVELS OF CARE CONSIDERED
+================================
+Home Health: Considered — deferred due to functional status and home environment assessment
+Inpatient Rehab Facility: Considered — intensity criteria not met at this time
+Home with Outpatient Therapy: Not appropriate — ambulation status does not support safe discharge to home
+SNF Selected: Appropriate level of care per functional assessment and social factors
+
+================================
+DOCUMENTATION SUBMITTED
+================================
+- Discharge planning summary (de-identified)
+- Functional assessment tool results (de-identified)
+- SNF level-of-care criteria checklist
+- Therapy evaluation summary (PT and OT)
+- Home environment assessment
+- Social work documentation
+- SNF admission agreement confirmation
+
+================================
+TARGET OUTPUT
+================================
+Required Output: Administrative post-acute placement review summary
+Review Standard: Administrative and process-oriented, non-clinical
+Reviewer Action Required: Approve SNF authorization (duration and level of care), modify duration, or refer for clinical review
+
+---
+NOTE: This is a synthetic, de-identified demonstration document created for the
+P402 Meter hackathon demo. It contains no real patient data, no PHI, and no
+identifiable clinical information. For demonstration purposes only.
+Upload this file via the Image/PDF tab in the Document Intake section to test
+Gemini multimodal file extraction.

@@ -2,13 +2,13 @@
 // Demo-safe, de-identified prior authorization packet for consistent demo runs
 
 export const DEMO_PACKET_CONTENT = `PRIOR AUTHORIZATION CASE PACKET
-Administrative Review Document — De-Identified
+Administrative Review Document, De-Identified
 
 ================================
 REQUEST INFORMATION
 ================================
-Request Type: Prior Authorization — Outpatient Service
-Line of Business: Commercial — Standard Plan
+Request Type: Prior Authorization, Outpatient Service
+Line of Business: Commercial, Standard Plan
 Case Reference: DEMO-2026-0001 (de-identified)
 Submission Date: [date removed]
 Urgency Classification: Standard (non-urgent)
@@ -56,15 +56,15 @@ export const DEMO_PACKET_METADATA = {
   budgetHintUsd: 0.50,
 };
 
-// Second demo packet — utilization review variant
+// Second demo packet, utilization review variant
 export const DEMO_PACKET_CONTENT_2 = `UTILIZATION REVIEW PACKET
-Administrative Review Document — De-Identified
+Administrative Review Document, De-Identified
 
 ================================
 REQUEST TYPE
 ================================
 Review Type: Concurrent Utilization Review
-Setting: Inpatient — Standard Admission Review
+Setting: Inpatient, Standard Admission Review
 Line of Business: Government-sponsored plan, generic
 Case Reference: DEMO-2026-0002 (de-identified)
 

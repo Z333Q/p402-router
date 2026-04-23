@@ -12,13 +12,13 @@ import {
   ERC_8183_AGENTIC_COMMERCE,
 } from '@/lib/chains/arc';
 
-// Minimal ERC-20 ABI — just transfer()
+// Minimal ERC-20 ABI, just transfer()
 const ERC20_ABI = [
   'function transfer(address to, uint256 amount) returns (bool)',
   'function balanceOf(address owner) view returns (uint256)',
 ];
 
-// Minimal ERC-8183 ABI — createJob() from Arc quickstart
+// Minimal ERC-8183 ABI, createJob() from Arc quickstart
 const ERC8183_ABI = [
   'function createJob(address provider, address evaluator, address paymentToken, uint256 paymentAmount, bytes32 deliverableHash, uint256 deadline) returns (uint256)',
   'function completeJob(uint256 jobId) returns (bool)',
@@ -38,7 +38,7 @@ function getProvider(): ethers.JsonRpcProvider {
 function getSigner(): ethers.Wallet {
   if (_signer) return _signer;
   const key = process.env.ARC_PRIVATE_KEY;
-  if (!key) throw new Error('ARC_PRIVATE_KEY not configured — cannot submit Arc transactions');
+  if (!key) throw new Error('ARC_PRIVATE_KEY not configured, cannot submit Arc transactions');
   _signer = new ethers.Wallet(key, getProvider());
   return _signer;
 }

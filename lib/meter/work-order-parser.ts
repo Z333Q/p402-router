@@ -10,7 +10,7 @@ import crypto from 'crypto';
 const genai = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY ?? '');
 
 // ============================================================================
-// Gemini tool definitions — what Flash calls during orchestration
+// Gemini tool definitions, what Flash calls during orchestration
 // All enum constraints expressed via description string only (SDK requirement)
 // ============================================================================
 
@@ -78,17 +78,17 @@ const SYSTEM_INSTRUCTION = `You are a healthcare payer operations workflow orche
 Process de-identified prior authorization and utilization review documents and produce structured administrative work orders.
 
 Rules:
-- ADMINISTRATIVE only — no clinical decisions, no diagnosis recommendations.
-- Document is de-identified — do not reference any PHI.
+- ADMINISTRATIVE only, no clinical decisions, no diagnosis recommendations.
+- Document is de-identified, do not reference any PHI.
 - Output goes to a payer operations analyst for review.
 - If the document contains clinical language, summarize only administrative and process aspects.
 - If parsing confidence is low, set extractedConfidence below 0.6, set approvalRequired to true.
 - Complex cases (specialist consult, appeals, emergent urgency) should set requiresSpecialistReview to true.
 
 You MUST call ALL THREE workflow tools in sequence:
-1. parsePriorAuthDocument — extract structured case fields and administrative summary
-2. createReviewSession — determine budget ceiling, routing mode, and policy reference
-3. addLedgerEstimate — record the intake cost estimate for governance
+1. parsePriorAuthDocument, extract structured case fields and administrative summary
+2. createReviewSession, determine budget ceiling, routing mode, and policy reference
+3. addLedgerEstimate, record the intake cost estimate for governance
 
 Call all three tools before providing any text response.`;
 
@@ -104,7 +104,7 @@ export interface WorkOrderParseResult {
 }
 
 // ============================================================================
-// Main parser — text intake
+// Main parser, text intake
 // ============================================================================
 
 export async function parsePacketToWorkOrder(
@@ -122,10 +122,11 @@ export async function parsePacketToWorkOrder(
 
   try {
     const model = genai.getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3.1-flash',
       systemInstruction: SYSTEM_INSTRUCTION,
       tools: [{ functionDeclarations: workflowTools }],
-      toolConfig: { functionCallingConfig: { mode: FunctionCallingMode.AUTO } },
+      // ANY mode forces all three tools to be called, required for complete work order
+      toolConfig: { functionCallingConfig: { mode: FunctionCallingMode.ANY } },
     });
 
     const chat = model.startChat();
@@ -144,7 +145,7 @@ export async function parsePacketToWorkOrder(
 }
 
 // ============================================================================
-// Multimodal parser — image or PDF intake (Gemini Vision)
+// Multimodal parser, image or PDF intake (Gemini Vision)
 // ============================================================================
 
 export async function parseDocumentMultimodal(
@@ -164,10 +165,10 @@ export async function parseDocumentMultimodal(
 
   try {
     const model = genai.getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3.1-flash',
       systemInstruction: SYSTEM_INSTRUCTION,
       tools: [{ functionDeclarations: workflowTools }],
-      toolConfig: { functionCallingConfig: { mode: FunctionCallingMode.AUTO } },
+      toolConfig: { functionCallingConfig: { mode: FunctionCallingMode.ANY } },
     });
 
     const chat = model.startChat();
@@ -294,7 +295,7 @@ async function processFunctionCalls(
     executionMode: 'live',
     toolTrace,
     status: 'session_open',
-    geminiModel: 'gemini-2.0-flash',
+    geminiModel: 'gemini-3.1-flash',
     healthcareExtract,
   };
 
@@ -324,7 +325,7 @@ function buildDegradedResult(
       requestId,
       workflowType: 'prior_auth_review',
       packetFormat: options.packetFormat ?? 'text',
-      packetSummary: 'Administrative packet review — manual classification required',
+      packetSummary: 'Administrative packet review, manual classification required',
       policySummary: undefined,
       budgetCapUsd: options.budgetHintUsd ?? 0.50,
       approvalRequired: true,
@@ -338,7 +339,7 @@ function buildDegradedResult(
         'ledger estimate (default)',
       ],
       status: 'created',
-      geminiModel: 'gemini-2.0-flash',
+      geminiModel: 'gemini-3.1-flash',
       healthcareExtract,
     },
     toolTrace: [
@@ -353,7 +354,7 @@ function buildDegradedResult(
 }
 
 // ============================================================================
-// Final approval recommendation (Gemini Flash — fast path)
+// Final approval recommendation (Gemini Flash, fast path)
 // ============================================================================
 
 export interface ApprovalRecommendationResult {
@@ -374,27 +375,37 @@ export async function generateApprovalRecommendation(params: {
 
   try {
     const model = genai.getGenerativeModel({
-      model: 'gemini-2.0-flash',
-      generationConfig: { responseMimeType: 'application/json' },
+      model: 'gemini-3.1-flash',
+      systemInstruction: `You are a payer operations quality evaluator for healthcare utilization management.
+You assess AI-generated prior authorization review summaries for three criteria:
+1. Policy compliance: does the output cite appropriate administrative criteria and avoid clinical overreach?
+2. Output scope: is the summary administrative-only with no PHI, no diagnosis language, and no clinical determinations?
+3. Budget adherence: did the session stay within the pre-authorized spend ceiling?
+
+You are the final automated gate before a human reviewer receives the document.
+Be conservative: when any criterion is borderline, recommend hold_for_escalation over approval.
+Return only valid JSON with no markdown formatting.`,
+      generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
     });
 
-    const prompt = `You are a payer operations quality evaluator. Evaluate this AI-assisted prior authorization review and provide an operational recommendation.
+    const prompt = `Evaluate this AI-generated prior authorization review summary and return a structured quality recommendation.
 
-WORK ORDER SUMMARY: ${workOrder.packetSummary ?? 'Prior authorization review'}
-POLICY REFERENCE: ${workOrder.policySummary ?? 'Standard utilization management criteria'}
-BUDGET CAP: $${workOrder.budgetCapUsd.toFixed(4)} USD
-ACTUAL COST: $${actualCostUsd.toFixed(4)} USD
-INSIDE BUDGET: ${insideBudget}
+WORK ORDER:
+- Summary: ${workOrder.packetSummary ?? 'Prior authorization review'}
+- Policy reference: ${workOrder.policySummary ?? 'Standard utilization management criteria'}
+- Budget cap: $${workOrder.budgetCapUsd.toFixed(4)} USD
+- Actual cost: $${actualCostUsd.toFixed(4)} USD
+- Inside budget: ${insideBudget}
 
-GENERATED REVIEW SUMMARY (first 1000 chars):
-${reviewSummaryText.slice(0, 1000)}
+GENERATED REVIEW (first 1500 chars):
+${reviewSummaryText.slice(0, 1500)}
 
-Respond with JSON only:
+Return this exact JSON structure:
 {
   "policyCompliant": boolean,
   "outputInScope": boolean,
   "recommendation": "approve_for_manual_review" | "hold_for_escalation" | "revise_output",
-  "reasonSummary": "1-2 sentence operational rationale, no PHI, no diagnosis language"
+  "reasonSummary": "1-2 sentence operational rationale, no PHI, no diagnosis language, no clinical determinations"
 }`;
 
     const result = await model.generateContent(prompt);
@@ -446,7 +457,7 @@ export async function generateEconomicAudit(params: {
   const arcGasCostUsd = arcTxCount * ARC_TYPICAL_GAS_COST_USDC;
   const avgCostPerActionUsd = arcTxCount > 0 ? totalCostUsd / arcTxCount : totalCostUsd;
 
-  // Stripe minimum: $0.30 base + 2.9% — fails at sub-$10 transaction sizes
+  // Stripe minimum: $0.30 base + 2.9%, fails at sub-$10 transaction sizes
   const comparisonStripeUsd = 0.30 + totalCostUsd * 0.029;
   // ETH mainnet at 30 gwei, ~65k gas per ERC-20 transfer: ~$2.85/tx
   const comparisonEthMainnetUsd = arcTxCount * 2.85;
@@ -456,27 +467,56 @@ export async function generateEconomicAudit(params: {
 
   let recommendation = `This session completed ${arcTxCount} economic events at an average of $${avgCostPerActionUsd.toFixed(6)} per action. Arc settlement at $${ARC_TYPICAL_GAS_COST_USDC}/tx enabled sub-cent billing that would be economically impossible on Ethereum mainnet ($${comparisonEthMainnetUsd.toFixed(2)} equivalent) or via Stripe ($${comparisonStripeUsd.toFixed(2)} minimum).`;
 
-  // Attempt Gemini Pro enrichment
+  // Gemini Pro deep audit, full reasoning, unconstrained output
   try {
     const model = genai.getGenerativeModel({
-      model: 'gemini-2.0-pro-exp',
-      generationConfig: { maxOutputTokens: 200 },
+      model: 'gemini-3.1-pro',
+      systemInstruction: `You are a senior healthcare AI economics analyst. You evaluate the cost efficiency of agentic AI workflows that use blockchain micropayment infrastructure for per-action billing.
+
+Your role is to produce a rigorous executive-level economic audit that:
+- Quantifies the per-action cost in absolute and relative terms
+- Compares the session economics against legacy payment rails (Stripe, Ethereum mainnet, traditional payer-ops processing)
+- Articulates why sub-cent micropayments unlock healthcare workflows that are economically impossible under minimum-fee models
+- Identifies the strategic value proposition for payer organizations adopting agentic AI with blockchain settlement
+- Draws a clear conclusion on the economic model viability
+
+Write with precision and confidence. Use exact numbers. No PHI. No clinical content. Audience: healthcare CFOs, payer operations VPs, and AI infrastructure investors.`,
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 1024,
+      },
     });
 
-    const prompt = `You are a healthcare AI economics auditor. Write one concise paragraph (under 150 words) explaining the economic value of this session.
+    const costSavingVsStripe = comparisonStripeUsd > totalCostUsd
+      ? Math.round(((comparisonStripeUsd - totalCostUsd) / comparisonStripeUsd) * 100)
+      : 0;
 
-Session: ${arcTxCount} onchain events, $${totalCostUsd.toFixed(6)} total cost, $${avgCostPerActionUsd.toFixed(6)} per action.
-Arc settlement: $${arcGasCostUsd.toFixed(4)} gas cost total.
-AI tokens: $${aiTokenCostUsd.toFixed(6)}.
-P402 routing: $${routingFeeUsd.toFixed(6)}.
-Equivalent cost on ETH mainnet: $${comparisonEthMainnetUsd.toFixed(2)}.
-Stripe minimum fee: $${comparisonStripeUsd.toFixed(2)}.
+    const prompt = `Produce a professional economic audit for this AI-assisted healthcare prior authorization session.
 
-Explain why Arc makes this healthcare workflow economically viable. No PHI. No jargon. Write for a business audience.`;
+SESSION METRICS:
+- Onchain settlement events: ${arcTxCount} Arc transactions
+- Total session cost: $${totalCostUsd.toFixed(6)} USD
+- Average cost per event: $${avgCostPerActionUsd.toFixed(6)} USD
+- AI token cost (Gemini 3.1 Flash): $${aiTokenCostUsd.toFixed(6)} USD
+- P402 routing and governance fee: $${routingFeeUsd.toFixed(6)} USD
+- Arc blockchain gas total: $${arcGasCostUsd.toFixed(6)} USD
+${escrowCostUsd > 0 ? `- Specialist escrow cost: $${escrowCostUsd.toFixed(6)} USD` : ''}
+
+COST BENCHMARKS:
+- Stripe minimum (base $0.30 + 2.9%): $${comparisonStripeUsd.toFixed(4)} USD (${costSavingVsStripe}% more expensive than this session)
+- Ethereum mainnet equivalent (~$2.85/tx at 30 gwei, ${arcTxCount} txs): $${comparisonEthMainnetUsd.toFixed(2)} USD (${savingVsEthMainnetPct}% more expensive than this session)
+- This session cost as fraction of Stripe minimum: ${(totalCostUsd / comparisonStripeUsd * 100).toFixed(2)}%
+
+Write a 3-paragraph executive audit (200-280 words total):
+Paragraph 1: What was accomplished in this session and what it cost in absolute terms.
+Paragraph 2: How this compares to legacy payment infrastructure and why the difference matters for healthcare payer operations.
+Paragraph 3: The strategic implication: what agentic AI workflows become economically viable at this cost tier that were previously not feasible.
+
+No headers. No bullet points. Flowing analytical prose.`;
 
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
-    if (text.length > 20) recommendation = text;
+    if (text.length > 50) recommendation = text;
   } catch { /* use computed fallback */ }
 
   return {
@@ -494,7 +534,7 @@ Explain why Arc makes this healthcare workflow economically viable. No PHI. No j
     comparisonEthMainnetUsd,
     savingVsEthMainnetPct,
     recommendation,
-    model: 'gemini-2.0-pro',
+    model: 'gemini-3.1-pro',
     createdAt: new Date().toISOString(),
   };
 }

@@ -92,7 +92,7 @@ export function ApprovalDecisionCard() {
           </div>
         </div>
 
-        {/* Action buttons — reviewer decision */}
+        {/* Action buttons, reviewer decision */}
         {actionState !== 'done' ? (
           <div className="mt-4 flex flex-col gap-2">
             <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider">

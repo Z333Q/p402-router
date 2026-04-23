@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
         ]
       );
     } catch {
-      // Table may not exist in all envs — session still returned for UI use
+      // Table may not exist in all envs, session still returned for UI use
     }
 
     return NextResponse.json({

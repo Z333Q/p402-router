@@ -1,0 +1,69 @@
+PRIOR AUTHORIZATION REQUEST — ELECTIVE SURGICAL PROCEDURE
+Administrative Review Document — De-Identified
+[P402 Meter Demo | Scenario 4 of 6 | De-identified · No PHI]
+
+Review Category: Musculoskeletal / Elective Surgery
+
+================================
+REQUEST INFORMATION
+================================
+Request Type: Prior Authorization — Elective Inpatient Surgical Procedure
+Line of Business: Commercial — PPO Plan
+Case Reference: DEMO-2026-0004 (de-identified)
+Submission Date: [date removed]
+Urgency Classification: Elective (non-urgent, scheduled)
+
+================================
+PROCEDURE INFORMATION
+================================
+Procedure Category: Major joint replacement — lower extremity
+Service Setting: Inpatient — acute care hospital
+Estimated Length of Stay: 2 nights (standard protocol)
+Anesthesia Type: General or regional (surgeon discretion)
+Facility Type: In-network acute care facility
+Post-Acute Disposition: Home with outpatient physical therapy (planned)
+
+================================
+CLINICAL PATHWAY DOCUMENTATION
+================================
+Conservative Treatment History:
+  - Physical therapy: 12 weeks documented, functional improvement plateau
+  - NSAID/analgesic trial: documented with duration and response
+  - Corticosteroid injection: 2 administrations, temporary relief only
+  - Activity modification: documented, functional limitation persists
+Functional Assessment: Documented functional limitation per standardized scoring tool
+Imaging: Radiographic documentation submitted (de-identified, findings summary only)
+BMI / Risk Stratification: Within plan criteria for elective surgical authorization
+
+================================
+POLICY CRITERIA REFERENCE
+================================
+Applicable Guideline: Plan utilization management criteria — major joint replacement
+Coverage Class: Elective inpatient surgical benefit, commercial PPO
+Conservative Treatment Requirement: Minimum 6 weeks documented — requirement met
+Pre-operative Requirements: Cardiac clearance, pre-anesthesia assessment — documented
+
+================================
+DOCUMENTATION SUBMITTED
+================================
+- Completed prior authorization request form
+- Operative plan summary (de-identified)
+- Conservative treatment documentation with dates
+- Functional limitation assessment
+- Imaging summary (de-identified, no identifiable markings)
+- Referring provider notes (de-identified)
+- Pre-operative clearance documentation
+
+================================
+TARGET OUTPUT
+================================
+Required Output: Administrative review summary — elective surgical authorization
+Review Standard: Administrative and process-oriented, non-clinical
+Reviewer Action Required: Approve for manual review, request peer-to-peer, or approve directly per criteria
+
+---
+NOTE: This is a synthetic, de-identified demonstration document created for the
+P402 Meter hackathon demo. It contains no real patient data, no PHI, and no
+identifiable clinical information. For demonstration purposes only.
+Upload this file via the Image/PDF tab in the Document Intake section to test
+Gemini multimodal file extraction.

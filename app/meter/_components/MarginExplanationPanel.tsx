@@ -50,7 +50,7 @@ export function MarginExplanationPanel() {
           <span className="text-sm font-bold text-neutral-50 uppercase tracking-wider">Why Arc works for per-step AI billing</span>
         </div>
         <div className="text-[10px] font-mono text-neutral-400 uppercase">
-          Usage-Based Compute Billing
+          Gateway-Based Micropayments · Arc Hackathon
         </div>
       </div>
 

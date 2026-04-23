@@ -54,7 +54,15 @@ export function ReviewSummaryPane() {
         }),
       });
 
-      if (!res.ok || !res.body) throw new Error('stream failed to start');
+      if (!res.ok) {
+        let errMsg = `stream request failed (${res.status})`;
+        try {
+          const errBody = await res.json() as { error?: string };
+          if (errBody.error) errMsg = errBody.error;
+        } catch { /* body not JSON */ }
+        throw new Error(errMsg);
+      }
+      if (!res.body) throw new Error('stream failed: no response body');
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -98,6 +106,7 @@ export function ReviewSummaryPane() {
               }
             } else if (frame.type === 'error') {
               setError(frame.message);
+              setSessionState('work_order_ready');
             }
           } catch { /* malformed SSE line */ }
         }
@@ -125,7 +134,7 @@ export function ReviewSummaryPane() {
       {quotaFallback && (
         <div className="px-4 py-2 border-b border-warning bg-neutral-900 flex items-center gap-2">
           <span className="text-[10px] font-mono text-warning uppercase tracking-wider">
-            Gemini free-tier quota hit — running pre-captured demo
+            Gemini free-tier quota hit, running pre-captured demo
           </span>
         </div>
       )}
@@ -154,7 +163,7 @@ export function ReviewSummaryPane() {
       {/* Footer */}
       <div className="px-4 py-3 border-t border-neutral-700 flex items-center justify-between">
         <div className="text-xs text-neutral-400">
-          {workOrder ? 'gemini-2.0-flash' : 'No work order'}
+          {workOrder ? 'gemini-3.1-flash' : 'No work order'}
         </div>
         {canExecute && !streamDone && (
           <button

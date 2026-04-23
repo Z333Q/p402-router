@@ -149,7 +149,7 @@ export function WorkOrderCard() {
                 Gemini Function Calls
               </div>
               <div className="text-[9px] font-mono border border-warning text-warning px-2 py-0.5 uppercase">
-                {workOrder.geminiModel ?? 'gemini-2.0-flash'}
+                {workOrder.geminiModel ?? 'gemini-3.1-flash'}
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
@@ -175,10 +175,10 @@ export function WorkOrderCard() {
                 Gemini roles in this workflow
               </div>
               <div className="text-[9px] font-mono text-neutral-500">
-                <span className="text-warning">Flash</span> — multimodal extraction, structured function calling, live review stream
+                <span className="text-warning">Flash</span>, multimodal extraction, structured function calling, live review stream
               </div>
               <div className="text-[9px] font-mono text-neutral-500">
-                <span className="text-warning">Pro</span> — post-run economic audit, cost breakdown narrative (see Gemini Audit panel)
+                <span className="text-warning">Pro</span>, post-run economic audit, cost breakdown narrative (see Gemini Audit panel)
               </div>
             </div>
           </div>

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 // Returns an inherited trust summary from the P402 ERC-8004 stack
 
 export async function GET(_req: NextRequest) {
-  // Feature-flag check — if ERC-8004 validation is disabled, return safe fallback
+  // Feature-flag check, if ERC-8004 validation is disabled, return safe fallback
   const erc8004Enabled = process.env.ERC8004_ENABLE_VALIDATION === 'true';
   const erc8004AgentId = process.env.ERC8004_AGENT_ID ?? '';
 

@@ -98,7 +98,7 @@ export function SpecialistEscrowCard() {
       <div className="p-4 flex flex-col gap-3">
         <div className="text-[10px] font-mono text-neutral-400 border-l-2 border-warning pl-2">
           Gemini determined this case requires specialist agent review.
-          The work will be delegated under escrow — payment releases on deliverable submission.
+          The work will be delegated under escrow, payment releases on deliverable submission.
         </div>
 
         {error && (
@@ -158,7 +158,7 @@ export function SpecialistEscrowCard() {
               </a>
             ) : (
               <div className="text-[10px] font-mono text-neutral-600">
-                Arc tx pending — configure ARC_PRIVATE_KEY for live settlement
+                Arc tx pending, configure ARC_PRIVATE_KEY for live settlement
               </div>
             )}
 

@@ -6,7 +6,7 @@ export function ComplianceBoundaryBanner() {
       <div className="flex items-center gap-3">
         <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">What this proves</span>
         <span className="text-xs font-mono text-neutral-300">
-          AI compute can be metered, priced, and settled at token granularity —
+          AI compute can be metered, priced, and settled at token granularity,
           making <span className="text-primary font-bold">per-action billing economically viable</span> for the first time.
         </span>
       </div>

@@ -3,6 +3,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useMeterStore } from '../_store/useMeterStore';
 import { DEMO_PACKET_CONTENT, DEMO_PACKET_CONTENT_2 } from '../_demo/packets/prior-auth-demo';
+import {
+  DEMO_SPECIALTY_DRUG,
+  DEMO_SURGICAL_PA,
+  DEMO_BEHAVIORAL_HEALTH,
+  DEMO_POST_ACUTE,
+  HEALTHCARE_SCENARIOS,
+  type ScenarioId,
+} from '../_demo/packets/healthcare-scenarios';
 
 type IntakeMode = 'text' | 'file';
 
@@ -15,6 +23,7 @@ export function PacketIntakeCard() {
   const [budgetCap, setBudgetCap] = useState('0.50');
   const [loading, setLoading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [loadedScenarioId, setLoadedScenarioId] = useState<ScenarioId | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
   const [fileData, setFileData] = useState<{ base64Data: string; mimeType: string } | null>(null);
@@ -113,7 +122,7 @@ export function PacketIntakeCard() {
         sourceLabel: isFile ? `upload:${fileName}` : 'demo-safe-mode',
         deidentified: true,
         packetType: 'prior_auth_packet',
-        previewText: isFile ? `[${fileName}] — simulated extraction in safe mode` : content.slice(0, 300),
+        previewText: isFile ? `[${fileName}], simulated extraction in safe mode` : content.slice(0, 300),
         createdAt: new Date().toISOString(),
       },
       content,
@@ -128,7 +137,7 @@ export function PacketIntakeCard() {
         workflowType: 'prior_auth_review',
         packetFormat: isFile ? (fileData?.mimeType.includes('pdf') ? 'pdf' : 'image') : 'text',
         packetSummary: isFile
-          ? `Uploaded document: ${fileName} (${formatBytes(fileSize ?? 0)}) — extracted via Gemini multimodal [safe mode simulation]`
+          ? `Uploaded document: ${fileName} (${formatBytes(fileSize ?? 0)}), extracted via Gemini multimodal [safe mode simulation]`
           : content.slice(0, 800),
         policySummary: 'Standard utilization management criteria for outpatient diagnostic services.',
         budgetCapUsd: parseFloat(budgetCap) || 0.50,
@@ -140,14 +149,14 @@ export function PacketIntakeCard() {
           ? ['parseMultimodalDocument', 'geminiVisionExtract', 'createReviewSession', 'addLedgerEstimate']
           : ['parsePriorAuthDocument', 'createReviewSession', 'addLedgerEstimate'],
         status: 'session_open',
-        geminiModel: 'gemini-2.0-flash',
+        geminiModel: 'gemini-3.1-flash',
         healthcareExtract: {
           requestId: `req_${crypto.randomUUID().slice(0, 8)}`,
           payerName: 'Demo Payer Organization',
           memberIdMasked: '***-**-7842',
           providerName: 'Demo Medical Group',
           procedureRequested: isFile ? `Document Analysis: ${fileName}` : 'Outpatient Advanced Diagnostic Imaging',
-          diagnosisSummary: 'Outpatient diagnostic imaging — standard prior auth category',
+          diagnosisSummary: 'Outpatient diagnostic imaging, standard prior auth category',
           urgencyLevel: 'routine',
           caseType: 'prior_auth',
           extractedConfidence: isFile ? 0.91 : 0.94,
@@ -253,17 +262,49 @@ export function PacketIntakeCard() {
     }
   }
 
-  function loadDemo(variant: 1 | 2 = 1) {
-    const content = variant === 2 ? DEMO_PACKET_CONTENT_2 : DEMO_PACKET_CONTENT;
+  function getScenarioContent(id: ScenarioId): string {
+    switch (id) {
+      case 1: return DEMO_PACKET_CONTENT;
+      case 2: return DEMO_PACKET_CONTENT_2;
+      case 3: return DEMO_SPECIALTY_DRUG;
+      case 4: return DEMO_SURGICAL_PA;
+      case 5: return DEMO_BEHAVIORAL_HEALTH;
+      case 6: return DEMO_POST_ACUTE;
+      default: return DEMO_PACKET_CONTENT;
+    }
+  }
+
+  function loadScenario(id: ScenarioId) {
+    const content = getScenarioContent(id);
     setMode('text');
     setPacketText(content);
+    setLoadedScenarioId(id);
     setFileData(null);
     setFileName(null);
     setFileSize(null);
     setImagePreview(null);
+    // Scroll textarea into view after state update
+    setTimeout(() => textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
     if (safeMode) {
       setTimeout(() => handleSubmitSafeMode(content), 0);
     }
+  }
+
+  function loadDemo(variant: 1 | 2 = 1) {
+    loadScenario(variant);
+  }
+
+  function downloadScenario(id: ScenarioId) {
+    const scenario = HEALTHCARE_SCENARIOS.find((s) => s.id === id);
+    if (!scenario) return;
+    const content = getScenarioContent(id);
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = scenario.filename;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   const canSubmit = isIdle && !loading && (mode === 'text' ? packetText.trim().length > 0 : fileData !== null);
@@ -332,7 +373,7 @@ export function PacketIntakeCard() {
                 </button>
               </div>
             )}
-            {/* Full packet preview — expands below */}
+            {/* Full packet preview, expands below */}
             {packetExpanded && packetText.length > 0 && (
               <div className="border-2 border-neutral-700 bg-neutral-900 p-3 max-h-[400px] overflow-y-auto">
                 <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider mb-2 border-b border-neutral-700 pb-1">
@@ -381,7 +422,7 @@ export function PacketIntakeCard() {
               )}
             </div>
 
-            {/* File preview card — shown after selection */}
+            {/* File preview card, shown after selection */}
             {fileName && fileData && (
               <div className="border-2 border-primary bg-neutral-900 p-3 flex gap-3">
                 {/* Image thumbnail */}
@@ -414,7 +455,7 @@ export function PacketIntakeCard() {
                   </div>
                   {safeMode && (
                     <div className="text-[9px] font-mono text-warning mt-0.5">
-                      Gemini API bypassed — demo extraction injected
+                      Gemini API bypassed, demo extraction injected
                     </div>
                   )}
                 </div>
@@ -454,24 +495,116 @@ export function PacketIntakeCard() {
 
         {/* Demo packet options */}
         <div className="border-t border-neutral-700 pt-3 flex flex-col gap-2">
-          <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">Demo Packets</div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              className="btn btn-secondary text-[10px] text-left flex flex-col gap-0.5 py-2 px-3 !items-start"
-              onClick={() => loadDemo(1)}
-              disabled={!isIdle || loading}
-            >
-              <span className="font-bold uppercase">Prior Auth</span>
-              <span className="text-neutral-500 normal-case font-normal">Outpatient imaging request</span>
-            </button>
-            <button
-              className="btn btn-secondary text-[10px] text-left flex flex-col gap-0.5 py-2 px-3 !items-start"
-              onClick={() => loadDemo(2)}
-              disabled={!isIdle || loading}
-            >
-              <span className="font-bold uppercase">Util Review</span>
-              <span className="text-neutral-500 normal-case font-normal">Inpatient extension request</span>
-            </button>
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">
+              Sample Scenarios
+            </div>
+            <div className="text-[9px] font-mono text-neutral-600 uppercase tracking-wider">
+              De-identified · Admin only
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-1.5">
+            {HEALTHCARE_SCENARIOS.map((scenario) => (
+              <div
+                key={scenario.id}
+                className="border border-neutral-700 flex items-stretch"
+              >
+                {/* Category pill */}
+                <div className="flex-shrink-0 w-16 flex items-center justify-center border-r border-neutral-700 bg-neutral-800">
+                  <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-wider text-center px-1">
+                    {scenario.category}
+                  </span>
+                </div>
+
+                {/* Load button, fills remaining width */}
+                <button
+                  className={`flex-1 text-[10px] text-left flex flex-col gap-0.5 py-2 px-3 transition-colors disabled:opacity-40 disabled:pointer-events-none ${loadedScenarioId === scenario.id ? 'bg-neutral-800 border-l-2 border-l-primary' : 'hover:bg-neutral-800'}`}
+                  onClick={() => loadScenario(scenario.id)}
+                  disabled={!isIdle || loading}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold uppercase text-neutral-50">{scenario.label}</span>
+                    {loadedScenarioId === scenario.id && (
+                      <span className="text-[9px] font-mono text-primary uppercase tracking-wider">Loaded</span>
+                    )}
+                  </div>
+                  <span className="text-neutral-500 normal-case font-normal">{scenario.sublabel}</span>
+                </button>
+
+                {/* Download button */}
+                <button
+                  className="flex-shrink-0 flex items-center justify-center w-10 border-l border-neutral-700 text-neutral-600 hover:text-primary hover:bg-neutral-800 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                  onClick={() => downloadScenario(scenario.id)}
+                  disabled={loading}
+                  title={`Download ${scenario.filename}`}
+                  aria-label={`Download ${scenario.label} sample`}
+                >
+                  <span className="text-base leading-none">↓</span>
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="text-[9px] font-mono text-neutral-600 leading-relaxed">
+            Click any row to load the case text directly. Use ↓ to save a copy to disk.
+          </div>
+        </div>
+
+        {/* Multimodal image demo */}
+        <div className="border-t border-neutral-700 pt-3 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">
+              Multimodal Image Demo
+            </div>
+            <div className="text-[9px] font-mono text-warning border border-warning px-2 py-0.5 uppercase">
+              Gemini Vision
+            </div>
+          </div>
+
+          {/* Image preview card */}
+          <a
+            href="/meter/samples/demo-prior-auth-form.png"
+            download="demo-prior-auth-form.png"
+            className="border border-neutral-700 flex gap-3 p-2 hover:border-primary hover:bg-neutral-800 transition-colors group"
+            aria-label="Download demo prior authorization form image"
+          >
+            {/* Thumbnail */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/meter/samples/demo-prior-auth-form.png"
+              alt="De-identified prior authorization form, multimodal demo"
+              className="w-20 h-28 object-cover object-top border border-neutral-700 flex-shrink-0"
+            />
+
+            {/* Details */}
+            <div className="flex flex-col justify-between flex-1 min-w-0">
+              <div>
+                <div className="text-[10px] font-bold text-neutral-50 uppercase tracking-wider group-hover:text-primary transition-colors">
+                  Prior Auth Form (PNG)
+                </div>
+                <div className="text-[9px] font-mono text-neutral-500 mt-0.5">
+                  Synthetic · De-identified · No PHI
+                </div>
+                <div className="text-[9px] font-mono text-neutral-600 mt-1.5 leading-relaxed">
+                  A realistic-looking PA form rendered for Gemini vision extraction. Upload via the
+                  Image/PDF tab to see multimodal structured field extraction in action.
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="text-[9px] font-mono text-warning uppercase tracking-wider">
+                  ↓ Download PNG
+                </div>
+                <div className="text-neutral-700">·</div>
+                <div className="text-[9px] font-mono text-neutral-600 uppercase">
+                  image/png · ~120 KB
+                </div>
+              </div>
+            </div>
+          </a>
+
+          <div className="text-[9px] font-mono text-neutral-600 leading-relaxed">
+            Download the PNG, then switch to the{' '}
+            <span className="text-neutral-400 font-bold">Image / PDF</span> tab above and upload it.
+            Gemini Flash will read the form fields and extract structured healthcare data.
           </div>
         </div>
 

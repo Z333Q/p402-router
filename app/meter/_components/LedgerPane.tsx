@@ -4,7 +4,7 @@ import { useMeterStore } from '../_store/useMeterStore';
 import { arcExplorerTxUrl } from '@/lib/chains/arc';
 import type { LedgerEvent, LedgerEventKind } from '@/lib/meter/types';
 
-// Row type taxonomy — three categories judges should see
+// Row type taxonomy, three categories judges should see
 type RowCategory = 'ai' | 'payment' | 'settlement';
 
 const KIND_CONFIG: Record<LedgerEventKind, { label: string; category: RowCategory }> = {

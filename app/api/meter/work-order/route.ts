@@ -5,7 +5,7 @@ import { insertWorkOrder, getWorkOrder } from '@/lib/meter/queries';
 export const dynamic = 'force-dynamic';
 
 // POST /api/meter/work-order
-// Run Gemini extraction on a packet — text or multimodal (image/PDF)
+// Run Gemini extraction on a packet, text or multimodal (image/PDF)
 // Returns WorkOrder + toolTrace + degraded flag
 
 export async function POST(req: NextRequest) {

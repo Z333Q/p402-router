@@ -1,0 +1,53 @@
+PRIOR AUTHORIZATION CASE PACKET
+Administrative Review Document — De-Identified
+[P402 Meter Demo | Scenario 1 of 6 | De-identified · No PHI]
+
+================================
+REQUEST INFORMATION
+================================
+Request Type: Prior Authorization — Outpatient Service
+Line of Business: Commercial — Standard Plan
+Case Reference: DEMO-2026-0001 (de-identified)
+Submission Date: [date removed]
+Urgency Classification: Standard (non-urgent)
+
+================================
+SERVICE INFORMATION
+================================
+Service Category: Outpatient Diagnostic Procedure
+Service Description: Advanced diagnostic imaging, outpatient setting
+Requested Service Units: 1
+Requested Date Range: Within 30 days of authorization
+
+================================
+POLICY CRITERIA REFERENCE
+================================
+Applicable Guideline: Standard utilization management criteria for outpatient diagnostic services
+Coverage Class: Standard outpatient benefit, commercial plan
+Review Criteria Threshold: Documentation of medical necessity per plan criteria; prior authorization required for services in this category
+Prior Claim History: Not applicable (first request)
+
+================================
+SUBMITTED DOCUMENTATION SUMMARY
+================================
+Supporting documentation indicates the requesting provider has submitted:
+- Completed prior authorization request form
+- Clinical summary documentation (de-identified)
+- Applicable diagnostic codes consistent with service request (codes removed for de-identification)
+- Ordering provider attestation
+
+Documentation appears complete per standard submission requirements.
+
+================================
+TARGET OUTPUT
+================================
+Required Output: Utilization management review summary
+Review Standard: Administrative and process-oriented, non-clinical
+Reviewer Action Required: Approve for manual review OR hold for escalation
+
+---
+NOTE: This is a synthetic, de-identified demonstration document created for the
+P402 Meter hackathon demo. It contains no real patient data, no PHI, and no
+identifiable clinical information. For demonstration purposes only.
+Upload this file via the Image/PDF tab in the Document Intake section to test
+Gemini multimodal file extraction.

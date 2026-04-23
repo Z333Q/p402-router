@@ -48,7 +48,7 @@ export function ArcProofDrawer() {
         <ProofStat label="Arc Tx" value={txEvents.length > 0 ? txEvents.length.toString() : batchEvents.length > 0 ? batchEvents.length.toString() : '—'} />
       </div>
 
-      {/* Wallet verify link — always visible, no expansion needed */}
+      {/* Wallet verify link, always visible, no expansion needed */}
       <a
         href={arcExplorerAddressUrl(ARC_SIGNER_ADDRESS)}
         target="_blank"
@@ -104,7 +104,7 @@ export function ArcProofDrawer() {
             </div>
           )}
 
-          {/* Funded wallet — always visible, verifiable before/after any run */}
+          {/* Funded wallet, always visible, verifiable before/after any run */}
           <div>
             <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-2">
               Settlement Wallet
@@ -123,7 +123,7 @@ export function ArcProofDrawer() {
             </a>
           </div>
 
-          {/* Per-tx links — only present in live mode when Arc settles */}
+          {/* Per-tx links, only present in live mode when Arc settles */}
           {txEvents.length > 0 ? (
             <div>
               <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-2">
@@ -159,7 +159,7 @@ export function ArcProofDrawer() {
           {workOrder && (
             <div className="border-t border-neutral-700 pt-3 grid grid-cols-2 gap-3 text-[10px] font-mono">
               <ProofField label="Work Order" value={workOrder.id.slice(0, 16) + '…'} mono />
-              <ProofField label="Gemini Model" value={workOrder.geminiModel ?? 'gemini-2.0-flash'} />
+              <ProofField label="Gemini Model" value={workOrder.geminiModel ?? 'gemini-3.1-flash'} />
             </div>
           )}
         </div>

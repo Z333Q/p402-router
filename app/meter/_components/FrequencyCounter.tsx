@@ -25,7 +25,7 @@ export function FrequencyCounter() {
       ? Math.round(ethEquivalentCost / totalCostUsd)
       : null;
 
-  // Threshold check — hackathon requires 50+ onchain tx and avg ≤ $0.01
+  // Threshold check, hackathon requires 50+ onchain tx and avg ≤ $0.01
   const txThresholdMet = signedAuths >= REQUIRED_TX_THRESHOLD;
   const costThresholdMet = signedAuths > 0 && avgCostPerAction < 0.01;
   const bothMet = txThresholdMet && costThresholdMet;

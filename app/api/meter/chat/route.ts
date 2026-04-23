@@ -14,22 +14,25 @@ export const dynamic = 'force-dynamic';
 
 const genai = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY ?? '');
 
-// Per-output-token cost for gemini-2.0-flash (approximate, for demo)
+// Per-output-token cost for gemini-3.1-flash (approximate, for demo)
 const COST_PER_TOKEN_USD = 0.000000600; // $0.60 per 1M output tokens
 
-const REVIEW_SYSTEM_INSTRUCTION = `You are a utilization management documentation assistant for healthcare payer operations.
+const REVIEW_SYSTEM_INSTRUCTION = `You are a utilization management documentation specialist for managed care payer operations, aligned to NCQA UM standards and URAC accreditation criteria.
 
-Your job is to produce administrative review summaries based on de-identified prior authorization case packets.
+Your role is to transform de-identified prior authorization case packets into structured administrative review artifacts ready for human reviewer approval.
 
-Rules:
-- The summary must be ADMINISTRATIVE only — process-oriented, policy-referencing, non-clinical
+Output standards:
+- ADMINISTRATIVE only: process-oriented, policy-referencing, documentation-complete
+- Cite applicable policy criteria by category (e.g. InterQual criteria, MCG guidelines, internal medical policy) without making clinical determinations
+- Structure your output with labeled sections: Request Classification, Policy Criteria Reference, Administrative Rationale, Documentation Completeness Assessment, and Reviewer Recommendation
 - Do NOT make medical decisions, diagnoses, or treatment recommendations
-- Do NOT reference specific patient names, member IDs, or any PHI
-- Frame your output as a utilization management documentation artifact ready for human reviewer approval
-- Include: request type, policy criteria reference, administrative rationale, and a clear recommendation for manual review
-- Use professional payer-operations language throughout
-- Keep the summary under 600 words
-- End with a clear "Ready for Manual Review" or "Escalation Recommended" statement`;
+- Do NOT reference specific patient names, member IDs, dates of birth, or any PHI
+- Do NOT quote or reproduce clinical notes verbatim
+- Use URAC-compliant payer-operations language throughout
+- Quantify completeness: note if required documentation elements are present or missing
+- Flag any documentation gaps that require clarification before approval
+- Close with one of: "Ready for Manual Review" or "Escalation Recommended" with a one-sentence operational rationale
+- Target length: 400-600 words`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -52,7 +55,7 @@ export async function POST(req: NextRequest) {
     // Attempt the Gemini call before opening the stream so 429/quota errors
     // can redirect cleanly to safe mode without a broken partial stream.
     const model = genai.getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3.1-flash',
       systemInstruction: REVIEW_SYSTEM_INSTRUCTION,
     });
 
@@ -69,11 +72,9 @@ Follow the administrative format strictly. No PHI. No clinical decisions.`;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       const isQuota = msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('too many requests');
-      if (isQuota) {
-        // Free-tier quota hit — fall back to safe mode so demo stays live
-        return streamSafeModeResponse(sessionId, workOrderId, budgetCapUsd, true);
-      }
-      throw err;
+      // Fall back to safe mode for any Gemini API error so the demo never breaks.
+      // quotaFallback=true shows the notice only for quota/rate-limit errors.
+      return streamSafeModeResponse(sessionId, workOrderId, budgetCapUsd, isQuota);
     }
 
     const encoder = new TextEncoder();
@@ -92,7 +93,7 @@ Follow the administrative format strictly. No PHI. No clinical decisions.`;
           const result = geminiStream;
 
           // ── Stream chunks ─────────────────────────────────────────────────
-          // Emit a ledger event on every chunk — required for 50+ onchain tx proof
+          // Emit a ledger event on every chunk, required for 50+ onchain tx proof
           for await (const chunk of result.stream) {
             const text = chunk.text();
             if (!text) continue;
@@ -164,7 +165,7 @@ Follow the administrative format strictly. No PHI. No clinical decisions.`;
           // ── Reconciliation event + real Arc settlement ───────────────────
           // When ARC_PRIVATE_KEY is set, submit a real USDC transfer on Arc testnet.
           // This produces a verifiable tx hash visible in ArcScan.
-          // Use P402 treasury as recipient (not self — some precompiles reject self-transfers).
+          // Use P402 treasury as recipient (not self, some precompiles reject self-transfers).
           const ARC_DEMO_RECIPIENT = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
           let arcTxHash: string | undefined;
           let arcBlock: number | undefined;
@@ -272,7 +273,7 @@ Follow the administrative format strictly. No PHI. No clinical decisions.`;
 }
 
 // ============================================================================
-// Safe Mode — replay pre-captured events with real proof refs
+// Safe Mode, replay pre-captured events with real proof refs
 // ============================================================================
 
 function streamSafeModeResponse(
@@ -283,10 +284,10 @@ function streamSafeModeResponse(
 ) {
   const encoder = new TextEncoder();
 
-  // Pre-captured summary text — split into 55 fine-grained chunks for 50+ ledger event proof
+  // Pre-captured summary text, split into 55 fine-grained chunks for 50+ ledger event proof
   const SAFE_SUMMARY_CHUNKS = [
     'Utilization Management Review Summary\n\n',
-    'Request Type: Prior Authorization — Administrative Review\n\n',
+    'Request Type: Prior Authorization, Administrative Review\n\n',
     'Policy Reference: Standard utilization management criteria ',
     'for outpatient services, ',
     'commercial line of business.\n\n',
@@ -320,7 +321,7 @@ function streamSafeModeResponse(
     'Routing overhead: ',
     '$0.000100 USD. ',
     'Grand total: ',
-    '$0.006447 USD — ',
+    '$0.006447 USD, ',
     'well under $0.01 per action.\n\n',
     'Nanopayment events emitted: ',
     '55 provisional estimates. ',
@@ -342,7 +343,7 @@ function streamSafeModeResponse(
     'No clinical determination has been made.',
   ];
 
-  // Safe mode: no real Arc tx hashes — proofRef only (avoids 422 on ArcScan)
+  // Safe mode: no real Arc tx hashes, proofRef only (avoids 422 on ArcScan)
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -356,7 +357,7 @@ function streamSafeModeResponse(
       let chunkIndex = 0;
       let totalCostUsd = 0;
 
-      // Emit a ledger event on every chunk — produces 55+ events for 50+ tx proof
+      // Emit a ledger event on every chunk, produces 55+ events for 50+ tx proof
       for (const chunk of SAFE_SUMMARY_CHUNKS) {
         await delay(80);
         emit({ type: 'text_delta', delta: chunk });

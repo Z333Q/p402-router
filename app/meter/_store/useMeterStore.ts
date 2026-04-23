@@ -29,7 +29,7 @@ export type SessionState =
   | 'held'
   | 'released';
 
-// Authorization event kinds — all per-chunk billing events
+// Authorization event kinds, all per-chunk billing events
 const AUTHORIZATION_KINDS = new Set([
   'extraction_estimate',
   'review_estimate',

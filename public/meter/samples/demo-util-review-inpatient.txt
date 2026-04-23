@@ -1,0 +1,47 @@
+UTILIZATION REVIEW PACKET
+Administrative Review Document — De-Identified
+[P402 Meter Demo | Scenario 2 of 6 | De-identified · No PHI]
+
+================================
+REQUEST TYPE
+================================
+Review Type: Concurrent Utilization Review
+Setting: Inpatient — Standard Admission Review
+Line of Business: Government-sponsored plan, generic
+Case Reference: DEMO-2026-0002 (de-identified)
+
+================================
+REVIEW CONTEXT
+================================
+Admission Category: Standard medical admission
+Requested Additional Days: 2
+Review Day: Day 3 of admission
+Attending Attestation: Included (de-identified)
+
+================================
+POLICY REFERENCE
+================================
+Criteria Set: Standard inpatient utilization management criteria
+Coverage Class: Government-sponsored plan benefit
+Applicable Review Level: Nurse review threshold for standard admission extension requests
+
+================================
+DOCUMENTATION SUBMITTED
+================================
+- Day 3 clinical summary (de-identified, PHI removed)
+- Discharge planning notes (administrative elements only)
+- Attending physician day 3 attestation
+
+================================
+TARGET OUTPUT
+================================
+Required Output: Concurrent utilization review summary for day 3 extension request
+Review Standard: Administrative, non-clinical, process-oriented
+Reviewer Action Required: Approve extension, hold for escalation, or recommend discharge planning review
+
+---
+NOTE: This is a synthetic, de-identified demonstration document created for the
+P402 Meter hackathon demo. It contains no real patient data, no PHI, and no
+identifiable clinical information. For demonstration purposes only.
+Upload this file via the Image/PDF tab in the Document Intake section to test
+Gemini multimodal file extraction.

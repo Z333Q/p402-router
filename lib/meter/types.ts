@@ -1,5 +1,5 @@
 // lib/meter/types.ts
-// P402 Meter — healthcare payer-ops types (Molina pack aligned)
+// P402 Meter, healthcare payer-ops types (Molina pack aligned)
 
 // ============================================================================
 // Packet
@@ -25,7 +25,7 @@ export interface PacketAsset {
 }
 
 // ============================================================================
-// Healthcare extract — structured fields from Gemini multimodal parsing
+// Healthcare extract, structured fields from Gemini multimodal parsing
 // ============================================================================
 
 export type UrgencyLevel = "routine" | "urgent" | "emergent";
@@ -84,7 +84,7 @@ export interface WorkOrder {
 }
 
 // ============================================================================
-// Ledger event kinds — healthcare-specific, judge-readable labels
+// Ledger event kinds, healthcare-specific, judge-readable labels
 // ============================================================================
 
 export type LedgerEventKind =
@@ -189,7 +189,7 @@ export interface EconomicAudit {
   comparisonEthMainnetUsd: number;  // equivalent gas cost on ETH mainnet
   savingVsEthMainnetPct: number;    // percentage saving vs ETH
   recommendation: string;           // Gemini Pro narrative
-  model: "gemini-2.0-pro" | "gemini-2.0-flash";
+  model: "gemini-3.1-pro" | "gemini-3.1-flash";
   createdAt: string;
 }
 

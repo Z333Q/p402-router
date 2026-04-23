@@ -1,0 +1,68 @@
+PRIOR AUTHORIZATION REQUEST — SPECIALTY PHARMACY
+Administrative Review Document — De-Identified
+[P402 Meter Demo | Scenario 3 of 6 | De-identified · No PHI]
+
+Review Category: High-Cost Biologic / Specialty Drug
+
+================================
+REQUEST INFORMATION
+================================
+Request Type: Prior Authorization — Specialty Pharmacy
+Line of Business: Commercial — Employer-Sponsored Plan
+Case Reference: DEMO-2026-0003 (de-identified)
+Submission Channel: Electronic — Specialty Pharmacy Hub
+Urgency Classification: Standard (non-urgent)
+
+================================
+MEDICATION INFORMATION
+================================
+Drug Category: Biologic — TNF-alpha inhibitor class
+Therapeutic Area: Gastroenterology
+Indication: Moderate-to-severe inflammatory bowel disease (de-identified code)
+Requested Duration: 12-month authorization with quarterly renewals
+Units / Frequency: Per prescribing label (de-identified)
+Dispensing Channel: Specialty pharmacy — cold chain required
+Step Therapy Status: Documentation of step therapy included (see attached)
+
+================================
+STEP THERAPY & CLINICAL PATHWAY
+================================
+Step Therapy Stage: Step 3 — advanced biologic
+Prior Therapies Documented:
+  Step 1: Conventional immunosuppressant — 6-month trial, inadequate response documented
+  Step 2: Alternative biologic — 4-month trial, discontinued due to documented adverse event
+  Current Request: Third-line agent per plan step therapy protocol
+Clinical Documentation: Prescriber attestation with trial outcomes attached (de-identified)
+
+================================
+POLICY CRITERIA REFERENCE
+================================
+Applicable Guideline: Plan specialty drug management criteria — biologic step therapy
+Coverage Class: Specialty tier, employer-sponsored commercial plan
+Step Therapy Requirement: Three documented prior therapy steps required — all steps documented
+Medical Necessity Threshold: Prescriber attestation + objective clinical criteria — submitted
+Clinical Exception Basis: Step 2 adverse event constitutes exception basis per plan criteria
+
+================================
+DOCUMENTATION SUBMITTED
+================================
+- Completed specialty PA request form
+- Prescriber letter of medical necessity (de-identified)
+- Step therapy documentation with dates and outcomes
+- Adverse event report for step 2 therapy
+- Lab values supporting diagnosis (de-identified, reference ranges only)
+- Pharmacy benefit verification (specialty hub)
+
+================================
+TARGET OUTPUT
+================================
+Required Output: Administrative review summary — specialty drug step therapy compliance
+Review Standard: Administrative and process-oriented, non-clinical
+Reviewer Action Required: Approve (step therapy complete), hold for clinical escalation, or request additional documentation
+
+---
+NOTE: This is a synthetic, de-identified demonstration document created for the
+P402 Meter hackathon demo. It contains no real patient data, no PHI, and no
+identifiable clinical information. For demonstration purposes only.
+Upload this file via the Image/PDF tab in the Document Intake section to test
+Gemini multimodal file extraction.

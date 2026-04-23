@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
         arcTxHash = result.txHash;
         onChainJobId = result.jobId;
       } catch (err) {
-        // Non-fatal — degrade to simulation with real contract address shown
+        // Non-fatal, degrade to simulation with real contract address shown
         console.error('[escrow] ERC-8183 createJob failed:', err instanceof Error ? err.message : err);
       }
     }

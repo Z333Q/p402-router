@@ -26,7 +26,7 @@ export default function MeterPage() {
 
   return (
     <div className={`min-h-screen flex flex-col ${lightMode ? 'bg-neutral-50' : 'bg-neutral-900'}`}>
-      {/* Safe Mode banner — thin bar, always first */}
+      {/* Safe Mode banner, thin bar, always first */}
       <SafeModeBanner />
 
       {/* Compact utility bar */}
@@ -54,7 +54,7 @@ export default function MeterPage() {
       </div>
 
       <div className={`${themeClass} flex-1 px-6 py-8 flex flex-col gap-8 max-w-[1400px] mx-auto w-full`}>
-        {/* Story block — first screen, one job per row */}
+        {/* Story block, first screen, one job per row */}
         <div className="max-w-2xl">
           <h1 className="text-4xl lg:text-5xl font-bold leading-tight text-neutral-50 mb-4">
             Real-time AI billing<br />
@@ -62,25 +62,28 @@ export default function MeterPage() {
           </h1>
           <div className="flex flex-col gap-1.5 mb-6">
             <p className="text-base text-neutral-300 leading-relaxed">
-              Each AI step is priced in USDC and settled on Arc.
+              Upload a prior auth document, Gemini reads it, classifies it, reviews it.
             </p>
             <p className="text-base text-neutral-300 leading-relaxed">
-              Gemini handles document intake and review.
+              Every AI token settles as a USDC event on Arc. Total cost: under $0.01.
             </p>
             <p className="text-base text-neutral-300 leading-relaxed">
-              The ledger stays visible from start to finish.
+              The ledger, the cost, and the proof stay visible from start to finish.
             </p>
           </div>
           {/* Proof chips */}
           <div className="flex flex-wrap gap-2 mb-6">
             <span className="border-2 border-primary text-primary text-xs font-bold font-mono px-3 py-1.5">
-              55+ Arc transactions per run
+              55+ Arc settlements per run
             </span>
             <span className="border-2 border-neutral-600 text-neutral-300 text-xs font-mono px-3 py-1.5">
-              $0.006 per settlement
+              $0.006 per settlement vs $2.85 on ETH
             </span>
             <span className="border-2 border-neutral-600 text-neutral-300 text-xs font-mono px-3 py-1.5">
-              Gemini multimodal intake
+              Gemini Flash + Pro · multimodal
+            </span>
+            <span className="border-2 border-neutral-600 text-neutral-300 text-xs font-mono px-3 py-1.5">
+              Circle wallets · Arc testnet
             </span>
           </div>
           {/* Action cluster */}
@@ -92,7 +95,7 @@ export default function MeterPage() {
           </div>
         </div>
 
-        {/* One-click demo — primary action, anchor target */}
+        {/* One-click demo, primary action, anchor target */}
         <div id="demo">
           <GuidedDemoStrip />
         </div>
@@ -107,9 +110,9 @@ export default function MeterPage() {
         {/* Circle + Arc stack proof */}
         <CircleInfraStrip />
 
-        {/* Hackathon context — moved below product content */}
+        {/* Hackathon context, moved below product content */}
         <div className="border border-neutral-800 px-4 py-2 text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
-          Arc Hackathon · April 2026 · Usage-Based Compute Billing · Gemini Prize Track
+          Agentic Commerce on Arc Hackathon · April 2026 · Best Gateway-Based Micropayments Integration · Best Use of Gemini Models
         </div>
 
         {/* Error banner */}
@@ -143,16 +146,16 @@ export default function MeterPage() {
           </div>
         </div>
 
-        {/* Economic audit — Gemini Pro post-run, appears after review completes */}
+        {/* Economic audit, Gemini Pro post-run, appears after review completes */}
         <EconomicAuditPanel />
 
-        {/* Trust chain — prerequisite for release */}
+        {/* Trust chain, prerequisite for release */}
         <InheritedTrustStrip />
 
-        {/* Arc Native Release Path — action follows trust */}
+        {/* Arc Native Release Path, action follows trust */}
         <OptionalReleaseStrip />
 
-        {/* Why Arc Works — contextual explanation after seeing it in action */}
+        {/* Why Arc Works, contextual explanation after seeing it in action */}
         <MarginExplanationPanel />
       </div>
     </div>

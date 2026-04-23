@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 // POST /api/meter/fund
 // Create a Circle Developer-Controlled Wallet on Arc testnet and open a nanopayment channel.
-// Visible in Circle Developer Console — required for video proof.
+// Visible in Circle Developer Console, required for video proof.
 
 interface FundRequest {
   sessionId: string;
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     // Creates a Developer-Controlled Wallet on ARC-TESTNET.
     // Visible in Circle Developer Console for video proof requirement.
     if (!apiKey) {
-      // Graceful degradation — return a demo wallet reference for local dev
+      // Graceful degradation, return a demo wallet reference for local dev
       return Response.json({
         walletId: `demo_wallet_${crypto.randomUUID().slice(0, 8)}`,
         address: `0x${crypto.randomBytes(20).toString('hex')}`,
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         estimatedGasCostUsd: ARC_TYPICAL_GAS_COST_USDC,
         nanopaymentChannelOpen: false,
         degraded: true,
-        degradedReason: 'CIRCLE_API_KEY not configured — demo wallet reference returned',
+        degradedReason: 'CIRCLE_API_KEY not configured, demo wallet reference returned',
       });
     }
 
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
     let nanopaymentChannelOpen = false;
     let nanopaymentChannelId: string | undefined;
 
-    // Circle Gateway x402 — verify the wallet can settle on Arc testnet
+    // Circle Gateway x402, verify the wallet can settle on Arc testnet
     // Endpoint: {NANOPAYMENTS_API_BASE}/gateway/v1/x402/settle
     if (NANOPAYMENTS_API_BASE) {
       try {
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
           const verifyData = await verifyRes.json() as { channelId?: string; id?: string };
           nanopaymentChannelId = verifyData.channelId ?? verifyData.id;
         }
-      } catch { /* non-fatal — gateway optional */ }
+      } catch { /* non-fatal, gateway optional */ }
     }
 
     return Response.json({
@@ -178,7 +178,7 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: 'sessionId required' }, { status: 400 });
   }
 
-  // Stub — real impl would look up wallet by sessionId from DB
+  // Stub, real impl would look up wallet by sessionId from DB
   return Response.json({
     sessionId,
     funded: false,

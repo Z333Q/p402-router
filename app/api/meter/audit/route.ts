@@ -4,7 +4,7 @@ import { generateEconomicAudit } from '@/lib/meter/work-order-parser';
 export const dynamic = 'force-dynamic';
 
 // POST /api/meter/audit
-// Gemini Pro post-run economic audit — called once per session after stream completes
+// Gemini Pro post-run economic audit, called once per session after stream completes
 
 export async function POST(req: NextRequest) {
   try {

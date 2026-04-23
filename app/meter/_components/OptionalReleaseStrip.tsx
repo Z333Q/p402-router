@@ -83,7 +83,7 @@ export function OptionalReleaseStrip() {
       {releaseDrawerOpen && (
         <div className="px-4 py-4 flex flex-col gap-4">
 
-          {/* ERC-8183 job lifecycle — always visible */}
+          {/* ERC-8183 job lifecycle, always visible */}
           <div>
             <div className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest mb-3">
               ERC-8183 Job Lifecycle · Agentic Job Flow Standard
