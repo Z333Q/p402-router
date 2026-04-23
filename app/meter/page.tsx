@@ -146,12 +146,14 @@ export default function MeterPage() {
         {/* Economic audit — Gemini Pro post-run, appears after review completes */}
         <EconomicAuditPanel />
 
-        {/* Margin explanation — judge-visible proof point */}
-        <MarginExplanationPanel />
-
-        {/* Trust and release strip — below main grid */}
+        {/* Trust chain — prerequisite for release */}
         <InheritedTrustStrip />
+
+        {/* Arc Native Release Path — action follows trust */}
         <OptionalReleaseStrip />
+
+        {/* Why Arc Works — contextual explanation after seeing it in action */}
+        <MarginExplanationPanel />
       </div>
     </div>
   );
