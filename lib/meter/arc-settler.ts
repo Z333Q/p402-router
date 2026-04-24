@@ -70,16 +70,30 @@ export async function settleOnArc(params: {
   memo?: string;
 }): Promise<{ txHash: string; blockNumber: number; gasUsed: string }> {
   const signer = getSigner();
-  const usdc = new ethers.Contract(USDC_ARC_TESTNET, ERC20_ABI, signer);
 
   // Convert USD to USDC-e6 (floor at 1 to avoid zero-value transfers)
   const amountE6 = BigInt(Math.max(1, Math.round(params.amountUsd * 1_000_000)));
 
-  // Explicit gasLimit avoids estimation failure on Arc's USDC-as-native-gas setup
-  const tx = await (usdc.getFunction('transfer').populateTransaction(params.toAddress, amountE6)
-    .then((populated) => signer.sendTransaction({ ...populated, gasLimit: 100000n })) as Promise<ethers.TransactionResponse>);
-  const receipt = await tx.wait(1);
+  // Encode transfer() data directly — bypasses populateTransaction's estimateGas call,
+  // which can throw on Arc's USDC-as-native-gas model before any tx is submitted.
+  const iface = new ethers.Interface(ERC20_ABI);
+  const data = iface.encodeFunctionData('transfer', [params.toAddress, amountE6]);
 
+  // Get current gas price from the network; fall back to 0 (Arc may set it automatically)
+  let gasPrice: bigint | undefined;
+  try {
+    const feeData = await signer.provider!.getFeeData();
+    gasPrice = feeData.gasPrice ?? undefined;
+  } catch { /* proceed without gasPrice if RPC doesn't support fee queries */ }
+
+  const tx = await signer.sendTransaction({
+    to: USDC_ARC_TESTNET,
+    data,
+    gasLimit: 100000n,
+    ...(gasPrice !== undefined ? { gasPrice } : {}),
+  });
+
+  const receipt = await tx.wait(1);
   if (!receipt) throw new Error('Arc tx receipt was null');
 
   return {

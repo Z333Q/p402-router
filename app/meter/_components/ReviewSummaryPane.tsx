@@ -18,6 +18,7 @@ export function ReviewSummaryPane() {
     setApproval,
     setSessionState,
     setError,
+    setArcSettleError,
   } = useMeterStore();
 
   const [executing, setExecuting] = useState(false);
@@ -89,7 +90,10 @@ export function ReviewSummaryPane() {
             } else if (frame.type === 'ledger_event') {
               appendLedgerEvent(frame.event as LedgerEvent);
             } else if (frame.type === 'stream_done') {
-              if (frame.arcSettleError) console.error('[Arc settler]', frame.arcSettleError);
+              if (frame.arcSettleError) {
+                console.error('[Arc settler]', frame.arcSettleError);
+                setArcSettleError(frame.arcSettleError);
+              }
               if (frame.quotaFallback) setQuotaFallback(true);
               setStreamDone(frame.totalCostUsd, frame.totalTokens);
               if (frame.approval) {

@@ -8,7 +8,7 @@ const ARC_NETWORK = 'Arc Testnet';
 const USDC_ASSET = 'USDC (native gas)';
 
 export function ArcProofDrawer() {
-  const { ledgerEvents, sessionId, proofDrawerOpen, setProofDrawerOpen, streamDone, frequencyStats, workOrder } =
+  const { ledgerEvents, sessionId, proofDrawerOpen, setProofDrawerOpen, streamDone, frequencyStats, workOrder, arcSettleError } =
     useMeterStore();
 
   const txEvents = ledgerEvents.filter((e) => e.arcTxHash);
@@ -122,6 +122,22 @@ export function ArcProofDrawer() {
               <span className="text-primary flex-shrink-0 ml-3 font-bold text-xs">↗ ArcScan</span>
             </a>
           </div>
+
+          {/* Arc settle error — shown if settlement was attempted but failed */}
+          {arcSettleError && (
+            <div className="border border-error bg-neutral-900 px-3 py-2 flex flex-col gap-1">
+              <div className="text-[9px] font-mono text-error uppercase tracking-wider">Arc Settle Error</div>
+              <div className="text-[10px] font-mono text-neutral-300 leading-relaxed break-all">{arcSettleError}</div>
+              <a
+                href="/api/meter/arc-health"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[9px] font-mono text-info hover:text-primary uppercase tracking-wider"
+              >
+                Run diagnostic → /api/meter/arc-health
+              </a>
+            </div>
+          )}
 
           {/* Per-tx links, only present in live mode when Arc settles */}
           {txEvents.length > 0 ? (

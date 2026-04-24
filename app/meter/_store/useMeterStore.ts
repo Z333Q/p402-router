@@ -84,6 +84,7 @@ interface MeterState {
   proofDrawerOpen: boolean;
   releaseDrawerOpen: boolean;
   error: string | null;
+  arcSettleError: string | null;
   safeMode: boolean;
   lightMode: boolean;
 
@@ -91,6 +92,7 @@ interface MeterState {
   setSafeMode: (v: boolean) => void;
   setLightMode: (v: boolean) => void;
   setSessionState: (s: SessionState) => void;
+  setArcSettleError: (msg: string | null) => void;
   setSession: (id: string, budget: number) => void;
   setPacket: (p: PacketAsset, content: string) => void;
   setWorkOrder: (wo: WorkOrder, degraded: boolean, reason?: string) => void;
@@ -154,6 +156,7 @@ export const useMeterStore = create<MeterState>()(
       proofDrawerOpen: false,
       releaseDrawerOpen: false,
       error: null,
+      arcSettleError: null,
       safeMode: process.env.NEXT_PUBLIC_DEMO_MODE === 'safe',
       lightMode: false,
 
@@ -161,6 +164,7 @@ export const useMeterStore = create<MeterState>()(
       setSafeMode: (v) => set({ safeMode: v }),
       setLightMode: (v) => set({ lightMode: v }),
       setSessionState: (s) => set({ sessionState: s }),
+      setArcSettleError: (msg) => set({ arcSettleError: msg }),
 
       setSession: (id, budget) =>
         set({ sessionId: id, budgetCapUsd: budget, sessionState: 'session_opening' }),
@@ -259,6 +263,7 @@ export const useMeterStore = create<MeterState>()(
           proofDrawerOpen: false,
           releaseDrawerOpen: false,
           error: null,
+          arcSettleError: null,
         }),
     }),
     { name: 'p402-meter-store' }
