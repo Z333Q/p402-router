@@ -17,6 +17,7 @@ import { OptionalReleaseStrip } from './_components/OptionalReleaseStrip';
 import { MarginExplanationPanel } from './_components/MarginExplanationPanel';
 import { SpecialistEscrowCard } from './_components/SpecialistEscrowCard';
 import { EconomicAuditPanel } from './_components/EconomicAuditPanel';
+import { ArcSettlementProof } from './_components/ArcSettlementProof';
 import { useMeterStore } from './_store/useMeterStore';
 
 export default function MeterPage() {
@@ -145,6 +146,9 @@ export default function MeterPage() {
             <ApprovalDecisionCard />
           </div>
         </div>
+
+        {/* Settlement proof — tx hash + ArcScan link, appears after stream completes */}
+        <ArcSettlementProof />
 
         {/* Economic audit, Gemini Pro post-run, appears after review completes */}
         <EconomicAuditPanel />
