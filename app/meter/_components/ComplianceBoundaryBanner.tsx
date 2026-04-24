@@ -11,9 +11,10 @@ export function ComplianceBoundaryBanner() {
         </span>
       </div>
       <div className="flex items-center gap-4 text-[10px] font-mono text-neutral-500 uppercase tracking-widest whitespace-nowrap">
-        <span className="border border-neutral-700 px-2 py-0.5">De-identified</span>
+        <span className="border border-neutral-700 px-2 py-0.5">Synthetic data</span>
         <span className="border border-neutral-700 px-2 py-0.5">No PHI</span>
-        <span className="border border-neutral-700 px-2 py-0.5">Admin Only</span>
+        <span className="border border-neutral-700 px-2 py-0.5">Admin only</span>
+        <span className="border border-neutral-700 px-2 py-0.5">Human approval required</span>
       </div>
     </div>
   );

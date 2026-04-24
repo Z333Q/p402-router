@@ -290,9 +290,57 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* ── Business Value ────────────────────────────────────────────────── */}
+        <section className="flex flex-col gap-6">
+          <SectionLabel number="07" label="Business Case" />
+          <h2 className="text-2xl font-bold uppercase tracking-tight">
+            The buyer is the payer. The ROI is measurable.
+          </h2>
+          <p className="font-mono text-neutral-400 text-sm leading-relaxed">
+            P402 Meter is not a demo for developers. The end buyer is a health plan, TPA, or
+            utilization management vendor who currently pays $25-100 per manual prior auth review
+            and receives no real-time cost visibility, no usage-based billing, and no audit trail
+            that survives litigation.
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="border-2 border-neutral-700 p-4 flex flex-col gap-2">
+              <div className="text-lg font-bold text-error tabular-nums">$25-100</div>
+              <div className="text-xs font-bold uppercase tracking-wider text-neutral-50">Manual review cost per case</div>
+              <div className="text-[11px] font-mono text-neutral-400 leading-relaxed">
+                Human reviewer time for a standard prior authorization decision. Complex cases can exceed $200.
+              </div>
+            </div>
+            <div className="border-2 border-primary p-4 flex flex-col gap-2">
+              <div className="text-lg font-bold text-primary tabular-nums">&lt;$0.01</div>
+              <div className="text-xs font-bold uppercase tracking-wider text-neutral-50">AI-metered review cost per case</div>
+              <div className="text-[11px] font-mono text-neutral-400 leading-relaxed">
+                Gemini extraction + streaming review + economic audit + Arc settlement. Every cent tracked and auditable.
+              </div>
+            </div>
+            <div className="border-2 border-neutral-700 p-4 flex flex-col gap-2">
+              <div className="text-lg font-bold text-success tabular-nums">Full audit trail</div>
+              <div className="text-xs font-bold uppercase tracking-wider text-neutral-50">Every action provable onchain</div>
+              <div className="text-[11px] font-mono text-neutral-400 leading-relaxed">
+                Budget cap, approval gate, and ledger events are all verifiable. No black-box AI billing. No subscription guessing.
+              </div>
+            </div>
+          </div>
+          <div className="border border-neutral-700 p-4 flex flex-col gap-3">
+            <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">What changes for the buyer</div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-[11px] font-mono text-neutral-400 leading-relaxed">
+              <div className="flex items-start gap-2"><span className="text-primary shrink-0">→</span><span>Usage-based vendor billing: pay per case reviewed, not per seat or per month</span></div>
+              <div className="flex items-start gap-2"><span className="text-primary shrink-0">→</span><span>Per-action cost visibility: know exactly what each AI step cost before approving release</span></div>
+              <div className="flex items-start gap-2"><span className="text-primary shrink-0">→</span><span>No subscription lock-in: metered pricing means cost scales with volume, not contract size</span></div>
+              <div className="flex items-start gap-2"><span className="text-primary shrink-0">→</span><span>Audit-ready output: every review is an onchain artifact that survives a URAC or NCQA audit</span></div>
+              <div className="flex items-start gap-2"><span className="text-primary shrink-0">→</span><span>Specialist delegation with financial proof: complex cases route to agents under verified escrow</span></div>
+              <div className="flex items-start gap-2"><span className="text-primary shrink-0">→</span><span>Human approval stays required: no AI makes a coverage decision without a qualified reviewer</span></div>
+            </div>
+          </div>
+        </section>
+
         {/* ── Judge Walkthrough ─────────────────────────────────────────────── */}
         <section className="flex flex-col gap-6">
-          <SectionLabel number="07" label="Judge Walkthrough" />
+          <SectionLabel number="08" label="Judge Walkthrough" />
           <h2 className="text-2xl font-bold uppercase tracking-tight">
             Five steps. Under three minutes.
           </h2>
@@ -343,7 +391,7 @@ export default function AboutPage() {
 
         {/* ── Mode Transparency ─────────────────────────────────────────────── */}
         <section className="flex flex-col gap-6">
-          <SectionLabel number="08" label="How the Demo Runs" />
+          <SectionLabel number="09" label="How the Demo Runs" />
           <h2 className="text-2xl font-bold uppercase tracking-tight">
             Three modes. Same architecture. All verifiable.
           </h2>

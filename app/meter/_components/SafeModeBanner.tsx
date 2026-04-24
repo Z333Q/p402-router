@@ -19,7 +19,7 @@ export function SafeModeBanner() {
         <div className="flex items-center gap-2">
           <span className="text-[9px] font-mono text-neutral-600 uppercase tracking-widest">Mode:</span>
           <span className="text-[9px] font-mono font-bold text-warning uppercase tracking-wider">
-            Simulation · Gemini API bypassed · Arc tx refs real
+            Proof Replay · Recorded Gemini stream · Real Arc tx references
           </span>
         </div>
         <button
@@ -41,7 +41,7 @@ export function SafeModeBanner() {
         className="text-[9px] font-mono uppercase tracking-wider border border-neutral-700 text-neutral-500 hover:text-warning hover:border-warning px-2 py-0.5 transition-colors"
         onClick={() => setSafeMode(true)}
       >
-        Simulation Mode
+        Proof Replay Mode
       </button>
     </div>
   );
