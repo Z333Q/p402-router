@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'About, P402 Meter · Agentic Commerce on Arc Hackathon',
   description:
-    'P402 Meter: Gemini-powered healthcare prior authorization where every AI token is priced in USDC and settled on Arc. Arc Hackathon, Best Gateway-Based Micropayments Integration.',
+    'P402 Meter: Gemini-powered healthcare prior authorization where every AI token is priced in USDC and settled on Arc. Arc Hackathon, Usage-Based Compute Billing track.',
 };
 
 export default function AboutPage() {
@@ -21,7 +21,7 @@ export default function AboutPage() {
             Agentic Commerce on Arc
           </span>
           <span className="border border-neutral-700 px-2 py-0.5 text-[10px] font-mono text-neutral-500 uppercase">
-            Micropayments Integration Track
+            Usage-Based Compute Billing
           </span>
         </div>
       </div>
@@ -218,17 +218,29 @@ export default function AboutPage() {
           </p>
           <div className="flex flex-col gap-3">
             <AlignmentRow
-              prize="Primary Track, Best Gateway-Based Micropayments Integration"
+              prize="Primary Track: Usage-Based Compute Billing"
               checks={[
-                'Circle Gateway x402 API is the settlement verification layer, every ledger event is confirmed through gateway-api-testnet.circle.com',
-                'Circle Developer-Controlled Wallets provision a dedicated USDC wallet per session on ARC-TESTNET, visible in Circle Developer Console',
-                '55+ Circle-verified USDC micropayment settlements per review run on Arc testnet (Chain ID 5042002), verifiable on ArcScan',
-                'Margin panel shows the exact case for Circle + Arc: $0.006/tx vs ETH mainnet $2.85/tx vs Stripe $0.30 minimum, micropayments are only possible on this stack',
-                'No ETH required, pure USDC workflow enabled by Arc\'s native USDC gas token and Circle\'s Gateway',
+                'Every AI token Gemini generates is priced at $0.0000006/token and written as a discrete USDC ledger event on Arc, not batched, not estimated after the fact, settled per chunk in real time',
+                '55+ onchain billing events per session: extraction estimates fire during document parsing, review estimates fire on every streaming chunk, reconciliation fires once with the verified token count, routing fee closes the session',
+                'Circle Developer-Controlled Wallets provision a dedicated USDC account per session on ARC-TESTNET, visible in the Circle Developer Console, serving as the session spending account with programmatic budget controls',
+                'Circle x402 Gateway (gateway-api-testnet.circle.com) is the settlement verification layer: each ledger event is confirmed through the Gateway before the Arc tx hash is returned',
+                'The FrequencyCounter widget shows real-time billing velocity: tokens, cost, and event count incrementing with every chunk emitted',
+                'Margin panel proves the economics: Arc $0.006/tx vs ETH mainnet $2.85/tx vs Stripe $0.30 minimum. Usage-based billing at token granularity is structurally impossible on any other payment rail.',
               ]}
             />
             <AlignmentRow
-              prize="Google Track, Best Use of Gemini Models + Google AI Studio"
+              prize="Secondary Track: B2B FinOps & Compliance"
+              checks={[
+                'Every review session has a budget cap enforced pre-execution: if projected cost exceeds the cap, the session is blocked before Gemini is invoked',
+                'Approval gate runs a policy-enforcing quality pass after the review: insideBudget, policyCompliant, and outputInScope are evaluated independently and returned in the stream_done event',
+                'EconomicAuditPanel (Gemini 3.1 Pro) produces a 3-paragraph executive narrative with cost-per-action benchmarks against Stripe and Ethereum mainnet, structured for a CFO or payer ops director audience',
+                'Every ledger event is written to a persistent audit log with UUID, sessionId, workOrderId, eventKind, tokensEstimate, costUsd, costUsdcE6, provisional flag, and createdAt timestamp',
+                'ArcScan block explorer links on every reconciliation event: the full billing trail is independently verifiable without trusting any P402 system',
+                'URAC-compliant review format with labeled output sections (Request Classification, Policy Criteria Reference, Administrative Rationale, Documentation Completeness Assessment, Reviewer Recommendation) satisfies the audit artifact requirement for UM compliance programs',
+              ]}
+            />
+            <AlignmentRow
+              prize="Google Track: Best Use of Gemini Models"
               checks={[
                 'Gemini 3.1 Flash is load-bearing across three distinct roles: multimodal document intake, function calling with forced ANY-mode tool invocation, and the live URAC-aligned streaming review with per-chunk USDC settlement',
                 'Function calling uses FunctionCallingMode.ANY to guarantee all 3 typed tools are invoked and returns a structured JSON healthcare extract (payer, provider, procedure, urgency, confidence score) visible in the Work Order panel',
@@ -239,7 +251,7 @@ export default function AboutPage() {
               ]}
             />
             <AlignmentRow
-              prize="Bonus Track, Best Autonomous Commerce Application"
+              prize="Bonus Track: Agent-to-Agent Payment Loop"
               checks={[
                 'Specialist escalation triggers autonomous escrow creation (ERC-8183 on Arc testnet) without human intervention, the Specialist Escrow panel shows the job ID and USDC amount locked',
                 'A cryptographic fingerprint of the specialist\'s output is recorded onchain, giving the agent-to-agent handoff a tamper-proof verifiable receipt',
@@ -326,6 +338,65 @@ export default function AboutPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* ── Mode Transparency ─────────────────────────────────────────────── */}
+        <section className="flex flex-col gap-6">
+          <SectionLabel number="08" label="How the Demo Runs" />
+          <h2 className="text-2xl font-bold uppercase tracking-tight">
+            Three modes. Same architecture. All verifiable.
+          </h2>
+          <p className="font-mono text-neutral-400 text-sm leading-relaxed">
+            P402 Meter adapts automatically to the environment. Every mode produces real ledger
+            events and real proof references. Only the source of the AI text changes.
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+            <ModeCard
+              mode="Live Mode"
+              badge="GOOGLE_API_KEY + ARC_PRIVATE_KEY set"
+              badgeColor="text-success border-success"
+              detail="Real Gemini 3.1 Flash/Pro calls. Real Circle wallet provisioned per session. Real Arc testnet tx hash returned from the settler. ArcScan link is live immediately."
+              indicator="success"
+            />
+            <ModeCard
+              mode="Proof Replay"
+              badge="Default (no keys required)"
+              badgeColor="text-info border-info"
+              detail="Pre-recorded stream from session_106e6747. 55 chunks. Real proof refs anchored to that session. All ledger events, approval gate, and economic audit run identically. No API keys needed to run or judge."
+              indicator="info"
+            />
+            <ModeCard
+              mode="Quota Fallback"
+              badge="Auto (free-tier Gemini limit hit)"
+              badgeColor="text-warning border-warning"
+              detail="If the Gemini free tier returns a 429 or quota error, the system silently switches to Proof Replay mid-session. A thin amber notice appears. The rest of the demo proceeds identically."
+              indicator="warning"
+            />
+          </div>
+
+          {/* Gateway payment flow */}
+          <div className="border-2 border-neutral-700 flex flex-col">
+            <div className="border-b-2 border-neutral-700 px-4 py-3">
+              <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">
+                Circle Gateway Payment Flow (per chunk)
+              </span>
+            </div>
+            <div className="p-4 font-mono text-[11px] text-neutral-400 flex flex-col gap-1 leading-relaxed">
+              <span><span className="text-primary">1.</span> Gemini emits token chunk → cost calculated at $0.0000006/token</span>
+              <span className="text-neutral-700 ml-4">↓</span>
+              <span><span className="text-primary">2.</span> Ledger event written: eventKind=review_estimate, costUsdcE6, provisional=true</span>
+              <span className="text-neutral-700 ml-4">↓</span>
+              <span><span className="text-primary">3.</span> USDC transfer constructed to Arc USDC predeploy (0x3600...0000)</span>
+              <span className="text-neutral-700 ml-4">↓</span>
+              <span><span className="text-primary">4.</span> Circle Gateway API (gateway-api-testnet.circle.com) verifies payment authorization</span>
+              <span className="text-neutral-700 ml-4">↓</span>
+              <span><span className="text-primary">5.</span> Arc settler submits ERC-20 transfer on Arc testnet (Chain ID 5042002)</span>
+              <span className="text-neutral-700 ml-4">↓</span>
+              <span><span className="text-primary">6.</span> Reconciliation event written: arcTxHash, arcBlock, provisional=false</span>
+              <span className="text-neutral-700 ml-4">↓</span>
+              <span><span className="text-primary">7.</span> ArcScan block explorer link available immediately</span>
+            </div>
           </div>
         </section>
 
@@ -441,6 +512,26 @@ function ContextCard({ label, detail }: { label: string; detail: string }) {
         {label}
       </div>
       <div className="text-[11px] font-mono text-neutral-400 leading-relaxed">{detail}</div>
+    </div>
+  );
+}
+
+function ModeCard({ mode, badge, badgeColor, detail, indicator }: {
+  mode: string; badge: string; badgeColor: string; detail: string; indicator: 'success' | 'info' | 'warning';
+}) {
+  const dotColor = indicator === 'success' ? 'bg-success' : indicator === 'warning' ? 'bg-warning' : 'bg-info';
+  return (
+    <div className="border-2 border-neutral-700 flex flex-col">
+      <div className="border-b border-neutral-700 px-4 py-3 flex items-center gap-2">
+        <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`} />
+        <span className="text-xs font-bold text-neutral-50 uppercase tracking-wider">{mode}</span>
+      </div>
+      <div className="p-4 flex flex-col gap-2">
+        <span className={`border text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider self-start ${badgeColor}`}>
+          {badge}
+        </span>
+        <p className="text-[11px] font-mono text-neutral-400 leading-relaxed">{detail}</p>
+      </div>
     </div>
   );
 }

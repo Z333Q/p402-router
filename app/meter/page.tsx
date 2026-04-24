@@ -112,7 +112,7 @@ export default function MeterPage() {
 
         {/* Hackathon context, moved below product content */}
         <div className="border border-neutral-800 px-4 py-2 text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
-          Agentic Commerce on Arc Hackathon · April 2026 · Best Gateway-Based Micropayments Integration · Best Use of Gemini Models
+          Agentic Economy on Arc Hackathon · April 2026 · Usage-Based Compute Billing · B2B FinOps & Compliance · Best Use of Gemini Models
         </div>
 
         {/* Error banner */}
