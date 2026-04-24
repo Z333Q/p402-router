@@ -1,17 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '../route';
 import { NextRequest } from 'next/server';
-import { A2AMessage, A2ATask, A2ATaskState, A2ATaskStatus } from '../../../../lib/a2a-types';
 import { query } from '../../../../lib/db';
-import { A2A_ERRORS, A2AError } from '../../../../lib/a2a-errors';
 
 vi.mock('../../../../lib/db', () => ({
     query: vi.fn(),
 }));
 
-// Mock uuid
 vi.mock('uuid', () => ({
     v4: () => 'mock-uuid',
+}));
+
+// Mock AI providers so the route doesn't try live HTTP calls
+vi.mock('../../../../lib/ai-providers', () => ({
+    complete: vi.fn().mockResolvedValue({
+        choices: [{
+            message: { role: 'assistant', content: 'I received your message and will process it.' },
+            finish_reason: 'stop',
+            index: 0,
+        }],
+        model: 'mock-model',
+        p402: { costUsd: 0.0001, providerId: 'mock-provider' },
+    }),
+}));
+
+// ERC-8004 validation is disabled in tests (ERC8004_ENABLE_VALIDATION not set)
+vi.mock('../../../../lib/erc8004/validation-guard', () => ({
+    validateAgentTrust: vi.fn().mockResolvedValue(true),
+}));
+
+// Escrow service — non-blocking, just needs to not throw
+vi.mock('../../../../lib/services/escrow-service', () => ({
+    createEscrow: vi.fn(),
+    getEscrowByReference: vi.fn(),
+    autoReleaseEscrow: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('A2A API Route', () => {
@@ -32,14 +54,14 @@ describe('A2A API Route', () => {
     });
 
     it('should handle message/send correctly', async () => {
-        // Mock tenant resolution
-        vi.mocked(query).mockResolvedValueOnce({
-            rowCount: 1,
-            rows: [{ id: 'tenant-123' }]
-        } as any);
-
-        // Mock context and task insertion
-        vi.mocked(query).mockResolvedValue({ rowCount: 1 } as any);
+        // Idempotency check — no cached result
+        vi.mocked(query).mockResolvedValueOnce({ rowCount: 0, rows: [] } as any);
+        // INSERT INTO a2a_contexts
+        vi.mocked(query).mockResolvedValueOnce({ rowCount: 1, rows: [] } as any);
+        // Escrow settings lookup
+        vi.mocked(query).mockResolvedValueOnce({ rowCount: 0, rows: [] } as any);
+        // INSERT INTO a2a_tasks
+        vi.mocked(query).mockResolvedValue({ rowCount: 1, rows: [] } as any);
 
         const payload = {
             jsonrpc: '2.0',
@@ -55,6 +77,10 @@ describe('A2A API Route', () => {
 
         const req = new NextRequest('https://p402.io/api/a2a', {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-P402-Tenant': 'tenant-123',
+            },
             body: JSON.stringify(payload)
         });
 
@@ -65,7 +91,6 @@ describe('A2A API Route', () => {
         expect(data.result.task.status.state).toBe('completed');
         expect(data.result.task.status.message.parts[0].text).toContain('received your message');
 
-        // Verify DB inserts
         expect(query).toHaveBeenCalledWith(
             expect.stringContaining('INSERT INTO a2a_contexts'),
             expect.any(Array)
@@ -79,6 +104,7 @@ describe('A2A API Route', () => {
     it('should return method not found for unknown methods', async () => {
         const req = new NextRequest('https://p402.io/api/a2a', {
             method: 'POST',
+            headers: { 'X-P402-Tenant': 'tenant-123' },
             body: JSON.stringify({ jsonrpc: '2.0', method: 'unknown/method', id: 2 })
         });
 
