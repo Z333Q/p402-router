@@ -71,25 +71,23 @@ export async function settleOnArc(params: {
 }): Promise<{ txHash: string; blockNumber: number; gasUsed: string }> {
   const signer = getSigner();
 
-  // Convert USD to USDC-e6 (floor at 1 to avoid zero-value transfers)
+  // Convert USD to USDC-e6. Floor at 1 to avoid zero-value sends.
   const amountE6 = BigInt(Math.max(1, Math.round(params.amountUsd * 1_000_000)));
 
-  // Encode transfer() data directly — bypasses populateTransaction's estimateGas call,
-  // which can throw on Arc's USDC-as-native-gas model before any tx is submitted.
-  const iface = new ethers.Interface(ERC20_ABI);
-  const data = iface.encodeFunctionData('transfer', [params.toAddress, amountE6]);
-
-  // Get current gas price from the network; fall back to 0 (Arc may set it automatically)
+  // On Arc, USDC is the native currency (like ETH on Ethereum).
+  // The predeploy at USDC_ARC_TESTNET only exposes balanceOf() — it does NOT accept
+  // ERC-20 transfer() calls. Native USDC is sent via the value field, exactly as
+  // ETH is sent on Ethereum. Unit: USDC-e6 (1 USDC = 1_000_000 units).
   let gasPrice: bigint | undefined;
   try {
     const feeData = await signer.provider!.getFeeData();
     gasPrice = feeData.gasPrice ?? undefined;
-  } catch { /* proceed without gasPrice if RPC doesn't support fee queries */ }
+  } catch { /* proceed without explicit gasPrice if Arc doesn't support getFeeData */ }
 
   const tx = await signer.sendTransaction({
-    to: USDC_ARC_TESTNET,
-    data,
-    gasLimit: 100000n,
+    to: params.toAddress,
+    value: amountE6,            // native USDC transfer
+    gasLimit: 21000n,           // minimal gas for a native value send
     ...(gasPrice !== undefined ? { gasPrice } : {}),
   });
 
