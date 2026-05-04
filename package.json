@@ -49,7 +49,7 @@
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@google/generative-ai": "^0.24.1",
     "@neondatabase/serverless": "^1.0.2",
-    "@p402/mpp-method": "file:p402-protocol/packages/mpp-method",
+    "@p402/mpp-method": "^0.1.0",
     "@p402/sdk": "file:sdk",
     "@rainbow-me/rainbowkit": "^2.0.0",
     "@react-native-async-storage/async-storage": "^2.0.0",
