@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { getMppx, isP402MppMethod } from '@/lib/mpp/instance';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,14 @@ export async function GET() {
             status: 'unhealthy',
             error: e.message
         };
+    }
+
+    // mppx payment path — surface basic instance status without blocking on Redis/DB
+    if (process.env.USE_MPP_METHOD === 'true') {
+        const instance = getMppx();
+        checks.mppx = instance
+            ? { status: 'healthy', mode: isP402MppMethod() ? 'multi-rail' : 'tempo' }
+            : { status: 'unhealthy', error: 'mppx instance failed to initialise — check MPP_SECRET_KEY' };
     }
 
     const totalLatency = Date.now() - start;

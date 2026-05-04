@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { type Hex } from "viem";
+import { type Hex, formatUnits } from "viem";
 import { SettlementService } from "@/lib/services/settlement-service";
 import { type EIP3009Authorization } from "@/lib/x402/eip3009";
 import { ApiError } from "@/lib/errors";
@@ -7,6 +7,7 @@ import { requireTenantAccess } from "@/lib/auth";
 import { computePlatformFeeUsd } from "@/lib/billing/entitlements";
 import { getTenantPlan } from "@/lib/billing/plan-guard";
 import { recordUsage } from "@/lib/billing/usage";
+import { verifyTransaction, resolveTokenSymbol } from "@/lib/x402/verify";
 
 // Force dynamic execution to prevent Next.js from evaluating Redis/DB on build-time
 export const dynamic = 'force-dynamic';
@@ -47,6 +48,85 @@ function buildSettleResponse(
     };
 }
 
+// ---------------------------------------------------------------------------
+// onchain scheme settlement (Tempo and any future onchain-verify facilitator)
+// ---------------------------------------------------------------------------
+
+async function handleOnchainSettle(
+    body: { paymentPayload?: { scheme?: string; network?: string; payload?: { txHash?: string } }; paymentRequirements?: { maxAmountRequired?: string; payTo?: string; network?: string; asset?: string } },
+    requestId: string
+): Promise<NextResponse> {
+    const txHash = body.paymentPayload?.payload?.txHash;
+    const paymentRequirements = body.paymentRequirements;
+
+    if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+        return NextResponse.json(
+            buildSettleResponse(false, '', null, 'onchain scheme requires paymentPayload.payload.txHash (66-char hex)'),
+            { status: 400 }
+        );
+    }
+
+    if (!paymentRequirements?.payTo || !paymentRequirements?.maxAmountRequired) {
+        return NextResponse.json(
+            buildSettleResponse(false, '', null, 'Missing paymentRequirements.payTo or maxAmountRequired'),
+            { status: 400 }
+        );
+    }
+
+    const networkStr = (body.paymentPayload?.network ?? paymentRequirements.network) as string | undefined;
+    const chainIdMatch = networkStr?.match(/:(\d+)$/);
+    const chainId = chainIdMatch?.[1] ? parseInt(chainIdMatch[1], 10) : 8453;
+    const assetAddress = paymentRequirements.asset ?? '';
+    const tokenSymbol = resolveTokenSymbol(chainId, assetAddress) ?? 'USDC';
+
+    // Atomically claim the tx hash to prevent double-crediting.
+    // tenantId must be a valid UUID — use the system/anonymous tenant UUID for
+    // onchain settlements that arrive without a session context.
+    const { ReplayProtection } = await import('@/lib/replay-protection');
+    const claim = await ReplayProtection.claimTxHash({
+        txHash,
+        requestId,
+        tenantId: '00000000-0000-0000-0000-000000000001',
+        asset: tokenSymbol,
+        network: networkStr ?? `eip155:${chainId}`,
+        settlementType: 'onchain',
+    });
+
+    if (!claim.claimed) {
+        return NextResponse.json(
+            buildSettleResponse(false, txHash, null, 'Transaction hash already settled (replay detected)'),
+            { status: 409 }
+        );
+    }
+
+    // Verify the Transfer event on-chain
+    const result = await verifyTransaction(
+        txHash as Hex,
+        paymentRequirements.payTo as Hex,
+        BigInt(paymentRequirements.maxAmountRequired),
+        chainId,
+        tokenSymbol
+    );
+
+    if (!result.valid) {
+        // Release the claim so the client can retry after fixing the issue
+        await ReplayProtection.releaseTxHash(txHash);
+        return NextResponse.json(
+            buildSettleResponse(false, txHash, null, result.error ?? 'On-chain Transfer event not found'),
+            { status: 400 }
+        );
+    }
+
+    // Settlement confirmed: the tx hash IS the settlement proof for the onchain scheme
+    const network = networkStr ?? `eip155:${chainId}`;
+    return NextResponse.json({
+        success: true,
+        transaction: txHash,
+        network,
+        payer: result.sender ?? null,
+    });
+}
+
 export async function POST(req: NextRequest) {
     const requestId = crypto.randomUUID();
 
@@ -57,6 +137,11 @@ export async function POST(req: NextRequest) {
         const isX402Wire = !!body.paymentPayload;
 
         if (isX402Wire) {
+            // ── onchain scheme: client already submitted tx; verify Transfer event and return txHash ──
+            if (body.paymentPayload?.scheme === 'onchain') {
+                return handleOnchainSettle(body, requestId);
+            }
+
             // ── x402 wire format: { paymentPayload, paymentRequirements } ──
             if (!body.paymentPayload?.payload?.authorization || !body.paymentPayload?.payload?.signature) {
                 return NextResponse.json(
@@ -99,9 +184,10 @@ export async function POST(req: NextRequest) {
                 s: sig.s,
             };
 
-            // Convert maxAmountRequired from atomic units to human-readable (USDC = 6 decimals)
+            // Convert maxAmountRequired from atomic units to human-readable (USDC = 6 decimals).
+            // formatUnits is precision-clean for all uint256 values including sub-cent amounts.
             const amountAtomic = BigInt(paymentRequirements.maxAmountRequired);
-            const amountHuman = (Number(amountAtomic) / 1e6).toString();
+            const amountHuman = formatUnits(amountAtomic, 6);
 
             const result = await SettlementService.settleWithAuthorization(requestId, auth, {
                 amount: amountHuman,

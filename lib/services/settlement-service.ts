@@ -1,4 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
+import { formatUnits, parseUnits } from 'viem';
 import pool from '@/lib/db'
 import { BlockchainService } from '@/lib/blockchain'
 import { getTokenConfig } from '@/lib/tokens'
@@ -369,9 +370,9 @@ export class SettlementService {
         }
 
         // 6. Record Success
-        // Calculate human-readable amount for record
+        // formatUnits is precision-clean for all uint256 values including sub-cent amounts.
         const amountUnscaled = BigInt(authorization.value);
-        const amountHuman = (Number(amountUnscaled) / Math.pow(10, tokenConfig.decimals)).toString();
+        const amountHuman = formatUnits(amountUnscaled, tokenConfig.decimals);
 
         await pool.query(
             `INSERT INTO events (
@@ -549,7 +550,8 @@ export class SettlementService {
         }
 
         // 4. Balance check
-        const requestedAtomic = BigInt(Math.round(parseFloat(amount) * 1e6));
+        // parseUnits is the precision-clean inverse of formatUnits.
+        const requestedAtomic = parseUnits(amount, 6);
         const remaining = BigInt(receipt.original_amount_atomic) - BigInt(receipt.consumed_amount_atomic);
         if (requestedAtomic > remaining) {
             throw new ApiError({

@@ -17,7 +17,8 @@
  */
 
 import { createPublicClient, http, parseUnits, type Hex } from 'viem';
-import { base } from 'viem/chains';
+import { base, tempo } from 'viem/chains';
+import { TEMPO_CHAIN_ID, TEMPO_RPC_URL, TEMPO_SUPPORTED_CURRENCIES } from '@/lib/constants/tempo';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,6 +74,12 @@ interface OfficialPaymentPayload {
 // Token config
 // ---------------------------------------------------------------------------
 
+// Tempo entries are derived from TEMPO_SUPPORTED_CURRENCIES (lib/constants/tempo.ts)
+// to keep a single source of truth. To add a Tempo token, update that file.
+const TEMPO_TOKEN_ADDRESSES: Record<string, Hex> = Object.fromEntries(
+    TEMPO_SUPPORTED_CURRENCIES.map((c) => [c.symbol, c.contract as Hex])
+);
+
 const TOKEN_ADDRESSES: Record<number, Record<string, Hex>> = {
     8453: {
         USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
@@ -81,9 +88,12 @@ const TOKEN_ADDRESSES: Record<number, Record<string, Hex>> = {
     84532: {
         USDC: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
     },
+    // Tempo Mainnet (chain 4217) — all 10 TIP-20 stablecoins
+    // ⚠ Some have verified: false — see lib/constants/tempo.ts for the full list.
+    [TEMPO_CHAIN_ID]: TEMPO_TOKEN_ADDRESSES,
 };
 
-function resolveTokenSymbol(
+export function resolveTokenSymbol(
     chainId: number,
     address: string
 ): string | undefined {
@@ -209,17 +219,25 @@ export async function verifyTransaction(
     token = 'USDC'
 ): Promise<VerificationResult> {
     try {
-        const rpcUrl =
-            chainId === 8453
-                ? (process.env.NEXT_PUBLIC_RPC_URL ?? 'https://mainnet.base.org')
-                : 'https://sepolia.base.org';
-
-        const client = createPublicClient({
-            chain: base,
-            transport: http(rpcUrl),
-        });
-
-        const receipt = await client.getTransactionReceipt({ hash: txHash });
+        // Fetch the receipt using a chain-specific client.
+        // Branches are kept separate so TypeScript infers each client type in isolation
+        // (viem's PublicClient generics differ between defineChain and known chains).
+        const receipt = chainId === TEMPO_CHAIN_ID
+            ? await (() => {
+                // Use viem `tempo` chain for metadata; override transport URL for env-configurability.
+                return createPublicClient({
+                    chain: tempo,
+                    transport: http(TEMPO_RPC_URL),
+                }).getTransactionReceipt({ hash: txHash });
+            })()
+            : await (() => {
+                const rpcUrl =
+                    chainId === 8453
+                        ? (process.env.NEXT_PUBLIC_RPC_URL ?? 'https://mainnet.base.org')
+                        : 'https://sepolia.base.org';
+                return createPublicClient({ chain: base, transport: http(rpcUrl) })
+                    .getTransactionReceipt({ hash: txHash });
+            })();
 
         if (receipt.status !== 'success') {
             return { valid: false, error: 'Transaction reverted on-chain' };

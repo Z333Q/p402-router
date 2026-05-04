@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Client } from "pg";
 import Redis from "ioredis";
+import { tempoMainnetProbe } from "@/lib/facilitator-adapters/tempo";
 
 // Reuse existing Redis connection logic if possible, or initialize here
 const redis = new Redis(process.env.UPSTASH_REDIS_URL || "");
@@ -96,10 +97,10 @@ export async function GET(req: Request) {
 
         // Fetch facilitators in batches
         const q = `
-            SELECT tenant_id, facilitator_id, endpoint, auth_config, status 
-            FROM facilitators 
-            WHERE status IN ('active','inactive') 
-            ORDER BY facilitator_id ASC 
+            SELECT tenant_id, facilitator_id, endpoint, auth_config, status, treasury_address
+            FROM facilitators
+            WHERE status IN ('active','inactive')
+            ORDER BY facilitator_id ASC
             LIMIT $1 OFFSET $2
         `;
         const { rows } = await client.query(q, [batchSize, offset]);
@@ -126,6 +127,31 @@ export async function GET(req: Request) {
                     ms: 0,
                     error: rpcOk ? null : `Missing ${cfg.rpcEnvVar} env var`
                 };
+            } else if (mode === "onchain_verify") {
+                // Real RPC probe: chain ID + contract code + treasury balance readable.
+                // Read addresses from the DB row — never hardcoded.
+                const stablecoinAddress = (cfg.stablecoin?.address as string | undefined) ?? '';
+                const treasuryAddress = (f.treasury_address as string | undefined) ?? '';
+
+                if (!stablecoinAddress) {
+                    health = { ok: false, ms: 0, error: 'Missing auth_config.stablecoin.address on facilitator row' };
+                } else {
+                    const probeResult = await tempoMainnetProbe({
+                        rpcUrl: process.env[cfg.rpcEnvVar as string] ?? process.env.TEMPO_RPC_URL,
+                        stablecoinAddress,
+                        treasuryAddress,
+                    });
+                    const failedChecks = Object.entries(probeResult.checks)
+                        .filter(([, c]) => !c.passed)
+                        .map(([name, c]) => `${name}: ${(c as { error?: string }).error ?? 'failed'}`)
+                        .join('; ');
+                    health = {
+                        ok: probeResult.healthy,
+                        ms: probeResult.durationMs,
+                        error: probeResult.healthy ? null : failedChecks,
+                        checks: probeResult.checks,
+                    };
+                }
             } else if (f.endpoint.startsWith("http")) {
                 const url = cfg.healthPath
                     ? `${f.endpoint.replace(/\/$/, '')}${cfg.healthPath}`

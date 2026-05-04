@@ -28,6 +28,11 @@ const envSchema = z.object({
     // Receipt signing — required so receipt signatures are always verifiable.
     // Must be at least 32 chars. Generate with: openssl rand -hex 32
     P402_RECEIPT_SECRET: z.string().min(32),
+    // Tempo Mainnet Direct facilitator (all optional; only required when adapter is enabled in Prompt 2)
+    TEMPO_TREASURY_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
+    TEMPO_TREASURY_PRIVATE_KEY: z.string().optional(),
+    TEMPO_RPC_URL: z.string().url().optional(),
+    TEMPO_STABLECOIN_CONTRACT: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
 });
 
 /**

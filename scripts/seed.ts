@@ -24,6 +24,14 @@ type FacilitatorSeed = {
     type: string;
     reputation_score: number;
     capabilities?: any;
+    // MPP-aware columns (v2_037_tempo_mpp_facilitator)
+    protocol_support?: string[];
+    mpp_method_id?: string | null;
+    chain_id?: number | null;
+    settlement_scheme?: string | null;
+    treasury_address?: string | null;
+    currency_contract?: string | null;
+    gas_model?: string;
 };
 
 const DEMO_TENANT_ID = "00000000-0000-0000-0000-000000000001";
@@ -49,7 +57,13 @@ const facilitators: FacilitatorSeed[] = [
         status: "active",
         type: "direct_onchain",
         reputation_score: 100,
-        capabilities: { inference: 0.8, summarization: 0.7 }
+        capabilities: { inference: 0.8, summarization: 0.7 },
+        protocol_support: ["x402"],
+        chain_id: 8453,
+        settlement_scheme: "exact",
+        treasury_address: "0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6",
+        currency_contract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        gas_model: "sponsored",
     },
     {
         id: "20000000-0000-0000-0000-000000000002",
@@ -70,7 +84,13 @@ const facilitators: FacilitatorSeed[] = [
         status: "active",
         type: "direct_onchain",
         reputation_score: 100,
-        capabilities: { inference: 0.8, translation: 0.9 }
+        capabilities: { inference: 0.8, translation: 0.9 },
+        protocol_support: ["x402"],
+        chain_id: 84532,
+        settlement_scheme: "exact",
+        treasury_address: null, // TODO: confirm Sepolia treasury address (Prompt 2)
+        currency_contract: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        gas_model: "sponsored",
     },
     {
         id: "20000000-0000-0000-0000-000000000003",
@@ -85,7 +105,14 @@ const facilitators: FacilitatorSeed[] = [
         networks: ["eip155:8453"],
         status: "active",
         type: "discovery_source",
-        reputation_score: 90
+        reputation_score: 90,
+        // Bridge/discovery row, no direct settlement — treasury_address and currency_contract intentionally NULL.
+        protocol_support: ["x402"],
+        chain_id: 8453,
+        settlement_scheme: null,
+        treasury_address: null,
+        currency_contract: null,
+        gas_model: "n/a",
     },
     {
         id: "20000000-0000-0000-0000-000000000004",
@@ -102,7 +129,13 @@ const facilitators: FacilitatorSeed[] = [
         status: "active",
         type: "x402_facilitator",
         reputation_score: 95,
-        capabilities: { inference: 1.0, agent_task: 0.9, code_gen: 0.6 }
+        capabilities: { inference: 1.0, agent_task: 0.9, code_gen: 0.6 },
+        protocol_support: ["x402"],
+        chain_id: 8453,
+        settlement_scheme: "exact",
+        treasury_address: null, // CDP-managed, no fixed treasury
+        currency_contract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        gas_model: "sponsored",
     },
     {
         id: "20000000-0000-0000-0000-000000000005",
@@ -119,7 +152,14 @@ const facilitators: FacilitatorSeed[] = [
         status: "inactive",
         type: "bridge",
         reputation_score: 95,
-        capabilities: { settlement: 1.0 }
+        capabilities: { settlement: 1.0 },
+        // Bridge/discovery row, no direct settlement — treasury_address and currency_contract intentionally NULL.
+        protocol_support: ["x402"],
+        chain_id: 8453,
+        settlement_scheme: null,
+        treasury_address: null,
+        currency_contract: null,
+        gas_model: "n/a",
     },
     {
         id: "20000000-0000-0000-0000-000000000006",
@@ -136,7 +176,15 @@ const facilitators: FacilitatorSeed[] = [
         status: "inactive",
         type: "bridge",
         reputation_score: 95,
-        capabilities: { settlement: 0.9 }
+        capabilities: { settlement: 0.9 },
+        // Bridge/discovery row, no direct settlement — treasury_address and currency_contract intentionally NULL.
+        // chain_id NULL because multi-chain bridge (Ethereum + Base).
+        protocol_support: ["x402"],
+        chain_id: null,
+        settlement_scheme: null,
+        treasury_address: null,
+        currency_contract: null,
+        gas_model: "n/a",
     },
     {
         id: "20000000-0000-0000-0000-000000000007",
@@ -152,8 +200,45 @@ const facilitators: FacilitatorSeed[] = [
         status: "inactive",
         type: "private_node",
         reputation_score: 80,
-        capabilities: { inference: 0.5 }
-    }
+        capabilities: { inference: 0.5 },
+        protocol_support: ["x402"],
+        chain_id: 8453,
+        settlement_scheme: null, // user-configured, scheme unknown at seed time
+        treasury_address: null,
+        currency_contract: null,
+        gas_model: "native",
+    },
+    {
+        id: "20000000-0000-0000-0000-000000000008",
+        facilitator_id: "fac_tempo_mainnet_direct",
+        tenant_id: DEMO_TENANT_ID,
+        name: "Tempo Mainnet Direct",
+        endpoint: "rpc:tempo",
+        auth_config: {
+            mode: "onchain_verify",
+            rpcEnvVar: "TEMPO_RPC_URL",
+            stablecoin: {
+                asset: "pathUSD",
+                network: "eip155:4217",
+                address: "0x20c0000000000000000000000000000000000000"
+            }
+        },
+        networks: ["eip155:4217"],
+        status: "active",
+        type: "onchain_verify",
+        reputation_score: 100,
+        capabilities: {},
+        // x402 only for Phase 1; mpp_method_id set when @p402/mpp-method ships (Phase 2/3).
+        protocol_support: ["x402"],
+        mpp_method_id: null,
+        chain_id: 4217,
+        settlement_scheme: "onchain",
+        treasury_address: "0xe00DD502FF571F3C721f22B3F9E525312d21D797",
+        // pathUSD: Tempo's native TIP-20 stablecoin (precompile address).
+        // See migration comment in v2_037 for transfer-restriction caveat.
+        currency_contract: "0x20c0000000000000000000000000000000000000",
+        gas_model: "stablecoin",
+    },
 ];
 
 async function upsertTenant(client: Client) {
@@ -198,17 +283,27 @@ async function upsertPolicy(client: Client) {
 async function upsertFacilitators(client: Client) {
     const q = `
         INSERT INTO facilitators (
-            id, facilitator_id, tenant_id, name, endpoint, auth_config, networks, status, type, reputation_score, capabilities
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+            id, facilitator_id, tenant_id, name, endpoint, auth_config, networks,
+            status, type, reputation_score, capabilities,
+            protocol_support, mpp_method_id, chain_id, settlement_scheme,
+            treasury_address, currency_contract, gas_model
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
         ON CONFLICT (facilitator_id) DO UPDATE
-        SET name = EXCLUDED.name,
-            endpoint = EXCLUDED.endpoint,
-            auth_config = EXCLUDED.auth_config,
-            networks = EXCLUDED.networks,
-            status = EXCLUDED.status,
-            type = EXCLUDED.type,
-            reputation_score = EXCLUDED.reputation_score,
-            capabilities = EXCLUDED.capabilities
+        SET name              = EXCLUDED.name,
+            endpoint          = EXCLUDED.endpoint,
+            auth_config       = EXCLUDED.auth_config,
+            networks          = EXCLUDED.networks,
+            status            = EXCLUDED.status,
+            type              = EXCLUDED.type,
+            reputation_score  = EXCLUDED.reputation_score,
+            capabilities      = EXCLUDED.capabilities,
+            protocol_support  = EXCLUDED.protocol_support,
+            mpp_method_id     = EXCLUDED.mpp_method_id,
+            chain_id          = EXCLUDED.chain_id,
+            settlement_scheme = EXCLUDED.settlement_scheme,
+            treasury_address  = EXCLUDED.treasury_address,
+            currency_contract = EXCLUDED.currency_contract,
+            gas_model         = EXCLUDED.gas_model
     `;
     for (const f of facilitators) {
         await client.query(q, [
@@ -222,7 +317,14 @@ async function upsertFacilitators(client: Client) {
             f.status,
             f.type,
             f.reputation_score,
-            JSON.stringify(f.capabilities || {})
+            JSON.stringify(f.capabilities || {}),
+            f.protocol_support ?? ["x402"],
+            f.mpp_method_id ?? null,
+            f.chain_id ?? null,
+            f.settlement_scheme ?? null,
+            f.treasury_address ?? null,
+            f.currency_contract ?? null,
+            f.gas_model ?? "native",
         ]);
     }
 }

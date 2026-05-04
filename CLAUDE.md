@@ -940,7 +940,42 @@ ERC8004_AGENT_URI=
 ERC8004_TESTNET=false
 ERC8004_ENABLE_REPUTATION=false
 ERC8004_ENABLE_VALIDATION=false
+
+# ── mppx Dual-Protocol (Phase 2.1) — all optional ───────────────────────────
+USE_MPP_METHOD=false          # Enable mppx/tempo payment path on /api/v2/chat/completions
+MPP_SECRET_KEY=               # HMAC secret for challenge signing (min 32 chars)
+MPP_CHARGE_AMOUNT_USD=0.001   # Per-request charge in human-readable USDC decimal
 ```
+
+---
+
+## mppx Integration (Phase 2.1+)
+
+### Payment gate on `/api/v2/chat/completions`
+
+When `USE_MPP_METHOD=true`, the endpoint supports three access paths:
+
+| Client sends | Path |
+|---|---|
+| `Authorization: Payment <base64url JSON>` | mppx/tempo charge — verify + settle, no API key needed |
+| Valid tenant API key | Existing billing guard (unchanged) |
+| Neither | Dual 402: `WWW-Authenticate: Payment ...` + `X-PAYMENT-REQUIRED: <base64>` |
+
+**x402 backwards-compat policy**: `X-PAYMENT` and `X-PAYMENT-REQUIRED` headers on all endpoints are guaranteed through **May 2027** (12-month window from Phase 2.1 ship). After that, x402 clients must migrate to `Authorization: Payment`.
+
+### mppx instance
+- `lib/mpp/instance.ts` — `getMppx()` returns the cached instance; null when disabled
+- `lib/mpp/store.ts` — Redis-backed `AtomicStore` (key prefix `mppx:v1:`, TTL 900s)
+- Instance is a module-level singleton (one per cold start); safe on Vercel serverless
+- `_buildMppxInstance()` pattern used so TypeScript infers the concrete `MppxInstance` type (not the unconstrained `Methods` generic)
+- `update()` in store is non-atomic get+set — Phase 2.4.5 load test will validate if WATCH/MULTI/EXEC is needed
+
+### Key mppx API facts (from spike)
+- `Mppx` lives in `mppx/nextjs` not `mppx` main
+- `tempo()` returns `[charge, session]` array — both registered; `mppx.charge` shorthand exists when charge intent is unique
+- `mppx.charge({ amount })(handler)(req)` — amount is human-readable decimal (`'0.001'` = 1000 raw units)
+- `Store.memory()` fallback used when `REDIS_URL` unset — NOT multi-instance safe (dev only)
+- Memo-binding (G1 in spike findings): raw `tempo` hash mode requires challengeId-bound memo; the `p402` custom method (Phase 2.2) sidesteps this by using P402's own credential format
 
 ---
 
@@ -1024,6 +1059,20 @@ E2E tests: `tests/e2e/cdp-ap2-erc8004-wiring.spec.ts`
 18. **`@coinbase/cdp-sdk` — dynamic import only**: Never `import { CdpClient } from '@coinbase/cdp-sdk'` at module top-level. It loads `@solana/kit` (ESM-only, broken named exports) which crashes the Next.js build at page-data-collection time. Always use `await getCdpClientAsync()` from `lib/cdp-client.ts`.
 19. **CDP Server Wallet API**: Policy creation is `cdp.policies.createPolicy(...)` — NOT `cdp.createPolicy(...)`. Required body shape: `{ policy: { scope: 'account', rules: [{ action: 'reject', operation: 'signEvmTransaction', criteria: [...] }] } }`.
 20. **CDP test mocks**: Mock `@/lib/cdp-client` (not the raw `@coinbase/cdp-sdk`) so tests never trigger the dynamic import or `@solana/kit`. The mock must export `isCdpEnabled`, `getCdpClientAsync`, `getCdpClient`, `_resetCdpClient`.
+
+### Tempo Mainnet Gotchas (chain 4217)
+
+21. **TIP-20 precompile sentinel — `0xef` is valid bytecode**: `eth_getCode` against any TIP-20 stablecoin on Tempo (USDC.e, USDT0, cUSD, pathUSD, etc.) returns the single byte `0xef` — the EIP-7702 delegation designator. This is Tempo's convention for system contracts handled by the execution layer rather than stored as EVM bytecode. The standard `code.length > 2` check (where `'0x'` has length 2) correctly identifies these as deployed. Bytecode disassembly tools will not work on these addresses. The probe at `tempoMainnetProbe()` in `lib/facilitator-adapters/tempo.ts` checks `codeLength > 0` accordingly.
+
+22. **No `msg.value` on Tempo**: Tempo has no native gas token — gas is paid in TIP-20 stablecoins via FeeAMM. Never pass a non-zero `value` field on Tempo transactions. TIP-20 transfers use the standard ERC-20 `transfer(to, amount)` interface. Never use `transfer{value: ...}` or set a value in `eth_sendTransaction` calls.
+
+23. **Tempo RPC URL (fixed in viem 2.48.8+)**: viem 2.48.8+ ships the correct `https://rpc.tempo.xyz` in the `tempo` chain definition (the stale `rpc.presto.tempo.xyz` pre-mainnet URL is gone). We still override via `TEMPO_RPC_URL` env var for env-configurability. Code pattern: `http(process.env.TEMPO_RPC_URL ?? 'https://rpc.tempo.xyz')`. Use `chain: tempo` for chain metadata only. Future-phase note: viem 2.47.x+ adds `withRelay` (replaces deprecated `withFeePayer`), virtual address actions (TIP-1022), and capabilities forwarding — none used by P402 yet.
+
+24. **Tempo currency selection is runtime-driven from DB**: `auth_config.stablecoin.address` (JSONB column on the `facilitators` table) drives currency selection per facilitator row at runtime. `TEMPO_SUPPORTED_CURRENCIES` in `lib/constants/tempo.ts` is the type-checked canonical list for the 10 supported TIP-20 stablecoins. Drift between the const and the DB row is detected by `lib/__tests__/tempo-currency-sync.test.ts` (opt-in: `TEMPO_SYNC_TEST=true TEMPO_SYNC_DATABASE_URL=...`).
+
+25. **Tempo settlement minimum is 1 raw unit — all settlement paths are now bigint-clean**: The x402 `onchain` scheme dispatches via `handleOnchainSettle()` in `app/api/v1/facilitator/settle/route.ts` and passes `BigInt(maxAmountRequired)` directly to `verifyTransaction`. It never goes through `Number(atomic) / 1e6`. The floor is 1 raw unit of USDC.e = $0.000001. Regression test: `lib/__tests__/onchain-settle-precision.test.ts`. The EIP-3009 `exact` scheme and receipt scheme float bugs were fixed in Prompt 4.5: `Number(atomic) / 1e6` replaced by `formatUnits(bigint, decimals)` (viem), and `BigInt(Math.round(parseFloat(amount) * 1e6))` replaced by `parseUnits(string, decimals)` (viem). Both are precision-clean for all uint256 values including sub-cent amounts and values above `Number.MAX_SAFE_INTEGER`. Round-trip tests: `lib/__tests__/amount-precision.test.ts`.
+
+26. **`handleOnchainSettle` requires a UUID `tenantId` in `claimTxHash`**: The `processed_tx_hashes` table has `tenant_id UUID NOT NULL`. When the settle endpoint handles the `onchain` scheme there is no session context, so the system-anonymous tenant UUID `'00000000-0000-0000-0000-000000000001'` must be passed. Passing any non-UUID string (e.g. `'onchain'`) causes Postgres error 22P02 (`invalid_text_representation`) and a 500 response. Fixed in Prompt 4.5. Regression test: `lib/__tests__/onchain-settle-uuid.test.ts`.
 
 ---
 

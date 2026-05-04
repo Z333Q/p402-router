@@ -3,6 +3,7 @@ import { type Hex } from "viem";
 import { validateAuthorizationStructure, type EIP3009Authorization } from "@/lib/x402/eip3009";
 import { SecurityChecks } from "@/lib/x402/security-checks";
 import { DEFAULT_TOKEN } from "@/lib/tokens";
+import { verifyTransaction, resolveTokenSymbol } from "@/lib/x402/verify";
 
 interface X402VerifyRequest {
     x402Version: number;
@@ -53,11 +54,78 @@ function parseSignature(sig: string): { v: number; r: Hex; s: Hex } {
     return { v, r, s };
 }
 
+// ---------------------------------------------------------------------------
+// onchain scheme handler (Tempo and any future onchain-verify facilitator)
+// ---------------------------------------------------------------------------
+
+async function handleOnchainVerify(
+    body: { paymentPayload?: { scheme?: string; network?: string; payload?: { txHash?: string } }; paymentRequirements?: { maxAmountRequired?: string; payTo?: string; network?: string; asset?: string } },
+    requestId: string
+): Promise<NextResponse> {
+    const txHash = body.paymentPayload?.payload?.txHash;
+    const paymentRequirements = body.paymentRequirements;
+
+    if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+        return NextResponse.json(
+            { isValid: false, invalidReason: 'onchain scheme requires paymentPayload.payload.txHash (66-char hex)' },
+            { status: 400 }
+        );
+    }
+
+    if (!paymentRequirements?.payTo || !paymentRequirements?.maxAmountRequired) {
+        return NextResponse.json(
+            { isValid: false, invalidReason: 'Missing paymentRequirements.payTo or maxAmountRequired' },
+            { status: 400 }
+        );
+    }
+
+    // Derive chain ID from CAIP-2 network identifier (e.g. 'eip155:4217' → 4217)
+    const networkStr = (body.paymentPayload?.network ?? paymentRequirements.network) as string | undefined;
+    const chainIdMatch = networkStr?.match(/:(\d+)$/);
+    const chainId = chainIdMatch?.[1] ? parseInt(chainIdMatch[1], 10) : 8453;
+
+    // Resolve token symbol from asset address (e.g. 0x20c0...0000 → 'pathUSD')
+    const assetAddress = paymentRequirements.asset ?? '';
+    const tokenSymbol = resolveTokenSymbol(chainId, assetAddress) ?? 'USDC';
+
+    // Replay protection — reject if this tx hash has already been verified
+    const { ReplayProtection } = await import('@/lib/replay-protection');
+    const alreadyProcessed = await ReplayProtection.isProcessed(txHash);
+    if (alreadyProcessed) {
+        return NextResponse.json(
+            { isValid: false, invalidReason: 'Transaction hash already processed (replay detected)' },
+            { status: 409 }
+        );
+    }
+
+    const result = await verifyTransaction(
+        txHash as Hex,
+        paymentRequirements.payTo as Hex,
+        BigInt(paymentRequirements.maxAmountRequired),
+        chainId,
+        tokenSymbol
+    );
+
+    if (!result.valid) {
+        return NextResponse.json(
+            { isValid: false, invalidReason: result.error ?? 'On-chain Transfer event not found' },
+            { status: 400 }
+        );
+    }
+
+    return NextResponse.json({ isValid: true, payer: result.sender ?? null });
+}
+
 export async function POST(req: NextRequest) {
     const requestId = crypto.randomUUID();
 
     try {
-        const body = await req.json() as X402VerifyRequest;
+        const body = await req.json() as X402VerifyRequest & { paymentPayload?: { scheme?: string; payload?: { txHash?: string } } };
+
+        // ── onchain scheme: client already submitted tx, we verify the Transfer event ──
+        if (body.paymentPayload?.scheme === 'onchain') {
+            return handleOnchainVerify(body, requestId);
+        }
 
         if (!body.paymentPayload?.payload?.authorization || !body.paymentPayload?.payload?.signature) {
             return NextResponse.json(

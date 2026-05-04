@@ -5,6 +5,7 @@ import { CoinbaseCDPAdapter } from './facilitator-adapters/cdp'
 import { GenericAdapter } from './facilitator-adapters/generic'
 import { CCIPBridgeAdapter } from './facilitator-adapters/ccip'
 import { SmartContractAdapter } from './facilitator-adapters/smart-contract'
+import { TempoAdapter } from './facilitator-adapters/tempo'
 import { GeminiOptimizer } from './intelligence/gemini-optimizer'
 
 import { checkUsageLimit, BillingError } from './billing/enforcement'
@@ -48,6 +49,14 @@ interface FacilitatorDbRow {
     erc8004_agent_id: string | null;
     erc8004_verified: boolean | null;
     erc8004_reputation_cached: number | null;
+    // MPP-aware columns (v2_037_tempo_mpp_facilitator)
+    protocol_support: string[] | null;
+    mpp_method_id: string | null;
+    chain_id: number | null;
+    settlement_scheme: 'exact' | 'onchain' | 'receipt' | null;
+    treasury_address: string | null;
+    currency_contract: string | null;
+    gas_model: 'native' | 'sponsored' | 'stablecoin' | 'n/a' | null;
 }
 
 export class RoutingEngine {
@@ -188,7 +197,8 @@ export class RoutingEngine {
         const adapters: FacilitatorAdapter[] = [
             new CCIPBridgeAdapter(),
             new CoinbaseCDPAdapter(),
-            new SmartContractAdapter()
+            new SmartContractAdapter(),
+            new TempoAdapter(),
         ];
         const candidates: FacilitatorCandidate[] = [];
         const dbFacilitators = new Map<string, FacilitatorDbRow>();

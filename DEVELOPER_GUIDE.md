@@ -155,6 +155,42 @@ The critical endpoint that verifies a blockchain transaction actually happened a
 
 ---
 
+## ⛓ Supported Facilitators
+
+P402 ships with the following facilitators pre-registered. Each row in the `facilitators` table carries `settlement_scheme`, `gas_model`, and `protocol_support` columns so the router can make protocol-aware decisions without reading adapter code.
+
+| Facilitator | Network | Scheme | Gas Model | Status |
+|---|---|---|---|---|
+| P402 Base Direct | Base (8453) | `exact` | `sponsored` | active |
+| P402 Base Sepolia Direct | Base Sepolia (84532) | `exact` | `sponsored` | active |
+| Tempo Mainnet Direct | Tempo (4217) | `onchain` | `stablecoin` | active |
+| Coinbase CDP x402 | Base (8453) | `exact` | `sponsored` | active |
+| Circle CCTP Bridge | Base (8453) | bridge | `n/a` | inactive |
+| Chainlink CCIP Bridge | multi-chain | bridge | `n/a` | inactive |
+| Private Facilitator Node | Base (8453) | user-configured | `native` | inactive |
+
+### Tempo Mainnet Direct
+
+Tempo Mainnet Direct settles real pathUSD on Tempo, the Stripe + Paradigm L1 launched March 2026. See https://docs.tempo.xyz for full chain documentation.
+
+**Settlement model:** Unlike Base Direct (which uses EIP-3009 `transferWithAuthorization` for gasless off-chain signatures), Tempo uses the `onchain` x402 scheme. The user's wallet submits a regular `transfer(treasury, amount)` call to the pathUSD TIP-20 contract. The P402 facilitator watches for confirmed `Transfer` events on Tempo and credits the session once finality is reached.
+
+**Gas:** Paid by the user in pathUSD via Tempo's FeeAMM. No ETH or native token is required; no relayer is needed. This is the `stablecoin` gas model.
+
+**Stablecoin:** pathUSD (`0x20c0000000000000000000000000000000000000`) is the native TIP-20 stablecoin on Tempo. Circle has not published a canonical bridged USDC contract for Tempo mainnet as of 2026-04-30; pathUSD is the canonical example in the Stripe+Tempo MPP documentation. If a bridged USDC contract becomes available, the `currency_contract` column on the `fac_tempo_mainnet_direct` row and the `TEMPO_STABLECOIN_CONTRACT` env var should be updated and v2_037 re-applied.
+
+**MPP support:** MPP support arrives in a later phase; this row is currently x402-only (`protocol_support = ['x402']`, `mpp_method_id = NULL`).
+
+**Required env vars (Phase 1 Prompt 2 onwards):**
+```
+TEMPO_TREASURY_ADDRESS=      # EIP-55 checksummed treasury address
+TEMPO_TREASURY_PRIVATE_KEY=  # Sensitive — use secrets manager
+TEMPO_RPC_URL=               # Defaults to https://rpc.tempo.xyz
+TEMPO_STABLECOIN_CONTRACT=   # Defaults to 0x20c0000000000000000000000000000000000000
+```
+
+---
+
 ## 🔌 Building Custom Facilitators
 
 You can extend the router by building your own **Facilitator Gateway**. This is useful if you want to support new networks (e.g., Solana, Bitcoin) or use a different settlement provider (e.g., Stripe Crypto).
