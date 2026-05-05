@@ -100,4 +100,4 @@ export const POST = mppx.charge({ amount: '0.001', recipient: '0x...' })(
 - [x] README.md with schema tables and quick-start code
 - [x] Security-hardened input validation (Phase 2.4.0)
 - [x] Load test + atomicity decision documented (Phase 2.4.5)
-- [ ] Submit PR / form at mpp.dev registry
+- [x] Submit PR / form at mpp.dev registry — https://github.com/tempoxyz/mpp/pull/625
