@@ -1,6 +1,7 @@
 'use client';
 
 import { useMeterStore } from '../_store/useMeterStore';
+import { TEMPO_CHAIN_ID } from '@/lib/constants/tempo';
 
 interface InfraStep {
   product: string;
@@ -14,32 +15,32 @@ export function CircleInfraStrip() {
 
   const hasSession  = sessionId != null;
   const hasPayments = frequencyStats.authorizations > 0;
-  const hasTx       = ledgerEvents.some((e) => e.arcTxHash != null);
+  const hasTx       = ledgerEvents.some((e) => e.settlementTxHash != null);
   const isDone      = sessionState === 'review_complete' || sessionState === 'approved' || sessionState === 'held' || sessionState === 'released';
 
   const steps: InfraStep[] = [
     {
-      product: 'Circle DCW',
+      product: 'P402 Router',
       role: 'Session Wallet',
-      detail: 'Developer-Controlled Wallet provisioned on ARC-TESTNET per session. No user custody required.',
+      detail: 'Pre-funded TEMPO_TREASURY_PRIVATE_KEY wallet settles on behalf of the session. No user custody required.',
       live: hasSession,
     },
     {
-      product: 'Nanopayments',
-      role: 'Sub-Cent Settlement',
-      detail: 'Circle Nanopayments API authorizes each USDC micro-event. One authorization per AI billing chunk.',
+      product: 'Gemini Flash',
+      role: 'Sub-Cent AI Billing',
+      detail: 'One ledger event per AI output chunk. 55+ provisional nanopayment events per session.',
       live: hasPayments,
     },
     {
-      product: 'Circle Gateway',
-      role: 'x402 Verification',
-      detail: 'Gateway domain 26 on Arc testnet. Verifies x402 payment headers at gateway-api-testnet.circle.com.',
+      product: 'MPP / mppx',
+      role: 'Payment Method Layer',
+      detail: 'Machine Payment Protocol (tempo.xyz). Per-request payment gate via USDC.e TIP-20 transfer.',
       live: hasTx,
     },
     {
-      product: 'Arc Testnet',
+      product: 'Tempo Mainnet',
       role: 'Chain Settlement',
-      detail: 'USDC as native gas. Chain ID 5042002. USDC predeploy 0x36000…. Settlement at $0.006/tx.',
+      detail: `USDC.e (TIP-20). Chain ID ${TEMPO_CHAIN_ID}. FeeAMM gas model. Sub-millidollar settlement fee.`,
       live: isDone,
     },
   ];
@@ -49,7 +50,7 @@ export function CircleInfraStrip() {
       <div className="px-4 py-2 border-b border-neutral-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-[10px] font-mono font-bold text-info uppercase tracking-widest">
-            Circle + Arc Infrastructure
+            Tempo + MPP Infrastructure
           </span>
           <span className="text-[9px] font-mono text-neutral-600 uppercase tracking-wider">
             load-bearing components

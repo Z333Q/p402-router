@@ -107,9 +107,9 @@ export interface LedgerEvent {
   costUsd: number;
   costUsdcE6: number;
   provisional: boolean;
-  arcTxHash?: string;
-  arcBatchId?: string;
-  arcBlock?: number;
+  settlementTxHash?: string;
+  settlementBlock?: number;
+  settlementChainId?: number;
   proofRef?: string;
   createdAt: string;
 }
@@ -144,7 +144,7 @@ export interface SseError {
 export type SseFrame = SseTextDelta | SseLedgerEvent | SseStreamDone | SseError;
 
 // ============================================================================
-// Specialist escrow job (ERC-8183 backed)
+// Specialist escalation (on-chain escrow planned for Phase 3; not yet live)
 // ============================================================================
 
 export type SpecialistJobStatus =
@@ -154,21 +154,6 @@ export type SpecialistJobStatus =
   | "reviewing"
   | "complete"
   | "failed";
-
-export interface SpecialistJob {
-  jobId: string;
-  sessionId: string;
-  workOrderId?: string;
-  reason: string;                   // why escalation was triggered
-  escrowAmountUsd: number;
-  escrowAmountUsdcE6: number;
-  deliverableHash?: string;         // keccak256 of specialist output
-  arcTxHash?: string;               // ERC-8183 job tx
-  arcExplorerUrl?: string;
-  status: SpecialistJobStatus;
-  createdAt: string;
-  completedAt?: string;
-}
 
 // ============================================================================
 // Gemini Pro economic audit (post-run)
@@ -180,10 +165,10 @@ export interface EconomicAudit {
   costBreakdown: {
     aiTokenCostUsd: number;
     routingFeeUsd: number;
-    arcGasCostUsd: number;
+    settlementGasCostUsd: number;
     escrowCostUsd: number;
   };
-  arcTxCount: number;
+  settlementTxCount: number;
   avgCostPerActionUsd: number;
   comparisonStripeUsd: number;      // what Stripe minimum fee would be
   comparisonEthMainnetUsd: number;  // equivalent gas cost on ETH mainnet
@@ -197,13 +182,13 @@ export interface EconomicAudit {
 // Proof
 // ============================================================================
 
-export interface ArcProofRecord {
+export interface TempoProofRecord {
   sessionId: string;
   workOrderId: string;
   finalAmountUsd: number;
   finalAmountUsdcE6: number;
   authorizationCount: number;
-  arcBatchCount: number;
+  settlementCount: number;
   explorerLinks: string[];
   txHashes: string[];
   status: "pending" | "partial" | "verified" | "safe_mode";
@@ -252,7 +237,7 @@ export interface ReleaseState {
   status: ReleaseStatus;
   jobId?: string;
   txHash?: string;
-  arcExplorerUrl?: string;
+  explorerUrl?: string;
 }
 
 // ============================================================================
@@ -261,7 +246,7 @@ export interface ReleaseState {
 
 export interface FrequencyStats {
   authorizations: number;
-  arcBatches: number;
+  settlements: number;
   avgCostPerAction: number;
   totalCostUsd: number;
   runningCostUsd: number;

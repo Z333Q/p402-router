@@ -9,9 +9,8 @@ import type {
   TrustSummary,
   ReleaseState,
   ApprovalRecord,
-  ArcProofRecord,
+  TempoProofRecord,
   FrequencyStats,
-  SpecialistJob,
   EconomicAudit,
 } from '@/lib/meter/types';
 
@@ -62,14 +61,11 @@ interface MeterState {
   ledgerEvents: LedgerEvent[];
   frequencyStats: FrequencyStats;
 
-  // ── Specialist escrow ─────────────────────────────────────────────────────
-  specialistJob: SpecialistJob | null;
-
   // ── Economic audit ────────────────────────────────────────────────────────
   economicAudit: EconomicAudit | null;
 
   // ── Proof ─────────────────────────────────────────────────────────────────
-  proofRecord: ArcProofRecord | null;
+  proofRecord: TempoProofRecord | null;
 
   // ── Approval ──────────────────────────────────────────────────────────────
   approvalRecord: ApprovalRecord | null;
@@ -84,7 +80,7 @@ interface MeterState {
   proofDrawerOpen: boolean;
   releaseDrawerOpen: boolean;
   error: string | null;
-  arcSettleError: string | null;
+  settleError: string | null;
   safeMode: boolean;
   lightMode: boolean;
 
@@ -92,7 +88,7 @@ interface MeterState {
   setSafeMode: (v: boolean) => void;
   setLightMode: (v: boolean) => void;
   setSessionState: (s: SessionState) => void;
-  setArcSettleError: (msg: string | null) => void;
+  setSettleError: (msg: string | null) => void;
   setSession: (id: string, budget: number) => void;
   setPacket: (p: PacketAsset, content: string) => void;
   setWorkOrder: (wo: WorkOrder, degraded: boolean, reason?: string) => void;
@@ -100,10 +96,9 @@ interface MeterState {
   appendLedgerEvent: (e: LedgerEvent) => void;
   setStreamDone: (totalCostUsd: number, totalTokens: number) => void;
   setApproval: (a: ApprovalRecord) => void;
-  setProof: (p: ArcProofRecord) => void;
+  setProof: (p: TempoProofRecord) => void;
   setTrustSummary: (t: TrustSummary) => void;
   setReleaseState: (r: Partial<ReleaseState>) => void;
-  setSpecialistJob: (j: SpecialistJob) => void;
   setEconomicAudit: (a: EconomicAudit) => void;
   setProofDrawerOpen: (open: boolean) => void;
   setReleaseDrawerOpen: (open: boolean) => void;
@@ -113,7 +108,7 @@ interface MeterState {
 
 const initialFrequencyStats: FrequencyStats = {
   authorizations: 0,
-  arcBatches: 0,
+  settlements: 0,
   avgCostPerAction: 0,
   totalCostUsd: 0,
   runningCostUsd: 0,
@@ -146,7 +141,6 @@ export const useMeterStore = create<MeterState>()(
       ledgerEvents: [],
       frequencyStats: initialFrequencyStats,
 
-      specialistJob: null,
       economicAudit: null,
       proofRecord: null,
       approvalRecord: null,
@@ -156,7 +150,7 @@ export const useMeterStore = create<MeterState>()(
       proofDrawerOpen: false,
       releaseDrawerOpen: false,
       error: null,
-      arcSettleError: null,
+      settleError: null,
       safeMode: process.env.NEXT_PUBLIC_DEMO_MODE === 'safe',
       lightMode: false,
 
@@ -164,7 +158,7 @@ export const useMeterStore = create<MeterState>()(
       setSafeMode: (v) => set({ safeMode: v }),
       setLightMode: (v) => set({ lightMode: v }),
       setSessionState: (s) => set({ sessionState: s }),
-      setArcSettleError: (msg) => set({ arcSettleError: msg }),
+      setSettleError: (msg) => set({ settleError: msg }),
 
       setSession: (id, budget) =>
         set({ sessionId: id, budgetCapUsd: budget, sessionState: 'session_opening' }),
@@ -192,9 +186,9 @@ export const useMeterStore = create<MeterState>()(
           // Authorizations = all per-chunk billing events (extraction + review variants)
           const authorizations = events.filter((ev) => AUTHORIZATION_KINDS.has(ev.eventKind)).length;
 
-          // Arc batches = reconciliation events + escrow_release events
-          const arcBatches = events.filter(
-            (ev) => ev.eventKind === 'reconciliation' || ev.eventKind === 'escrow_release' || ev.arcBatchId != null
+          // Settlements = reconciliation events + escrow_release events
+          const settlements = events.filter(
+            (ev) => ev.eventKind === 'reconciliation' || ev.eventKind === 'escrow_release'
           ).length;
 
           const avgCostPerAction = authorizations > 0 ? totalCostUsd / authorizations : 0;
@@ -203,7 +197,7 @@ export const useMeterStore = create<MeterState>()(
             ledgerEvents: events,
             frequencyStats: {
               authorizations,
-              arcBatches,
+              settlements,
               avgCostPerAction,
               totalCostUsd,
               runningCostUsd: totalCostUsd,
@@ -229,7 +223,6 @@ export const useMeterStore = create<MeterState>()(
 
       setProof: (p) => set({ proofRecord: p }),
       setTrustSummary: (t) => set({ trustSummary: t }),
-      setSpecialistJob: (j) => set({ specialistJob: j }),
       setEconomicAudit: (a) => set({ economicAudit: a }),
 
       setReleaseState: (r) =>
@@ -255,7 +248,6 @@ export const useMeterStore = create<MeterState>()(
           streamDone: false,
           ledgerEvents: [],
           frequencyStats: initialFrequencyStats,
-          specialistJob: null,
           economicAudit: null,
           proofRecord: null,
           approvalRecord: null,
@@ -263,7 +255,7 @@ export const useMeterStore = create<MeterState>()(
           proofDrawerOpen: false,
           releaseDrawerOpen: false,
           error: null,
-          arcSettleError: null,
+          settleError: null,
         }),
     }),
     { name: 'p402-meter-store' }

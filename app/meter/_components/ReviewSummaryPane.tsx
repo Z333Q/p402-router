@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useMeterStore } from '../_store/useMeterStore';
 import type { SseFrame, LedgerEvent, ApprovalRecord } from '@/lib/meter/types';
 
@@ -18,19 +18,11 @@ export function ReviewSummaryPane() {
     setApproval,
     setSessionState,
     setError,
-    setArcSettleError,
+    setSettleError,
   } = useMeterStore();
 
   const [executing, setExecuting] = useState(false);
   const [quotaFallback, setQuotaFallback] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll during stream
-  useEffect(() => {
-    if (contentRef.current) {
-      contentRef.current.scrollTop = contentRef.current.scrollHeight;
-    }
-  }, [streamText]);
 
   const canExecute =
     sessionState === 'work_order_ready' ||
@@ -83,16 +75,16 @@ export function ReviewSummaryPane() {
           if (!raw) continue;
 
           try {
-            const frame = JSON.parse(raw) as SseFrame & { approval?: ApprovalRecord; proofRefs?: string[]; quotaFallback?: boolean; arcSettleError?: string };
+            const frame = JSON.parse(raw) as SseFrame & { approval?: ApprovalRecord; proofRefs?: string[]; quotaFallback?: boolean; settleError?: string };
 
             if (frame.type === 'text_delta') {
               appendStreamText(frame.delta);
             } else if (frame.type === 'ledger_event') {
               appendLedgerEvent(frame.event as LedgerEvent);
             } else if (frame.type === 'stream_done') {
-              if (frame.arcSettleError) {
-                console.error('[Arc settler]', frame.arcSettleError);
-                setArcSettleError(frame.arcSettleError);
+              if (frame.settleError) {
+                console.error('[Tempo settler]', frame.settleError);
+                setSettleError(frame.settleError);
               }
               if (frame.quotaFallback) setQuotaFallback(true);
               setStreamDone(frame.totalCostUsd, frame.totalTokens);
@@ -145,8 +137,7 @@ export function ReviewSummaryPane() {
 
       {/* Stream content */}
       <div
-        ref={contentRef}
-        className="flex-1 overflow-y-auto p-4 min-h-[200px] max-h-[320px] bg-neutral-900"
+        className="flex-1 p-4 min-h-[200px] bg-neutral-900"
       >
         {!streamText && !executing && (
           <div className="flex flex-col gap-2 pt-1">

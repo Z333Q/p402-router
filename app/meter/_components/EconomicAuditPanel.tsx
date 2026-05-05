@@ -36,7 +36,7 @@ export function EconomicAuditPanel() {
           body: JSON.stringify({
             sessionId,
             totalCostUsd: frequencyStats.totalCostUsd,
-            arcTxCount: frequencyStats.authorizations,
+            settlementTxCount: frequencyStats.authorizations,
             aiTokenCostUsd,
             routingFeeUsd,
             escrowCostUsd,
@@ -78,7 +78,7 @@ export function EconomicAuditPanel() {
             <div className="grid grid-cols-2 gap-2">
               <CostCell label="AI Tokens" value={`$${audit.costBreakdown.aiTokenCostUsd.toFixed(6)}`} />
               <CostCell label="P402 Routing" value={`$${audit.costBreakdown.routingFeeUsd.toFixed(6)}`} />
-              <CostCell label="Arc Gas" value={`$${audit.costBreakdown.arcGasCostUsd.toFixed(4)}`} />
+              <CostCell label="Tempo Gas" value={`$${audit.costBreakdown.settlementGasCostUsd.toFixed(8)}`} />
               <CostCell label="Escrow" value={audit.costBreakdown.escrowCostUsd > 0 ? `$${audit.costBreakdown.escrowCostUsd.toFixed(4)}` : '—'} />
             </div>
 
@@ -95,7 +95,7 @@ export function EconomicAuditPanel() {
               </div>
               <CompRow label="ETH Mainnet (30 gwei)" value={`~$${audit.comparisonEthMainnetUsd.toFixed(2)}`} bad />
               <CompRow label="Stripe minimum fee" value={`~$${audit.comparisonStripeUsd.toFixed(2)}`} bad />
-              <CompRow label="Arc (this session)" value={`$${audit.totalCostUsd.toFixed(6)}`} good />
+              <CompRow label="Tempo (this session)" value={`$${audit.totalCostUsd.toFixed(6)}`} good />
               <div className="mt-1 text-[10px] font-mono text-primary font-bold">
                 {audit.savingVsEthMainnetPct}% saving vs ETH mainnet
               </div>
@@ -112,7 +112,7 @@ export function EconomicAuditPanel() {
             </div>
 
             <div className="text-[9px] font-mono text-neutral-600 text-right">
-              {audit.model} · {audit.arcTxCount} onchain events · avg ${audit.avgCostPerActionUsd.toFixed(6)}/action
+              {audit.model} · {audit.settlementTxCount} onchain events · avg ${audit.avgCostPerActionUsd.toFixed(6)}/action
             </div>
           </>
         )}

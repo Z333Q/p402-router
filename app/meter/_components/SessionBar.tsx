@@ -13,7 +13,7 @@ export function SessionBar() {
   const overBudget = budgetSpentUsd > budgetCapUsd;
   const budgetRemaining = Math.max(0, budgetCapUsd - budgetSpentUsd);
 
-  const arcTxCount = ledgerEvents.filter((e) => e.arcTxHash != null).length;
+  const arcTxCount = ledgerEvents.filter((e) => e.settlementTxHash != null).length;
   const avgCostPerTx =
     frequencyStats.authorizations > 0
       ? frequencyStats.totalCostUsd / frequencyStats.authorizations

@@ -1,7 +1,5 @@
 'use client';
 
-import { ARC_TYPICAL_GAS_COST_USDC } from '@/lib/chains/arc';
-
 interface CostRow {
   network: string;
   gasCost: string;
@@ -33,10 +31,10 @@ const COST_ROWS: CostRow[] = [
     viable: false,
   },
   {
-    network: `Arc Testnet (USDC gas)`,
-    gasCost: `$${ARC_TYPICAL_GAS_COST_USDC.toFixed(3)} USDC`,
+    network: 'Tempo Mainnet (FeeAMM)',
+    gasCost: '<$0.000001',
     aiCost: '~$0.0003',
-    totalPerAction: '~$0.0063',
+    totalPerAction: '~$0.0003',
     viable: true,
   },
 ];
@@ -47,10 +45,10 @@ export function MarginExplanationPanel() {
       <div className="section-header px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="badge badge-primary text-[10px]">⚡</span>
-          <span className="text-sm font-bold text-neutral-50 uppercase tracking-wider">Why Arc works for per-step AI billing</span>
+          <span className="text-sm font-bold text-neutral-50 uppercase tracking-wider">Why Tempo works for per-step AI billing</span>
         </div>
         <div className="text-[10px] font-mono text-neutral-400 uppercase">
-          Gateway-Based Micropayments · Arc Hackathon
+          MPP Micropayments · Tempo Mainnet
         </div>
       </div>
 
@@ -72,10 +70,10 @@ export function MarginExplanationPanel() {
             </p>
           </div>
           <div className="border-2 border-primary p-4 flex flex-col gap-2">
-            <div className="text-sm font-bold text-neutral-50">Arc</div>
-            <div className="text-2xl font-bold text-primary">$0.006</div>
+            <div className="text-sm font-bold text-neutral-50">Tempo</div>
+            <div className="text-2xl font-bold text-primary">&lt;$0.001</div>
             <p className="text-sm text-neutral-300 leading-relaxed">
-              Sub-cent settlement preserves real-time pricing. Every token chunk settles individually.
+              Sub-cent settlement via FeeAMM. Every token chunk settles individually with USDC.e TIP-20 transfer.
             </p>
           </div>
         </div>
@@ -108,19 +106,19 @@ export function MarginExplanationPanel() {
 
         {/* Single closing sentence */}
         <p className="text-sm text-neutral-400 leading-relaxed border-l-4 border-primary pl-3">
-          Arc is the first rail in this demo where settlement stays below the value of the individual AI action.
-          <span className="text-neutral-500 ml-2 text-xs">ETH gas at 30 gwei, 65k gas per ERC-20 transfer. Numbers from live Arc testnet runs.</span>
+          Tempo is the first rail in this demo where settlement stays below the value of the individual AI action.
+          <span className="text-neutral-500 ml-2 text-xs">FeeAMM on Tempo mainnet. ETH gas at 30 gwei, 65k gas per ERC-20 transfer for comparison.</span>
         </p>
 
-        {/* Circle infrastructure callout */}
+        {/* Tempo infrastructure callout */}
         <div className="border border-neutral-700 px-4 py-3 flex flex-wrap items-start gap-x-4 gap-y-1">
           <div className="text-xs font-mono text-info uppercase tracking-wider whitespace-nowrap">
-            Circle Infrastructure
+            Tempo + MPP Infrastructure
           </div>
           <div className="text-sm text-neutral-400 leading-relaxed">
-            Circle Developer-Controlled Wallets provision per-session spending accounts on <span className="text-neutral-200">ARC-TESTNET</span>.
-            Circle Nanopayments handles sub-cent settlement.
-            Circle Gateway domain <span className="text-neutral-200">26</span> verifies x402 payments on Arc.
+            P402 settler wallet submits USDC.e <span className="text-neutral-200">TIP-20</span> transfers on{' '}
+            <span className="text-neutral-200">Tempo Mainnet (chain 4217)</span> via the MPP payment protocol.
+            Sub-millidollar FeeAMM gas makes per-chunk billing economically viable.
           </div>
         </div>
       </div>

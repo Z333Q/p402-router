@@ -150,28 +150,32 @@ export async function insertLedgerEvent(
     `INSERT INTO nanopayment_events (
       id, session_id, work_order_id, tenant_id, event_kind,
       chunk_index, tokens_estimate, cost_usd, cost_usdc_e6, provisional,
-      arc_tx_hash, arc_batch_id, arc_block, proof_ref
+      settlement_tx_hash, settlement_block, settlement_chain_id, proof_ref
     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
     RETURNING *`,
     [
       id,
       event.sessionId,
       event.workOrderId ?? null,
-      event.sessionId, // tenant_id fallback; real impl passes tenantId
+      event.sessionId, // tenant_id fallback
       event.eventKind,
       event.chunkIndex ?? null,
       event.tokensEstimate ?? null,
       event.costUsd,
       costUsdcE6,
       event.provisional,
-      event.arcTxHash ?? null,
-      event.arcBatchId ?? null,
-      event.arcBlock ?? null,
+      event.settlementTxHash ?? null,
+      event.settlementBlock ?? null,
+      event.settlementChainId ?? null,
       event.proofRef ?? null,
     ]
   );
   const row = result.rows[0];
   if (!row) throw new Error('insertLedgerEvent: no row returned');
+  return mapLedgerRow(row);
+}
+
+function mapLedgerRow(row: Record<string, unknown>): LedgerEvent {
   return {
     id: row['id'] as string,
     sessionId: row['session_id'] as string,
@@ -182,9 +186,10 @@ export async function insertLedgerEvent(
     costUsd: Number(row['cost_usd']),
     costUsdcE6: Number(row['cost_usdc_e6']),
     provisional: Boolean(row['provisional']),
-    arcTxHash: row['arc_tx_hash'] as string | undefined,
-    arcBatchId: row['arc_batch_id'] as string | undefined,
-    arcBlock: row['arc_block'] as number | undefined,
+    // Read new columns; fall back to legacy arc_* columns for rows written before migration.
+    settlementTxHash: (row['settlement_tx_hash'] ?? row['arc_tx_hash']) as string | undefined,
+    settlementBlock: (row['settlement_block'] ?? row['arc_block']) as number | undefined,
+    settlementChainId: row['settlement_chain_id'] as number | undefined,
     proofRef: row['proof_ref'] as string | undefined,
     createdAt: String(row['created_at']),
   };
@@ -195,20 +200,5 @@ export async function getSessionLedgerEvents(sessionId: string): Promise<LedgerE
     'SELECT * FROM nanopayment_events WHERE session_id = $1 ORDER BY created_at ASC',
     [sessionId]
   );
-  return result.rows.map((row) => ({
-    id: row['id'] as string,
-    sessionId: row['session_id'] as string,
-    workOrderId: row['work_order_id'] as string | undefined,
-    eventKind: row['event_kind'] as LedgerEvent['eventKind'],
-    chunkIndex: row['chunk_index'] as number | undefined,
-    tokensEstimate: row['tokens_estimate'] as number | undefined,
-    costUsd: Number(row['cost_usd']),
-    costUsdcE6: Number(row['cost_usdc_e6']),
-    provisional: Boolean(row['provisional']),
-    arcTxHash: row['arc_tx_hash'] as string | undefined,
-    arcBatchId: row['arc_batch_id'] as string | undefined,
-    arcBlock: row['arc_block'] as number | undefined,
-    proofRef: row['proof_ref'] as string | undefined,
-    createdAt: String(row['created_at']),
-  }));
+  return result.rows.map(mapLedgerRow);
 }

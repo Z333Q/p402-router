@@ -442,30 +442,32 @@ Return this exact JSON structure:
 // ============================================================================
 
 import type { EconomicAudit } from './types';
-import { ARC_TYPICAL_GAS_COST_USDC } from '@/lib/chains/arc';
+
+// Tempo TIP-20 settlement fee is sub-millidollar (FeeAMM); use 0 for comparison purposes.
+const TEMPO_GAS_COST_USDC = 0.000001;
 
 export async function generateEconomicAudit(params: {
   sessionId: string;
   totalCostUsd: number;
-  arcTxCount: number;
+  settlementTxCount: number;
   aiTokenCostUsd: number;
   routingFeeUsd: number;
   escrowCostUsd?: number;
 }): Promise<EconomicAudit> {
-  const { sessionId, totalCostUsd, arcTxCount, aiTokenCostUsd, routingFeeUsd, escrowCostUsd = 0 } = params;
+  const { sessionId, totalCostUsd, settlementTxCount, aiTokenCostUsd, routingFeeUsd, escrowCostUsd = 0 } = params;
 
-  const arcGasCostUsd = arcTxCount * ARC_TYPICAL_GAS_COST_USDC;
-  const avgCostPerActionUsd = arcTxCount > 0 ? totalCostUsd / arcTxCount : totalCostUsd;
+  const settlementGasCostUsd = settlementTxCount * TEMPO_GAS_COST_USDC;
+  const avgCostPerActionUsd = settlementTxCount > 0 ? totalCostUsd / settlementTxCount : totalCostUsd;
 
   // Stripe minimum: $0.30 base + 2.9%, fails at sub-$10 transaction sizes
   const comparisonStripeUsd = 0.30 + totalCostUsd * 0.029;
   // ETH mainnet at 30 gwei, ~65k gas per ERC-20 transfer: ~$2.85/tx
-  const comparisonEthMainnetUsd = arcTxCount * 2.85;
+  const comparisonEthMainnetUsd = settlementTxCount * 2.85;
   const savingVsEthMainnetPct = comparisonEthMainnetUsd > 0
     ? Math.round(((comparisonEthMainnetUsd - totalCostUsd) / comparisonEthMainnetUsd) * 100)
     : 99;
 
-  let recommendation = `This session completed ${arcTxCount} economic events at an average of $${avgCostPerActionUsd.toFixed(6)} per action. Arc settlement at $${ARC_TYPICAL_GAS_COST_USDC}/tx enabled sub-cent billing that would be economically impossible on Ethereum mainnet ($${comparisonEthMainnetUsd.toFixed(2)} equivalent) or via Stripe ($${comparisonStripeUsd.toFixed(2)} minimum).`;
+  let recommendation = `This session completed ${settlementTxCount} economic events at an average of $${avgCostPerActionUsd.toFixed(6)} per action. Tempo mainnet TIP-20 settlement at sub-millidollar fees enabled micropayment billing that would be economically impossible on Ethereum mainnet ($${comparisonEthMainnetUsd.toFixed(2)} equivalent) or via Stripe ($${comparisonStripeUsd.toFixed(2)} minimum).`;
 
   // Gemini Pro deep audit, full reasoning, unconstrained output
   try {
@@ -494,17 +496,17 @@ Write with precision and confidence. Use exact numbers. No PHI. No clinical cont
     const prompt = `Produce a professional economic audit for this AI-assisted healthcare prior authorization session.
 
 SESSION METRICS:
-- Onchain settlement events: ${arcTxCount} Arc transactions
+- Onchain settlement events: ${settlementTxCount} Tempo mainnet TIP-20 transactions via MPP
 - Total session cost: $${totalCostUsd.toFixed(6)} USD
 - Average cost per event: $${avgCostPerActionUsd.toFixed(6)} USD
 - AI token cost (Gemini 3.1 Flash): $${aiTokenCostUsd.toFixed(6)} USD
 - P402 routing and governance fee: $${routingFeeUsd.toFixed(6)} USD
-- Arc blockchain gas total: $${arcGasCostUsd.toFixed(6)} USD
+- Tempo settlement gas total: $${settlementGasCostUsd.toFixed(8)} USD (FeeAMM, sub-millidollar)
 ${escrowCostUsd > 0 ? `- Specialist escrow cost: $${escrowCostUsd.toFixed(6)} USD` : ''}
 
 COST BENCHMARKS:
 - Stripe minimum (base $0.30 + 2.9%): $${comparisonStripeUsd.toFixed(4)} USD (${costSavingVsStripe}% more expensive than this session)
-- Ethereum mainnet equivalent (~$2.85/tx at 30 gwei, ${arcTxCount} txs): $${comparisonEthMainnetUsd.toFixed(2)} USD (${savingVsEthMainnetPct}% more expensive than this session)
+- Ethereum mainnet equivalent (~$2.85/tx at 30 gwei, ${settlementTxCount} txs): $${comparisonEthMainnetUsd.toFixed(2)} USD (${savingVsEthMainnetPct}% more expensive than this session)
 - This session cost as fraction of Stripe minimum: ${(totalCostUsd / comparisonStripeUsd * 100).toFixed(2)}%
 
 Write a 3-paragraph executive audit (200-280 words total):
@@ -525,10 +527,10 @@ No headers. No bullet points. Flowing analytical prose.`;
     costBreakdown: {
       aiTokenCostUsd,
       routingFeeUsd,
-      arcGasCostUsd,
+      settlementGasCostUsd,
       escrowCostUsd,
     },
-    arcTxCount,
+    settlementTxCount,
     avgCostPerActionUsd,
     comparisonStripeUsd,
     comparisonEthMainnetUsd,

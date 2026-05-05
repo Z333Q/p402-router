@@ -1,19 +1,20 @@
 'use client';
 
 import { useMeterStore } from '../_store/useMeterStore';
-import { arcExplorerTxUrl, arcExplorerAddressUrl, ARC_SIGNER_ADDRESS } from '@/lib/chains/arc';
+import { tempoExplorerTxUrl, tempoExplorerAddressUrl } from '@/lib/meter/tempo-settler';
+import { TEMPO_CHAIN_ID } from '@/lib/constants/tempo';
 
-const ARC_CHAIN_ID = 5042002;
-const ARC_NETWORK = 'Arc Testnet';
-const USDC_ASSET = 'USDC (native gas)';
+const TEMPO_SIGNER_ADDRESS = process.env.NEXT_PUBLIC_TEMPO_SIGNER_ADDRESS ?? '';
+const TEMPO_NETWORK = 'Tempo Mainnet';
+const USDC_ASSET = 'USDC.e (TIP-20)';
 
-export function ArcProofDrawer() {
-  const { ledgerEvents, sessionId, proofDrawerOpen, setProofDrawerOpen, streamDone, frequencyStats, workOrder, arcSettleError } =
+export function TempoProofDrawer() {
+  const { ledgerEvents, sessionId, proofDrawerOpen, setProofDrawerOpen, streamDone, frequencyStats, workOrder, settleError } =
     useMeterStore();
 
-  const txEvents = ledgerEvents.filter((e) => e.arcTxHash);
+  const txEvents = ledgerEvents.filter((e) => e.settlementTxHash);
   const batchEvents = ledgerEvents.filter(
-    (e) => e.eventKind === 'reconciliation' || e.eventKind === 'escrow_release' || e.arcBatchId != null,
+    (e) => e.eventKind === 'reconciliation' || e.eventKind === 'escrow_release',
   );
   const { totalCostUsd, authorizations } = frequencyStats;
 
@@ -28,7 +29,7 @@ export function ArcProofDrawer() {
       >
         <div className="flex items-center gap-2">
           <span className="badge badge-primary text-[10px]">05</span>
-          <span className="text-sm font-bold tracking-wider uppercase">Arc Proof</span>
+          <span className="text-sm font-bold tracking-wider uppercase">Tempo Proof</span>
         </div>
         <div className="flex items-center gap-3">
           {streamDone && (
@@ -45,22 +46,24 @@ export function ArcProofDrawer() {
         <ProofStat label="Session" value={sessionId ? sessionId.slice(0, 10) + '…' : '—'} />
         <ProofStat label="Total Cost" value={streamDone ? `$${totalCostUsd.toFixed(6)}` : '—'} highlight />
         <ProofStat label="AI Events" value={authorizations > 0 ? `${authorizations}` : '—'} pass={thresholdMet || undefined} />
-        <ProofStat label="Arc Tx" value={txEvents.length > 0 ? txEvents.length.toString() : batchEvents.length > 0 ? batchEvents.length.toString() : '—'} />
+        <ProofStat label="Tempo Tx" value={txEvents.length > 0 ? txEvents.length.toString() : batchEvents.length > 0 ? batchEvents.length.toString() : '—'} />
       </div>
 
-      {/* Wallet verify link, always visible, no expansion needed */}
-      <a
-        href={arcExplorerAddressUrl(ARC_SIGNER_ADDRESS)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="px-4 py-2 border-b border-neutral-700 flex items-center justify-between hover:bg-neutral-800 transition-colors group"
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-wider">Verify on ArcScan →</span>
-          <span className="text-[10px] font-mono text-info group-hover:text-primary truncate max-w-[200px]">{ARC_SIGNER_ADDRESS}</span>
-        </div>
-        <span className="text-[9px] font-mono text-primary font-bold uppercase tracking-wider flex-shrink-0">↗ Open</span>
-      </a>
+      {/* Explorer link, always visible */}
+      {TEMPO_SIGNER_ADDRESS && (
+        <a
+          href={tempoExplorerAddressUrl(TEMPO_SIGNER_ADDRESS)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 border-b border-neutral-700 flex items-center justify-between hover:bg-neutral-800 transition-colors group"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-wider">Verify on Tempo Explorer →</span>
+            <span className="text-[10px] font-mono text-info group-hover:text-primary truncate max-w-[200px]">{TEMPO_SIGNER_ADDRESS}</span>
+          </div>
+          <span className="text-[9px] font-mono text-primary font-bold uppercase tracking-wider flex-shrink-0">↗ Open</span>
+        </a>
+      )}
 
       {/* Expandable proof detail */}
       {proofDrawerOpen && (
@@ -68,17 +71,17 @@ export function ArcProofDrawer() {
 
           {/* Chain identifiers */}
           <div className="grid grid-cols-2 gap-3 text-[10px] font-mono">
-            <ProofField label="Network" value={ARC_NETWORK} />
-            <ProofField label="Chain ID" value={ARC_CHAIN_ID.toString()} />
+            <ProofField label="Network" value={TEMPO_NETWORK} />
+            <ProofField label="Chain ID" value={TEMPO_CHAIN_ID.toString()} />
             <ProofField label="Settlement Asset" value={USDC_ASSET} />
             <ProofField label="Session ID" value={sessionId ?? '—'} mono />
           </div>
 
-          {/* Hackathon threshold proof */}
+          {/* Threshold proof */}
           <div className={`border-2 p-3 flex items-center justify-between ${thresholdMet ? 'border-success' : 'border-neutral-700'}`}>
             <div>
               <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-0.5">
-                Hackathon Threshold: 50+ Onchain Events
+                Threshold: 50+ Onchain Events
               </div>
               <div className="text-[10px] font-mono text-neutral-500">
                 {authorizations} AI billing events at ≤ $0.01 each
@@ -93,7 +96,7 @@ export function ArcProofDrawer() {
           {batchEvents.length > 0 && (
             <div>
               <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-2">
-                Settlement Batches ({batchEvents.length})
+                Settlement Events ({batchEvents.length})
               </div>
               {batchEvents.map((e) => (
                 <div key={e.id} className="flex items-center justify-between border-b border-neutral-800 py-1.5">
@@ -104,42 +107,44 @@ export function ArcProofDrawer() {
             </div>
           )}
 
-          {/* Funded wallet, always visible, verifiable before/after any run */}
-          <div>
-            <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-2">
-              Settlement Wallet
-            </div>
-            <a
-              href={arcExplorerAddressUrl(ARC_SIGNER_ADDRESS)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between border-2 border-primary px-3 py-2 hover:bg-neutral-800 transition-colors group"
-            >
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[9px] font-mono text-neutral-400 uppercase tracking-wider">Funded Arc Testnet USDC wallet</span>
-                <span className="text-[10px] font-mono text-info group-hover:text-primary break-all">{ARC_SIGNER_ADDRESS}</span>
+          {/* Signer wallet */}
+          {TEMPO_SIGNER_ADDRESS && (
+            <div>
+              <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-2">
+                Settlement Wallet
               </div>
-              <span className="text-primary flex-shrink-0 ml-3 font-bold text-xs">↗ ArcScan</span>
-            </a>
-          </div>
-
-          {/* Arc settle error — shown if settlement was attempted but failed */}
-          {arcSettleError && (
-            <div className="border border-error bg-neutral-900 px-3 py-2 flex flex-col gap-1">
-              <div className="text-[9px] font-mono text-error uppercase tracking-wider">Arc Settle Error</div>
-              <div className="text-[10px] font-mono text-neutral-300 leading-relaxed break-all">{arcSettleError}</div>
               <a
-                href="/api/meter/arc-health"
+                href={tempoExplorerAddressUrl(TEMPO_SIGNER_ADDRESS)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[9px] font-mono text-info hover:text-primary uppercase tracking-wider"
+                className="flex items-center justify-between border-2 border-primary px-3 py-2 hover:bg-neutral-800 transition-colors group"
               >
-                Run diagnostic → /api/meter/arc-health
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[9px] font-mono text-neutral-400 uppercase tracking-wider">Funded Tempo Mainnet USDC.e wallet</span>
+                  <span className="text-[10px] font-mono text-info group-hover:text-primary break-all">{TEMPO_SIGNER_ADDRESS}</span>
+                </div>
+                <span className="text-primary flex-shrink-0 ml-3 font-bold text-xs">↗ Explorer</span>
               </a>
             </div>
           )}
 
-          {/* Per-tx links, only present in live mode when Arc settles */}
+          {/* Settle error */}
+          {settleError && (
+            <div className="border border-error bg-neutral-900 px-3 py-2 flex flex-col gap-1">
+              <div className="text-[9px] font-mono text-error uppercase tracking-wider">Settle Error</div>
+              <div className="text-[10px] font-mono text-neutral-300 leading-relaxed break-all">{settleError}</div>
+              <a
+                href="/api/meter/health"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[9px] font-mono text-info hover:text-primary uppercase tracking-wider"
+              >
+                Run diagnostic → /api/meter/health
+              </a>
+            </div>
+          )}
+
+          {/* Per-tx links */}
           {txEvents.length > 0 ? (
             <div>
               <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-2">
@@ -149,12 +154,12 @@ export function ArcProofDrawer() {
                 {txEvents.slice(0, 10).map((e) => (
                   <a
                     key={e.id}
-                    href={arcExplorerTxUrl(e.arcTxHash!)}
+                    href={tempoExplorerTxUrl(e.settlementTxHash!)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-between text-[10px] font-mono hover:bg-neutral-800 px-2 py-1 transition-colors group"
                   >
-                    <span className="text-info group-hover:text-primary truncate">{e.arcTxHash}</span>
+                    <span className="text-info group-hover:text-primary truncate">{e.settlementTxHash}</span>
                     <span className="text-neutral-400 flex-shrink-0 ml-2 uppercase">↗</span>
                   </a>
                 ))}
@@ -167,7 +172,7 @@ export function ArcProofDrawer() {
             </div>
           ) : streamDone ? (
             <div className="text-[10px] font-mono text-neutral-500 border border-neutral-700 px-3 py-2 leading-relaxed">
-              Live mode produces per-tx hashes here. Demo mode uses the wallet above for on-chain verification.
+              Live mode produces per-tx hashes here. Proof Replay mode shows pre-recorded session data.
             </div>
           ) : null}
 

@@ -60,7 +60,7 @@ export function InheritedTrustStrip() {
         <div className="border-t border-neutral-800 px-4 py-3 flex flex-col gap-3">
           <TrustDetailRow
             label="Non-Custodial Execution"
-            value="No user funds held. Circle Developer-Controlled Wallets with per-session policy locks."
+            value="No user funds held. Pre-funded TEMPO_TREASURY_PRIVATE_KEY wallet settles on behalf of each session."
           />
           <TrustDetailRow
             label="Replay Protection"
@@ -68,11 +68,11 @@ export function InheritedTrustStrip() {
           />
           <TrustDetailRow
             label="Evidence Bundle"
-            value="Each run produces an exportable audit bundle: extracted fields, Gemini trace, ledger events, Arc tx hashes."
+            value="Each run produces an exportable audit bundle: extracted fields, Gemini trace, ledger events, Tempo tx hashes."
           />
           <TrustDetailRow
             label="ERC-8004 Identity"
-            value="Agent identity registered on Arc mainnet. Identity Registry: 0x8004A169..."
+            value="Agent identity registered on Base mainnet (cross-chain). Identity Registry: 0x8004A169..."
           />
           <TrustDetailRow
             label="AP2 Budget Controls"

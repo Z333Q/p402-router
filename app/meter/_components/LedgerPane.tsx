@@ -1,7 +1,7 @@
 'use client';
 
 import { useMeterStore } from '../_store/useMeterStore';
-import { arcExplorerTxUrl } from '@/lib/chains/arc';
+import { tempoExplorerTxUrl } from '@/lib/meter/tempo-settler';
 import type { LedgerEvent, LedgerEventKind } from '@/lib/meter/types';
 
 // Row type taxonomy, three categories judges should see
@@ -12,7 +12,7 @@ const KIND_CONFIG: Record<LedgerEventKind, { label: string; category: RowCategor
   review_estimate:            { label: 'Gemini Review',        category: 'ai' },
   followup_estimate:          { label: 'Gemini Follow-Up',     category: 'ai' },
   specialist_review_estimate: { label: 'Specialist Review',    category: 'ai' },
-  reconciliation:             { label: 'Arc Reconciliation',   category: 'settlement' },
+  reconciliation:             { label: 'Tempo Reconciliation',  category: 'settlement' },
   escrow_release:             { label: 'Escrow Release',       category: 'settlement' },
   routing_fee:                { label: 'P402 Routing Fee',     category: 'payment' },
   cache_access:               { label: 'Cache Hit',            category: 'payment' },
@@ -51,7 +51,7 @@ export function LedgerPane() {
         <div className="flex divide-x divide-neutral-800 border-b border-neutral-700">
           <TaxonomyCell label="AI Events" count={aiEvents} color="text-warning" />
           <TaxonomyCell label="Payment Auths" count={paymentEvents} color="text-info" />
-          <TaxonomyCell label="Arc Settlements" count={settleEvents} color="text-primary" />
+          <TaxonomyCell label="Tempo Settlements" count={settleEvents} color="text-primary" />
           <TaxonomyCell label="Total Events" count={ledgerEvents.length} color="text-neutral-300" />
         </div>
       )}
@@ -62,7 +62,7 @@ export function LedgerPane() {
           <div className="p-6 flex flex-col gap-2">
             <p className="text-sm font-bold text-neutral-200">Each billed AI event will appear here in order.</p>
             <p className="text-sm text-neutral-400 leading-relaxed">
-              Running cost and Arc settlement proof are shown per event. Start a review to begin.
+              Running cost and Tempo settlement proof are shown per event. Start a review to begin.
             </p>
           </div>
         ) : (
@@ -91,7 +91,7 @@ export function LedgerPane() {
           <div className="flex items-center gap-4 text-[10px] font-mono text-neutral-300 uppercase">
             <span>{ledgerEvents.length} events reconciled</span>
             <span className="text-warning">{aiEvents} AI</span>
-            <span className="text-primary">{settleEvents} Arc tx</span>
+            <span className="text-primary">{settleEvents} Tempo tx</span>
           </div>
           <span className={`text-sm font-bold font-mono ${overBudget ? 'text-error' : 'text-primary'}`}>
             ${totalCostUsd.toFixed(6)}
@@ -118,8 +118,8 @@ function LedgerRow({ event }: { event: LedgerEvent }) {
     ? new Date(event.createdAt).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
     : '—';
 
-  const proofDisplay = event.arcTxHash
-    ? event.arcTxHash.slice(0, 8) + '…'
+  const proofDisplay = event.settlementTxHash
+    ? event.settlementTxHash.slice(0, 8) + '…'
     : event.proofRef
     ? event.proofRef.slice(0, 8) + '…'
     : event.provisional
@@ -137,9 +137,9 @@ function LedgerRow({ event }: { event: LedgerEvent }) {
         ${event.costUsd.toFixed(6)}
       </td>
       <td className="px-3 py-2 text-right">
-        {event.arcTxHash ? (
+        {event.settlementTxHash ? (
           <a
-            href={arcExplorerTxUrl(event.arcTxHash)}
+            href={tempoExplorerTxUrl(event.settlementTxHash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-info hover:text-primary underline"

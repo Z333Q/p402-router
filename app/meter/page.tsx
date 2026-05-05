@@ -10,14 +10,12 @@ import { PacketIntakeCard } from './_components/PacketIntakeCard';
 import { WorkOrderCard } from './_components/WorkOrderCard';
 import { ReviewSummaryPane } from './_components/ReviewSummaryPane';
 import { LedgerPane } from './_components/LedgerPane';
-import { ArcProofDrawer } from './_components/ArcProofDrawer';
+import { TempoProofDrawer } from './_components/TempoProofDrawer';
 import { ApprovalDecisionCard } from './_components/ApprovalDecisionCard';
 import { InheritedTrustStrip } from './_components/InheritedTrustStrip';
-import { OptionalReleaseStrip } from './_components/OptionalReleaseStrip';
 import { MarginExplanationPanel } from './_components/MarginExplanationPanel';
-import { SpecialistEscrowCard } from './_components/SpecialistEscrowCard';
 import { EconomicAuditPanel } from './_components/EconomicAuditPanel';
-import { ArcSettlementProof } from './_components/ArcSettlementProof';
+import { TempoSettlementProof } from './_components/TempoSettlementProof';
 import { useMeterStore } from './_store/useMeterStore';
 
 export default function MeterPage() {
@@ -36,7 +34,7 @@ export default function MeterPage() {
           <span className={`text-sm font-bold ${lightMode ? 'text-neutral-900' : 'text-neutral-50'}`}>P402 Meter</span>
           <span className={lightMode ? 'text-neutral-400' : 'text-neutral-700'}>·</span>
           <span className={`border px-2 py-0.5 text-[10px] font-mono uppercase tracking-wide ${lightMode ? 'border-neutral-400 text-neutral-600' : 'border-neutral-700 text-neutral-400'}`}>
-            Arc Testnet
+            Tempo Mainnet
           </span>
           <span className={`text-[10px] font-mono uppercase px-2 py-0.5 border ${safeMode ? 'border-warning text-warning' : 'border-success text-success'}`}>
             {safeMode ? 'Demo' : 'Live'}
@@ -66,7 +64,7 @@ export default function MeterPage() {
               Upload a prior auth document, Gemini reads it, classifies it, reviews it.
             </p>
             <p className="text-base text-neutral-300 leading-relaxed">
-              Every AI token settles as a USDC event on Arc. Total cost: under $0.01.
+              Every AI token settles as a USDC.e event on Tempo. Total cost: under $0.001.
             </p>
             <p className="text-base text-neutral-300 leading-relaxed">
               The ledger, the cost, and the proof stay visible from start to finish.
@@ -75,16 +73,16 @@ export default function MeterPage() {
           {/* Proof chips */}
           <div className="flex flex-wrap gap-2 mb-6">
             <span className="border-2 border-primary text-primary text-xs font-bold font-mono px-3 py-1.5">
-              55+ Arc settlements per run
+              55+ Tempo settlements per run
             </span>
             <span className="border-2 border-neutral-600 text-neutral-300 text-xs font-mono px-3 py-1.5">
-              $0.006 per settlement vs $2.85 on ETH
+              &lt;$0.000001 per settlement vs $2.85 on ETH
             </span>
             <span className="border-2 border-neutral-600 text-neutral-300 text-xs font-mono px-3 py-1.5">
               Gemini Flash + Pro · multimodal
             </span>
             <span className="border-2 border-neutral-600 text-neutral-300 text-xs font-mono px-3 py-1.5">
-              Circle wallets · Arc testnet
+              USDC.e TIP-20 · Tempo mainnet
             </span>
           </div>
           {/* Action cluster */}
@@ -92,7 +90,7 @@ export default function MeterPage() {
             <a href="#demo" className="btn btn-primary text-sm px-5">Run Demo →</a>
             <a href="/meter/about" className="btn btn-secondary text-sm">About</a>
             <a href="https://p402.io/docs/router" target="_blank" rel="noopener noreferrer" className="btn btn-secondary text-sm">Docs ↗</a>
-            <a href="https://testnet.arcscan.app" target="_blank" rel="noopener noreferrer" className="btn btn-secondary text-sm">ArcScan ↗</a>
+            <a href="https://explore.tempo.xyz" target="_blank" rel="noopener noreferrer" className="btn btn-secondary text-sm">Tempo Explorer ↗</a>
           </div>
         </div>
 
@@ -108,13 +106,8 @@ export default function MeterPage() {
         <SessionBar />
         <FrequencyCounter />
 
-        {/* Circle + Arc stack proof */}
+        {/* Tempo + MPP infrastructure strip */}
         <CircleInfraStrip />
-
-        {/* Hackathon context, moved below product content */}
-        <div className="border border-neutral-800 px-4 py-2 text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
-          Agentic Economy on Arc Hackathon · April 2026 · Usage-Based Compute Billing · B2B FinOps & Compliance · Best Use of Gemini Models
-        </div>
 
         {/* Error banner */}
         {error && (
@@ -137,29 +130,25 @@ export default function MeterPage() {
             <WorkOrderCard />
           </div>
 
-          {/* Right column: Review + Ledger + Specialist + Proof + Approval */}
+          {/* Right column: Review + Ledger + Proof + Approval */}
           <div className="flex flex-col gap-6">
             <ReviewSummaryPane />
             <LedgerPane />
-            <SpecialistEscrowCard />
-            <ArcProofDrawer />
+            <TempoProofDrawer />
             <ApprovalDecisionCard />
           </div>
         </div>
 
-        {/* Settlement proof — tx hash + ArcScan link, appears after stream completes */}
-        <ArcSettlementProof />
+        {/* Settlement proof — tx hash + Tempo explorer link, appears after stream completes */}
+        <TempoSettlementProof />
 
         {/* Economic audit, Gemini Pro post-run, appears after review completes */}
         <EconomicAuditPanel />
 
-        {/* Trust chain, prerequisite for release */}
+        {/* Trust chain */}
         <InheritedTrustStrip />
 
-        {/* Arc Native Release Path, action follows trust */}
-        <OptionalReleaseStrip />
-
-        {/* Why Arc Works, contextual explanation after seeing it in action */}
+        {/* Why Tempo Works, contextual explanation after seeing it in action */}
         <MarginExplanationPanel />
       </div>
     </div>

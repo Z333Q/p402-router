@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { insertLedgerEvent, updateWorkOrderStatus } from '@/lib/meter/queries';
 import { generateApprovalRecommendation } from '@/lib/meter/work-order-parser';
-import { isArcSettlerEnabled, settleOnArcWithFallback, getSignerAddress } from '@/lib/meter/arc-settler';
+import { isTempoSettlerEnabled, settleOnTempoWithFallback } from '@/lib/meter/tempo-settler';
 import type { SseFrame, LedgerEvent } from '@/lib/meter/types';
 import crypto from 'crypto';
 
@@ -162,26 +162,25 @@ Follow the administrative format strictly. No PHI. No clinical decisions.`;
             emit({ type: 'ledger_event', event: { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...specialistEvent } });
           }
 
-          // ── Reconciliation event + real Arc settlement ───────────────────
-          // When ARC_PRIVATE_KEY is set, submit a real USDC transfer on Arc testnet.
-          // This produces a verifiable tx hash visible in ArcScan.
-          // Use P402 treasury as recipient (not self, some precompiles reject self-transfers).
-          const ARC_DEMO_RECIPIENT = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
-          let arcTxHash: string | undefined;
-          let arcBlock: number | undefined;
-          let arcSettleError: string | undefined;
-          if (isArcSettlerEnabled()) {
-            try {
-              const result = await settleOnArcWithFallback({
-                toAddress: ARC_DEMO_RECIPIENT,
-                amountUsd: Math.max(finalCostUsd, 0.000001), // floor at 1 USDC-e6 unit
-              });
-              if (result) {
-                arcTxHash = result.txHash;
-                arcBlock = result.blockNumber;
-              }
-            } catch (err) {
-              arcSettleError = err instanceof Error ? err.message : String(err);
+          // ── Reconciliation event + real Tempo settlement ─────────────────
+          // When TEMPO_TREASURY_PRIVATE_KEY is set, submit a real USDC.e transfer
+          // on Tempo mainnet (chain 4217). Produces a verifiable tx hash on explore.tempo.xyz.
+          const TEMPO_DEMO_RECIPIENT = process.env.TEMPO_TREASURY_ADDRESS ?? '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
+          let settlementTxHash: string | undefined;
+          let settlementBlock: number | undefined;
+          let settlementChainId: number | undefined;
+          let settleError: string | undefined;
+          if (isTempoSettlerEnabled()) {
+            const settled = await settleOnTempoWithFallback({
+              toAddress: TEMPO_DEMO_RECIPIENT,
+              amountUsd: Math.max(finalCostUsd, 0.000001),
+            });
+            if (settled) {
+              settlementTxHash = settled.txHash;
+              settlementBlock = settled.blockNumber;
+              settlementChainId = settled.chainId;
+            } else {
+              settleError = 'Tempo settlement returned null (see server logs)';
             }
           }
 
@@ -194,7 +193,7 @@ Follow the administrative format strictly. No PHI. No clinical decisions.`;
             costUsdcE6: Math.round(finalCostUsd * 1_000_000),
             provisional: false,
             proofRef: `proof:${sessionId}:reconcile`,
-            ...(arcTxHash ? { arcTxHash, arcBlock } : {}),
+            ...(settlementTxHash ? { settlementTxHash, settlementBlock, settlementChainId } : {}),
           };
           insertLedgerEvent(reconcileEvent).catch(() => null);
           emit({ type: 'ledger_event', event: { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...reconcileEvent } });
@@ -245,8 +244,8 @@ Follow the administrative format strictly. No PHI. No clinical decisions.`;
             totalTokens: outputTokens,
             reconciled: true,
             ...(approvalResult ? { approval: approvalResult } : {}),
-            ...(arcSettleError ? { arcSettleError } : {}),
-          } as SseFrame & { approval?: unknown; arcSettleError?: string });
+            ...(settleError ? { settleError } : {}),
+          } as SseFrame & { approval?: unknown; settleError?: string });
 
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : 'stream failed';
@@ -316,23 +315,23 @@ function streamSafeModeResponse(
     '~412 output tokens. ',
     'Total AI cost: ',
     '$0.000247 USD. ',
-    'Arc settlement fee: ',
-    '$0.006 USDC. ',
+    'Tempo settlement fee: ',
+    '<$0.000001 TIP-20. ',
     'Routing overhead: ',
     '$0.000100 USD. ',
     'Grand total: ',
-    '$0.006447 USD, ',
-    'well under $0.01 per action.\n\n',
+    '$0.000348 USD, ',
+    'well under $0.001 per action.\n\n',
     'Nanopayment events emitted: ',
     '55 provisional estimates. ',
     '1 reconcile event. ',
     '1 routing fee event. ',
-    'Arc batch: ',
-    '57 events submitted to Arc testnet. ',
+    '57 ledger events total. ',
+    '1 Tempo mainnet settlement tx. ',
     'Traditional gas equivalent: ',
     '~$2.85 USD (Ethereum mainnet at 30 gwei). ',
-    'Arc saving: ',
-    '>99.7% cost reduction.\n\n',
+    'Tempo saving: ',
+    '>99.9% cost reduction vs ETH mainnet.\n\n',
     'Recommendation: ',
     'Ready for Manual Review. ',
     'The administrative documentation is complete ',
