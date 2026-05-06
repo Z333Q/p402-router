@@ -1,17 +1,22 @@
 {
   "_format": "hh-sol-artifact-1",
-  "contractName": "IERC20",
-  "sourceName": "contracts/P402Settlement.sol",
+  "contractName": "IERC20Permit",
+  "sourceName": "contracts/SubscriptionFacilitator.sol",
   "abi": [
     {
       "inputs": [
         {
           "internalType": "address",
-          "name": "account",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "spender",
           "type": "address"
         }
       ],
-      "name": "balanceOf",
+      "name": "allowance",
       "outputs": [
         {
           "internalType": "uint256",
@@ -26,23 +31,42 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "to",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "spender",
           "type": "address"
         },
         {
           "internalType": "uint256",
-          "name": "amount",
+          "name": "value",
           "type": "uint256"
-        }
-      ],
-      "name": "transfer",
-      "outputs": [
+        },
         {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
+          "internalType": "uint256",
+          "name": "deadline",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint8",
+          "name": "v",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "r",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "s",
+          "type": "bytes32"
         }
       ],
+      "name": "permit",
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },

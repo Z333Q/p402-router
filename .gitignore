@@ -52,3 +52,6 @@ DEPLOYMENT_GUIDE_SECRET.md
 cli/
 dune/
 scripts/dune-sync.ts
+
+# Tempo settlement test artifacts (idempotency marker — never commit)
+.tempo-settle-result.json
