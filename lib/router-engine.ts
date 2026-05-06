@@ -69,7 +69,11 @@ export class RoutingEngine {
             requestId?: string,
             tenantId?: string,
             task?: string,
-            prompt?: string // New for Caching
+            prompt?: string,
+            // Enterprise attribution
+            department?: string,
+            projectName?: string,
+            employeeId?: string,
         }
     ): Promise<{ candidates: FacilitatorCandidate[], selectedId: string, cacheHit?: boolean }> {
 
@@ -88,12 +92,14 @@ export class RoutingEngine {
                     if (options?.requestId) {
                         await pool.query(`
                             INSERT INTO router_decisions (
-                                request_id, tenant_id, task, requested_mode, 
-                                selected_provider_id, reason, success, cost_usd
-                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                                request_id, tenant_id, task, requested_mode,
+                                selected_provider_id, reason, success, cost_usd,
+                                department, project_name, employee_id
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                         `, [
                             options.requestId, tenantId, options.task || 'inference',
-                            mode, 'system', 'usage_limit_reached', false, 0
+                            mode, 'system', 'usage_limit_reached', false, 0,
+                            options.department ?? null, options.projectName ?? null, options.employeeId ?? null,
                         ]);
                     }
                     throw error;
@@ -110,12 +116,14 @@ export class RoutingEngine {
                 if (options?.requestId) {
                     await pool.query(`
                         INSERT INTO router_decisions (
-                            request_id, tenant_id, task, requested_mode, 
-                            selected_provider_id, reason, success, cost_usd
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                            request_id, tenant_id, task, requested_mode,
+                            selected_provider_id, reason, success, cost_usd,
+                            department, project_name, employee_id
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                     `, [
                         options.requestId, tenantId, options.task || 'inference',
-                        mode, 'cache_engine', 'semantic_hit', true, 0
+                        mode, 'cache_engine', 'semantic_hit', true, 0,
+                        options.department ?? null, options.projectName ?? null, options.employeeId ?? null,
                     ]);
                 }
 
@@ -146,12 +154,14 @@ export class RoutingEngine {
                     if (options?.requestId) {
                         await pool.query(`
                             INSERT INTO router_decisions (
-                                request_id, tenant_id, task, requested_mode, 
-                                selected_provider_id, reason, success, cost_usd
-                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                                request_id, tenant_id, task, requested_mode,
+                                selected_provider_id, reason, success, cost_usd,
+                                department, project_name, employee_id
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                         `, [
                             options.requestId, tenantId, options.task || 'inference',
-                            mode, row.substitute_model, 'intelligence_override', true, 0
+                            mode, row.substitute_model, 'intelligence_override', true, 0,
+                            options.department ?? null, options.projectName ?? null, options.employeeId ?? null,
                         ]);
                     }
 
@@ -418,10 +428,11 @@ export class RoutingEngine {
 
                 await pool.query(`
                     INSERT INTO router_decisions (
-                        request_id, tenant_id, route_id, task, requested_mode, 
-                        selected_provider_id, reason, alternatives, 
-                        success, cost_usd
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                        request_id, tenant_id, route_id, task, requested_mode,
+                        selected_provider_id, reason, alternatives,
+                        success, cost_usd,
+                        department, project_name, employee_id
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                 `, [
                     options.requestId,
                     options.tenantId,
@@ -432,7 +443,10 @@ export class RoutingEngine {
                     selectedId ? 'scored_optimal' : 'no_route',
                     JSON.stringify(alternatives),
                     !!selectedId,
-                    0 // Cost unknown at planning time
+                    0,
+                    options.department ?? null,
+                    options.projectName ?? null,
+                    options.employeeId ?? null,
                 ]);
             } catch (e) {
                 console.error("[RoutingEngine] Failed to log decision:", e);

@@ -16,6 +16,8 @@ import { InheritedTrustStrip } from './_components/InheritedTrustStrip';
 import { MarginExplanationPanel } from './_components/MarginExplanationPanel';
 import { EconomicAuditPanel } from './_components/EconomicAuditPanel';
 import { TempoSettlementProof } from './_components/TempoSettlementProof';
+import { BuyerStoryCard } from './_components/BuyerStoryCard';
+import { BuyerROIPanel } from './_components/BuyerROIPanel';
 import { useMeterStore } from './_store/useMeterStore';
 
 export default function MeterPage() {
@@ -96,6 +98,9 @@ export default function MeterPage() {
           </div>
         </div>
 
+        {/* Buyer story — who you are, what you pay today, what you're about to see */}
+        <BuyerStoryCard />
+
         {/* One-click demo, primary action, anchor target */}
         <div id="demo">
           <GuidedDemoStrip />
@@ -147,11 +152,67 @@ export default function MeterPage() {
         {/* Economic audit, Gemini Pro post-run, appears after review completes */}
         <EconomicAuditPanel />
 
+        {/* Interactive ROI — buyer economics + SI partner opportunity */}
+        <BuyerROIPanel />
+
         {/* Trust chain */}
         <InheritedTrustStrip />
 
         {/* Why Tempo Works, contextual explanation after seeing it in action */}
         <MarginExplanationPanel />
+
+        {/* Cross-links to the other live demos */}
+        <div className="border-2 border-neutral-700 p-6 flex flex-col gap-4">
+          <div className={`text-[10px] font-mono uppercase tracking-widest ${lightMode ? 'text-neutral-500' : 'text-neutral-500'}`}>
+            Same infrastructure · Three more demos
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <a href="/meter/legal" className="border-2 border-neutral-700 hover:border-primary p-4 flex flex-col gap-2 transition-colors group">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest">Legal</span>
+                <span className="border border-success text-success text-[8px] font-mono px-1.5 py-0.5 uppercase">Live</span>
+              </div>
+              <div className="text-sm font-bold uppercase tracking-tight group-hover:text-primary transition-colors">M&A Due Diligence</div>
+              <p className="text-[10px] font-mono text-neutral-500 leading-relaxed">
+                8 contracts routed Flash or Pro by complexity. Cross-document conflict detection. Per-matter Tempo ledger.
+              </p>
+              <span className="text-[10px] font-mono text-neutral-600 group-hover:text-primary transition-colors mt-auto">Run Demo →</span>
+            </a>
+
+            <a href="/meter/real-estate" className="border-2 border-neutral-700 hover:border-primary p-4 flex flex-col gap-2 transition-colors group">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest">Real Estate</span>
+                <span className="border border-success text-success text-[8px] font-mono px-1.5 py-0.5 uppercase">Live</span>
+              </div>
+              <div className="text-sm font-bold uppercase tracking-tight group-hover:text-primary transition-colors">Tenant Screening</div>
+              <p className="text-[10px] font-mono text-neutral-500 leading-relaxed">
+                3 applicant scenarios. Fraud score 0–100. Escalation threshold. Flash + Pro extraction and consistency.
+              </p>
+              <span className="text-[10px] font-mono text-neutral-600 group-hover:text-primary transition-colors mt-auto">Run Demo →</span>
+            </a>
+
+            <a href="/meter/enterprise" className="border-2 border-neutral-700 hover:border-info p-4 flex flex-col gap-2 transition-colors group">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest">Enterprise</span>
+                <span className="border border-info text-info text-[8px] font-mono px-1.5 py-0.5 uppercase">Demo</span>
+              </div>
+              <div className="text-sm font-bold uppercase tracking-tight group-hover:text-info transition-colors">AI Cost Management</div>
+              <p className="text-[10px] font-mono text-neutral-500 leading-relaxed">
+                Org → dept → project → employee attribution. Routing optimization. Budget projections. Synthetic dashboard live now.
+              </p>
+              <span className="text-[10px] font-mono text-neutral-600 group-hover:text-info transition-colors mt-auto">View Dashboard →</span>
+            </a>
+          </div>
+          <div className="flex gap-3 pt-1">
+            <a href="/meter" className="text-[10px] font-mono text-neutral-500 hover:text-primary uppercase tracking-wider border border-neutral-700 hover:border-primary px-3 py-1.5 transition-colors">
+              ← All Demos
+            </a>
+            <a href="/meter/about" className="text-[10px] font-mono text-neutral-500 hover:text-primary uppercase tracking-wider border border-neutral-700 hover:border-primary px-3 py-1.5 transition-colors">
+              Full P402 Story →
+            </a>
+          </div>
+        </div>
+
       </div>
     </div>
   );

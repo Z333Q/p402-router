@@ -56,10 +56,10 @@ export default function MeterHubPage() {
           </div>
         </section>
 
-        {/* Three demo cards */}
+        {/* Four demo cards */}
         <section className="flex flex-col gap-4">
           <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-2">
-            Three live demos
+            Four use cases
           </div>
 
           <DemoCard
@@ -80,12 +80,12 @@ export default function MeterHubPage() {
             number="02"
             industry="Legal"
             title="M&A Due Diligence Contract Review"
-            status="coming-soon"
-            description="Upload a data room of 5–10 contracts. P402 routes each document to the right model tier (Flash for NDAs, Pro for MSAs). Cross-document conflict detection. Per-matter cost readout. Specialist escalation under MPP escrow."
+            status="live"
+            description="8 synthetic contracts from the Acme/Beta M&A data room. Flash for NDAs and leases, Pro for the MSA, employment agreements, IP assignment, and merger agreement. Cross-document conflict detection. Per-matter ledger on Tempo."
             unitEconomics="&lt;$0.10 per matter"
             vsBaseline="vs $200–800 paralegal time"
             buyer="Law firm partner · In-house GC · Legal ops director"
-            highlight="Routing decisions visible · Budget cap per matter · ABA-audit trail"
+            highlight="Tier routing decisions visible · Cross-document conflicts · ABA-audit trail"
             href="/meter/legal"
             aboutHref="/meter/about/legal"
           />
@@ -94,37 +94,57 @@ export default function MeterHubPage() {
             number="03"
             industry="Real Estate"
             title="Tenant Application Screening"
-            status="coming-soon"
-            description="Upload an applicant packet: rental form, pay stubs, bank statement, ID. Gemini Flash extracts structured fields multimodally. Gemini Pro runs cross-document consistency. Fraud signal triggers specialist escalation under MPP escrow."
+            status="live"
+            description="3 applicant scenarios. 4 documents each. Flash extracts structured fields, Pro runs cross-document consistency. Fraud score 0–100 with escalation threshold. Per-applicant Tempo settlement."
             unitEconomics="$0.02–$0.05 per applicant"
             vsBaseline="vs $30–80 manual screening"
             buyer="Property management co · Multi-family REIT · Leasing platform"
-            highlight="Multimodal volume economics · Fraud escalation · HUD fair-housing audit trail"
+            highlight="Fraud score · escalation threshold · HUD fair-housing audit trail"
             href="/meter/real-estate"
             aboutHref="/meter/about/real-estate"
           />
+
+          <DemoCard
+            number="04"
+            industry="Enterprise"
+            title="AI Cost Management Platform"
+            status="live"
+            cta="View Dashboard →"
+            description="Multi-department AI spend visibility. Every employee, every session, every token attributed to a department, project, and client. Budget caps enforced per org level. Gemini Pro generates routing optimization suggestions and end-of-month cost projections."
+            unitEconomics="30–70% model cost reduction"
+            vsBaseline="vs opaque monthly invoices"
+            buyer="CFO · CTO · Head of AI · Engineering lead"
+            highlight="Org → dept → project → employee attribution · Routing optimization · Budget projections"
+            href="/meter/enterprise"
+            aboutHref="/meter/about/enterprise"
+            accent
+          />
         </section>
 
-        {/* What all three prove */}
+        {/* What all four prove */}
         <section className="border-2 border-neutral-700 p-6 flex flex-col gap-4">
           <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
-            What all three prove together
+            What all four prove together
           </div>
           <h2 className="text-xl font-bold uppercase tracking-tight">
-            P402 is industry-agnostic AI cost infrastructure.
+            P402 is the metering layer AI has been missing — vertical and horizontal.
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-[11px] font-mono text-neutral-400 leading-relaxed">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-[11px] font-mono text-neutral-400 leading-relaxed">
             <div className="flex flex-col gap-1">
-              <span className="text-primary font-bold uppercase tracking-wider text-[9px]">Same router</span>
-              <span>Healthcare, legal, and real estate workflows run on the same P402 router, the same Tempo settler, the same MPP payment layer. The domain changes. The infrastructure does not.</span>
+              <span className="text-primary font-bold uppercase tracking-wider text-[9px]">Three vertical workflows</span>
+              <span>Healthcare, legal, and real estate prove P402 works for specific high-stakes document workflows with distinct regulatory requirements. Same settlement layer, three different compliance regimes.</span>
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-primary font-bold uppercase tracking-wider text-[9px]">Intentionally different</span>
-              <span>Clinical (URAC-governed), transactional (ABA ethics rules), multimodal-volume (HUD fair housing). Three distinct regulatory regimes. One settlement pattern covers all of them.</span>
+              <span className="text-primary font-bold uppercase tracking-wider text-[9px]">One horizontal platform</span>
+              <span>Enterprise proves P402 works as the AI cost layer across every department simultaneously — Engineering, Marketing, Legal, Finance. The vertical workflows run inside the enterprise platform.</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-primary font-bold uppercase tracking-wider text-[9px]">The routing insight</span>
+              <span>Enterprise is where routing optimization pays the biggest dividend. When you can see that Engineering uses Opus for tasks Haiku handles equally well, the 30–70% savings becomes real and actionable.</span>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-primary font-bold uppercase tracking-wider text-[9px]">The common denominator</span>
-              <span>Every high-stakes AI workflow has the same gap: no metered cost visibility, no per-action audit trail, no sub-cent settlement rail. P402 fills it once, across all three.</span>
+              <span>Every AI workflow — vertical or horizontal — has the same gap: no per-action cost attribution, no sub-cent settlement rail, no onchain audit trail. P402 fills it once across all four.</span>
             </div>
           </div>
           <Link href="/meter/about" className="self-start text-[10px] font-mono text-info hover:text-primary uppercase tracking-wider border border-info hover:border-primary px-3 py-1.5 transition-colors">
@@ -148,13 +168,14 @@ export default function MeterHubPage() {
 }
 
 function DemoCard({
-  number, industry, title, status, description, unitEconomics, vsBaseline,
-  buyer, highlight, href, aboutHref,
+  number, industry, title, status, cta, description, unitEconomics, vsBaseline,
+  buyer, highlight, href, aboutHref, accent,
 }: {
   number: string;
   industry: string;
   title: string;
   status: 'live' | 'coming-soon';
+  cta?: string;
   description: string;
   unitEconomics: string;
   vsBaseline: string;
@@ -162,15 +183,21 @@ function DemoCard({
   highlight: string;
   href: string;
   aboutHref: string;
+  accent?: boolean;
 }) {
   const isLive = status === 'live';
+  const borderColor = isLive ? (accent ? 'border-info' : 'border-primary') : 'border-neutral-700';
+  const numColor = isLive ? (accent ? 'text-info' : 'text-primary') : 'text-neutral-600';
+  const costColor = isLive ? (accent ? 'text-info' : 'text-primary') : 'text-neutral-500';
   return (
-    <div className={`border-2 flex flex-col lg:flex-row ${isLive ? 'border-primary' : 'border-neutral-700'}`}>
+    <div className={`border-2 flex flex-col lg:flex-row ${borderColor}`}>
       {/* Number + status column */}
-      <div className={`flex-shrink-0 flex flex-col items-center justify-start gap-2 px-5 py-5 border-b-2 lg:border-b-0 lg:border-r-2 ${isLive ? 'border-primary' : 'border-neutral-700'}`}>
-        <span className={`text-3xl font-bold font-mono tabular-nums ${isLive ? 'text-primary' : 'text-neutral-600'}`}>{number}</span>
+      <div className={`flex-shrink-0 flex flex-col items-center justify-start gap-2 px-5 py-5 border-b-2 lg:border-b-0 lg:border-r-2 ${borderColor}`}>
+        <span className={`text-3xl font-bold font-mono tabular-nums ${numColor}`}>{number}</span>
         {isLive ? (
-          <span className="border border-success text-success text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">Live</span>
+          accent
+            ? <span className="border border-info text-info text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">Demo</span>
+            : <span className="border border-success text-success text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">Live</span>
         ) : (
           <span className="border border-neutral-700 text-neutral-600 text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">Soon</span>
         )}
@@ -185,7 +212,7 @@ function DemoCard({
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex flex-col items-end">
-              <span className={`text-base font-bold font-mono tabular-nums ${isLive ? 'text-primary' : 'text-neutral-500'}`}>{unitEconomics}</span>
+              <span className={`text-base font-bold font-mono tabular-nums ${costColor}`}>{unitEconomics}</span>
               <span className="text-[9px] font-mono text-neutral-600 uppercase">{vsBaseline}</span>
             </div>
           </div>
@@ -204,8 +231,8 @@ function DemoCard({
 
         <div className="flex gap-3 mt-1 flex-wrap">
           {isLive ? (
-            <Link href={href} className="btn btn-primary text-xs px-4 py-1.5">
-              Run Demo →
+            <Link href={href} className={`btn text-xs px-4 py-1.5 ${accent ? 'btn-secondary border-info text-info hover:bg-info hover:text-neutral-900' : 'btn-primary'}`}>
+              {cta ?? 'Run Demo →'}
             </Link>
           ) : (
             <span className="border-2 border-neutral-700 text-neutral-600 text-xs font-mono px-4 py-1.5 uppercase tracking-wider cursor-not-allowed">

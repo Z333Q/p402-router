@@ -70,6 +70,10 @@ function logTrafficEvent(event: {
     costUsd: number;
     cacheHit: boolean;
     statusCode: number;
+    // Enterprise attribution
+    department?: string;
+    projectName?: string;
+    employeeId?: string;
     // Phase 3.3 — mppx payment analytics (optional)
     paymentRail?: string;
     chargeAmountRaw?: bigint;
@@ -87,8 +91,10 @@ function logTrafficEvent(event: {
     db.query(
         `INSERT INTO traffic_events
             (tenant_id, path, method, status_code, latency_ms, model, provider,
-             tokens_in, tokens_out, cost_usd, cache_hit, request_id, event_type, created_at)
-         VALUES ($1, $2, 'POST', $3, $4, $5, $6, $7, $8, $9, $10, $11, 'chat_completion', NOW())`,
+             tokens_in, tokens_out, cost_usd, cache_hit, request_id, event_type,
+             department, project_name, employee_id, created_at)
+         VALUES ($1, $2, 'POST', $3, $4, $5, $6, $7, $8, $9, $10, $11, 'chat_completion',
+                 $12, $13, $14, NOW())`,
         [
             event.tenantId,
             '/api/v2/chat/completions',
@@ -101,6 +107,9 @@ function logTrafficEvent(event: {
             event.costUsd,
             event.cacheHit,
             event.requestId,
+            event.department ?? null,
+            event.projectName ?? null,
+            event.employeeId ?? null,
         ]
     ).catch(() => { /* best-effort — never block response */ });
 }
@@ -199,6 +208,13 @@ function buildRoutingOptions(body: V2ChatRequest, p402?: V2ChatRequest['p402']):
 export async function POST(req: NextRequest) {
     const requestId = crypto.randomUUID();
     const start = Date.now();
+
+    // Enterprise attribution — read from headers, passed through to router_decisions
+    const attribution = {
+        department: req.headers.get('x-p402-department') ?? undefined,
+        projectName: req.headers.get('x-p402-project') ?? undefined,
+        employeeId: req.headers.get('x-p402-employee') ?? undefined,
+    };
 
     try {
         // Parse request body
@@ -469,12 +485,14 @@ export async function POST(req: NextRequest) {
                     getProviderRegistry(), buildCompletionRequest(body),
                     buildRoutingOptions(body, p402Options), requestId, tenantId,
                     start, agentkit, reputationScore, creditBalance?.balance ?? null,
+                    undefined, attribution,
                 );
             }
             return handleNonStreamingResponse(
                 getProviderRegistry(), buildCompletionRequest(body),
                 buildRoutingOptions(body, p402Options), requestId, tenantId,
                 start, agentkit, reputationScore, creditBalance?.balance ?? null,
+                undefined, attribution,
             );
         }
 
@@ -514,9 +532,9 @@ export async function POST(req: NextRequest) {
 
         // Handle streaming vs non-streaming
         if (body.stream) {
-            return handleStreamingResponse(registry, completionRequest, routingOptions, requestId, tenantId, start, agentkit, reputationScore, creditBalance?.balance ?? null);
+            return handleStreamingResponse(registry, completionRequest, routingOptions, requestId, tenantId, start, agentkit, reputationScore, creditBalance?.balance ?? null, undefined, attribution);
         } else {
-            return handleNonStreamingResponse(registry, completionRequest, routingOptions, requestId, tenantId, start, agentkit, reputationScore, creditBalance?.balance ?? null);
+            return handleNonStreamingResponse(registry, completionRequest, routingOptions, requestId, tenantId, start, agentkit, reputationScore, creditBalance?.balance ?? null, undefined, attribution);
         }
 
     } catch (error: any) {
@@ -594,6 +612,7 @@ async function handleNonStreamingResponse(
     reputationScore: number | null,
     creditBalanceBefore: number | null,
     paymentMeta?: MppxPaymentMeta,
+    attribution?: { department?: string; projectName?: string; employeeId?: string },
 ) {
     // Execute completion
     const response = await registry.complete(request, options);
@@ -689,6 +708,9 @@ async function handleNonStreamingResponse(
         costUsd,
         cacheHit: response.p402?.cached ?? false,
         statusCode: 200,
+        department: attribution?.department,
+        projectName: attribution?.projectName,
+        employeeId: attribution?.employeeId,
         paymentRail: paymentMeta?.rail,
         chargeAmountRaw: paymentMeta?.chargeAmountRaw,
         analyticsTag: paymentMeta?.analyticsTag,
@@ -719,6 +741,7 @@ async function handleStreamingResponse(
     reputationScore: number | null,
     creditBalanceBefore: number | null,
     paymentMeta?: MppxPaymentMeta,
+    attribution?: { department?: string; projectName?: string; employeeId?: string },
 ) {
     // Create a readable stream
     const encoder = new TextEncoder();
@@ -836,6 +859,9 @@ async function handleStreamingResponse(
                     costUsd,
                     cacheHit: false,
                     statusCode: 200,
+                    department: attribution?.department,
+                    projectName: attribution?.projectName,
+                    employeeId: attribution?.employeeId,
                     paymentRail: paymentMeta?.rail,
                     chargeAmountRaw: paymentMeta?.chargeAmountRaw,
                     analyticsTag: paymentMeta?.analyticsTag,
