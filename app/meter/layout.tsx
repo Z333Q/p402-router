@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'P402 Meter, Healthcare Payer-Ops on Arc',
+  title: 'P402 Meter · Per-Token AI Billing on Tempo Mainnet',
   description:
-    'De-identified prior authorization spend control. Gemini-governed. Circle-settled. Proof on Arc.',
+    'Per-token AI settlement infrastructure. Gemini-powered. MPP-settled. Proof on Tempo mainnet.',
 };
 
 export default function MeterLayout({ children }: { children: React.ReactNode }) {

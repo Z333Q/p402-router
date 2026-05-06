@@ -1,0 +1,116 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/Users/za/Library/CloudStorage/Dropbox/Nature Of Commerce LLC/P402.io-Corporate/V2/p402-router/contracts/P402Escrow.sol": {
+      "lastModificationDate": 1774164272385,
+      "contentHash": "87e4ccd7cbe9a923c6e6f498a97d15fb",
+      "sourceName": "contracts/P402Escrow.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IERC20",
+        "P402Escrow"
+      ]
+    },
+    "/Users/za/Library/CloudStorage/Dropbox/Nature Of Commerce LLC/P402.io-Corporate/V2/p402-router/contracts/P402Settlement.sol": {
+      "lastModificationDate": 1766121363112,
+      "contentHash": "cd6c0f242faf40f410520f120c05f322",
+      "sourceName": "contracts/P402Settlement.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IERC20",
+        "P402Settlement"
+      ]
+    },
+    "/Users/za/Library/CloudStorage/Dropbox/Nature Of Commerce LLC/P402.io-Corporate/V2/p402-router/contracts/SubscriptionFacilitator.sol": {
+      "lastModificationDate": 1772056196392,
+      "contentHash": "30b6bb7eada220632af7c48c7223d57f",
+      "sourceName": "contracts/SubscriptionFacilitator.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IERC20Permit",
+        "SubscriptionFacilitator"
+      ]
+    }
+  }
+}
