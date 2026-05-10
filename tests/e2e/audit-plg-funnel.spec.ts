@@ -4,7 +4,6 @@ test.describe('Audit PLG Funnel & SSE Streams', () => {
     test('User runs audit, sees real-time SSE update, and hits Upgrade Gate', async ({ page }) => {
         // 1. Mock the SSE endpoint to instantly return a success payload
         await page.route('**/api/v1/audit/stream*', async (route) => {
-            const encoder = new TextEncoder();
             const mockPayload = {
                 type: 'AUDIT_SUCCESS',
                 data: {
@@ -13,16 +12,9 @@ test.describe('Audit PLG Funnel & SSE Streams', () => {
                 }
             };
 
-            const stream = new ReadableStream({
-                start(controller) {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(mockPayload)}\n\n`));
-                    controller.close();
-                }
-            });
-
             await route.fulfill({
                 headers: { 'Content-Type': 'text/event-stream' },
-                body: stream, // Playwright handles ReadableStreams natively
+                body: `data: ${JSON.stringify(mockPayload)}\n\n`,
             });
         });
 

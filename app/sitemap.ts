@@ -65,6 +65,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { url: `${baseUrl}/intelligence/protocol-economics`,                lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
         { url: `${baseUrl}/intelligence/sentinel-layer`,                    lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
 
+        // ── P402 Meter — per-token AI billing on Tempo ────────────────
+        { url: `${baseUrl}/meter`,                          lastModified: now, changeFrequency: 'weekly',  priority: 0.95 },
+        { url: `${baseUrl}/meter/healthcare`,               lastModified: now, changeFrequency: 'weekly',  priority: 0.9  },
+        { url: `${baseUrl}/meter/legal`,                    lastModified: now, changeFrequency: 'weekly',  priority: 0.9  },
+        { url: `${baseUrl}/meter/real-estate`,              lastModified: now, changeFrequency: 'weekly',  priority: 0.9  },
+        { url: `${baseUrl}/meter/enterprise`,               lastModified: now, changeFrequency: 'weekly',  priority: 0.9  },
+        { url: `${baseUrl}/meter/about/billing`,            lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+        { url: `${baseUrl}/meter/about/routing`,            lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+        { url: `${baseUrl}/meter/about/tracing`,            lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+        { url: `${baseUrl}/meter/about/audit`,              lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+        { url: `${baseUrl}/meter/about/optimization`,       lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+
+        // ── Changelog ─────────────────────────────────────────────────
+        { url: `${baseUrl}/changelog`,                      lastModified: now, changeFrequency: 'weekly',  priority: 0.6  },
+
         // ── Legal ─────────────────────────────────────────────────────
         { url: `${baseUrl}/terms`,                  lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
         { url: `${baseUrl}/privacy`,                lastModified: now, changeFrequency: 'monthly', priority: 0.3 },

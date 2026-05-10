@@ -50,7 +50,7 @@ const UNVERIFIED_METADATA = {
     credits_balance: null,
 };
 
-const MOCK_CHAT_RESPONSE = (meta: typeof VERIFIED_METADATA) => ({
+const MOCK_CHAT_RESPONSE = (meta: typeof VERIFIED_METADATA | typeof UNVERIFIED_METADATA) => ({
     id: 'chatcmpl-test001',
     object: 'chat.completion',
     created: Math.floor(Date.now() / 1000),

@@ -3,7 +3,7 @@ import { POST, GET, PUT, OPTIONS } from './route';
 import { NextRequest } from 'next/server';
 
 function createRequest(url: string, options: RequestInit = {}) {
-    return new NextRequest(new URL(url, 'https://p402.io'), options);
+    return new NextRequest(new URL(url, 'https://p402.io'), options as ConstructorParameters<typeof NextRequest>[1]);
 }
 
 describe('Receipts API', () => {

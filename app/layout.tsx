@@ -3,20 +3,30 @@ import './globals.css'
 import GoogleAnalytics from './components/GoogleAnalytics'
 
 export const metadata: Metadata = {
-    title: 'P402 | The Agentic Economy Operating System',
+    title: 'P402 | AI Payment Processing, Token Metering & Intelligent Routing',
     description:
-        'P402 is the sovereign routing and payment layer for Agent-to-Agent (A2A) and Agent-to-Passenger (A2P) commerce. Powered by Gemini 3 for autonomous policy governance and x402 settlement.',
+        'P402 is production AI infrastructure for payment processing, per-token metering, intelligent multi-provider routing, distributed tracing, compliance auditing, and spend optimization. OpenAI-compatible. Settles micropayments on Base and Tempo.',
     metadataBase: new URL('https://p402.io'),
     keywords: [
-        'AI Agents', 'A2A Protocol', 'A2P Commerce', 'x402 Payment Required',
-        'Agentic Web', 'Autonomous Agents', 'LLM Routing', 'Agent Payments',
-        'Base Blockchain', 'Google A2A', 'Agentic Economy', 'AI Governance'
+        // Core product
+        'AI payment processing', 'token metering', 'LLM routing', 'AI cost optimization',
+        'per-token billing', 'AI spend management', 'AI audit trail',
+        // Technical
+        'x402 payment protocol', 'EIP-3009', 'OpenAI-compatible API', 'AI gateway',
+        'multi-provider routing', 'semantic cache', 'distributed tracing',
+        // Protocols
+        'A2A protocol', 'AP2 mandates', 'x402', 'ERC-8004',
+        // Business
+        'AI metering', 'AI compliance', 'department AI budgets', 'AI observability',
+        'agentic payments', 'AI agent governance', 'autonomous agent spending',
+        // Blockchain
+        'Base blockchain', 'Tempo mainnet', 'USDC micropayments', 'gasless payments',
     ],
     authors: [{ name: 'P402 Protocol Research' }],
     openGraph: {
-        title: 'P402 | Infrastructure for the Agentic Economy',
+        title: 'P402 | AI Payment Processing, Token Metering & Intelligent Routing',
         description:
-            'The sovereign routing and settlement layer for the Agentic Web. Secure, Intelligent, and A2A-Native.',
+            'Production AI infrastructure: per-token metering, intelligent routing across 300+ models, on-chain micropayment settlement, compliance auditing, and spend optimization.',
         url: 'https://p402.io',
         siteName: 'P402',
         type: 'website',
@@ -26,14 +36,14 @@ export const metadata: Metadata = {
                 url: '/opengraph-image',
                 width: 1200,
                 height: 630,
-                alt: 'P402 — AI Payment Router for Agent Commerce',
+                alt: 'P402 — AI Payment Processing and Token Metering Infrastructure',
             },
         ],
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'P402 Protocol',
-        description: 'The Agent-to-Agent (A2A) Commerce Infrastructure.',
+        title: 'P402 — AI Payment Processing & Token Metering',
+        description: 'Per-token AI billing, intelligent routing, on-chain settlement, compliance auditing. OpenAI-compatible.',
         site: '@p402_io',
         images: ['/opengraph-image'],
     },
@@ -61,37 +71,95 @@ export const metadata: Metadata = {
 }
 
 // JSON-LD Structured Data for SEO & LLMs
-const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'P402',
-    url: 'https://p402.io',
-    logo: 'https://p402.io/favicon.png',
-    description: 'A sovereign infrastructure layer for Agent-to-Agent (A2A) commerce and autonomous policy governance.',
-    knowsAbout: ['AI Agents', 'Agentic Web', 'Blockchain Payments', 'A2A Protocol', 'HTTP 402'],
-    hasOfferCatalog: {
-        '@type': 'OfferCatalog',
-        name: 'P402 Services',
-        itemListElement: [
-            {
-                '@type': 'Offer',
-                itemOffered: {
-                    '@type': 'SoftwareApplication',
-                    name: 'P402 Router',
-                    description: 'Autonomous A2A payment routing and policy enforcement.'
-                }
-            },
-            {
-                '@type': 'Offer',
-                itemOffered: {
-                    '@type': 'SoftwareApplication',
-                    name: 'x402 Protocol',
-                    description: 'The standard for Agent-to-Agent payment requests.'
-                }
-            }
-        ]
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'P402',
+        url: 'https://p402.io',
+        logo: 'https://p402.io/favicon.png',
+        description: 'Production AI infrastructure for payment processing, per-token metering, intelligent routing, distributed tracing, compliance auditing, and spend optimization.',
+        knowsAbout: [
+            'AI Payment Processing', 'Token Metering', 'LLM Routing', 'x402 Protocol',
+            'EIP-3009 Gasless Payments', 'A2A Protocol', 'AI Compliance Auditing',
+            'Agent-to-Agent Commerce', 'Micropayment Settlement', 'AI Cost Optimization',
+        ],
+        sameAs: ['https://twitter.com/p402_io', 'https://github.com/Z333Q/p402-router'],
+        hasOfferCatalog: {
+            '@type': 'OfferCatalog',
+            name: 'P402 Products',
+            itemListElement: [
+                {
+                    '@type': 'Offer',
+                    itemOffered: {
+                        '@type': 'SoftwareApplication',
+                        name: 'P402 Meter',
+                        applicationCategory: 'BusinessApplication',
+                        description: 'Per-token AI billing with department attribution, budget enforcement, and on-chain settlement on Tempo mainnet.',
+                        url: 'https://p402.io/meter',
+                    }
+                },
+                {
+                    '@type': 'Offer',
+                    itemOffered: {
+                        '@type': 'SoftwareApplication',
+                        name: 'P402 Router',
+                        applicationCategory: 'DeveloperApplication',
+                        description: 'Intelligent multi-provider LLM routing across 300+ models with cost/speed/quality optimization and semantic cache.',
+                        url: 'https://p402.io/docs/router',
+                    }
+                },
+                {
+                    '@type': 'Offer',
+                    itemOffered: {
+                        '@type': 'SoftwareApplication',
+                        name: 'x402 Payment Protocol',
+                        applicationCategory: 'FinanceApplication',
+                        description: 'EIP-3009 gasless USDC micropayment settlement on Base L2. HTTP 402 as a machine-native payment primitive.',
+                        url: 'https://p402.io/docs/facilitator',
+                    }
+                },
+                {
+                    '@type': 'Offer',
+                    itemOffered: {
+                        '@type': 'SoftwareApplication',
+                        name: 'P402 Enterprise Dashboard',
+                        applicationCategory: 'BusinessApplication',
+                        description: 'CFO-grade AI spend analytics: department budgets, employee attribution, model mix, optimization findings.',
+                        url: 'https://p402.io/meter/enterprise',
+                    }
+                },
+            ]
+        }
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'P402',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Any',
+        url: 'https://p402.io',
+        description: 'AI payment processor and token metering platform. OpenAI-compatible API with intelligent routing, on-chain micropayment settlement, compliance auditing, and enterprise spend management.',
+        featureList: [
+            'Per-token AI billing on Tempo mainnet',
+            'Intelligent routing across 300+ LLM models',
+            'EIP-3009 gasless USDC micropayments on Base L2',
+            'Department and project attribution for AI spend',
+            'Real-time distributed tracing and audit trail',
+            'Semantic cache reducing LLM costs 15–40%',
+            'AP2 mandate governance for autonomous agents',
+            'Google A2A JSON-RPC with x402 payment extension',
+            'OpenAI-compatible drop-in replacement',
+            'Enterprise budget caps and overage alerts',
+        ],
+        offers: {
+            '@type': 'Offer',
+            priceCurrency: 'USD',
+            price: '0',
+            description: 'Free tier available. Metered billing per token processed.',
+        }
     }
-}
+]
 
 import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 
@@ -119,7 +187,11 @@ export default function RootLayout({
             <head>
                 <script
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd[0]) }}
+                />
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd[1]) }}
                 />
             </head>
             <body>

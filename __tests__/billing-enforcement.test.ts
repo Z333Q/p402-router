@@ -97,7 +97,7 @@ describe('Hard Usage Enforcement', () => {
             const middleware = new A2AMiddleware('tenant-123');
             await expect(middleware.createTask({
                 tenantId: 'tenant-123',
-                message: { id: 'm1', type: 'task', content: {} }
+                message: { role: 'user' as const, parts: [{ type: 'text' as const, text: 'task' }] }
             })).rejects.toThrow(BillingError);
         });
     });

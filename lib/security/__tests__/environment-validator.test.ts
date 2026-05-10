@@ -49,7 +49,7 @@ describe('EnvironmentValidator', () => {
             process.env.NEXTAUTH_URL = 'http://localhost:3000';
             process.env.P402_TREASURY_ADDRESS = '0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6';
             process.env.BASE_RPC_URL = 'https://mainnet.base.org';
-            process.env.NODE_ENV = 'development';
+            Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', configurable: true });
 
             const result = EnvironmentValidator.validate();
 
@@ -112,7 +112,7 @@ describe('EnvironmentValidator', () => {
 
     describe('detectEnvironment', () => {
         it('should detect production from NODE_ENV', () => {
-            process.env.NODE_ENV = 'production';
+            Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', configurable: true });
             // Set required vars to avoid validation errors
             process.env.DATABASE_URL = 'postgresql://user:pass@localhost/db';
             process.env.NEXTAUTH_SECRET = 'a'.repeat(64);
@@ -125,7 +125,7 @@ describe('EnvironmentValidator', () => {
         });
 
         it('should detect development by default', () => {
-            process.env.NODE_ENV = 'development';
+            Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', configurable: true });
             delete process.env.VERCEL_ENV;
             process.env.DATABASE_URL = 'postgresql://user:pass@localhost/db';
             process.env.NEXTAUTH_SECRET = 'a'.repeat(64);
@@ -148,7 +148,7 @@ describe('EnvironmentValidator', () => {
         });
 
         it('should return healthy status when validation passes', () => {
-            process.env.NODE_ENV = 'production';
+            Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', configurable: true });
             process.env.DATABASE_URL = 'postgresql://user:pass@localhost/db';
             process.env.NEXTAUTH_SECRET = 'a'.repeat(64);
             process.env.NEXTAUTH_URL = 'https://p402.io';

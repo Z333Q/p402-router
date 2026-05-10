@@ -42,6 +42,9 @@ import { verifyP402Charge, verifyBaseCharge, resolveAmount, decodePaymentHeader 
 import type { P402ChargeCredential, BaseChargeCredential, ComposeResult } from '@p402/mpp-method';
 import { executeBaseSettle } from '@/lib/mpp/base-settler';
 import { BASE_USDC_ADDRESS } from '@/lib/constants';
+import { computePlatformFeeUsd } from '@/lib/billing/entitlements';
+import { getTenantPlan } from '@/lib/billing/plan-guard';
+import { recordUsage } from '@/lib/billing/usage';
 
 // x402 payment requirements emitted in the dual-402 challenge for Base mainnet.
 // Clients supporting x402 can pre-pay; verification on this endpoint ships in Phase 2.3.
@@ -343,6 +346,20 @@ export async function POST(req: NextRequest) {
                     guard.finalizeSpend(billingCtx, reservation.reservationId, mppxChargeAmount)
                         .catch(err => console.warn('[mppx:billing] finalizeSpend failed:', err));
 
+                    // Record platform fee (non-blocking) — mppx clients fall back to 'free' plan (1%)
+                    void (async () => {
+                        try {
+                            const planId = await getTenantPlan(syntheticTenantId);
+                            const platformFee = computePlatformFeeUsd(planId, mppxChargeAmount);
+                            await recordUsage({ tenantId: syntheticTenantId, eventType: 'api_call', costUsd: mppxChargeAmount });
+                            if (platformFee > 0) {
+                                await recordUsage({ tenantId: syntheticTenantId, eventType: 'platform_fee', costUsd: platformFee });
+                            }
+                        } catch (err) {
+                            console.warn('[mppx:billing] platform fee recording failed:', err);
+                        }
+                    })();
+
                     return (composeResult as { status: 200; withReceipt: (r: Response) => Response })
                         .withReceipt(aiResponse);
                 }
@@ -418,6 +435,20 @@ export async function POST(req: NextRequest) {
 
                         guard.finalizeSpend(billingCtx, reservation.reservationId, mppxChargeAmount)
                             .catch(err => console.warn('[mppx:billing] finalizeSpend failed:', err));
+
+                        // Record platform fee (non-blocking) — mppx clients fall back to 'free' plan (1%)
+                        void (async () => {
+                            try {
+                                const planId = await getTenantPlan(syntheticTenantId);
+                                const platformFee = computePlatformFeeUsd(planId, mppxChargeAmount);
+                                await recordUsage({ tenantId: syntheticTenantId, eventType: 'api_call', costUsd: mppxChargeAmount });
+                                if (platformFee > 0) {
+                                    await recordUsage({ tenantId: syntheticTenantId, eventType: 'platform_fee', costUsd: platformFee });
+                                }
+                            } catch (err) {
+                                console.warn('[mppx:billing] platform fee recording failed:', err);
+                            }
+                        })();
 
                         return aiResponse;
                     }

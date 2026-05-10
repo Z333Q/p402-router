@@ -1,108 +1,264 @@
 # P402.io
 
-> Payment-aware AI orchestration layer. Routes LLM requests across 300+ models with cost/speed/quality optimization and settles micropayments in USDC on Base via the x402 protocol (EIP-3009, gasless).
+> AI infrastructure for payment processing, token metering, intelligent routing, distributed tracing, compliance auditing, and spend optimization. Production-grade. OpenAI-compatible. Settles micropayments on-chain.
 
-P402 sits between your application and AI providers the same way a payment network sits between merchants and banks — handling routing, authorization, and settlement so your code just makes API calls.
+P402 is the infrastructure layer that sits between AI applications and AI providers — the same way a payment network sits between merchants and banks. It handles routing, authorization, metering, settlement, and governance so your application makes one API call and P402 handles the rest.
 
-- **OpenAI-compatible**: Drop-in replacement for `openai` SDK — change one URL
-- **300+ models**: GPT-4o, Claude 4, Gemini 3, Llama 4, Mistral, and more via OpenRouter
-- **Micropayments**: USDC settlement on Base L2 at fractions of a cent per request
-- **Routing modes**: `cost`, `speed`, `quality`, `balanced` — or custom weights
-- **Semantic cache**: Cosine-similarity cache cuts redundant LLM calls and fees
-- **A2A protocol**: Google A2A JSON-RPC with x402 payment extension
-- **Spending controls**: AP2 mandates give agents bounded authority with budget caps
-- **Email login**: Sign in with email OTP — CDP embedded wallet created automatically, no MetaMask required
+---
 
-## Claude Skill
+## What P402 Does
 
-Install the P402 skill to give Claude Code and Claude.ai deep integration knowledge:
+**Payment Processing** — EIP-3009 gasless USDC settlement on Base L2. HTTP 402 becomes a machine-native payment primitive. Facilitators execute on-chain transfers; users pay zero gas.
 
-- [Install Skill (zip)](https://p402.io/skill/p402.zip): `claude mcp install https://p402.io/skill/p402.zip`
-- [SKILL.md](https://p402.io/skill/SKILL.md): Core routing guide, billing guard reference, migration patterns
-- [Skill Documentation](https://p402.io/docs/skill): Full installation guide and use cases
+**Token Metering** — Per-token AI billing tracked at request granularity. Every token counted, costed, and attributed to a department, project, or employee. Real-time dashboards. Budget enforcement. Overage alerts.
 
-### What the Skill Teaches Claude
-- Generate P402 integration code from scratch
-- Debug routing decisions and billing guard errors
-- Compare model pricing across all 300+ providers
-- Set up session-based spending limits for autonomous agents
-- Implement x402 payment flows (verify → settle → receipt)
-- Configure AP2 mandates for multi-agent workflows
+**Intelligent Routing** — 300+ models across 13 providers. Four routing modes: `cost`, `speed`, `quality`, `balanced`. Semantic cache cuts redundant LLM calls. Gemini-powered Protocol Economist optimizes routing decisions asynchronously.
 
-## Docs
+**Distributed Tracing** — Every request traced end-to-end: model selected, provider latency, tokens used, cost incurred, cache hit/miss, routing decision, settlement result. SSE real-time trace viewer. Full audit trail in `traffic_events`.
 
-- [API Reference](https://p402.io/docs/api): Chat completions, sessions, providers, analytics, cache, x402 settlement
-- [Routing Guide](https://p402.io/docs/router): Modes (cost, speed, quality, balanced), scoring algorithm, failover
-- [SDK Reference](https://p402.io/docs/sdk): TypeScript SDK, MCP server integration, CLI tools
-- [A2A Protocol](https://p402.io/docs/a2a): JSON-RPC 2.0 with x402 payment extension, AP2 mandates
-- [x402 Facilitator](https://p402.io/docs/facilitator): Deploy a facilitator, EIP-3009, USDC on Base
-- [AP2 Mandates](https://p402.io/docs/mandates): Bounded spending authority for AI agents
-- [MCP Server](https://p402.io/docs/mcp): Model Context Protocol integration for Claude and other agents
-- [ERC-8004 Agents](https://p402.io/docs/erc8004): On-chain agent identity and reputation on Base
-- [Model Comparison](https://p402.io/models): Live 300+ model pricing with cost calculator
-- [Full Documentation](https://p402.io/llms-full.txt): Complete technical reference (1,900+ lines)
+**Compliance Auditing** — Immutable audit log for every AI interaction. Department attribution via `X-P402-Department`, `X-P402-Project`, `X-P402-Employee` headers. Proof-of-settlement receipts. HIPAA-ready audit trails for healthcare. Compliance bundles for legal. Verifiable spend records for finance.
 
-## Skill Reference Files
+**Spend Optimization** — AI-generated recommendations from Gemini Protocol Economist. Model mix analysis. Budget pacing (day-of-month projection). Semantic cache ROI. Provider cost comparisons. Enterprise dashboard with department budgets, top spenders, project breakdown.
 
-- [API Reference](https://p402.io/skill/references/api-reference.md): TypeScript interfaces, error codes, examples
-- [Routing Guide](https://p402.io/skill/references/routing-guide.md): Scoring algorithm, provider landscape, config
-- [Payment Flows](https://p402.io/skill/references/payment-flows.md): x402 3-step flow, EIP-3009, USDC addresses
-- [A2A Protocol](https://p402.io/skill/references/a2a-protocol.md): JSON-RPC methods, mandates, Bazaar marketplace
+---
 
-## Key Endpoints
+## P402 Meter — Per-Token AI Billing
 
-- `POST /api/v2/chat/completions` — OpenAI-compatible routing (change base URL, keep your code)
-- `POST /api/v2/sessions` — Create budget-capped sessions for autonomous agent spending
-- `GET  /api/v2/sessions/:id` — Check session budget and status
-- `POST /api/v2/providers/compare` — Compare pricing across 300+ models in real time
-- `GET  /api/v2/analytics/recommendations` — AI-generated cost optimization suggestions
-- `GET  /api/v2/credits/balance` — Credit balance (1 credit = $0.01; World ID-verified users get 500 free)
-- `POST /api/v2/credits/purchase` — Buy credits (test or paid USDC mode)
-- `GET  /api/v2/credits/history` — Credit transaction history
-- `GET  /api/v2/agents/:address/reputation` — Human-anchored reputation score [0.0–1.0]
-- `POST /api/v1/facilitator/verify` — Verify x402 EIP-3009 payment authorization
-- `POST /api/v1/facilitator/settle` — Execute USDC transfer on Base L2
-- `POST /api/a2a` — Google A2A JSON-RPC with x402 payment extension
-- `GET  /.well-known/agent.json` — A2A agent discovery card
+P402 Meter is the per-token billing system built on Tempo mainnet (chain 4217) using TIP-20 stablecoins (USDC.e, USDT0, cUSD, pathUSD, and 6 more).
 
-## Quick Integration
+**Key capabilities:**
+- Per-request token counting with department/project/employee attribution
+- Budget caps enforced in real time — requests blocked when budget exhausted
+- On-chain settlement proofs (Tempo USDC.e, ERC-20 `transfer`)
+- Full model mix analytics: which models each team is using and what it costs
+- Semantic cache: identical or near-identical queries served from cache, cost = $0
+- Enterprise dashboard: department budgets, top employees by spend, project breakdown, recent sessions, optimization findings
 
-```bash
-npm install @p402/sdk
-```
+**Industry demos (live):**
+- `/meter/healthcare` — HIPAA-grade audit trail, clinical AI compliance, department cost allocation
+- `/meter/legal` — matter-level billing, privilege log, multi-jurisdictional routing, per-token invoicing
+- `/meter/real-estate` — property-contextual AI, MLS enrichment, deal pipeline cost tracking
+- `/meter/enterprise` — full CFO dashboard: department budgets, spend forecasting, model mix optimization
+
+**Tempo chain details:**
+- Chain ID: 4217 (CAIP-2: `eip155:4217`)
+- No native gas token — gas paid in TIP-20 stablecoins via FeeAMM
+- `eth_getCode` returns `0xef` for TIP-20 contracts (EIP-7702 delegation designator, not an error)
+- Settlement uses standard ERC-20 `transfer(to, amount)` — never `msg.value`
+
+---
+
+## Core Routing
+
+POST `/api/v2/chat/completions` — OpenAI-compatible. Drop-in replacement for the OpenAI SDK (change one URL). P402 selects the optimal provider, executes the request, settles payment, and logs telemetry.
 
 ```typescript
 import OpenAI from 'openai';
 
-// Drop-in: change base URL only
 const client = new OpenAI({
   baseURL: 'https://p402.io/api/v2',
   apiKey: process.env.P402_API_KEY,
 });
 
 const response = await client.chat.completions.create({
-  model: 'auto',  // P402 picks the optimal model
+  model: 'auto',               // P402 picks the optimal model
   messages: [{ role: 'user', content: 'Hello' }],
-  // P402 extensions:
-  // x_routing_mode: 'cost',   // or 'speed', 'quality', 'balanced'
-  // x_session_id: 'sess_...',  // budget-capped session
+  // P402 routing extensions (via extra_body):
+  // x_routing_mode: 'cost'    // 'cost' | 'speed' | 'quality' | 'balanced'
+  // x_session_id: 'sess_...'  // budget-capped session
 });
 ```
 
-## Agent Discovery
+**Enterprise attribution headers:**
+```
+X-P402-Department: Engineering
+X-P402-Project: copilot-v2
+X-P402-Employee: alice@company.com
+```
+These stamp every `traffic_events` row for analytics.
 
-- [Agent Card](https://p402.io/.well-known/agent.json): A2A-compliant discovery (streaming, x402 payments)
-- [OpenAPI Spec](https://p402.io/openapi.yaml): Machine-readable full API specification
-- [p402.json](https://p402.io/.well-known/p402.json): x402 protocol governance configuration
+**Routing modes:**
+- `cost` — cheapest model that meets quality threshold
+- `speed` — lowest p95 latency, prioritizes fast providers
+- `quality` — highest model capability score
+- `balanced` — weighted composite (default)
 
-## Contracts (Base Mainnet, Chain ID 8453)
+---
 
+## x402 Payment Protocol
+
+x402 makes HTTP 402 "Payment Required" machine-native. A client signs an EIP-3009 `TransferWithAuthorization`, submits it with the request, and the facilitator executes the on-chain USDC transfer gaslessly.
+
+**Wire format:**
+```
+Authorization: Payment <base64url(paymentPayload)>
+```
+
+**Settlement flow:**
+1. `POST /api/v1/facilitator/verify` — validate signature, amount, nonce
+2. `POST /api/v1/facilitator/settle` — execute `transferWithAuthorization` on USDC contract
+3. Facilitator pays gas; user pays zero gas
+
+**Key addresses (Base Mainnet, Chain ID 8453):**
 - USDC: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`
 - Treasury: `0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6`
-- Settlement: `0xd03c7ab9a84d86dbc171367168317d6ebe408601`
+- P402Settlement: `0xd03c7ab9a84d86dbc171367168317d6ebe408601`
+- SubscriptionFacilitator: `0xc64747651e977464af5bce98895ca6018a3e26d7`
+
+**Security:** replay protection (nonces recorded), gas limit guard (rejects if Base gas > 50 gwei), expiry check, $0.01 minimum.
+
+---
+
+## Sessions & Budget Control
+
+Sessions give AI agents bounded authority to spend within defined limits.
+
+```typescript
+// Create a budget-capped session
+const session = await fetch('https://p402.io/api/v2/sessions', {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${API_KEY}` },
+  body: JSON.stringify({
+    budget_usd: 5.00,         // max spend
+    expires_in_seconds: 3600, // 1 hour
+    agent_id: 'my-agent',
+  })
+}).then(r => r.json());
+
+// Use session in requests
+const client = new OpenAI({
+  baseURL: 'https://p402.io/api/v2',
+  apiKey: session.session_token,
+});
+```
+
+Sessions enforce hard spend caps. Budget exceeded → `BillingGuard` blocks at middleware, returns 402 before touching any provider.
+
+---
+
+## AP2 Mandates — Bounded Agent Authority
+
+AP2 mandates are user-signed spending authorizations that let AI agents spend on behalf of users within defined constraints. The governance layer on top of x402.
+
+```typescript
+// Issue a mandate
+const mandate = await fetch('https://p402.io/api/a2a/mandates', {
+  method: 'POST',
+  body: JSON.stringify({
+    type: 'payment',
+    user_did: 'did:p402:user:0xABC...',
+    agent_did: 'did:p402:agent:analyst-v2',
+    constraints: {
+      max_amount_usd: 25.00,
+      allowed_categories: ['research', 'summarization'],
+      valid_until: '2026-12-31T23:59:59Z',
+    },
+  })
+});
+```
+
+Constraints enforced: max budget, allowed categories, expiry. `MANDATE_BUDGET_EXCEEDED` blocks overspend. Each mandate tracks `amount_spent_usd` cumulatively.
+
+---
+
+## A2A Protocol — Agent-to-Agent Commerce
+
+P402 implements the Google A2A JSON-RPC 2.0 protocol for agent-to-agent communication with x402 payment extension.
+
+**JSON-RPC methods:**
+- `tasks/send` — submit task to agent
+- `tasks/get` — retrieve task status + artifacts
+- `tasks/cancel` — cancel in-progress task
+- `tasks/sendSubscribe` — submit + subscribe via SSE
+
+**Discovery:**
+- `GET /.well-known/agent.json` — P402's A2A agent card (capabilities, skills, endpoints, x402 extension)
+- `GET /api/a2a/agents` — list all registered agents in Bazaar
+
+**Payment extension URI:** `tag:x402.org,2025:x402-payment`
+
+---
+
+## Analytics & Observability Endpoints
+
+```
+GET  /api/v2/analytics/spend              — Detailed spend breakdown by model, provider, time
+GET  /api/v2/analytics/recommendations    — Gemini-generated cost optimization suggestions
+GET  /api/v2/enterprise/analytics         — Department/employee/project breakdown (enterprise)
+GET  /api/v2/enterprise/budgets           — Department budget configuration
+POST /api/v2/enterprise/budgets           — Set department budget cap
+GET  /api/v2/sessions                     — List active sessions with spend
+GET  /api/v2/sessions/:id/stats           — Real-time session metrics
+GET  /api/v1/analytics/spend              — Time-series spend data
+GET  /api/v1/analytics/alerts             — Budget alert history
+GET  /api/v1/analytics/decisions          — Routing decision log
+GET  /api/v1/analytics/conversion         — Conversion funnel metrics
+```
+
+---
+
+## Intelligence Layer
+
+Gemini-powered governance:
+
+- **Protocol Economist** (`gemini-2.0-pro`) — deep ledger analysis, routing optimization, cost recommendations. Runs async after each batch.
+- **Sentinel** (`gemini-2.0-flash`) — real-time anomaly detection. Flags unusual spend velocity, model abuse, credential anomalies.
+
+Feature flags: `ENABLE_COST_INTELLIGENCE=true`, `ENABLE_SEMANTIC_CACHE=true`
+
+---
+
+## Semantic Cache
+
+Cosine-similarity cache using `text-embedding-004`. Near-identical queries served from cache — no LLM call, no provider cost, sub-10ms response.
+
+Cache hit rate typically 15–40% in production enterprise deployments. ROI shown in `/api/v2/analytics/recommendations`.
+
+---
+
+## ERC-8004 Trustless Agent Identity
+
+On-chain agent identity and reputation on Base. Agents registered with a DID, validated on-chain before receiving tasks.
+
+- Identity Registry (Base): `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432`
+- Reputation Registry (Base): `0x8004BAa17C55a88189AE136b182e5fdA19dE9b63`
+
+---
+
+## Docs
+
+- [API Reference](https://p402.io/docs/api): Chat completions, sessions, providers, analytics, cache, x402
+- [Routing Guide](https://p402.io/docs/router): Modes, scoring algorithm, failover
+- [SDK Reference](https://p402.io/docs/sdk): TypeScript SDK, MCP server, CLI
+- [A2A Protocol](https://p402.io/docs/a2a): JSON-RPC 2.0 with x402 payment extension, AP2 mandates
+- [x402 Facilitator](https://p402.io/docs/facilitator): Deploy a facilitator, EIP-3009, USDC on Base
+- [AP2 Mandates](https://p402.io/docs/mandates): Bounded spending authority for AI agents
+- [MCP Server](https://p402.io/docs/mcp): Model Context Protocol integration for Claude and other agents
+- [ERC-8004](https://p402.io/docs/erc8004): On-chain agent identity and reputation on Base
+- [OpenAPI Spec](https://p402.io/openapi.yaml): Machine-readable full API specification
+- [Whitepaper](https://p402.io/whitepaper.pdf): Protocol architecture and economics
+- [Full Reference](https://p402.io/llms-full.txt): Complete technical reference
+
+## Meter
+
+- [P402 Meter](https://p402.io/meter): Per-token AI billing hub
+- [Healthcare Demo](https://p402.io/meter/healthcare): HIPAA audit trail, clinical AI compliance
+- [Legal Demo](https://p402.io/meter/legal): Matter billing, privilege log, per-token invoicing
+- [Real Estate Demo](https://p402.io/meter/real-estate): Property-contextual AI, deal pipeline tracking
+- [Enterprise Dashboard](https://p402.io/meter/enterprise): CFO dashboard, department budgets, optimization
+
+## Claude Skill
+
+- [Install Skill](https://p402.io/skill/p402.zip): `claude mcp install https://p402.io/skill/p402.zip`
+- [SKILL.md](https://p402.io/skill/SKILL.md): Core routing guide, billing guard, migration patterns
+- [Skill Documentation](https://p402.io/docs/skill): Full installation guide
+
+## Discovery
+
+- [Agent Card](https://p402.io/.well-known/agent.json): A2A-compliant agent discovery
+- [p402.json](https://p402.io/.well-known/p402.json): x402 protocol governance config
 
 ## Source
 
 - [GitHub](https://github.com/Z333Q/p402-router)
 - [Twitter](https://twitter.com/p402_io)
-- [Whitepaper](https://p402.io/whitepaper.pdf)
