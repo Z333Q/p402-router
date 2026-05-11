@@ -124,13 +124,20 @@ export function TopNav() {
                                             <div className="text-[10px] font-medium text-neutral-500 normal-case tracking-normal mt-0.5">{link.desc}</div>
                                         </Link>
                                     ))}
-                                    <div className="px-4 py-2 bg-neutral-50 border-t-2 border-neutral-100">
+                                    <div className="px-4 py-2 bg-neutral-50 border-t-2 border-neutral-100 flex items-center justify-between gap-4">
                                         <Link
                                             href="/pricing"
                                             onClick={() => setIsProductOpen(false)}
                                             className="text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-black no-underline"
                                         >
                                             View pricing →
+                                        </Link>
+                                        <Link
+                                            href="/meter"
+                                            onClick={() => setIsProductOpen(false)}
+                                            className="text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-primary no-underline"
+                                        >
+                                            Live demos →
                                         </Link>
                                     </div>
                                 </div>
@@ -140,6 +147,7 @@ export function TopNav() {
 
                     <Link href="/docs" className="text-black no-underline hover:text-primary transition-colors">Docs</Link>
                     <Link href="/models" className="text-black no-underline hover:text-primary transition-colors">Models</Link>
+                    <Link href="/demo" className="text-black no-underline hover:text-primary transition-colors">Demo</Link>
                     <Link href="/pricing" className="text-black no-underline hover:text-primary transition-colors">Pricing</Link>
                     <Link href="/trust" className="text-black no-underline hover:text-primary transition-colors">Trust</Link>
                 </nav>
@@ -245,6 +253,8 @@ export function TopNav() {
                         <nav className="flex flex-col gap-4 px-6 py-4 font-black text-sm uppercase">
                             <Link href="/docs" onClick={() => setIsMenuOpen(false)} className="text-black no-underline hover:text-primary">Docs</Link>
                             <Link href="/models" onClick={() => setIsMenuOpen(false)} className="text-black no-underline hover:text-primary">Models</Link>
+                            <Link href="/demo" onClick={() => setIsMenuOpen(false)} className="text-black no-underline hover:text-primary">Demo</Link>
+                            <Link href="/meter" onClick={() => setIsMenuOpen(false)} className="text-black no-underline hover:text-primary">Meter Demos</Link>
                             <Link href="/pricing" onClick={() => setIsMenuOpen(false)} className="text-black no-underline hover:text-primary">Pricing</Link>
                             <Link href="/trust" onClick={() => setIsMenuOpen(false)} className="text-black no-underline hover:text-primary">Trust</Link>
                         </nav>

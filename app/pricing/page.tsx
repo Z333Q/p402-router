@@ -374,7 +374,7 @@ export default function PricingPage() {
                             <Link href="/login" className="btn btn-primary bg-[var(--primary)] text-black text-xl px-12 py-6 h-auto font-black uppercase tracking-widest border-2 border-black shadow-[8px_8px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
                                 Get Started Free
                             </Link>
-                            <Link href="/demo/payment-flow" className="btn border-2 border-white text-white text-xl px-12 py-6 h-auto font-black uppercase tracking-widest bg-transparent hover:bg-white hover:text-black transition-all">
+                            <Link href="/demo" className="btn border-2 border-white text-white text-xl px-12 py-6 h-auto font-black uppercase tracking-widest bg-transparent hover:bg-white hover:text-black transition-all">
                                 See Live Demo
                             </Link>
                         </div>

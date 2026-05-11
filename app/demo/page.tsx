@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DemoScreen } from '@/components/demo/DemoScreen';
+import { TopNav } from '@/components/TopNav';
 import Link from 'next/link';
 
 // Animation phases
@@ -92,7 +93,9 @@ export default function DemoPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#E5E5E5] flex flex-col items-center justify-center p-8 font-sans">
+        <div className="min-h-screen bg-[#E5E5E5] flex flex-col font-sans">
+        <TopNav />
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
 
             {/* Container Frame */}
             <div className="relative w-full max-w-5xl aspect-video bg-white border-[2px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col">
@@ -180,15 +183,32 @@ export default function DemoPage() {
 
             </div>
 
-            {/* CTA Link */}
-            <div className="mt-12 flex justify-center">
-                <Link
-                    href="https://www.p402.io/demo/payment-flow"
-                    className="px-8 py-4 bg-[#B6FF2E] border-2 border-black font-black uppercase tracking-tighter shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:translate-x-[0px] active:translate-y-[0px] active:shadow-none transition-all text-base hover:bg-black hover:text-white"
-                >
-                    Build Your First Payment Flow →
-                </Link>
+            {/* CTA block — two paths */}
+            <div className="mt-10 w-full max-w-5xl flex flex-col gap-4">
+                <p className="text-center text-[11px] font-black uppercase tracking-widest text-black/50">
+                    You just saw the x402 payment protocol. Where do you go from here?
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Link
+                        href="/meter"
+                        className="flex flex-col gap-1.5 px-7 py-5 bg-white border-2 border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all no-underline"
+                    >
+                        <span className="text-[9px] font-black uppercase tracking-widest text-black/40">Enterprise · Healthcare · Legal · Real Estate</span>
+                        <span className="text-base font-black uppercase tracking-tight text-black">See it running in your industry →</span>
+                        <span className="text-[11px] font-medium text-black/60 normal-case tracking-normal">Live AI demos. Real Gemini calls. Per-token settlement on Tempo.</span>
+                    </Link>
+                    <Link
+                        href="/login"
+                        className="flex flex-col gap-1.5 px-7 py-5 bg-[#B6FF2E] border-2 border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-x-0 active:translate-y-0 active:shadow-none transition-all no-underline"
+                    >
+                        <span className="text-[9px] font-black uppercase tracking-widest text-black/40">Developer · OpenAI-compatible · Free to start</span>
+                        <span className="text-base font-black uppercase tracking-tight text-black">Start routing in minutes →</span>
+                        <span className="text-[11px] font-medium text-black/60 normal-case tracking-normal">One API key. 300+ models. Drop-in replacement for OpenAI.</span>
+                    </Link>
+                </div>
             </div>
+
+        </div>
         </div>
     );
 }

@@ -44,13 +44,13 @@ export function MeterFunnelFooter({ context = 'hub' }: { context?: MeterContext 
             I want this for<br />my company's AI spend
           </h3>
           <p className="text-[11px] font-mono text-neutral-400 leading-relaxed flex-1">
-            Connect your teams, see real attribution, enforce budget caps, cut model waste. Live account — your data, not synthetic.
+            Connect your teams, see real attribution, enforce budget caps, cut model waste. Free tier available — or talk to sales for a white-glove onboarding.
           </p>
           <Link
-            href="/onboarding"
+            href="/pricing"
             className="btn btn-primary text-xs px-3 py-2 text-center mt-auto"
           >
-            Get Early Access →
+            See Plans & Pricing →
           </Link>
         </div>
 
