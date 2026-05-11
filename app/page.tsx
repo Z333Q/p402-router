@@ -65,6 +65,12 @@ export default async function Page() {
                             <a href="https://github.com/Z333Q/p402-protocol" target="_blank" rel="noopener noreferrer" className="text-black hover:text-primary transition-colors no-underline">
                                 Open source SDK ↗
                             </a>
+                            <span className="text-neutral-200">|</span>
+                            <Link href="/demo" className="text-black hover:text-primary transition-colors no-underline">Protocol demo</Link>
+                            <Link href="/meter" className="flex items-center gap-1.5 text-black hover:text-primary transition-colors no-underline">
+                                <span className="w-2 h-2 bg-primary inline-block" />
+                                Live industry demos
+                            </Link>
                         </div>
                     </div>
                 </section>
@@ -89,51 +95,6 @@ export default async function Page() {
                                 <div className="font-mono text-sm bg-black/10 border border-black/10 px-3 py-2 mb-2">npm install @p402/sdk</div>
                                 <p className="text-xs text-black/60 leading-relaxed">OpenAI-compatible endpoint. Drop-in replacement — change the base URL and API key.</p>
                             </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* 3c. Live demo bridge — connect protocol to industry use cases */}
-                <section className="py-10 bg-black border-b-2 border-black">
-                    <div className="container mx-auto px-6 max-w-7xl">
-                        <div className="flex flex-col lg:flex-row gap-6 lg:items-center lg:justify-between mb-6">
-                            <div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-1">See it running</div>
-                                <h2 className="text-2xl font-black uppercase tracking-tighter text-white leading-tight">
-                                    Two ways to experience P402.
-                                </h2>
-                            </div>
-                            <p className="text-sm font-medium text-neutral-400 max-w-md leading-relaxed">
-                                The protocol demo shows how x402 payment flows work. The Meter demos show what per-token AI billing looks like inside a real industry workflow.
-                            </p>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-neutral-800 border-2 border-neutral-800">
-                            <Link href="/demo" className="group bg-black p-7 flex flex-col gap-3 hover:bg-neutral-900 transition-colors no-underline">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-neutral-600">x402 Protocol · Base · EIP-3009</span>
-                                    <span className="border border-primary text-primary text-[8px] font-mono px-2 py-0.5 uppercase tracking-wide">Animated</span>
-                                </div>
-                                <h3 className="text-lg font-black uppercase tracking-tighter text-white group-hover:text-primary transition-colors">
-                                    Payment Protocol Demo
-                                </h3>
-                                <p className="text-sm text-neutral-400 leading-relaxed">
-                                    Watch the full x402 lifecycle — REQUEST → 402 → PAY → RETRY → RECEIPT → REUSE → AUDIT. No wallet required.
-                                </p>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-600 group-hover:text-primary transition-colors mt-auto">Watch the demo →</span>
-                            </Link>
-                            <Link href="/meter" className="group bg-neutral-950 p-7 flex flex-col gap-3 hover:bg-neutral-900 transition-colors no-underline">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-neutral-600">Healthcare · Legal · Real Estate · Enterprise</span>
-                                    <span className="border border-success text-success text-[8px] font-mono px-2 py-0.5 uppercase tracking-wide">Live</span>
-                                </div>
-                                <h3 className="text-lg font-black uppercase tracking-tighter text-white group-hover:text-primary transition-colors">
-                                    Industry Meter Demos
-                                </h3>
-                                <p className="text-sm text-neutral-400 leading-relaxed">
-                                    Real Gemini calls. Real USDC.e settlement on Tempo. Per-token billing in healthcare, legal, real estate, and enterprise AI.
-                                </p>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-600 group-hover:text-primary transition-colors mt-auto">Run a live demo →</span>
-                            </Link>
                         </div>
                     </div>
                 </section>
