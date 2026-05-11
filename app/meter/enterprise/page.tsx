@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { MeterFunnelFooter } from '../_components/MeterFunnelFooter';
+import { MeterBrand } from '../_components/MeterBrand';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -293,9 +294,7 @@ export default function EnterpriseDemoPage() {
       {/* Top bar */}
       <div className="border-b-2 border-neutral-700 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <a href="/meter" className="text-sm font-bold text-neutral-50 hover:text-primary transition-colors">P402 Meter</a>
-          <span className="text-neutral-700">·</span>
-          <span className="text-sm font-bold text-neutral-400">Enterprise</span>
+          <MeterBrand section="Enterprise" />
           <span className="text-neutral-700">·</span>
           <span className="border border-neutral-700 px-2 py-0.5 text-[10px] font-mono text-neutral-500 uppercase">
             {connectedTenant ? connectedTenant.slice(0, 16) + (connectedTenant.length > 16 ? '…' : '') : 'Demo Org'}

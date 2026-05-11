@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { MeterFunnelFooter } from '../_components/MeterFunnelFooter';
+import { MeterBrand } from '../_components/MeterBrand';
 import { LegalDemoStrip } from './_components/LegalDemoStrip';
 import { DataRoomPanel } from './_components/DataRoomPanel';
 import { ReviewPanel } from './_components/ReviewPanel';
@@ -18,11 +19,7 @@ export default function LegalDemoPage() {
       {/* Top bar */}
       <div className="border-b-2 border-neutral-700 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/meter" className="text-sm font-bold hover:text-primary transition-colors text-neutral-50">
-            P402 Meter
-          </Link>
-          <span className="text-neutral-700">·</span>
-          <span className="text-sm font-bold text-neutral-400">Legal</span>
+          <MeterBrand section="Legal" />
           <span className="text-neutral-700">·</span>
           <span className="border px-2 py-0.5 text-[10px] font-mono uppercase tracking-wide border-neutral-700 text-neutral-400">
             Tempo Mainnet

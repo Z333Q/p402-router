@@ -19,6 +19,7 @@ import { TempoSettlementProof } from './_components/TempoSettlementProof';
 import { BuyerStoryCard } from './_components/BuyerStoryCard';
 import { BuyerROIPanel } from './_components/BuyerROIPanel';
 import { MeterFunnelFooter } from '../_components/MeterFunnelFooter';
+import { MeterBrand } from '../_components/MeterBrand';
 import { useMeterStore } from './_store/useMeterStore';
 
 export default function MeterPage() {
@@ -34,9 +35,7 @@ export default function MeterPage() {
       {/* Compact utility bar */}
       <div className={`border-b-2 px-6 py-3 flex items-center justify-between ${lightMode ? 'border-neutral-300 bg-white' : 'border-neutral-700 bg-neutral-900'}`}>
         <div className="flex items-center gap-3">
-          <a href="/meter" className={`text-sm font-bold hover:text-primary transition-colors ${lightMode ? 'text-neutral-900' : 'text-neutral-50'}`}>P402 Meter</a>
-          <span className={lightMode ? 'text-neutral-400' : 'text-neutral-700'}>·</span>
-          <span className={`text-sm font-bold ${lightMode ? 'text-neutral-600' : 'text-neutral-400'}`}>Healthcare</span>
+          <MeterBrand section="Healthcare" light={lightMode} />
           <span className={lightMode ? 'text-neutral-400' : 'text-neutral-700'}>·</span>
           <span className={`border px-2 py-0.5 text-[10px] font-mono uppercase tracking-wide ${lightMode ? 'border-neutral-400 text-neutral-600' : 'border-neutral-700 text-neutral-400'}`}>
             Tempo Mainnet

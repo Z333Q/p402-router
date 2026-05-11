@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { MeterFunnelFooter } from './_components/MeterFunnelFooter';
+import { MeterBrand } from './_components/MeterBrand';
 
 export const metadata: Metadata = {
   title: 'P402 Meter · Per-Token AI Billing on Tempo',
@@ -14,9 +15,7 @@ export default function MeterHubPage() {
 
       {/* Top bar */}
       <div className="border-b-2 border-neutral-700 px-6 py-3 flex items-center justify-between">
-        <span className="text-xs font-mono text-neutral-400 uppercase tracking-widest">
-          P402 Meter
-        </span>
+        <MeterBrand />
         <div className="flex items-center gap-3">
           <span className="border border-primary px-2 py-0.5 text-[10px] font-mono text-primary uppercase tracking-wider">
             Tempo Mainnet · MPP
