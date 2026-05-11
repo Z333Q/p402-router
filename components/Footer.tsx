@@ -16,7 +16,7 @@ export function Footer() {
                             <img src="/favicon.png" alt="P402 Logo" className="w-12 h-12 border-2 border-black" />
                             <span className="text-xl">P402<span className="text-primary NOT-italic">.io</span></span>
                         </div>
-                        <div className="text-sm text-neutral-600 mb-6 font-bold uppercase tracking-tight">Automatic cost control for AI agents.</div>
+                        <div className="text-sm text-neutral-600 mb-6 font-bold uppercase tracking-tight">Per-token AI billing and payment routing infrastructure.</div>
                         <button
                             onClick={() => setHelpOpen(true)}
                             className="text-[10px] font-black uppercase tracking-widest bg-primary px-3 py-1.5 border-2 border-black hover:bg-black hover:text-white transition-all shadow-none"
@@ -30,13 +30,13 @@ export function Footer() {
                         </div>
                     </div>
                     <FooterCol title="Product" links={[
-                        { label: 'Router', href: '/#product' },
+                        { label: 'AI Router', href: '/#product' },
+                        { label: 'Industry Demos', href: '/meter' },
+                        { label: 'Demo', href: '/demo' },
                         { label: 'Intelligence', href: '/intelligence' },
                         { label: 'Agent Bazaar', href: '/dashboard/bazaar' },
-                        { label: 'Routing Policies', href: '/dashboard/policies' },
                         { label: 'Pricing', href: '/pricing' },
                         { label: 'Changelog', href: '/changelog' },
-                        { label: 'Demo', href: '/demo' },
                     ]} />
                     <FooterCol title="Developers" links={[
                         { label: 'Documentation', href: '/docs/api' },
@@ -78,16 +78,17 @@ export function Footer() {
                 <div className="border-t-2 border-black mt-12 pt-6">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 order-2 md:order-1">
-                            © {new Date().getFullYear()} P402. Tokens: USDC, USDT on Base.
+                            © {new Date().getFullYear()} P402. Settlement: USDC on Base · USDC.e on Tempo.
                         </div>
                         <div className="flex items-center gap-8 order-1 md:order-2 grayscale opacity-40">
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Infrastructure</span>
-                            <div className="font-black text-xs uppercase tracking-tighter">Base L2</div>
-                            <div className="font-black text-xs uppercase tracking-tighter">Chainlink</div>
-                            <div className="font-black text-xs uppercase tracking-tighter">Coinbase</div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Built on</span>
+                            <div className="font-black text-xs uppercase tracking-tighter">Base</div>
+                            <div className="font-black text-xs uppercase tracking-tighter">Tempo</div>
+                            <div className="font-black text-xs uppercase tracking-tighter">Coinbase CDP</div>
                             <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer" className="font-black text-xs uppercase tracking-tighter hover:opacity-100 transition-opacity">
                                 OpenRouter
                             </a>
+                            <div className="font-black text-xs uppercase tracking-tighter">Google Gemini</div>
                         </div>
                     </div>
                 </div>
