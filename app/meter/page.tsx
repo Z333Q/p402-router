@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { MeterFunnelFooter } from './_components/MeterFunnelFooter';
 
 export const metadata: Metadata = {
   title: 'P402 Meter · Per-Token AI Billing on Tempo',
@@ -156,15 +157,7 @@ export default function MeterHubPage() {
           </Link>
         </section>
 
-        {/* Footer nav */}
-        <div className="border-t border-neutral-700 pt-6 flex items-center justify-between text-[10px] font-mono text-neutral-600 uppercase tracking-wider">
-          <span>P402 Meter · Tempo Mainnet · MPP</span>
-          <div className="flex gap-4">
-            <Link href="/meter/about" className="hover:text-neutral-400 transition-colors">About</Link>
-            <a href="https://explore.tempo.xyz" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-400 transition-colors">Tempo Explorer ↗</a>
-            <a href="https://p402.io/docs/router" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-400 transition-colors">Docs ↗</a>
-          </div>
-        </div>
+        <MeterFunnelFooter context="hub" />
 
       </div>
     </div>

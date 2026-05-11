@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { MeterFunnelFooter } from '../_components/MeterFunnelFooter';
 import { LegalDemoStrip } from './_components/LegalDemoStrip';
 import { DataRoomPanel } from './_components/DataRoomPanel';
 import { ReviewPanel } from './_components/ReviewPanel';
@@ -178,16 +179,7 @@ export default function LegalDemoPage() {
           </div>
         </div>
 
-        {/* Footer nav */}
-        <div className="border-t border-neutral-700 pt-6 flex items-center justify-between text-[10px] font-mono text-neutral-600 uppercase tracking-wider">
-          <span>P402 Meter · Legal · Tempo Mainnet</span>
-          <div className="flex gap-4">
-            <Link href="/meter/about/legal" className="hover:text-neutral-400 transition-colors">Case Study</Link>
-            <Link href="/meter/healthcare" className="hover:text-neutral-400 transition-colors">Healthcare Demo</Link>
-            <Link href="/meter" className="hover:text-neutral-400 transition-colors">All Demos</Link>
-            <a href="https://explore.tempo.xyz" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-400 transition-colors">Tempo Explorer ↗</a>
-          </div>
-        </div>
+        <MeterFunnelFooter context="legal" />
 
       </div>
     </div>

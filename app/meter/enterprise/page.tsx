@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { MeterFunnelFooter } from '../_components/MeterFunnelFooter';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -810,6 +811,8 @@ export default function EnterpriseDemoPage() {
             </div>
           )}
         </div>
+
+        <MeterFunnelFooter context="enterprise" />
 
       </div>
     </div>

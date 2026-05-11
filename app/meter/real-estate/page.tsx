@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
+import { MeterFunnelFooter } from '../_components/MeterFunnelFooter';
 import { ScreeningDemoStrip } from './_components/ScreeningDemoStrip';
 import { ApplicantSelector } from './_components/ApplicantSelector';
 import { ScreeningPanel } from './_components/ScreeningPanel';
@@ -172,17 +173,7 @@ export default function RealEstateDemoPage() {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-neutral-700 pt-6 flex items-center justify-between text-[10px] font-mono text-neutral-600 uppercase tracking-wider">
-          <span>P402 Meter · Real Estate · Tempo Mainnet</span>
-          <div className="flex gap-4">
-            <Link href="/meter/about/real-estate" className="hover:text-neutral-400 transition-colors">Case Study</Link>
-            <Link href="/meter/healthcare" className="hover:text-neutral-400 transition-colors">Healthcare Demo</Link>
-            <Link href="/meter/legal" className="hover:text-neutral-400 transition-colors">Legal Demo</Link>
-            <Link href="/meter" className="hover:text-neutral-400 transition-colors">All Demos</Link>
-            <a href="https://explore.tempo.xyz" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-400 transition-colors">Tempo ↗</a>
-          </div>
-        </div>
+        <MeterFunnelFooter context="real-estate" />
 
       </div>
     </div>

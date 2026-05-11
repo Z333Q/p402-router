@@ -18,6 +18,7 @@ import { EconomicAuditPanel } from './_components/EconomicAuditPanel';
 import { TempoSettlementProof } from './_components/TempoSettlementProof';
 import { BuyerStoryCard } from './_components/BuyerStoryCard';
 import { BuyerROIPanel } from './_components/BuyerROIPanel';
+import { MeterFunnelFooter } from '../_components/MeterFunnelFooter';
 import { useMeterStore } from './_store/useMeterStore';
 
 export default function MeterPage() {
@@ -160,6 +161,8 @@ export default function MeterPage() {
 
         {/* Why Tempo Works, contextual explanation after seeing it in action */}
         <MarginExplanationPanel />
+
+        <MeterFunnelFooter context="healthcare" />
 
         {/* Cross-links to the other live demos */}
         <div className="border-2 border-neutral-700 p-6 flex flex-col gap-4">
