@@ -64,57 +64,61 @@ export default function MeterHubPage() {
 
           <DemoCard
             number="01"
-            industry="Healthcare"
+            industry="Health Insurance · Utilization Management"
             title="Prior Authorization Review"
+            subtitle="AI reads insurance coverage requests and writes clinical decisions — for the teams that decide whether a treatment gets approved"
             status="live"
-            description="Upload a prior-auth document. Gemini Flash reads it, classifies it, streams a URAC-aligned UM review. Every token settles as a USDC.e event on Tempo. Gemini Pro audits the economics. Human approves."
+            description="Health plans and TPAs process thousands of prior-auth requests a month. Each one goes to a nurse or doctor for review — costing $25–100 in staff time. This demo uploads a real prior-auth document: Gemini Flash reads and classifies it, streams a URAC-aligned clinical review, and settles every token as a USDC.e event on Tempo. Gemini Pro audits the economics. A human makes the final approval call."
             unitEconomics="$0.00035 per full review"
             vsBaseline="vs $25–100 manual review"
-            buyer="Health plan · TPA · Utilization management vendor"
-            highlight="Per-token meter readings · Economic audit · Clinical governance"
+            buyer="Health plan · TPA · Utilization management vendor · Medical director"
+            highlight="Per-token meter readings · Economic audit · URAC-aligned clinical governance"
             href="/meter/healthcare"
             aboutHref="/meter/about/healthcare"
           />
 
           <DemoCard
             number="02"
-            industry="Legal"
-            title="M&A Due Diligence Contract Review"
+            industry="Law Firms · Corporate Legal · M&A"
+            title="Contract Due Diligence Review"
+            subtitle="AI reads an entire merger data room and flags contract conflicts — for lawyers and legal ops teams handling deals"
             status="live"
-            description="8 synthetic contracts from the Acme/Beta M&A data room. Flash for NDAs and leases, Pro for the MSA, employment agreements, IP assignment, and merger agreement. Cross-document conflict detection. Per-matter ledger on Tempo."
+            description="When a company acquires another, lawyers read hundreds of contracts to find risks, inconsistencies, and missing clauses. This demo simulates an M&A deal (Acme acquires Beta) with 8 synthetic contracts — NDAs, leases, an MSA, employment agreements, IP assignment, and the merger agreement itself. Flash handles the routine docs, Pro handles the high-stakes ones. AI flags cross-document conflicts. Every token is priced and settled per matter on Tempo."
             unitEconomics="&lt;$0.10 per matter"
             vsBaseline="vs $200–800 paralegal time"
-            buyer="Law firm partner · In-house GC · Legal ops director"
-            highlight="Tier routing decisions visible · Cross-document conflicts · ABA-audit trail"
+            buyer="Law firm partner · In-house GC · Legal ops director · M&A associate"
+            highlight="Tier routing visible per document · Cross-document conflict detection · ABA-audit trail"
             href="/meter/legal"
             aboutHref="/meter/about/legal"
           />
 
           <DemoCard
             number="03"
-            industry="Real Estate"
+            industry="Property Management · Multi-Family Real Estate"
             title="Tenant Application Screening"
+            subtitle="AI reads rental applications and scores fraud risk — for landlords and property managers deciding who gets approved"
             status="live"
-            description="3 applicant scenarios. 4 documents each. Flash extracts structured fields, Pro runs cross-document consistency. Fraud score 0–100 with escalation threshold. Per-applicant Tempo settlement."
+            description="Property managers screen hundreds of rental applications a month, each requiring manual review of pay stubs, IDs, bank statements, and rental history. This demo runs 3 applicant scenarios (4 documents each): Flash extracts structured fields from each doc, Pro checks cross-document consistency, and the system outputs a fraud score from 0–100 with an escalation threshold. Every applicant is billed and settled per-token on Tempo."
             unitEconomics="$0.02–$0.05 per applicant"
             vsBaseline="vs $30–80 manual screening"
-            buyer="Property management co · Multi-family REIT · Leasing platform"
-            highlight="Fraud score · escalation threshold · HUD fair-housing audit trail"
+            buyer="Property management co · Multi-family REIT · Leasing platform · Landlord"
+            highlight="Fraud score 0–100 · Escalation threshold · HUD fair-housing audit trail"
             href="/meter/real-estate"
             aboutHref="/meter/about/real-estate"
           />
 
           <DemoCard
             number="04"
-            industry="Enterprise"
-            title="AI Cost Management Platform"
+            industry="Any Enterprise · Any Industry · Any Department"
+            title="Enterprise AI Spend Control"
+            subtitle="Drop P402 in front of any team's AI usage — see every token, every cost, every department, across the whole company"
             status="live"
             cta="View Dashboard →"
-            description="Multi-department AI spend visibility. Every employee, every session, every token attributed to a department, project, and client. Budget caps enforced per org level. Gemini Pro generates routing optimization suggestions and end-of-month cost projections."
+            description="Every enterprise using AI has the same problem: a monthly invoice with no breakdown. You can't see which team spent what, which model was used, or which calls were waste. P402 sits between your teams and every AI provider — attributing every token to an org, department, project, and employee. Budget caps are enforced before the call goes out. Gemini Pro identifies where cheaper models handle tasks just as well. Works for Engineering, Marketing, Legal, Finance, or any combination."
             unitEconomics="30–70% model cost reduction"
             vsBaseline="vs opaque monthly invoices"
-            buyer="CFO · CTO · Head of AI · Engineering lead"
-            highlight="Org → dept → project → employee attribution · Routing optimization · Budget projections"
+            buyer="CFO · CTO · Head of AI · Engineering lead · Finance ops"
+            highlight="Org → dept → project → employee attribution · Model routing optimization · Budget projections"
             href="/meter/enterprise"
             aboutHref="/meter/about/enterprise"
             accent
@@ -168,12 +172,13 @@ export default function MeterHubPage() {
 }
 
 function DemoCard({
-  number, industry, title, status, cta, description, unitEconomics, vsBaseline,
+  number, industry, title, subtitle, status, cta, description, unitEconomics, vsBaseline,
   buyer, highlight, href, aboutHref, accent,
 }: {
   number: string;
   industry: string;
   title: string;
+  subtitle: string;
   status: 'live' | 'coming-soon';
   cta?: string;
   description: string;
@@ -206,11 +211,12 @@ function DemoCard({
       {/* Main content */}
       <div className="flex-1 p-5 flex flex-col gap-3">
         <div className="flex items-start justify-between flex-wrap gap-2">
-          <div>
-            <div className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest mb-1">{industry}</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-1">{industry}</div>
             <h3 className="text-lg font-bold uppercase tracking-tight text-neutral-50">{title}</h3>
+            <p className={`text-[12px] font-mono mt-1 leading-snug ${accent ? 'text-info' : 'text-primary'}`}>{subtitle}</p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap flex-shrink-0 pl-4">
             <div className="flex flex-col items-end">
               <span className={`text-base font-bold font-mono tabular-nums ${costColor}`}>{unitEconomics}</span>
               <span className="text-[9px] font-mono text-neutral-600 uppercase">{vsBaseline}</span>
