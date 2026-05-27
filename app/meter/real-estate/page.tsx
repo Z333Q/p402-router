@@ -145,8 +145,8 @@ export default function RealEstateDemoPage() {
                 <span className="text-[9px] font-mono text-neutral-500 uppercase">Healthcare</span>
                 <span className="border border-success text-success text-[8px] font-mono px-1.5 py-0.5 uppercase">Live</span>
               </div>
-              <div className="text-sm font-bold uppercase text-primary">Prior Auth Review</div>
-              <p className="text-[10px] font-mono text-neutral-500 leading-relaxed">Live Gemini + Tempo settlement. 55+ events per run. URAC-aligned review with economic audit.</p>
+              <div className="text-sm font-bold uppercase text-primary">Medicaid PA Governance</div>
+              <p className="text-[10px] font-mono text-neutral-500 leading-relaxed">Per-operation receipts. 5-level client budget hierarchy. Human review gate. CMS-0057-F + HIPAA-aligned demo.</p>
               <span className="text-[10px] font-mono text-primary mt-auto">Run Demo →</span>
             </Link>
             <Link href="/meter/legal" className="border-2 border-neutral-700 hover:border-primary p-4 flex flex-col gap-2 hover:bg-neutral-800 transition-colors group">

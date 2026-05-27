@@ -149,8 +149,8 @@ export default function LegalDemoPage() {
                 <span className="text-[9px] font-mono text-neutral-500 uppercase">Healthcare</span>
                 <span className="border border-success text-success text-[8px] font-mono px-1.5 py-0.5 uppercase">Live</span>
               </div>
-              <div className="text-sm font-bold uppercase tracking-tight text-primary">Prior Auth Review</div>
-              <p className="text-[10px] font-mono text-neutral-500 leading-relaxed">Live Gemini + Tempo settlement. 55+ events per run. URAC-aligned UM review with economic audit.</p>
+              <div className="text-sm font-bold uppercase tracking-tight text-primary">Medicaid PA Governance</div>
+              <p className="text-[10px] font-mono text-neutral-500 leading-relaxed">Per-operation receipts. 5-level client budget hierarchy. Human review gate. CMS-0057-F + HIPAA-aligned demo.</p>
               <span className="text-[10px] font-mono text-primary mt-auto">Run Demo →</span>
             </Link>
 

@@ -64,15 +64,15 @@ export default function MeterHubPage() {
 
           <DemoCard
             number="01"
-            industry="Health Insurance · Utilization Management"
-            title="Prior Authorization Review"
-            subtitle="AI reads insurance coverage requests and writes clinical decisions — for the teams that decide whether a treatment gets approved"
+            industry="Medicaid Managed Care · Utilization Management"
+            title="Medicaid Prior Authorization Governance"
+            subtitle="Metered AI governance for prior authorization review — built for a multi-state government-program health plan operating across Medicaid, D-SNP, and Marketplace"
             status="live"
-            description="Health plans and TPAs process thousands of prior-auth requests a month. Each one goes to a nurse or doctor for review — costing $25–100 in staff time. This demo uploads a real prior-auth document: Gemini Flash reads and classifies it, streams a URAC-aligned clinical review, and settles every token as a USDC.e event on Tempo. Gemini Pro audits the economics. A human makes the final approval call."
-            unitEconomics="$0.00035 per full review"
-            vsBaseline="vs $25–100 manual review"
-            buyer="Health plan · TPA · Utilization management vendor · Medical director"
-            highlight="Per-token meter readings · Economic audit · URAC-aligned clinical governance"
+            description="Health plans run thousands of PA requests a month under CMS-0057-F decision clocks, state Medicaid program rules, and HIPAA constraints. This demo models a Medicaid behavioral-health inpatient extension on synthetic records only: documentation extraction, completeness check, criteria mapping, reviewer summary, and RFI-reason drafting. Each AI operation produces a receipt tied to a 5-level budget hierarchy (client → line of business → workflow → case → agent). Real USDC.e settles on Tempo. The reviewer makes the coverage decision — no autonomous denial."
+            unitEconomics="$0.01–$0.03 per case"
+            vsBaseline="vs $25–100 manual review · with auditable governance"
+            buyer="VP Utilization Management · Director Prior Authorization · CMO staff · Compliance · Medicaid plan operations"
+            highlight="Client budget controls + operation receipts · CMS-0057-F decision clocks · HIPAA-aligned demo mode · Human review gate · Oversight packet export"
             href="/meter/healthcare"
             aboutHref="/meter/about/healthcare"
           />

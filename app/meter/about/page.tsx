@@ -174,13 +174,13 @@ export default function AboutRootPage() {
             <IndustryCard
               number="01"
               industry="Healthcare"
-              workflow="Prior Authorization Review"
+              workflow="Medicaid Prior Authorization Governance"
               status="live"
-              facet="Per-token meter readings as the primary visual. Live ledger with running USDC cost. Economic audit panel as the climactic moment."
-              unitEcon="$0.00035 per full review"
-              vsBaseline="vs $25–100 manual"
-              buyer="Health plan · TPA · UM vendor"
-              regulatory="URAC / NCQA utilization management standards"
+              facet="Per-operation receipts tied to a 5-level budget hierarchy (client / line of business / workflow / case / agent). Human review gate before export. Oversight packet JSON with compliance trace. Real USDC.e settlement on Tempo at session close."
+              unitEcon="$0.01–$0.03 per case"
+              vsBaseline="vs $25–100 manual review"
+              buyer="VP UM · Director PA · CMO staff · Compliance · Medicaid plan ops"
+              regulatory="CMS-0057-F · HIPAA · Medicaid managed care · D-SNP UM equity"
               href="/meter/healthcare"
               deepDiveHref="/meter/about/healthcare"
             />
@@ -242,7 +242,7 @@ export default function AboutRootPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ProofCard
               claim="Same router, four distinct governance regimes"
-              detail="URAC (clinical), ABA (legal), HUD (housing), SOC2 (enterprise). Different audit artifacts, different compliance requirements. Same P402 session model and budget cap architecture satisfies all four."
+              detail="CMS-0057-F and HIPAA (Medicaid PA), ABA Formal Opinion 512 (legal), HUD and ECOA (housing), SOC2 (enterprise). Different audit artifacts, different compliance requirements. The same P402 session model, budget hierarchy, and human review boundary satisfies all four."
             />
             <ProofCard
               claim="Per-token economics are universal"
@@ -254,7 +254,7 @@ export default function AboutRootPage() {
             />
             <ProofCard
               claim="The audit trail is load-bearing in every use case"
-              detail="Clinical decisions for URAC. Contract reviews for ABA. Screening decisions for HUD. Employee AI usage for SOC2. The P402 ledger — with Tempo settlement hashes — provides the tamper-evident record all four require."
+              detail="Coverage-decision support for Medicaid PA. Contract reviews for ABA. Screening decisions for HUD. Employee AI usage for SOC2. The P402 ledger — with Tempo settlement hashes — provides the tamper-evident record all four require."
             />
           </div>
 
@@ -312,21 +312,21 @@ export default function AboutRootPage() {
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <CtaCard
             label="Healthcare"
-            sub="Prior auth · Live now"
+            sub="Medicaid PA governance · Live"
             href="/meter/healthcare"
             primary
           />
           <CtaCard
             label="Legal"
-            sub="M&A diligence · Coming soon"
-            href="/meter/about/legal"
-            primary={false}
+            sub="M&A diligence · Live"
+            href="/meter/legal"
+            primary
           />
           <CtaCard
             label="Real Estate"
-            sub="Tenant screening · Coming soon"
-            href="/meter/about/real-estate"
-            primary={false}
+            sub="Tenant screening · Live"
+            href="/meter/real-estate"
+            primary
           />
         </section>
 

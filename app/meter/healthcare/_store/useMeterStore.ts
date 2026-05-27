@@ -13,6 +13,7 @@ import type {
   FrequencyStats,
   EconomicAudit,
 } from '@/lib/meter/types';
+import type { HealthcarePersona, HumanReviewAction } from '@/lib/meter/healthcare/types';
 
 export type SessionState =
   | 'idle'
@@ -84,7 +85,13 @@ interface MeterState {
   safeMode: boolean;
   lightMode: boolean;
 
+  // ── Governance overlay (Medicaid MCO PA demo) ────────────────────────────
+  persona: HealthcarePersona;
+  humanDecision: HumanReviewAction | null;
+
   // ── Actions ───────────────────────────────────────────────────────────────
+  setPersona: (p: HealthcarePersona) => void;
+  setHumanDecision: (d: HumanReviewAction | null) => void;
   setSafeMode: (v: boolean) => void;
   setLightMode: (v: boolean) => void;
   setSessionState: (s: SessionState) => void;
@@ -154,7 +161,12 @@ export const useMeterStore = create<MeterState>()(
       safeMode: process.env.NEXT_PUBLIC_DEMO_MODE === 'safe',
       lightMode: false,
 
+      persona: 'medicaid-mco',
+      humanDecision: null,
+
       // ── Actions ─────────────────────────────────────────────────────────────
+      setPersona: (p) => set({ persona: p, humanDecision: null }),
+      setHumanDecision: (d) => set({ humanDecision: d }),
       setSafeMode: (v) => set({ safeMode: v }),
       setLightMode: (v) => set({ lightMode: v }),
       setSessionState: (s) => set({ sessionState: s }),
@@ -256,6 +268,7 @@ export const useMeterStore = create<MeterState>()(
           releaseDrawerOpen: false,
           error: null,
           settleError: null,
+          humanDecision: null,
         }),
     }),
     { name: 'p402-meter-store' }

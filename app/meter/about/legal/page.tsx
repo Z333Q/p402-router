@@ -20,8 +20,8 @@ export default function LegalAboutPage() {
           <span className="border border-neutral-700 px-2 py-0.5 text-[10px] font-mono text-neutral-500 uppercase tracking-wider">
             Legal · M&A Diligence
           </span>
-          <span className="border border-neutral-700 px-2 py-0.5 text-[10px] font-mono text-neutral-600 uppercase">
-            Demo coming soon
+          <span className="border border-success px-2 py-0.5 text-[10px] font-mono text-success uppercase">
+            Live demo
           </span>
         </div>
       </div>
@@ -55,8 +55,8 @@ export default function LegalAboutPage() {
             </span>
           </div>
           <div className="flex gap-4 flex-wrap">
-            <Link href="/meter/legal" className="btn btn-secondary text-sm px-6 py-2 opacity-50 cursor-not-allowed">
-              Demo Coming Soon
+            <Link href="/meter/legal" className="btn btn-primary text-sm px-6 py-2">
+              Run Legal Demo →
             </Link>
             <Link href="/meter/about" className="btn btn-secondary text-sm px-6 py-2">
               ← All Industries
@@ -252,20 +252,29 @@ export default function LegalAboutPage() {
         </section>
 
         {/* ── CTA ───────────────────────────────────────────────────────────── */}
-        <section className="border-2 border-neutral-700 p-8 flex flex-col gap-4">
-          <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">Coming soon</div>
+        <section className="border-2 border-primary p-8 flex flex-col gap-4">
+          <div className="text-[10px] font-mono text-primary uppercase tracking-wider">See it live</div>
           <h2 className="text-2xl font-bold uppercase tracking-tight">
-            The legal demo is in development.
+            The demo is the proof.
           </h2>
           <p className="font-mono text-neutral-400 leading-relaxed max-w-xl">
-            The infrastructure is built. The routing logic, ledger, and Tempo settlement
-            are identical to the live healthcare demo. The legal-specific components — document
-            classifier, clause extractor, conflict detector — are next.
+            Eight contracts in a synthetic M&A data room. Tier routing visible per document
+            — Flash for NDAs and amendments, Pro for the MSA, employment agreement, and merger
+            agreement. Cross-document conflict detection. Real USDC.e settlement on Tempo. Every
+            cent attributable per matter for client passthrough.
           </p>
           <div className="flex gap-4 flex-wrap mt-2">
-            <Link href="/meter/healthcare" className="btn btn-primary text-sm px-8 py-3">
-              See Healthcare Demo → (Live Now)
+            <Link href="/meter/legal" className="btn btn-primary text-sm px-8 py-3">
+              Run Legal Demo →
             </Link>
+            <a
+              href="https://explore.tempo.xyz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-secondary text-sm px-8 py-3"
+            >
+              Verify on Tempo →
+            </a>
             <Link href="/meter/about" className="btn btn-secondary text-sm px-8 py-3">
               All Industries
             </Link>

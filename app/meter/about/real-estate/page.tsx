@@ -20,8 +20,8 @@ export default function RealEstateAboutPage() {
           <span className="border border-neutral-700 px-2 py-0.5 text-[10px] font-mono text-neutral-500 uppercase tracking-wider">
             Real Estate · Tenant Screening
           </span>
-          <span className="border border-neutral-700 px-2 py-0.5 text-[10px] font-mono text-neutral-600 uppercase">
-            Demo coming soon
+          <span className="border border-success px-2 py-0.5 text-[10px] font-mono text-success uppercase">
+            Live demo
           </span>
         </div>
       </div>
@@ -55,8 +55,8 @@ export default function RealEstateAboutPage() {
             </span>
           </div>
           <div className="flex gap-4 flex-wrap">
-            <Link href="/meter/real-estate" className="btn btn-secondary text-sm px-6 py-2 opacity-50 cursor-not-allowed">
-              Demo Coming Soon
+            <Link href="/meter/real-estate" className="btn btn-primary text-sm px-6 py-2">
+              Screen Applicant Demo →
             </Link>
             <Link href="/meter/about" className="btn btn-secondary text-sm px-6 py-2">
               ← All Industries
@@ -258,20 +258,29 @@ export default function RealEstateAboutPage() {
         </section>
 
         {/* ── CTA ───────────────────────────────────────────────────────────── */}
-        <section className="border-2 border-neutral-700 p-8 flex flex-col gap-4">
-          <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">Coming soon</div>
+        <section className="border-2 border-primary p-8 flex flex-col gap-4">
+          <div className="text-[10px] font-mono text-primary uppercase tracking-wider">See it live</div>
           <h2 className="text-2xl font-bold uppercase tracking-tight">
-            The real estate demo is in development.
+            The demo is the proof.
           </h2>
           <p className="font-mono text-neutral-400 leading-relaxed max-w-xl">
-            The multimodal intake, consistency checking, and fraud escalation paths are designed.
-            The Tempo settlement infrastructure is identical to the live healthcare demo.
-            The real-estate-specific components are next.
+            Three synthetic applicant scenarios — clean, mismatch, and likely fraud. Multimodal
+            intake across application form, pay stubs, bank statement, and ID. Cross-document
+            consistency check. Fraud score with escalation threshold. Real USDC.e settlement on
+            Tempo. HUD fair-housing audit trail on every decision.
           </p>
           <div className="flex gap-4 flex-wrap mt-2">
-            <Link href="/meter/healthcare" className="btn btn-primary text-sm px-8 py-3">
-              See Healthcare Demo → (Live Now)
+            <Link href="/meter/real-estate" className="btn btn-primary text-sm px-8 py-3">
+              Run Tenant Screening Demo →
             </Link>
+            <a
+              href="https://explore.tempo.xyz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-secondary text-sm px-8 py-3"
+            >
+              Verify on Tempo →
+            </a>
             <Link href="/meter/about" className="btn btn-secondary text-sm px-8 py-3">
               All Industries
             </Link>
