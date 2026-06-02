@@ -86,6 +86,11 @@ CREATE TABLE IF NOT EXISTS traffic_events (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- router_decisions uses `timestamp` (NOT `created_at`) per schema.sql.
+-- Match the production shape so this test catches v2_050 indexes that
+-- reference the wrong column. (An earlier version used created_at and
+-- masked a real bug in v2_050; that bug was caught by the full-chain
+-- test and is fixed in v2_050; this seed now mirrors production.)
 CREATE TABLE IF NOT EXISTS router_decisions (
     id BIGSERIAL PRIMARY KEY,
     request_id TEXT,
@@ -101,7 +106,7 @@ CREATE TABLE IF NOT EXISTS router_decisions (
     department TEXT,
     project_name TEXT,
     employee_id VARCHAR(255),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    "timestamp" TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS enterprise_departments (

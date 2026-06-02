@@ -157,8 +157,10 @@ CREATE INDEX IF NOT EXISTS idx_traffic_events_apikey
     ON traffic_events (api_key_id, created_at DESC)
     WHERE api_key_id IS NOT NULL;
 
+-- router_decisions uses `timestamp` (not `created_at`) per schema.sql.
+-- Sort the index by it so this orders matches the table's actual time column.
 CREATE INDEX IF NOT EXISTS idx_router_decisions_apikey
-    ON router_decisions (api_key_id, created_at DESC)
+    ON router_decisions (api_key_id, "timestamp" DESC)
     WHERE api_key_id IS NOT NULL;
 
 COMMIT;

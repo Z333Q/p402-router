@@ -1,7 +1,24 @@
 -- P402 V2 Database Schema
 -- =======================
--- This schema extends the existing P402 schema with V2 features.
--- Run this migration after the existing schema.
+-- SCOPE: This file documents a subset of V2 feature tables (semantic_cache,
+-- router_decisions, agent_sessions, provider_health, cost_alerts). It is
+-- NOT a full production schema mirror. CLAUDE.md previously called it
+-- "schema mirror" — that wording is imprecise.
+--
+-- Canonical production schema sources of truth:
+--   1. schema.sql at repo root (bootstrap: tenants, api_keys, etc.)
+--   2. scripts/migrations/*.sql applied in lexicographic order
+--      (see scripts/test-migration-v2_050-fullchain.sh for the exact chain;
+--       v2_001_initial_schema.sql and v2_016_settlement_receipts.sql are
+--       known-broken on fresh DBs and are skipped — production applied them
+--       against an older schema.sql shape).
+--
+-- v2_050 additions (api_keys ownership columns, departments rename,
+-- employees table, traffic_events/router_decisions FK columns) live in
+-- scripts/migrations/v2_050_budget_owned_api_keys.sql, not this file.
+--
+-- If you change this file, update the v2_xxx migration that ships the same
+-- change; do not edit only this file.
 
 -- =============================================================================
 -- SEMANTIC CACHE TABLE
