@@ -20,6 +20,7 @@ import {
     FileText,
     GitBranch,
     TrendingDown,
+    Sparkles,
     BookOpen,
     Wrench,
     FlaskConical,
@@ -36,6 +37,7 @@ import { usePlanUsage } from "@/hooks/usePlanUsage"
 const NAV_ITEMS = [
     { name: "Mission Control", href: "/dashboard", icon: LayoutDashboard },
     { name: "Live Traffic", href: "/dashboard/traffic", icon: Activity },
+    { name: "Optimize", href: "/dashboard/optimize", icon: Sparkles, isNew: true },
     { name: "Intelligence", href: "/dashboard/intelligence", icon: Bot },
     { name: "Security Audit", href: "/dashboard/audit", icon: ShieldCheck },
     { name: "Policies", href: "/dashboard/policies", icon: DatabaseZap },
@@ -139,7 +141,12 @@ export function AppSidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
                                 `}
                             >
                                 <item.icon className={`h-4 w-4 transition-transform group-hover:scale-110 ${isActive ? "text-primary shadow-[0_0_8px_rgba(182,255,46,0.5)]" : "text-neutral-600 group-hover:text-neutral-100"}`} />
-                                {item.name}
+                                <span className="flex-1">{item.name}</span>
+                                {'isNew' in item && item.isNew && (
+                                    <span className={`text-[8px] font-black px-1.5 py-0.5 border ${isActive ? 'border-black bg-black text-primary' : 'border-primary bg-primary/10 text-black'}`}>
+                                        NEW
+                                    </span>
+                                )}
                             </Link>
                         )
                     })}
