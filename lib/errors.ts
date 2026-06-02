@@ -45,6 +45,15 @@ export type ApiErrorCode =
     | 'NO_VALID_PLAN'
     | 'IDEMPOTENCY_CONFLICT'
     | 'EXECUTION_FAILED'
+    // Budget-Owned API Keys (Phase C)
+    | 'API_KEY_NOT_FOUND'
+    | 'API_KEY_REVOKED'
+    | 'API_KEY_BUDGET_EXCEEDED'
+    | 'DEPARTMENT_BUDGET_EXCEEDED'
+    | 'EMPLOYEE_BUDGET_EXCEEDED'
+    | 'MAX_COST_PER_REQUEST_EXCEEDED'
+    | 'MODEL_NOT_ALLOWED'
+    | 'TASK_TYPE_NOT_ALLOWED'
 
 export class ApiError extends Error {
     public readonly code: ApiErrorCode

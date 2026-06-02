@@ -59,5 +59,52 @@ describe('Intelligence Layer', () => {
             expect(recommendations[0]!.message).toContain('claude-3-opus');
             expect(recommendations[0]!.details.suggestedModel).toBe('gpt-4o-mini');
         });
+
+        describe('analyzeForContext (v2_050 Optimize seam)', () => {
+            const ctx: any = {
+                apiKeyId: 'k_1', tenantId: 't_1', ownerType: 'tenant', ownerId: 't_1',
+                departmentId: 'd_1', employeeId: 'e_1', workflowId: null, projectId: null,
+                budgetId: null, policyId: null,
+                allowedModels: [], allowedTaskTypes: [],
+                maxCostPerRequestUsd: null, monthlyBudgetUsd: null,
+                headerOverridePolicy: 'allow',
+                departmentMonthlyBudgetUsd: null, employeeMonthlyBudgetUsd: null,
+            };
+
+            it('returns MODEL_SWAP when an expensive model is used at >$0.05', async () => {
+                const recs = await OptimizationEngine.analyzeForContext(ctx, {
+                    model: 'claude-3-opus-20240229',
+                    taskType: 'inference',
+                    estimatedCostUsd: 0.10,
+                });
+                expect(recs.length).toBe(1);
+                expect(recs[0]!.type).toBe('MODEL_SWAP');
+                expect(recs[0]!.apiKeyId).toBe('k_1');
+                expect(recs[0]!.departmentId).toBe('d_1');
+                expect(recs[0]!.employeeId).toBe('e_1');
+            });
+
+            it('returns [] when cheap models are used', async () => {
+                const recs = await OptimizationEngine.analyzeForContext(ctx, {
+                    model: 'gpt-4o-mini',
+                    estimatedCostUsd: 0.001,
+                });
+                expect(recs).toEqual([]);
+            });
+
+            it('returns [] when estimatedCostUsd is missing', async () => {
+                const recs = await OptimizationEngine.analyzeForContext(ctx, {
+                    model: 'claude-3-opus',
+                });
+                expect(recs).toEqual([]);
+            });
+
+            it('is non-throwing on internal failure', async () => {
+                // Hand the function a model that triggers the regex but with
+                // an undefined cost path — must still return [].
+                const recs = await OptimizationEngine.analyzeForContext(ctx, {});
+                expect(recs).toEqual([]);
+            });
+        });
     });
 });

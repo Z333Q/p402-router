@@ -45,6 +45,10 @@ import { BASE_USDC_ADDRESS } from '@/lib/constants';
 import { computePlatformFeeUsd } from '@/lib/billing/entitlements';
 import { getTenantPlan } from '@/lib/billing/plan-guard';
 import { recordUsage } from '@/lib/billing/usage';
+import { resolveApiKeyContext } from '@/lib/api-key-context';
+import type { ApiKeyContext } from '@/lib/types/api-key';
+import { enforcePreRouting } from '@/lib/budget-guard';
+import { OptimizationEngine } from '@/lib/intelligence/optimization';
 
 // x402 payment requirements emitted in the dual-402 challenge for Base mainnet.
 // Clients supporting x402 can pre-pay; verification on this endpoint ships in Phase 2.3.
@@ -73,10 +77,15 @@ function logTrafficEvent(event: {
     costUsd: number;
     cacheHit: boolean;
     statusCode: number;
-    // Enterprise attribution
+    // Enterprise attribution (legacy free-form, v2_040)
     department?: string;
     projectName?: string;
     employeeId?: string;
+    // v2_050 FK attribution from resolved ApiKeyContext
+    apiKeyId?: string | null;
+    departmentId?: string | null;
+    employeeUuid?: string | null;
+    projectId?: string | null;
     // Phase 3.3 — mppx payment analytics (optional)
     paymentRail?: string;
     chargeAmountRaw?: bigint;
@@ -95,9 +104,11 @@ function logTrafficEvent(event: {
         `INSERT INTO traffic_events
             (tenant_id, path, method, status_code, latency_ms, model, provider,
              tokens_in, tokens_out, cost_usd, cache_hit, request_id, event_type,
-             department, project_name, employee_id, created_at)
+             department, project_name, employee_external_ref,
+             api_key_id, department_id, employee_id, project_id,
+             created_at)
          VALUES ($1, $2, 'POST', $3, $4, $5, $6, $7, $8, $9, $10, $11, 'chat_completion',
-                 $12, $13, $14, NOW())`,
+                 $12, $13, $14, $15, $16, $17, $18, NOW())`,
         [
             event.tenantId,
             '/api/v2/chat/completions',
@@ -113,6 +124,10 @@ function logTrafficEvent(event: {
             event.department ?? null,
             event.projectName ?? null,
             event.employeeId ?? null,
+            event.apiKeyId ?? null,
+            event.departmentId ?? null,
+            event.employeeUuid ?? null,
+            event.projectId ?? null,
         ]
     ).catch(() => { /* best-effort — never block response */ });
 }
@@ -212,16 +227,43 @@ export async function POST(req: NextRequest) {
     const requestId = crypto.randomUUID();
     const start = Date.now();
 
-    // Enterprise attribution — read from headers, passed through to router_decisions
+    // v2_050: Resolve Budget-Owned API Key once at entry. When the caller
+    // presents `Authorization: Bearer p402_live_...`, FK attribution flows
+    // from the key's owning row (department/employee/workflow/project).
+    // Legacy free-form x-p402-* headers continue to fill the text columns.
+    let apiKeyCtx: ApiKeyContext | null = null;
+    try {
+        apiKeyCtx = await resolveApiKeyContext(req);
+    } catch {
+        // Invalid/revoked key surfaces later via requireTenantAccess; don't
+        // double-fail here (mppx and session paths must remain reachable).
+    }
+
     const attribution = {
         department: req.headers.get('x-p402-department') ?? undefined,
         projectName: req.headers.get('x-p402-project') ?? undefined,
         employeeId: req.headers.get('x-p402-employee') ?? undefined,
+        // v2_050 FK columns
+        apiKeyId:     apiKeyCtx?.apiKeyId     ?? null,
+        departmentId: apiKeyCtx?.departmentId ?? null,
+        employeeUuid: apiKeyCtx?.employeeId   ?? null,
+        projectId:    apiKeyCtx?.projectId    ?? null,
     };
 
     try {
         // Parse request body
         const body = await req.json() as V2ChatRequest;
+
+        // ── v2_050 Control layer: Budget-Owned API Key pre-routing guard ─────
+        // Skipped when no API key was presented (mppx, session, agentkit-trial
+        // paths handle their own limits). Throws ApiError on violation; the
+        // outer catch converts to the standard error envelope.
+        if (apiKeyCtx) {
+            // taskType is not yet sourced from the request body — wire that in
+            // once a `task` field is added to V2ChatRequest.p402. Model
+            // allow-list and MTD spend caps work today.
+            await enforcePreRouting(apiKeyCtx, { model: body.model });
+        }
 
         // ── mppx dual-protocol payment gate ──────────────────────────────────
         // Runs before tenant auth so mppx-paying clients don't need an API key.
@@ -643,7 +685,11 @@ async function handleNonStreamingResponse(
     reputationScore: number | null,
     creditBalanceBefore: number | null,
     paymentMeta?: MppxPaymentMeta,
-    attribution?: { department?: string; projectName?: string; employeeId?: string },
+    attribution?: {
+        department?: string; projectName?: string; employeeId?: string;
+        apiKeyId?: string | null; departmentId?: string | null;
+        employeeUuid?: string | null; projectId?: string | null;
+    },
 ) {
     // Execute completion
     const response = await registry.complete(request, options);
@@ -742,6 +788,10 @@ async function handleNonStreamingResponse(
         department: attribution?.department,
         projectName: attribution?.projectName,
         employeeId: attribution?.employeeId,
+        apiKeyId:     attribution?.apiKeyId,
+        departmentId: attribution?.departmentId,
+        employeeUuid: attribution?.employeeUuid,
+        projectId:    attribution?.projectId,
         paymentRail: paymentMeta?.rail,
         chargeAmountRaw: paymentMeta?.chargeAmountRaw,
         analyticsTag: paymentMeta?.analyticsTag,
@@ -772,7 +822,11 @@ async function handleStreamingResponse(
     reputationScore: number | null,
     creditBalanceBefore: number | null,
     paymentMeta?: MppxPaymentMeta,
-    attribution?: { department?: string; projectName?: string; employeeId?: string },
+    attribution?: {
+        department?: string; projectName?: string; employeeId?: string;
+        apiKeyId?: string | null; departmentId?: string | null;
+        employeeUuid?: string | null; projectId?: string | null;
+    },
 ) {
     // Create a readable stream
     const encoder = new TextEncoder();
@@ -893,6 +947,10 @@ async function handleStreamingResponse(
                     department: attribution?.department,
                     projectName: attribution?.projectName,
                     employeeId: attribution?.employeeId,
+                    apiKeyId:     attribution?.apiKeyId,
+                    departmentId: attribution?.departmentId,
+                    employeeUuid: attribution?.employeeUuid,
+                    projectId:    attribution?.projectId,
                     paymentRail: paymentMeta?.rail,
                     chargeAmountRaw: paymentMeta?.chargeAmountRaw,
                     analyticsTag: paymentMeta?.analyticsTag,

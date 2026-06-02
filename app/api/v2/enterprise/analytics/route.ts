@@ -29,12 +29,14 @@ export async function GET(req: NextRequest) {
     }
 
     // ── Department aggregation ────────────────────────────────────────────────
+    // v2_050: employee_id (VARCHAR) was renamed to employee_external_ref to free
+    // the column name for the new UUID FK. Output JSON keys preserved via alias.
     const deptRes = await db.query(
       `SELECT
          COALESCE(department, 'Unattributed')  AS department,
          COUNT(*)::int                          AS requests,
          COUNT(DISTINCT request_id)::int        AS sessions,
-         COUNT(DISTINCT employee_id)::int       AS employees,
+         COUNT(DISTINCT employee_external_ref)::int AS employees,
          COALESCE(SUM(cost_usd), 0)::float      AS spent_usd,
          COALESCE(SUM(tokens_in + tokens_out), 0)::bigint AS tokens,
          (SELECT model FROM traffic_events t2
@@ -54,7 +56,7 @@ export async function GET(req: NextRequest) {
     const budgetMap: Record<string, number> = {};
     try {
       const budgetRes = await db.query(
-        `SELECT name, budget_usd FROM enterprise_departments WHERE tenant_id = $1`,
+        `SELECT name, budget_usd FROM departments WHERE tenant_id = $1`,
         [tenantId],
       );
       for (const row of budgetRes.rows) {
@@ -77,7 +79,7 @@ export async function GET(req: NextRequest) {
     // ── Employee aggregation ──────────────────────────────────────────────────
     const empRes = await db.query(
       `SELECT
-         COALESCE(employee_id, 'unknown')      AS employee_id,
+         COALESCE(employee_external_ref, 'unknown') AS employee_id,
          COALESCE(department, 'Unattributed')  AS department,
          COALESCE(project_name, 'General')     AS project_name,
          COUNT(*)::int                         AS requests,
@@ -87,8 +89,8 @@ export async function GET(req: NextRequest) {
        FROM traffic_events
        WHERE tenant_id = $1 AND created_at >= $2
          AND event_type = 'chat_completion' AND status_code = 200
-         AND employee_id IS NOT NULL
-       GROUP BY employee_id, department, project_name
+         AND employee_external_ref IS NOT NULL
+       GROUP BY employee_external_ref, department, project_name
        ORDER BY spent_usd DESC
        LIMIT 50`,
       [tenantId, monthStart],
@@ -154,7 +156,7 @@ export async function GET(req: NextRequest) {
     // ── Recent sessions ───────────────────────────────────────────────────────
     const recentRes = await db.query(
       `SELECT
-         COALESCE(employee_id, 'unknown')     AS employee_id,
+         COALESCE(employee_external_ref, 'unknown') AS employee_id,
          COALESCE(department, 'Unattributed') AS department,
          COALESCE(project_name, 'General')    AS project_name,
          COALESCE(model, 'unknown')           AS model,

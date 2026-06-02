@@ -1,11 +1,24 @@
 import pool from '@/lib/db'
+import type { ApiKeyContext } from '@/lib/types/api-key';
 
 export interface Recommendation {
-    type: 'MODEL_SWAP' | 'PROVIDER_SWAP';
+    type: 'MODEL_SWAP' | 'PROVIDER_SWAP' | 'CACHE_LIKELY' | 'APPROACHING_BUDGET';
     tenantId: string;
     message: string;
     potentialSavingsUsd: number;
     details: any;
+    // v2_050: per-request advisory may be scoped below tenant.
+    apiKeyId?: string | null;
+    departmentId?: string | null;
+    employeeId?: string | null;
+}
+
+export interface RequestAdvisoryInput {
+    model?: string;
+    taskType?: string;
+    /** Estimated cost the router picked. Optional; some advice (model-swap)
+     *  doesn't need it. */
+    estimatedCostUsd?: number;
 }
 
 export class OptimizationEngine {
@@ -58,5 +71,56 @@ export class OptimizationEngine {
     static async getGlobalRecommendations(): Promise<Recommendation[]> {
         const demoTenantId = '00000000-0000-0000-0000-000000000001';
         return this.getRecommendationsForTenant(demoTenantId);
+    }
+
+    /**
+     * Per-request advisory for the Optimize layer of the Meter stack.
+     *
+     * Runs after routing chose a provider. Non-blocking by contract: never
+     * throws, returns [] on failure. Caller should fire-and-forget the result
+     * into traffic_events metadata or an out-of-band channel.
+     *
+     * Current advice surface:
+     *   - MODEL_SWAP for expensive models on cheap tasks (mirrors batch
+     *     heuristic, but scoped to the key's owner so a department dashboard
+     *     can attribute the suggestion).
+     *
+     * Future advice (lands with ai_optimization_recommendations table):
+     *   - CACHE_LIKELY from semantic-cache near-miss
+     *   - APPROACHING_BUDGET when MTD spend > 80% of cap
+     */
+    static async analyzeForContext(
+        ctx: ApiKeyContext,
+        req: RequestAdvisoryInput,
+    ): Promise<Recommendation[]> {
+        const recs: Recommendation[] = [];
+
+        try {
+            if (
+                req.model &&
+                req.estimatedCostUsd !== undefined &&
+                req.estimatedCostUsd > 0.05 &&
+                /gpt-4(?!o-mini)|claude-3-opus|claude-opus/i.test(req.model)
+            ) {
+                recs.push({
+                    type: 'MODEL_SWAP',
+                    tenantId: ctx.tenantId,
+                    apiKeyId: ctx.apiKeyId,
+                    departmentId: ctx.departmentId,
+                    employeeId: ctx.employeeId,
+                    message: `Cheaper model likely sufficient for '${req.taskType ?? 'inference'}'`,
+                    potentialSavingsUsd: req.estimatedCostUsd * 0.8,
+                    details: {
+                        currentModel: req.model,
+                        suggestedModel: 'gpt-4o-mini',
+                        taskType: req.taskType,
+                    },
+                });
+            }
+            return recs;
+        } catch (e) {
+            console.error('[OptimizationEngine] analyzeForContext failed:', e);
+            return [];
+        }
     }
 }

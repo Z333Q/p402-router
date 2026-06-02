@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const res = await db.query(
-      `SELECT id, name, budget_usd FROM enterprise_departments
+      `SELECT id, name, budget_usd FROM departments
        WHERE tenant_id = $1 ORDER BY name`,
       [access.tenantId],
     );
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const res = await db.query(
-      `INSERT INTO enterprise_departments (tenant_id, name, budget_usd, updated_at)
+      `INSERT INTO departments (tenant_id, name, budget_usd, updated_at)
        VALUES ($1, $2, $3, NOW())
        ON CONFLICT (tenant_id, name)
        DO UPDATE SET budget_usd = $3, updated_at = NOW()
