@@ -48,6 +48,8 @@ interface OverviewResponse {
     by_provider: ProviderSpend[];
     by_task: TaskSpend[];
     top_expensive_tasks: TaskSpend[];
+    accepted_output_count_30d: number | null;
+    cost_per_accepted_output_usd: number | null;
     open_recommendations: number;
     recommendations_state: 'coming_soon' | 'live';
     coming_soon_label: string;
@@ -137,6 +139,25 @@ export default function OptimizePage() {
                             subtext={`${data.by_provider.length} providers`}
                         />
                     </div>
+
+                    {/* Cost per accepted output (only when outcomes exist) */}
+                    {data.cost_per_accepted_output_usd !== null && data.accepted_output_count_30d !== null && (
+                        <Card title="Cost per accepted output" body="last 30 days · live from /api/v2/outcomes">
+                            <div className="flex flex-wrap items-baseline gap-4">
+                                <span className="text-3xl font-black font-mono">
+                                    {fmtUsd(data.cost_per_accepted_output_usd, 6)}
+                                </span>
+                                <span className="text-[11px] font-bold text-neutral-500 uppercase">
+                                    across {data.accepted_output_count_30d.toLocaleString()} accepted outputs
+                                </span>
+                            </div>
+                            <p className="text-[12px] font-mono text-neutral-600 mt-2 max-w-[640px]">
+                                Acceptance is reported via <code className="bg-neutral-100 px-1">POST /api/v2/outcomes</code>.
+                                Once outcomes flow, Optimize uses cost-per-accepted-output (not raw cost-per-request)
+                                to score model swaps, route changes, and budget reallocation.
+                            </p>
+                        </Card>
+                    )}
 
                     {/* ── Recommendation queue (honest empty state) ────────── */}
                     <Card title="Recommendation queue" body={data.coming_soon_label}>

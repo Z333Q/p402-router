@@ -58,6 +58,9 @@ export interface OptimizeOverviewResponse {
     by_provider: ProviderSpend[];
     by_task: TaskSpend[];
     top_expensive_tasks: TaskSpend[];
+    // v2_051 — surfaces only when outcome data exists; null until then.
+    accepted_output_count_30d: number | null;
+    cost_per_accepted_output_usd: number | null;
     open_recommendations: number;
     recommendations_state: 'coming_soon' | 'live';
     coming_soon_label: string;
@@ -137,14 +140,15 @@ export async function GET(req: NextRequest) {
         const requestCount30d = byProvider.reduce((sum, r) => sum + r.request_count, 0);
 
         // --- by task / action_type --------------------------------------------------
-        // traffic_events doesn't have action_type yet (v2_051), so we read the
-        // existing event_type column. After v2_051 lands, switch to action_type.
+        // v2_051 added action_type; prefer it when populated and fall back to
+        // event_type for legacy rows. The COALESCE order means a single row
+        // can answer with whichever bucket fits.
         const taskRes = await db.query(
             `SELECT
-                COALESCE(NULLIF(event_type, ''), 'unknown') AS task,
-                COUNT(*)::int                                AS request_count,
-                COALESCE(SUM(cost_usd), 0)::float            AS total_cost_usd,
-                COALESCE(AVG(cost_usd), 0)::float            AS avg_cost_usd
+                COALESCE(NULLIF(action_type, ''), NULLIF(event_type, ''), 'unknown') AS task,
+                COUNT(*)::int                                                          AS request_count,
+                COALESCE(SUM(cost_usd), 0)::float                                      AS total_cost_usd,
+                COALESCE(AVG(cost_usd), 0)::float                                      AS avg_cost_usd
              FROM traffic_events
              WHERE tenant_id = $1
                AND status_code = 200
@@ -159,6 +163,36 @@ export async function GET(req: NextRequest) {
             total_cost_usd: Number(r.total_cost_usd),
             avg_cost_usd:   Number(r.avg_cost_usd),
         }));
+
+        // --- v2_051 — cost per accepted output --------------------------------------
+        // Optimize's core efficiency metric. Only meaningful when request_outcomes
+        // has data; we fail-soft when the table is missing (Slice 2A not yet
+        // applied) or when no outcomes have been recorded yet.
+        let acceptedOutputCount: number | null = null;
+        let costPerAcceptedOutputUsd: number | null = null;
+        try {
+            const outcomesRes = await db.query(
+                `SELECT
+                    COUNT(*) FILTER (WHERE o.status = 'accepted')::int AS accepted_count,
+                    COALESCE(SUM(t.cost_usd) FILTER (WHERE o.status = 'accepted'), 0)::float AS accepted_cost
+                 FROM request_outcomes o
+                 JOIN traffic_events t
+                   ON t.tenant_id = o.tenant_id
+                  AND t.request_id = o.request_id
+                 WHERE o.tenant_id = $1
+                   AND o.created_at >= $2`,
+                [tenantId, periodStart],
+            );
+            const o = outcomesRes.rows[0] ?? { accepted_count: 0, accepted_cost: 0 };
+            const acceptedCount = Number(o.accepted_count);
+            const acceptedCost  = Number(o.accepted_cost);
+            if (acceptedCount > 0) {
+                acceptedOutputCount = acceptedCount;
+                costPerAcceptedOutputUsd = Number((acceptedCost / acceptedCount).toFixed(6));
+            }
+        } catch {
+            // request_outcomes table may not exist yet — fail-soft.
+        }
 
         // --- routing savings: actual_cost vs baseline_cost from execute_requests ----
         // execute_requests is what /api/v1/savings already aggregates. Fail-soft
@@ -194,6 +228,8 @@ export async function GET(req: NextRequest) {
             by_provider: byProvider,
             by_task: byTask,
             top_expensive_tasks: byTask.slice(0, 5),
+            accepted_output_count_30d: acceptedOutputCount,
+            cost_per_accepted_output_usd: costPerAcceptedOutputUsd,
             // Recommendation engine ships in Slice 4 (writes to
             // optimization_recommendations, which lands in Slice 3). Until then,
             // the queue is intentionally empty so users see an honest

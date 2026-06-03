@@ -54,6 +54,10 @@ export type ApiErrorCode =
     | 'MAX_COST_PER_REQUEST_EXCEEDED'
     | 'MODEL_NOT_ALLOWED'
     | 'TASK_TYPE_NOT_ALLOWED'
+    // Outcomes (v2_051)
+    | 'INVALID_OUTCOME_STATUS'
+    | 'INVALID_QUALITY_SCORE'
+    | 'OUTCOME_REQUEST_ID_REQUIRED'
 
 export class ApiError extends Error {
     public readonly code: ApiErrorCode

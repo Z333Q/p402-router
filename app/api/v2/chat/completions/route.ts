@@ -86,6 +86,9 @@ function logTrafficEvent(event: {
     departmentId?: string | null;
     employeeUuid?: string | null;
     projectId?: string | null;
+    // v2_051 action / task taxonomy
+    actionType?: string | null;
+    taskType?: string | null;
     // Phase 3.3 — mppx payment analytics (optional)
     paymentRail?: string;
     chargeAmountRaw?: bigint;
@@ -106,9 +109,10 @@ function logTrafficEvent(event: {
              tokens_in, tokens_out, cost_usd, cache_hit, request_id, event_type,
              department, project_name, employee_external_ref,
              api_key_id, department_id, employee_id, project_id,
+             action_type, task_type,
              created_at)
          VALUES ($1, $2, 'POST', $3, $4, $5, $6, $7, $8, $9, $10, $11, 'chat_completion',
-                 $12, $13, $14, $15, $16, $17, $18, NOW())`,
+                 $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())`,
         [
             event.tenantId,
             '/api/v2/chat/completions',
@@ -128,6 +132,8 @@ function logTrafficEvent(event: {
             event.departmentId ?? null,
             event.employeeUuid ?? null,
             event.projectId ?? null,
+            event.actionType ?? null,
+            event.taskType ?? null,
         ]
     ).catch(() => { /* best-effort — never block response */ });
 }
@@ -182,6 +188,16 @@ interface V2ChatRequest {
         tenant_id?: string;
         /** Arbitrary analytics tag forwarded to P402 analytics (Phase 3.3) */
         analyticsTag?: string;
+        /**
+         * Action type — recurring action this request represents (e.g.
+         * `support_reply`, `claims_summary`, `prior_auth_review`). Used by
+         * Optimize for action-level baselines. Free-text per the V5 starter
+         * taxonomy; will move to action_catalog when that table lands.
+         */
+        action_type?: string;
+        /** Task type — generic action category (e.g. `summarization`,
+         *  `classification`, `extraction`). Coarser than action_type. */
+        task_type?: string;
     };
 }
 
@@ -239,7 +255,20 @@ export async function POST(req: NextRequest) {
         // double-fail here (mppx and session paths must remain reachable).
     }
 
-    const attribution = {
+    // body is parsed inside the try{} below; pre-extract action/task here so
+    // we can populate attribution once. attribution.actionType / taskType
+    // get filled after body parse via the merge step.
+    const attribution: {
+        department?: string;
+        projectName?: string;
+        employeeId?: string;
+        apiKeyId: string | null;
+        departmentId: string | null;
+        employeeUuid: string | null;
+        projectId: string | null;
+        actionType: string | null;
+        taskType: string | null;
+    } = {
         department: req.headers.get('x-p402-department') ?? undefined,
         projectName: req.headers.get('x-p402-project') ?? undefined,
         employeeId: req.headers.get('x-p402-employee') ?? undefined,
@@ -248,21 +277,33 @@ export async function POST(req: NextRequest) {
         departmentId: apiKeyCtx?.departmentId ?? null,
         employeeUuid: apiKeyCtx?.employeeId   ?? null,
         projectId:    apiKeyCtx?.projectId    ?? null,
+        // v2_051 action / task — filled from body.p402.{action_type,task_type}
+        // (or header overrides) once body is parsed.
+        actionType: req.headers.get('x-p402-action-type') ?? null,
+        taskType:   req.headers.get('x-p402-task-type')   ?? null,
     };
 
     try {
         // Parse request body
         const body = await req.json() as V2ChatRequest;
 
+        // ── v2_051: action_type / task_type ──────────────────────────────────
+        // Body fields take precedence over header overrides. Both are
+        // optional; nullable downstream.
+        if (body.p402?.action_type) attribution.actionType = body.p402.action_type;
+        if (body.p402?.task_type)   attribution.taskType   = body.p402.task_type;
+
         // ── v2_050 Control layer: Budget-Owned API Key pre-routing guard ─────
         // Skipped when no API key was presented (mppx, session, agentkit-trial
         // paths handle their own limits). Throws ApiError on violation; the
         // outer catch converts to the standard error envelope.
         if (apiKeyCtx) {
-            // taskType is not yet sourced from the request body — wire that in
-            // once a `task` field is added to V2ChatRequest.p402. Model
-            // allow-list and MTD spend caps work today.
-            await enforcePreRouting(apiKeyCtx, { model: body.model });
+            await enforcePreRouting(apiKeyCtx, {
+                model: body.model,
+                // v2_051 unlocks TASK_TYPE_NOT_ALLOWED enforcement when the
+                // request carries a task_type and the key has an allowlist.
+                taskType: attribution.taskType ?? undefined,
+            });
         }
 
         // ── mppx dual-protocol payment gate ──────────────────────────────────
@@ -689,6 +730,7 @@ async function handleNonStreamingResponse(
         department?: string; projectName?: string; employeeId?: string;
         apiKeyId?: string | null; departmentId?: string | null;
         employeeUuid?: string | null; projectId?: string | null;
+        actionType?: string | null; taskType?: string | null;
     },
 ) {
     // Execute completion
@@ -765,6 +807,11 @@ async function handleNonStreamingResponse(
             // Credits
             credits_spent: creditsSpent,
             credits_balance: creditBalanceAfter,
+            // v2_051 — outcome tracking surface. Callers POST to
+            // outcome_endpoint with { request_id, status, quality_score? }
+            // to feed cost-per-accepted-output, retry waste, and Optimize.
+            outcome_tracking: true,
+            outcome_endpoint: '/api/v2/outcomes',
             // Phase 3.3 — mppx payment analytics
             ...(paymentMeta && {
                 payment_rail: paymentMeta.rail,
@@ -792,6 +839,8 @@ async function handleNonStreamingResponse(
         departmentId: attribution?.departmentId,
         employeeUuid: attribution?.employeeUuid,
         projectId:    attribution?.projectId,
+        actionType:   attribution?.actionType,
+        taskType:     attribution?.taskType,
         paymentRail: paymentMeta?.rail,
         chargeAmountRaw: paymentMeta?.chargeAmountRaw,
         analyticsTag: paymentMeta?.analyticsTag,
@@ -826,6 +875,7 @@ async function handleStreamingResponse(
         department?: string; projectName?: string; employeeId?: string;
         apiKeyId?: string | null; departmentId?: string | null;
         employeeUuid?: string | null; projectId?: string | null;
+        actionType?: string | null; taskType?: string | null;
     },
 ) {
     // Create a readable stream
@@ -920,6 +970,9 @@ async function handleStreamingResponse(
                         // Credits (deducted post-stream)
                         credits_spent: Math.ceil(costUsd * 100),
                         credits_balance: creditBalanceBefore !== null ? Math.max(0, creditBalanceBefore - Math.ceil(costUsd * 100)) : null,
+                        // v2_051 — outcome tracking surface
+                        outcome_tracking: true,
+                        outcome_endpoint: '/api/v2/outcomes',
                         // Phase 3.3 — mppx payment analytics
                         ...(paymentMeta && {
                             payment_rail: paymentMeta.rail,
@@ -951,6 +1004,8 @@ async function handleStreamingResponse(
                     departmentId: attribution?.departmentId,
                     employeeUuid: attribution?.employeeUuid,
                     projectId:    attribution?.projectId,
+                    actionType:   attribution?.actionType,
+                    taskType:     attribution?.taskType,
                     paymentRail: paymentMeta?.rail,
                     chargeAmountRaw: paymentMeta?.chargeAmountRaw,
                     analyticsTag: paymentMeta?.analyticsTag,

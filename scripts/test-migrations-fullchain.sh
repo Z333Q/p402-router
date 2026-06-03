@@ -129,12 +129,15 @@ apply "$ROOT/schema.sql"
 # Pre-v2 numbered migrations (lexicographic)
 for f in "$MIG_DIR"/0*.sql; do apply "$f"; done
 
-# All v2_NNN migrations except the one under test. Known-broken files are
-# skipped by apply() itself; see KNOWN_BROKEN above.
+# All v2_NNN migrations except the ones under test (v2_050, v2_051).
+# Those are applied later under explicit pre/post snapshots so we can assert
+# behavioral parity. Known-broken files are skipped by apply() itself; see
+# KNOWN_BROKEN above.
 while IFS= read -r -d '' f; do
     base=$(basename "$f")
     case "$base" in
         v2_050_*) continue ;;  # under test, applied below
+        v2_051_*) continue ;;  # under test, applied below
         *) apply "$f" ;;
     esac
 done < <(find "$MIG_DIR" -maxdepth 1 -type f -name 'v2_*.sql' -print0 | sort -z)
@@ -377,7 +380,98 @@ assert_eq "departments restored after up-again" "1" \
 echo "    round-trip ok"
 
 # =============================================================================
-# 9. Final summary
+# 9. Apply v2_051 on top and assert its surface
+# =============================================================================
+echo "==> 9. Apply v2_051"
+apply "$MIG_DIR/v2_051_action_type_and_outcomes.sql"
+
+echo "==> 9a. v2_051 schema assertions"
+
+# 9a.1 action_type + task_type columns
+for tbl in traffic_events router_decisions; do
+    for col in action_type task_type; do
+        assert_eq "${tbl}.${col} exists as text" "text" \
+            "$(PSQL_T "SELECT data_type FROM information_schema.columns WHERE table_name='${tbl}' AND column_name='${col}';")"
+    done
+done
+echo "    action_type + task_type on both event tables ok"
+
+# 9a.2 request_outcomes table
+assert_eq "request_outcomes table exists" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='request_outcomes';")"
+assert_eq "request_outcomes.tenant_id is uuid FK to tenants" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.referential_constraints rc JOIN information_schema.key_column_usage kcu ON rc.constraint_name=kcu.constraint_name WHERE kcu.table_name='request_outcomes' AND kcu.column_name='tenant_id';")"
+assert_eq "request_outcomes UNIQUE(tenant_id, request_id)" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.table_constraints WHERE table_name='request_outcomes' AND constraint_type='UNIQUE';")"
+assert_eq "request_outcomes has status CHECK" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.check_constraints WHERE check_clause LIKE '%accepted%' AND check_clause LIKE '%human_reviewed%' AND check_clause LIKE '%failed%';")"
+echo "    request_outcomes table + constraints ok"
+
+# 9a.3 Indexes
+for idx in idx_traffic_events_action_type idx_router_decisions_action_type \
+           idx_request_outcomes_tenant_time idx_request_outcomes_status; do
+    assert_eq "$idx exists" "1" \
+        "$(PSQL_T "SELECT COUNT(*) FROM pg_indexes WHERE indexname='$idx';")"
+done
+echo "    v2_051 indexes ok"
+
+echo "==> 9b. v2_051 behavioral assertions"
+
+# 9b.1 INSERT a valid outcome
+OUTCOME_ID=$(PSQL_T "INSERT INTO request_outcomes (tenant_id, request_id, status, quality_score)
+                     VALUES ('$TENANT_ID', 'req_outcome_001', 'accepted', 0.91)
+                     RETURNING id;")
+[[ -n "$OUTCOME_ID" ]] || { echo "FAIL: outcome INSERT returned no id" >&2; exit 1; }
+
+# 9b.2 ON CONFLICT (tenant_id, request_id) DO UPDATE works (caller can overwrite)
+PSQL -c "INSERT INTO request_outcomes (tenant_id, request_id, status, quality_score)
+         VALUES ('$TENANT_ID', 'req_outcome_001', 'rejected', 0.4)
+         ON CONFLICT (tenant_id, request_id) DO UPDATE
+         SET status = EXCLUDED.status, quality_score = EXCLUDED.quality_score, updated_at = NOW();" >/dev/null
+assert_eq "outcome status after upsert" "rejected" \
+    "$(PSQL_T "SELECT status FROM request_outcomes WHERE tenant_id='$TENANT_ID' AND request_id='req_outcome_001';")"
+
+# 9b.3 status CHECK rejects unknown values
+INVALID_OUT=$(PSQL_T "INSERT INTO request_outcomes (tenant_id, request_id, status) VALUES ('$TENANT_ID', 'req_invalid', 'bogus_status') RETURNING id;" 2>&1 || true)
+echo "$INVALID_OUT" | grep -qi "violates check constraint" || { echo "FAIL: status CHECK did not reject 'bogus_status' (got: $INVALID_OUT)" >&2; exit 1; }
+
+# 9b.4 quality_score CHECK rejects out-of-range
+INVALID_QS=$(PSQL_T "INSERT INTO request_outcomes (tenant_id, request_id, status, quality_score) VALUES ('$TENANT_ID', 'req_invalid_qs', 'accepted', 1.5) RETURNING id;" 2>&1 || true)
+echo "$INVALID_QS" | grep -qi "violates check constraint" || { echo "FAIL: quality_score CHECK did not reject 1.5 (got: $INVALID_QS)" >&2; exit 1; }
+
+# 9b.5 quality_score NULL is allowed
+PSQL -c "INSERT INTO request_outcomes (tenant_id, request_id, status) VALUES ('$TENANT_ID', 'req_no_score', 'accepted');" >/dev/null
+assert_eq "outcome with NULL quality_score persisted" "accepted" \
+    "$(PSQL_T "SELECT status FROM request_outcomes WHERE tenant_id='$TENANT_ID' AND request_id='req_no_score';")"
+
+# 9b.6 traffic_events can write action_type (NULL by default for legacy)
+PSQL -c "UPDATE traffic_events SET action_type='claims_summary' WHERE request_id='req_legacy_001';" >/dev/null
+assert_eq "traffic_events.action_type writeable" "claims_summary" \
+    "$(PSQL_T "SELECT action_type FROM traffic_events WHERE request_id='req_legacy_001';")"
+
+echo "    v2_051 behavior ok"
+
+# 9c. Idempotency on v2_051
+echo "==> 9c. v2_051 idempotency"
+apply "$MIG_DIR/v2_051_action_type_and_outcomes.sql"
+assert_eq "outcomes table still present after re-apply" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='request_outcomes';")"
+echo "    second apply ok"
+
+# 9d. v2_051 round-trip
+echo "==> 9d. v2_051 round-trip"
+PSQL -f "$MIG_DIR/v2_051_down.sql" >/dev/null
+assert_eq "request_outcomes dropped by down" "0" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='request_outcomes';")"
+assert_eq "traffic_events.action_type dropped by down" "0" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.columns WHERE table_name='traffic_events' AND column_name='action_type';")"
+apply "$MIG_DIR/v2_051_action_type_and_outcomes.sql"
+assert_eq "request_outcomes restored after up-again" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='request_outcomes';")"
+echo "    v2_051 round-trip ok"
+
+# =============================================================================
+# 10. Final summary
 # =============================================================================
 echo
 echo "============================================================"
@@ -391,9 +485,10 @@ if (( ${#SKIPPED_FILES[@]} > 0 )); then
         echo "                   - $s"
     done
 fi
-echo "  schema:        all 13 api_keys columns + 7 indexes + 2 CHECKs + 2 FKs verified"
+echo "  v2_050:        13 columns + 7 indexes + 2 CHECKs + 2 FKs + CRUD parity"
+echo "  v2_051:        action_type/task_type cols + request_outcomes (status & quality CHECKs)"
 echo "  legacy:        api_keys, traffic_events, departments rows preserved"
-echo "  CRUD parity:   create/lookup-by-hash/revoke flow unchanged"
+echo "  CRUD parity:   create/lookup/revoke for api_keys; upsert + CHECK for outcomes"
 echo "  idempotent:    second apply leaves DB unchanged"
-echo "  round-trip:    down -> up restores schema"
+echo "  round-trip:    down -> up restores schema (both migrations)"
 echo "============================================================"

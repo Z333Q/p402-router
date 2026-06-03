@@ -79,6 +79,9 @@ export class RoutingEngine {
             departmentId?: string | null,
             employeeUuid?: string | null,
             projectId?: string | null,
+            // v2_051 action / task taxonomy (Optimize layer)
+            actionType?: string | null,
+            taskType?: string | null,
         }
     ): Promise<{ candidates: FacilitatorCandidate[], selectedId: string, cacheHit?: boolean }> {
 
@@ -100,13 +103,15 @@ export class RoutingEngine {
                                 request_id, tenant_id, task, requested_mode,
                                 selected_provider_id, reason, success, cost_usd,
                                 department, project_name, employee_external_ref,
-                                api_key_id, department_id, employee_id, project_id
-                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                                api_key_id, department_id, employee_id, project_id,
+                                action_type, task_type
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                         `, [
                             options.requestId, tenantId, options.task || 'inference',
                             mode, 'system', 'usage_limit_reached', false, 0,
                             options.department ?? null, options.projectName ?? null, options.employeeId ?? null,
                             options.apiKeyId ?? null, options.departmentId ?? null, options.employeeUuid ?? null, options.projectId ?? null,
+                            options.actionType ?? null, options.taskType ?? null,
                         ]);
                     }
                     throw error;
@@ -126,13 +131,15 @@ export class RoutingEngine {
                             request_id, tenant_id, task, requested_mode,
                             selected_provider_id, reason, success, cost_usd,
                             department, project_name, employee_external_ref,
-                            api_key_id, department_id, employee_id, project_id
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                            api_key_id, department_id, employee_id, project_id,
+                            action_type, task_type
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                     `, [
                         options.requestId, tenantId, options.task || 'inference',
                         mode, 'cache_engine', 'semantic_hit', true, 0,
                         options.department ?? null, options.projectName ?? null, options.employeeId ?? null,
                         options.apiKeyId ?? null, options.departmentId ?? null, options.employeeUuid ?? null, options.projectId ?? null,
+                        options.actionType ?? null, options.taskType ?? null,
                     ]);
                 }
 
@@ -166,13 +173,15 @@ export class RoutingEngine {
                                 request_id, tenant_id, task, requested_mode,
                                 selected_provider_id, reason, success, cost_usd,
                                 department, project_name, employee_external_ref,
-                                api_key_id, department_id, employee_id, project_id
-                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                                api_key_id, department_id, employee_id, project_id,
+                                action_type, task_type
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                         `, [
                             options.requestId, tenantId, options.task || 'inference',
                             mode, row.substitute_model, 'intelligence_override', true, 0,
                             options.department ?? null, options.projectName ?? null, options.employeeId ?? null,
                             options.apiKeyId ?? null, options.departmentId ?? null, options.employeeUuid ?? null, options.projectId ?? null,
+                            options.actionType ?? null, options.taskType ?? null,
                         ]);
                     }
 
@@ -443,8 +452,9 @@ export class RoutingEngine {
                         selected_provider_id, reason, alternatives,
                         success, cost_usd,
                         department, project_name, employee_external_ref,
-                        api_key_id, department_id, employee_id, project_id
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                        api_key_id, department_id, employee_id, project_id,
+                        action_type, task_type
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
                 `, [
                     options.requestId,
                     options.tenantId,
@@ -463,6 +473,8 @@ export class RoutingEngine {
                     options.departmentId ?? null,
                     options.employeeUuid ?? null,
                     options.projectId ?? null,
+                    options.actionType ?? null,
+                    options.taskType ?? null,
                 ]);
             } catch (e) {
                 console.error("[RoutingEngine] Failed to log decision:", e);

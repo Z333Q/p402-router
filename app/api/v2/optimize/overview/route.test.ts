@@ -20,11 +20,12 @@ beforeEach(() => {
     (db.query as any).mockReset();
 });
 
-// Per-test, the route makes up to 4 queries in this order:
+// Per-test, the route makes up to 5 queries in this code order:
 //   1. MTD cost + count from traffic_events
 //   2. by-provider from traffic_events (last 30d)
 //   3. by-task from traffic_events (last 30d)
-//   4. savings (baseline vs actual) from execute_requests — fail-soft
+//   4. cost-per-accepted-output from request_outcomes JOIN traffic_events — fail-soft (v2_051)
+//   5. savings (baseline vs actual) from execute_requests — fail-soft
 function mockChain(opts: {
     mtdCost?: number;
     mtdRequests?: number;
@@ -33,11 +34,19 @@ function mockChain(opts: {
     baseline?: number;
     actual?: number;
     savingsThrows?: boolean;
+    acceptedCount?: number;
+    acceptedCost?: number;
+    outcomesThrows?: boolean;
 }) {
     const q = (db.query as any);
     q.mockResolvedValueOnce({ rows: [{ mtd_cost: opts.mtdCost ?? 0, mtd_requests: opts.mtdRequests ?? 0 }] });
     q.mockResolvedValueOnce({ rows: opts.providerRows ?? [] });
     q.mockResolvedValueOnce({ rows: opts.taskRows ?? [] });
+    if (opts.outcomesThrows) {
+        q.mockRejectedValueOnce(new Error('request_outcomes table missing'));
+    } else {
+        q.mockResolvedValueOnce({ rows: [{ accepted_count: opts.acceptedCount ?? 0, accepted_cost: opts.acceptedCost ?? 0 }] });
+    }
     if (opts.savingsThrows) {
         q.mockRejectedValueOnce(new Error('execute_requests table missing'));
     } else {
@@ -61,6 +70,8 @@ describe('GET /api/v2/optimize/overview', () => {
             by_provider: [],
             by_task: [],
             top_expensive_tasks: [],
+            accepted_output_count_30d: null,
+            cost_per_accepted_output_usd: null,
             open_recommendations: 0,
             recommendations_state: 'coming_soon',
         });
@@ -138,17 +149,51 @@ describe('GET /api/v2/optimize/overview', () => {
         mockChain({});
         await GET(makeReq());
         const calls = (db.query as any).mock.calls;
-        // First three queries hit traffic_events.created_at; fourth hits execute_requests.created_at.
+        // Queries 1-3 hit traffic_events; 4 hits request_outcomes JOIN traffic_events; 5 hits execute_requests.
         expect(calls[0][0]).toContain('FROM traffic_events');
         expect(calls[0][0]).toContain('created_at');
         expect(calls[1][0]).toContain('FROM traffic_events');
         expect(calls[2][0]).toContain('FROM traffic_events');
-        expect(calls[3][0]).toContain('FROM execute_requests');
+        expect(calls[3][0]).toContain('FROM request_outcomes');
+        expect(calls[4][0]).toContain('FROM execute_requests');
         // Must NOT touch router_decisions (which uses `timestamp`, not `created_at` —
         // pre-existing bug in /api/v2/analytics/spend; do not replicate).
         for (const c of calls) {
             expect(c[0]).not.toContain('FROM router_decisions');
         }
+    });
+
+    it('by-task query prefers action_type over event_type (v2_051)', async () => {
+        mockChain({});
+        await GET(makeReq());
+        const taskSql = (db.query as any).mock.calls[2][0];
+        // COALESCE order must be action_type then event_type
+        expect(taskSql).toMatch(/COALESCE\(NULLIF\(action_type, ''\), NULLIF\(event_type, ''\), 'unknown'\)/);
+    });
+
+    it('reports cost_per_accepted_output when outcomes exist', async () => {
+        mockChain({ acceptedCount: 100, acceptedCost: 1.50 });
+        const res = await GET(makeReq());
+        const body = await res.json();
+        expect(body.accepted_output_count_30d).toBe(100);
+        expect(body.cost_per_accepted_output_usd).toBe(0.015);
+    });
+
+    it('cost_per_accepted_output stays null when no accepted outcomes', async () => {
+        mockChain({ acceptedCount: 0, acceptedCost: 0 });
+        const res = await GET(makeReq());
+        const body = await res.json();
+        expect(body.accepted_output_count_30d).toBeNull();
+        expect(body.cost_per_accepted_output_usd).toBeNull();
+    });
+
+    it('fails soft when request_outcomes table is missing', async () => {
+        mockChain({ outcomesThrows: true });
+        const res = await GET(makeReq());
+        const body = await res.json();
+        expect(res.status).toBe(200);
+        expect(body.accepted_output_count_30d).toBeNull();
+        expect(body.cost_per_accepted_output_usd).toBeNull();
     });
 
     it('always reports open_recommendations=0 until Slice 4 ships', async () => {
