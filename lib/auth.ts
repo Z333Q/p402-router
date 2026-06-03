@@ -241,3 +241,63 @@ export async function requireTenantAccess(req: NextRequest) {
 
     return { tenantId: requestedTenant };
 }
+
+/**
+ * Strict admin gate for tenant-scoped governance routes (privacy settings,
+ * scope overrides, retention rules, etc.).
+ *
+ * Returns { tenantId, actorEmail } only when ALL of these are true:
+ *   1. The caller has a NextAuth session — API keys cannot reach this gate.
+ *   2. The session user is the tenant owner (tenants.owner_email matches the
+ *      session email), OR the session user has the global ADMIN_EMAILS flag.
+ *
+ * The `actorEmail` field is intentionally returned so the caller can record
+ * who saved a sensitive row (e.g. metadata.last_modified_by_email on a
+ * widening privacy override).
+ *
+ * Returns { error, status } on failure; do NOT fall back to less-restrictive
+ * gates from this function — privacy widening is one of those decisions that
+ * must fail closed.
+ */
+export async function requireTenantAdminAccess(req: NextRequest): Promise<
+    | { tenantId: string; actorEmail: string; isAdmin: boolean }
+    | { error: string; status: number }
+> {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+        return { error: 'Unauthorized: signed-in session required for admin action', status: 401 };
+    }
+
+    const sessionTenantId = (session.user as any).tenantId as string | undefined;
+    const sessionEmail    = (session.user as any).email   as string | undefined;
+    const sessionIsAdmin  = !!(session.user as any).isAdmin;
+
+    if (!sessionTenantId || !sessionEmail) {
+        return { error: 'Unauthorized: incomplete session', status: 401 };
+    }
+
+    const requestedTenant = req.headers.get('x-p402-tenant');
+    if (requestedTenant && requestedTenant !== sessionTenantId && !sessionIsAdmin) {
+        return { error: 'Forbidden: cannot manage other tenant', status: 403 };
+    }
+
+    const tenantId = (requestedTenant && sessionIsAdmin) ? requestedTenant : sessionTenantId;
+
+    // The owner check: tenants.owner_email must match the session email.
+    // Global admins bypass the owner match.
+    if (!sessionIsAdmin) {
+        try {
+            const r = await pool.query('SELECT owner_email FROM tenants WHERE id = $1', [tenantId]);
+            const row = r.rows[0];
+            const ownerEmail = row?.owner_email?.toLowerCase?.();
+            if (!ownerEmail || ownerEmail !== sessionEmail.toLowerCase()) {
+                return { error: 'Forbidden: tenant-admin role required', status: 403 };
+            }
+        } catch {
+            // Fail closed on a DB lookup error — never grant admin access by accident.
+            return { error: 'Forbidden: unable to verify tenant ownership', status: 403 };
+        }
+    }
+
+    return { tenantId, actorEmail: sessionEmail, isAdmin: sessionIsAdmin };
+}

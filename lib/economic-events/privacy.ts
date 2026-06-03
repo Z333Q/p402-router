@@ -5,6 +5,23 @@
 //   2. tenant default row in tenant_privacy_settings
 //   3. system default: metadata_only, no prompt/response storage, 30d retention
 //
+// IMPORTANT — privacy widening rule (clarified 2026-06-03):
+//
+//   * Admin-configured scope overrides (rows in privacy_scope_overrides) CAN
+//     widen OR narrow privacy mode relative to the tenant default. Writing
+//     such a row is gated at the CRUD endpoint layer by
+//     requireTenantAdminAccess — only a real authenticated tenant admin can
+//     persist a scope override that widens (e.g. tenant default
+//     metadata_only with a workflow override of full_trace). The override is
+//     retention-bound, auditable via metadata.last_modified_by/at, and visible
+//     in /dashboard/settings/privacy.
+//
+//   * Per-request `override` passed to this resolver by the runtime caller
+//     (chat completions, meter-only endpoint, etc.) can ONLY ratchet tighter.
+//     A request body cannot self-upgrade privacy mode regardless of what the
+//     caller sends — applyOverride() refuses anything looser than the
+//     resolved (scope/tenant/system) base.
+//
 // The resolver also produces retention_expires_at relative to "now" so the
 // writer can stamp it onto ai_economic_events without recomputing.
 

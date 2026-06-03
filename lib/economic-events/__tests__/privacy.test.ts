@@ -43,6 +43,52 @@ describe('resolveTenantPrivacy', () => {
         expect(r.source).toBe('tenant_default');
     });
 
+    it('admin-configured scope override WIDENS tenant default (workflow=full_trace on metadata_only tenant)', async () => {
+        // User clarification 2026-06-03: scope overrides persisted by an
+        // admin can widen privacy mode. CRUD endpoint enforces "authorized
+        // admin" gate — this resolver trusts a present override row.
+        (db.query as any)
+            .mockResolvedValueOnce({
+                rows: [{
+                    privacy_mode: 'full_trace',
+                    store_prompts: true,
+                    store_responses: true,
+                    retention_days: 14,
+                    scope: 'workflow',
+                    scope_id: 'engineering_debug',
+                }],
+            });
+        const r = await resolveTenantPrivacy(TENANT, {
+            scope: [{ type: 'workflow', id: 'engineering_debug' }],
+        });
+        expect(r.source).toBe('scope_override');
+        expect(r.privacyMode).toBe('full_trace');
+        expect(r.storePrompts).toBe(true);
+        expect(r.storeResponses).toBe(true);
+        expect(r.retentionDays).toBe(14);
+    });
+
+    it('per-request override CANNOT widen even when scope override is wider', async () => {
+        // Even though a runtime caller passes override='full_trace', the
+        // resolved (scope_override) base is metadata_only — the caller is
+        // refused (applyOverride only ratchets tighter for per-request input).
+        (db.query as any).mockResolvedValueOnce({
+            rows: [{
+                privacy_mode: 'metadata_only',
+                store_prompts: false,
+                store_responses: false,
+                retention_days: 30,
+                scope: 'department',
+                scope_id: 'claims',
+            }],
+        });
+        const r = await resolveTenantPrivacy(TENANT, {
+            scope: [{ type: 'department', id: 'claims' }],
+            override: 'full_trace',
+        });
+        expect(r.privacyMode).toBe('metadata_only');
+    });
+
     it('scope override takes precedence over tenant default', async () => {
         // scope override matches on first candidate
         (db.query as any)

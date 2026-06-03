@@ -49,6 +49,100 @@ import { resolveApiKeyContext } from '@/lib/api-key-context';
 import type { ApiKeyContext } from '@/lib/types/api-key';
 import { enforcePreRouting } from '@/lib/budget-guard';
 import { OptimizationEngine } from '@/lib/intelligence/optimization';
+import { writeEconomicEvent } from '@/lib/economic-events/writer';
+import type { Scope } from '@/lib/economic-events/types';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Hosted-routing dual-write into ai_economic_events (Slice 2C).
+//
+// Fire-and-forget. The writer resolves tenant + scope privacy and decides
+// whether prompt/response are persisted, fingerprinted, or dropped. This
+// function NEVER blocks the response.
+//
+// Privacy posture is enforced by the writer:
+//   - default tenant (metadata_only) -> prompt/response are passed in, but
+//     the writer drops them on the floor; nothing content-bearing lands in
+//     ai_economic_events.
+//   - fingerprint_only / redacted_trace / full_trace -> writer follows the
+//     resolved policy.
+// Callers cannot widen the privacy mode of a request — only admin-saved
+// scope overrides can do that (V5 widening rule).
+// ─────────────────────────────────────────────────────────────────────────────
+function recordHostedEconomicEvent(args: {
+    tenantId: string;
+    requestId: string;
+    /** Stringified prompt content (e.g. JSON-encoded messages). Writer
+     *  decides whether to fingerprint / store / drop based on privacy mode. */
+    promptContent?: string;
+    /** Stringified response content (when available — streaming may pass undefined). */
+    responseContent?: string;
+    attribution?: {
+        apiKeyId?: string | null; departmentId?: string | null;
+        employeeUuid?: string | null; projectId?: string | null;
+        department?: string; projectName?: string; employeeId?: string;
+        actionType?: string | null; taskType?: string | null;
+    };
+    provider: string | null;
+    modelRequested: string | null;
+    modelUsed: string | null;
+    costUsd: number;
+    directCostUsd: number;
+    latencyMs: number;
+    inputTokens: number;
+    outputTokens: number;
+    cacheHit: boolean;
+    statusCode: number;
+    success: boolean;
+}) {
+    writeEconomicEvent(args.tenantId, {
+        request_id: args.requestId,
+        source: 'chat_completions',
+        api_key_id:    args.attribution?.apiKeyId ?? null,
+        owner_type:    (args.attribution?.apiKeyId
+                          ? 'api_key'
+                          : args.attribution?.employeeUuid
+                            ? 'employee'
+                            : args.attribution?.departmentId ? 'department' : null) as Scope | null,
+        department_id: args.attribution?.departmentId ?? null,
+        employee_id:   args.attribution?.employeeUuid ?? null,
+        project_id:    args.attribution?.projectId ?? null,
+        action_type:   args.attribution?.actionType ?? null,
+        task_type:     args.attribution?.taskType ?? null,
+
+        provider:        args.provider,
+        model_requested: args.modelRequested,
+        model_used:      args.modelUsed,
+
+        input_tokens:  args.inputTokens,
+        output_tokens: args.outputTokens,
+        total_tokens:  args.inputTokens + args.outputTokens,
+        cost_usd:        args.costUsd,
+        direct_cost_usd: args.directCostUsd,
+        latency_ms:      args.latencyMs,
+        cache_hit:       args.cacheHit,
+        status_code:     args.statusCode,
+        success:         args.success,
+
+        // Privacy: passed to writer which fingerprints/stores/drops based
+        // on resolved tenant + scope policy. NEVER persisted directly here.
+        _promptForRedaction:   args.promptContent,
+        _responseForRedaction: args.responseContent,
+    }).catch((e) => {
+        // ai_economic_events INSERT must never break a successful response.
+        console.error('[economic-events] hosted-routing write failed:', e instanceof Error ? e.message : e);
+    });
+}
+
+function serializeMessages(messages: unknown): string | undefined {
+    try { return JSON.stringify(messages ?? []); } catch { return undefined; }
+}
+
+function serializeChoices(choices: unknown): string | undefined {
+    try {
+        if (!Array.isArray(choices)) return undefined;
+        return JSON.stringify(choices.map((c: any) => c?.message ?? c?.delta ?? {}));
+    } catch { return undefined; }
+}
 
 // x402 payment requirements emitted in the dual-402 challenge for Base mainnet.
 // Clients supporting x402 can pre-pay; verification on this endpoint ships in Phase 2.3.
@@ -846,6 +940,26 @@ async function handleNonStreamingResponse(
         analyticsTag: paymentMeta?.analyticsTag,
     });
 
+    // v2_052 dual-write into ai_economic_events. Privacy-resolver gated.
+    recordHostedEconomicEvent({
+        tenantId,
+        requestId,
+        promptContent:   serializeMessages(request.messages),
+        responseContent: serializeChoices(response.choices),
+        attribution,
+        provider:        response.p402?.providerId ?? null,
+        modelRequested:  request.model ?? null,
+        modelUsed:       response.p402?.modelId ?? request.model ?? null,
+        costUsd,
+        directCostUsd:   directCost,
+        latencyMs:       totalLatencyMs,
+        inputTokens,
+        outputTokens,
+        cacheHit:        response.p402?.cached ?? false,
+        statusCode:      200,
+        success:         true,
+    });
+
     return NextResponse.json(p402Response, {
         headers: {
             'X-P402-Request-ID': requestId,
@@ -1009,6 +1123,29 @@ async function handleStreamingResponse(
                     paymentRail: paymentMeta?.rail,
                     chargeAmountRaw: paymentMeta?.chargeAmountRaw,
                     analyticsTag: paymentMeta?.analyticsTag,
+                });
+
+                // v2_052 dual-write. Streaming: response content is not
+                // accumulated server-side; pass undefined for responseContent
+                // so the writer fingerprints/persists only the prompt under
+                // the resolved privacy policy.
+                recordHostedEconomicEvent({
+                    tenantId,
+                    requestId,
+                    promptContent:   serializeMessages(request.messages),
+                    responseContent: undefined,
+                    attribution,
+                    provider:        decision.provider.id,
+                    modelRequested:  request.model ?? null,
+                    modelUsed:       decision.model.id,
+                    costUsd,
+                    directCostUsd:   directCost,
+                    latencyMs:       totalLatencyMs,
+                    inputTokens:     estimatedInputTokens,
+                    outputTokens:    totalOutputTokens,
+                    cacheHit:        false,
+                    statusCode:      200,
+                    success:         true,
                 });
 
             } catch (error: any) {
