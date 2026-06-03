@@ -129,7 +129,7 @@ apply "$ROOT/schema.sql"
 # Pre-v2 numbered migrations (lexicographic)
 for f in "$MIG_DIR"/0*.sql; do apply "$f"; done
 
-# All v2_NNN migrations except the ones under test (v2_050, v2_051).
+# All v2_NNN migrations except the ones under test (v2_050, v2_051, v2_052).
 # Those are applied later under explicit pre/post snapshots so we can assert
 # behavioral parity. Known-broken files are skipped by apply() itself; see
 # KNOWN_BROKEN above.
@@ -138,6 +138,7 @@ while IFS= read -r -d '' f; do
     case "$base" in
         v2_050_*) continue ;;  # under test, applied below
         v2_051_*) continue ;;  # under test, applied below
+        v2_052_*) continue ;;  # under test, applied below
         *) apply "$f" ;;
     esac
 done < <(find "$MIG_DIR" -maxdepth 1 -type f -name 'v2_*.sql' -print0 | sort -z)
@@ -471,7 +472,132 @@ assert_eq "request_outcomes restored after up-again" "1" \
 echo "    v2_051 round-trip ok"
 
 # =============================================================================
-# 10. Final summary
+# 10. Apply v2_052 on top and assert its surface (privacy + ai_economic_events)
+# =============================================================================
+echo "==> 10. Apply v2_052"
+apply "$MIG_DIR/v2_052_privacy_and_economic_events.sql"
+
+echo "==> 10a. v2_052 schema assertions"
+
+# 10a.1 Tables present
+for tbl in tenant_privacy_settings privacy_scope_overrides ai_economic_events; do
+    assert_eq "${tbl} exists" "1" \
+        "$(PSQL_T "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='${tbl}';")"
+done
+echo "    three tables present"
+
+# 10a.2 tenant_privacy_settings defaults are privacy-first
+assert_eq "default_privacy_mode default" "metadata_only" \
+    "$(PSQL_T "SELECT column_default FROM information_schema.columns WHERE table_name='tenant_privacy_settings' AND column_name='default_privacy_mode';" | sed "s/'//g; s/::text//")"
+assert_eq "store_prompts default" "false" \
+    "$(PSQL_T "SELECT column_default FROM information_schema.columns WHERE table_name='tenant_privacy_settings' AND column_name='store_prompts';")"
+assert_eq "store_responses default" "false" \
+    "$(PSQL_T "SELECT column_default FROM information_schema.columns WHERE table_name='tenant_privacy_settings' AND column_name='store_responses';")"
+assert_eq "retention_days default" "30" \
+    "$(PSQL_T "SELECT column_default FROM information_schema.columns WHERE table_name='tenant_privacy_settings' AND column_name='retention_days';")"
+echo "    tenant_privacy_settings defaults privacy-first"
+
+# 10a.3 ai_economic_events privacy columns present from day one
+for col in privacy_mode prompt_stored response_stored prompt_fingerprint response_fingerprint redaction_applied retention_expires_at; do
+    assert_eq "ai_economic_events.${col} exists" "1" \
+        "$(PSQL_T "SELECT COUNT(*) FROM information_schema.columns WHERE table_name='ai_economic_events' AND column_name='${col}';")"
+done
+echo "    ai_economic_events privacy columns ok"
+
+# 10a.4 ai_economic_events default privacy_mode is metadata_only
+assert_eq "ai_economic_events.privacy_mode default" "metadata_only" \
+    "$(PSQL_T "SELECT column_default FROM information_schema.columns WHERE table_name='ai_economic_events' AND column_name='privacy_mode';" | sed "s/'//g; s/::text//")"
+
+# 10a.5 UNIQUE(tenant_id, request_id)
+assert_eq "ai_economic_events has UNIQUE (tenant_id, request_id)" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.table_constraints WHERE table_name='ai_economic_events' AND constraint_type='UNIQUE';")"
+
+# 10a.6 Indexes
+for idx in idx_aiee_tenant_time idx_aiee_api_key idx_aiee_department \
+           idx_aiee_employee idx_aiee_customer idx_aiee_action idx_aiee_evidence \
+           idx_aiee_retention_expiry idx_aiee_denials \
+           idx_privacy_overrides_tenant; do
+    assert_eq "$idx exists" "1" \
+        "$(PSQL_T "SELECT COUNT(*) FROM pg_indexes WHERE indexname='$idx';")"
+done
+echo "    v2_052 indexes ok"
+
+echo "==> 10b. v2_052 behavioral assertions"
+
+# 10b.1 Tenant privacy settings UPSERT
+PSQL -c "INSERT INTO tenant_privacy_settings (tenant_id) VALUES ('$TENANT_ID');" >/dev/null
+assert_eq "tenant_privacy_settings row inherits metadata_only" "metadata_only" \
+    "$(PSQL_T "SELECT default_privacy_mode FROM tenant_privacy_settings WHERE tenant_id='$TENANT_ID';")"
+assert_eq "tenant_privacy_settings row inherits store_prompts=false" "f" \
+    "$(PSQL_T "SELECT store_prompts FROM tenant_privacy_settings WHERE tenant_id='$TENANT_ID';")"
+
+# 10b.2 Invalid privacy mode rejected
+INVALID_PM=$(PSQL_T "INSERT INTO tenant_privacy_settings (tenant_id, default_privacy_mode) VALUES (gen_random_uuid(), 'fully_public') RETURNING id;" 2>&1 || true)
+echo "$INVALID_PM" | grep -qi "violates check constraint" || { echo "FAIL: privacy_mode CHECK did not reject 'fully_public'" >&2; exit 1; }
+
+# 10b.3 Scope override INSERT + dedup
+PSQL -c "INSERT INTO privacy_scope_overrides (tenant_id, scope, scope_id, privacy_mode)
+         VALUES ('$TENANT_ID', 'department', 'claims', 'redacted_trace');" >/dev/null
+DUP_OUT=$(PSQL_T "INSERT INTO privacy_scope_overrides (tenant_id, scope, scope_id, privacy_mode)
+                  VALUES ('$TENANT_ID', 'department', 'claims', 'full_trace') RETURNING id;" 2>&1 || true)
+echo "$DUP_OUT" | grep -qi "duplicate key value violates unique constraint" || { echo "FAIL: scope override unique constraint did not fire" >&2; exit 1; }
+
+# 10b.4 Invalid scope rejected
+INVALID_SCOPE=$(PSQL_T "INSERT INTO privacy_scope_overrides (tenant_id, scope, scope_id, privacy_mode)
+                         VALUES ('$TENANT_ID', 'galaxy', 'gid', 'metadata_only') RETURNING id;" 2>&1 || true)
+echo "$INVALID_SCOPE" | grep -qi "violates check constraint" || { echo "FAIL: scope CHECK did not reject 'galaxy'" >&2; exit 1; }
+
+# 10b.5 ai_economic_events INSERT with defaults
+EVENT_ID=$(PSQL_T "INSERT INTO ai_economic_events (request_id, tenant_id, provider, model_used, input_tokens, output_tokens, cost_usd)
+                   VALUES ('req_e1', '$TENANT_ID', 'openai', 'gpt-4o-mini', 100, 50, 0.0012)
+                   RETURNING id;")
+[[ -n "$EVENT_ID" ]] || { echo "FAIL: ai_economic_events INSERT returned no id" >&2; exit 1; }
+assert_eq "event privacy_mode default" "metadata_only" \
+    "$(PSQL_T "SELECT privacy_mode FROM ai_economic_events WHERE request_id='req_e1' AND tenant_id='$TENANT_ID';")"
+assert_eq "event prompt_stored default" "f" \
+    "$(PSQL_T "SELECT prompt_stored FROM ai_economic_events WHERE request_id='req_e1' AND tenant_id='$TENANT_ID';")"
+
+# 10b.6 ON CONFLICT (tenant_id, request_id) upsert works
+PSQL -c "INSERT INTO ai_economic_events (request_id, tenant_id, provider, model_used, input_tokens, output_tokens, cost_usd, output_status)
+         VALUES ('req_e1', '$TENANT_ID', 'openai', 'gpt-4o-mini', 100, 50, 0.0012, 'accepted')
+         ON CONFLICT (tenant_id, request_id) DO UPDATE
+            SET output_status = EXCLUDED.output_status, updated_at = NOW();" >/dev/null
+assert_eq "event output_status after upsert" "accepted" \
+    "$(PSQL_T "SELECT output_status FROM ai_economic_events WHERE request_id='req_e1' AND tenant_id='$TENANT_ID';")"
+
+# 10b.7 governance_decision CHECK rejects unknown
+INVALID_GD=$(PSQL_T "INSERT INTO ai_economic_events (request_id, tenant_id, governance_decision)
+                      VALUES ('req_bad_gd', '$TENANT_ID', 'maybe') RETURNING id;" 2>&1 || true)
+echo "$INVALID_GD" | grep -qi "violates check constraint" || { echo "FAIL: governance_decision CHECK did not reject 'maybe'" >&2; exit 1; }
+
+# 10b.8 quality_score CHECK
+INVALID_QS=$(PSQL_T "INSERT INTO ai_economic_events (request_id, tenant_id, quality_score)
+                      VALUES ('req_bad_qs', '$TENANT_ID', 1.5) RETURNING id;" 2>&1 || true)
+echo "$INVALID_QS" | grep -qi "violates check constraint" || { echo "FAIL: quality_score CHECK did not reject 1.5" >&2; exit 1; }
+
+echo "    v2_052 behavior ok"
+
+# 10c. Idempotency
+echo "==> 10c. v2_052 idempotency"
+apply "$MIG_DIR/v2_052_privacy_and_economic_events.sql"
+assert_eq "ai_economic_events still present" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='ai_economic_events';")"
+echo "    second apply ok"
+
+# 10d. Round-trip
+echo "==> 10d. v2_052 round-trip"
+PSQL -f "$MIG_DIR/v2_052_down.sql" >/dev/null
+for tbl in tenant_privacy_settings privacy_scope_overrides ai_economic_events; do
+    assert_eq "$tbl dropped by down" "0" \
+        "$(PSQL_T "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='$tbl';")"
+done
+apply "$MIG_DIR/v2_052_privacy_and_economic_events.sql"
+assert_eq "ai_economic_events restored after up-again" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='ai_economic_events';")"
+echo "    v2_052 round-trip ok"
+
+# =============================================================================
+# 11. Final summary
 # =============================================================================
 echo
 echo "============================================================"
@@ -487,8 +613,9 @@ if (( ${#SKIPPED_FILES[@]} > 0 )); then
 fi
 echo "  v2_050:        13 columns + 7 indexes + 2 CHECKs + 2 FKs + CRUD parity"
 echo "  v2_051:        action_type/task_type cols + request_outcomes (status & quality CHECKs)"
+echo "  v2_052:        ai_economic_events (privacy from day one) + tenant_privacy_settings + scope overrides"
 echo "  legacy:        api_keys, traffic_events, departments rows preserved"
-echo "  CRUD parity:   create/lookup/revoke for api_keys; upsert + CHECK for outcomes"
+echo "  CRUD parity:   create/lookup/revoke for api_keys; upsert + CHECKs for outcomes + economic events"
 echo "  idempotent:    second apply leaves DB unchanged"
-echo "  round-trip:    down -> up restores schema (both migrations)"
+echo "  round-trip:    down -> up restores schema (all three migrations)"
 echo "============================================================"
