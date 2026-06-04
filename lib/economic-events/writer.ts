@@ -248,7 +248,12 @@ export async function writeEconomicEvent(
             await recordWriteFailure({
                 tenantId,
                 source: input.source ?? 'unknown',
-                route: undefined,  // caller can pass via _route override; not part of public contract today
+                // _route is the writer's private channel for "which surface
+                // produced this failure" — never persisted to
+                // ai_economic_events. The outbox UPSERT COALESCEs on
+                // re-failure so the first route wins (preserved across
+                // retries).
+                route: input._route,
                 input,
                 error: insertErr,
             });
@@ -265,8 +270,16 @@ export async function writeEconomicEvent(
         // BUT: most callers expect a writer success to mean the canonical
         // ledger has the row. To avoid silently lying, we throw a typed
         // error here and let the caller's .catch handle it. The outbox is
-        // already durable, so nothing is lost.
-        throw new EconomicEventDeferredError(input.request_id);
+        // already durable, so nothing is lost. The resolved privacy posture
+        // is attached so the caller can render a deferred response without
+        // re-resolving (which would also touch the DB).
+        throw new EconomicEventDeferredError(input.request_id, {
+            privacy,
+            promptStored: storage.promptStored,
+            responseStored: storage.responseStored,
+            redactionApplied: storage.redactionApplied,
+            retentionExpiresAt: expiresAt,
+        });
     }
 
     return {
@@ -286,13 +299,23 @@ export async function writeEconomicEvent(
  * completions, meter-only) can ignore this — durability is intact. Callers
  * that need a synchronous canonical write (none today) can react.
  */
+export interface DeferredContext {
+    privacy: EffectivePrivacy;
+    promptStored: boolean;
+    responseStored: boolean;
+    redactionApplied: boolean;
+    retentionExpiresAt: Date;
+}
+
 export class EconomicEventDeferredError extends Error {
     public readonly request_id: string;
     public readonly deferredToOutbox = true;
-    constructor(request_id: string) {
+    public readonly context?: DeferredContext;
+    constructor(request_id: string, context?: DeferredContext) {
         super(`ai_economic_events INSERT deferred to outbox for request_id=${request_id}`);
         this.name = 'EconomicEventDeferredError';
         this.request_id = request_id;
+        this.context = context;
     }
 }
 

@@ -115,6 +115,7 @@ function recordHostedEconomicEvent(args: {
     writeEconomicEvent(args.tenantId, {
         request_id: args.requestId,
         source: 'chat_completions',
+        _route: '/api/v2/chat/completions',
         api_key_id:    args.attribution?.apiKeyId ?? null,
         owner_type:    (args.attribution?.apiKeyId
                           ? 'api_key'

@@ -289,6 +289,41 @@ describe('writeEconomicEvent — end-to-end durability', () => {
         expect(payload).toContain('benign');
     });
 
+    it('_route flows from input through to the outbox row (audit can answer "which surface")', async () => {
+        // scope override lookup (api_key) — miss
+        (db.query as any).mockResolvedValueOnce({ rows: [] });
+        // tenant default
+        (db.query as any).mockResolvedValueOnce({
+            rows: [{
+                default_privacy_mode: 'metadata_only',
+                store_prompts: false, store_responses: false,
+                require_redaction: true, retention_days: 30,
+            }],
+        });
+        // primary INSERT fails
+        (db.query as any).mockRejectedValueOnce(Object.assign(
+            new Error('check'), { code: '23514' },
+        ));
+        // outbox INSERT succeeds
+        (db.query as any).mockResolvedValueOnce({ rows: [{ id: 'outbox-2', retry_count: 0 }] });
+
+        await expect(writeEconomicEvent(TENANT, {
+            request_id: 'req_audit_origin',
+            api_key_id: 'k_1',
+            _route: '/api/v2/chat/completions',
+        } as EconomicEventInput)).rejects.toMatchObject({
+            name: 'EconomicEventDeferredError',
+        });
+
+        const outboxCall = (db.query as any).mock.calls[3];
+        const params = outboxCall[1];
+        // bind order: tenant, request_id, source, route, error_code, message, next, payload
+        expect(params[3]).toBe('/api/v2/chat/completions');
+        // and _route MUST NOT appear in the JSONB payload (not allowlisted)
+        const payload = params[params.length - 1];
+        expect(payload).not.toContain('_route');
+    });
+
     it('if both primary INSERT and outbox INSERT fail, the original error re-throws (last-resort path)', async () => {
         (db.query as any).mockResolvedValueOnce({
             rows: [{

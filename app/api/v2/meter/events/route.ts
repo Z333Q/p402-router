@@ -25,7 +25,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { requireTenantAccess } from '@/lib/auth';
 import { ApiError, toApiErrorResponse } from '@/lib/errors';
-import { writeEconomicEvent } from '@/lib/economic-events/writer';
+import { writeEconomicEvent, EconomicEventDeferredError } from '@/lib/economic-events/writer';
 import { PRIVACY_MODES, SCOPES, type PrivacyMode, type Scope } from '@/lib/economic-events/types';
 
 export const dynamic = 'force-dynamic';
@@ -241,9 +241,12 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const result = await writeEconomicEvent(tenantId, {
+        let result;
+        try {
+            result = await writeEconomicEvent(tenantId, {
             request_id: eventRequestId,
             source: strOrNull(body.source, 64) ?? 'meter_only',
+            _route: '/api/v2/meter/events',
             api_key_id:    strOrNull(att.api_key_id),
             owner_type:    ownerType,
             owner_id:      strOrNull(att.owner_id),
@@ -293,7 +296,38 @@ export async function POST(req: NextRequest) {
             metadata: (body.metadata && typeof body.metadata === 'object' && !Array.isArray(body.metadata))
                 ? body.metadata as Record<string, unknown>
                 : {},
-        });
+            });
+        } catch (writerErr) {
+            // Durable-deferred path: ai_economic_events INSERT failed, but
+            // the outbox (economic_event_write_failures) captured the row.
+            // We return 202 Accepted with deferred=true and NO event_id —
+            // never claim a canonical ledger id we don't have. The retry
+            // worker (/api/internal/cron/economic-events/retry) replays.
+            //
+            // Privacy posture is rendered from the resolved policy attached
+            // to the error so the caller still sees the storage decision
+            // that *would have* been applied; prompt_stored/response_stored
+            // are forced false here because this endpoint never persists
+            // content under any mode.
+            if (writerErr instanceof EconomicEventDeferredError) {
+                const ctx = writerErr.context;
+                return NextResponse.json({
+                    ok: true,
+                    deferred: true,
+                    request_id: eventRequestId,
+                    message: 'Economic event accepted for retry',
+                    privacy: {
+                        mode: ctx?.privacy.privacyMode ?? privacyModeOverride ?? null,
+                        source: ctx?.privacy.source ?? null,
+                        prompt_stored: false,
+                        response_stored: false,
+                        redaction_applied: ctx?.redactionApplied ?? false,
+                        retention_expires_at: ctx?.retentionExpiresAt.toISOString() ?? null,
+                    },
+                }, { status: 202, headers: { 'X-P402-Request-ID': requestId } });
+            }
+            throw writerErr;
+        }
 
         return NextResponse.json({
             ok: true,

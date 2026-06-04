@@ -151,6 +151,13 @@ export async function replayOutboxRow(row: PendingOutboxRow): Promise<ReplayResu
     // a future refactor cannot regress the contract.
     delete (input as any)._promptForRedaction;
     delete (input as any)._responseForRedaction;
+    // Preserve the originating route so a re-failure on replay does not
+    // overwrite "where did this event come from" with the cron path.
+    // recordWriteFailure UPSERTs route via COALESCE — first non-null wins,
+    // but for completeness we forward it explicitly here. If the original
+    // row predates route capture (route IS NULL), fall back to the cron
+    // path so the audit panel still has a usable value.
+    input._route = row.route ?? '/api/internal/cron/economic-events/retry';
 
     try {
         const result = await writeEconomicEvent(row.tenant_id, input);

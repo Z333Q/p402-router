@@ -170,6 +170,60 @@ describe('POST /api/v2/meter/events — privacy contract', () => {
     });
 });
 
+describe('POST /api/v2/meter/events — deferred outbox path', () => {
+    // Mock the writer stack so the primary INSERT fails and the outbox
+    // INSERT succeeds. The writer throws EconomicEventDeferredError; the
+    // route must catch it and return 202 with deferred=true.
+    function mockDeferredStack() {
+        const q = (db.query as any);
+        // tenant default
+        q.mockResolvedValueOnce({
+            rows: [{
+                default_privacy_mode: 'metadata_only',
+                store_prompts: false, store_responses: false,
+                require_redaction: true, retention_days: 30,
+            }],
+        });
+        // primary INSERT into ai_economic_events FAILS (check constraint)
+        q.mockRejectedValueOnce(Object.assign(new Error('check'), { code: '23514' }));
+        // outbox INSERT succeeds
+        q.mockResolvedValueOnce({ rows: [{ id: 'outbox-1', retry_count: 0 }] });
+    }
+
+    it('returns 202 deferred=true, NO event_id, prompt/response_stored=false', async () => {
+        mockDeferredStack();
+        const res = await POST(postReq({
+            request_id: 'req_deferred',
+            model: { provider: 'openai', model_used: 'gpt-4o-mini' },
+            usage: { input_tokens: 10, output_tokens: 5 },
+        }));
+        const body = await res.json();
+        expect(res.status).toBe(202);
+        expect(body.ok).toBe(true);
+        expect(body.deferred).toBe(true);
+        expect(body.request_id).toBe('req_deferred');
+        expect(body.event_id).toBeUndefined();
+        expect(body.privacy.mode).toBe('metadata_only');
+        expect(body.privacy.prompt_stored).toBe(false);
+        expect(body.privacy.response_stored).toBe(false);
+        expect(body.privacy.retention_expires_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    });
+
+    it('the outbox INSERT carries route=/api/v2/meter/events', async () => {
+        mockDeferredStack();
+        await POST(postReq({ request_id: 'req_meter_surface' }));
+        const outboxCall = (db.query as any).mock.calls.find(
+            (c: any[]) => /INSERT INTO economic_event_write_failures/.test(c[0]),
+        );
+        expect(outboxCall).toBeTruthy();
+        // bind order: tenant, request_id, source, route, error_code, ...
+        expect(outboxCall![1][3]).toBe('/api/v2/meter/events');
+        // and the JSONB payload MUST NOT contain _route
+        const payload = outboxCall![1][outboxCall![1].length - 1];
+        expect(payload).not.toContain('_route');
+    });
+});
+
 describe('GET /api/v2/meter/events — list', () => {
     it('returns a paged list scoped by tenant', async () => {
         (db.query as any).mockResolvedValueOnce({

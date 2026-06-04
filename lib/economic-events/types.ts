@@ -122,6 +122,14 @@ export interface EconomicEventInput {
     _promptForRedaction?: string;
     _responseForRedaction?: string;
 
+    // Originating HTTP/internal call site. NEVER written to
+    // ai_economic_events; consumed only by the outbox so the audit panel
+    // can answer "which surface failed". Examples:
+    //   '/api/v2/chat/completions'
+    //   '/api/v2/meter/events'
+    //   '/api/internal/cron/economic-events/retry'
+    _route?: string;
+
     metadata?: Record<string, unknown>;
 }
 
