@@ -153,9 +153,13 @@ function recordHostedEconomicEvent(args: {
         },
     }).catch((e) => {
         // ai_economic_events INSERT must never break a successful response.
-        // TODO durability — see follow-up
-        // 2026-06-04-economic-event-write-durability.md. Console-only is
-        // not acceptable for an economic ledger at scale.
+        // v2_053 durability: the writer catches its own INSERT failures and
+        // lands an outbox row in economic_event_write_failures, then
+        // throws EconomicEventDeferredError. That path is intentionally
+        // silent — durability is intact, the retry worker will replay.
+        // Anything else gets logged as a true incident (last-resort: both
+        // ai_economic_events AND the outbox are down).
+        if (e?.name === 'EconomicEventDeferredError') return;
         console.error('[economic-events] hosted-routing write failed:', e instanceof Error ? e.message : e);
     });
 }

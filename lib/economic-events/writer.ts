@@ -24,6 +24,7 @@ import {
     fingerprintContent,
     retentionExpiry,
 } from './privacy';
+import { recordWriteFailure } from './outbox';
 import type {
     EconomicEventInput,
     EconomicEventRow,
@@ -109,7 +110,9 @@ export async function writeEconomicEvent(
     const outputTokens = input.output_tokens ?? 0;
     const totalTokens  = input.total_tokens  ?? (inputTokens + outputTokens);
 
-    const res = await db.query(
+    let res;
+    try {
+        res = await db.query(
         `INSERT INTO ai_economic_events (
             request_id, tenant_id, api_key_id, source, event_time,
             owner_type, owner_id, department_id, employee_id, customer_id,
@@ -229,7 +232,42 @@ export async function writeEconomicEvent(
 
             input.metadata ?? {},
         ],
-    );
+        );
+    } catch (insertErr) {
+        // Durable failure path. Route the failure into the outbox so a
+        // retry worker can replay later. Privacy contract: the outbox
+        // writer's sanitizePayload() strips _promptForRedaction /
+        // _responseForRedaction and any forbidden metadata key — the
+        // outbox row carries METADATA ONLY.
+        //
+        // If the outbox itself is unavailable, we re-throw so the caller's
+        // .catch in chat completions logs as a last resort. That is the
+        // only path where a write can be completely lost; it requires both
+        // ai_economic_events AND economic_event_write_failures to be down.
+        try {
+            await recordWriteFailure({
+                tenantId,
+                source: input.source ?? 'unknown',
+                route: undefined,  // caller can pass via _route override; not part of public contract today
+                input,
+                error: insertErr,
+            });
+        } catch (outboxErr) {
+            // Last-resort: both ledgers down. Re-throw the original error
+            // so the caller's existing console.error fires. There is no
+            // privacy risk here because we never touched outbox.payload.
+            throw insertErr;
+        }
+        // Outbox write succeeded — return a sentinel result so the caller
+        // can distinguish "wrote durable record" from "wrote ai_economic_events".
+        // The id is the outbox row id; consumers like the meter-only endpoint
+        // only read result.privacy etc. so this is non-breaking.
+        // BUT: most callers expect a writer success to mean the canonical
+        // ledger has the row. To avoid silently lying, we throw a typed
+        // error here and let the caller's .catch handle it. The outbox is
+        // already durable, so nothing is lost.
+        throw new EconomicEventDeferredError(input.request_id);
+    }
 
     return {
         id: res.rows[0].id,
@@ -240,6 +278,22 @@ export async function writeEconomicEvent(
         redaction_applied: storage.redactionApplied,
         retention_expires_at: expiresAt,
     };
+}
+
+/**
+ * Thrown when the canonical ai_economic_events INSERT failed but the outbox
+ * captured a retryable record. Callers that fire-and-forget (chat
+ * completions, meter-only) can ignore this — durability is intact. Callers
+ * that need a synchronous canonical write (none today) can react.
+ */
+export class EconomicEventDeferredError extends Error {
+    public readonly request_id: string;
+    public readonly deferredToOutbox = true;
+    constructor(request_id: string) {
+        super(`ai_economic_events INSERT deferred to outbox for request_id=${request_id}`);
+        this.name = 'EconomicEventDeferredError';
+        this.request_id = request_id;
+    }
 }
 
 /** Re-export the row shape for read paths. */

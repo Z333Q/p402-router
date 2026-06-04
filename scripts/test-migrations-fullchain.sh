@@ -139,6 +139,7 @@ while IFS= read -r -d '' f; do
         v2_050_*) continue ;;  # under test, applied below
         v2_051_*) continue ;;  # under test, applied below
         v2_052_*) continue ;;  # under test, applied below
+        v2_053_*) continue ;;  # under test, applied below
         *) apply "$f" ;;
     esac
 done < <(find "$MIG_DIR" -maxdepth 1 -type f -name 'v2_*.sql' -print0 | sort -z)
@@ -597,7 +598,104 @@ assert_eq "ai_economic_events restored after up-again" "1" \
 echo "    v2_052 round-trip ok"
 
 # =============================================================================
-# 11. Final summary
+# 11. Apply v2_053 on top and assert its surface (economic event outbox)
+# =============================================================================
+echo "==> 11. Apply v2_053"
+apply "$MIG_DIR/v2_053_economic_event_outbox.sql"
+
+echo "==> 11a. v2_053 schema assertions"
+
+assert_eq "economic_event_write_failures table exists" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='economic_event_write_failures';")"
+
+# Every required column present
+for col in tenant_id request_id source route error_code error_message_safe \
+           retry_count status next_retry_at created_at updated_at payload; do
+    assert_eq "economic_event_write_failures.${col} exists" "1" \
+        "$(PSQL_T "SELECT COUNT(*) FROM information_schema.columns WHERE table_name='economic_event_write_failures' AND column_name='${col}';")"
+done
+
+# Forbidden columns absent
+for bad in prompt response messages content document file transcript chat_history; do
+    assert_eq "no ${bad} column in outbox" "0" \
+        "$(PSQL_T "SELECT COUNT(*) FROM information_schema.columns WHERE table_name='economic_event_write_failures' AND column_name='${bad}';")"
+done
+
+# Indexes
+for idx in idx_eewf_pending_retry idx_eewf_tenant_recent idx_eewf_tenant_code; do
+    assert_eq "$idx exists" "1" \
+        "$(PSQL_T "SELECT COUNT(*) FROM pg_indexes WHERE indexname='$idx';")"
+done
+
+# UNIQUE constraint
+assert_eq "outbox UNIQUE(tenant_id, request_id)" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.table_constraints WHERE table_name='economic_event_write_failures' AND constraint_type='UNIQUE';")"
+
+echo "    schema ok"
+
+echo "==> 11b. v2_053 behavioral assertions"
+
+# 11b.1 INSERT a failure row
+OUTBOX_ID=$(PSQL_T "INSERT INTO economic_event_write_failures
+                    (tenant_id, request_id, source, route, error_code, error_message_safe, payload)
+                    VALUES ('$TENANT_ID', 'req_outbox_001', 'chat_completions', '/api/v2/chat/completions',
+                            'check_violation', 'invalid governance_decision value', '{}'::jsonb)
+                    RETURNING id;")
+[[ -n "$OUTBOX_ID" ]] || { echo "FAIL: outbox INSERT returned no id" >&2; exit 1; }
+assert_eq "row inherits status=pending" "pending" \
+    "$(PSQL_T "SELECT status FROM economic_event_write_failures WHERE id='$OUTBOX_ID';")"
+assert_eq "row inherits retry_count=0" "0" \
+    "$(PSQL_T "SELECT retry_count FROM economic_event_write_failures WHERE id='$OUTBOX_ID';")"
+
+# 11b.2 ON CONFLICT (tenant_id, request_id) — repeat failure increments
+PSQL -c "INSERT INTO economic_event_write_failures
+         (tenant_id, request_id, source, route, error_code, error_message_safe, payload)
+         VALUES ('$TENANT_ID', 'req_outbox_001', 'chat_completions', '/api/v2/chat/completions',
+                 'db_unavailable', 'connection timeout', '{}'::jsonb)
+         ON CONFLICT (tenant_id, request_id) DO UPDATE
+            SET retry_count = economic_event_write_failures.retry_count + 1,
+                error_code = EXCLUDED.error_code,
+                error_message_safe = EXCLUDED.error_message_safe,
+                next_retry_at = NOW() + INTERVAL '5 minutes',
+                updated_at = NOW();" >/dev/null
+assert_eq "retry_count incremented on conflict" "1" \
+    "$(PSQL_T "SELECT retry_count FROM economic_event_write_failures WHERE id='$OUTBOX_ID';")"
+assert_eq "error_code updated on conflict" "db_unavailable" \
+    "$(PSQL_T "SELECT error_code FROM economic_event_write_failures WHERE id='$OUTBOX_ID';")"
+
+# 11b.3 status CHECK rejects unknown
+BAD=$(PSQL_T "INSERT INTO economic_event_write_failures (tenant_id, request_id, source, error_code, status)
+              VALUES ('$TENANT_ID', 'req_bad', 'meter_only', 'unknown', 'lost_to_the_void')
+              RETURNING id;" 2>&1 || true)
+echo "$BAD" | grep -qi "violates check constraint" || { echo "FAIL: status CHECK did not reject 'lost_to_the_void'" >&2; exit 1; }
+
+# 11b.4 Resolve flow
+PSQL -c "UPDATE economic_event_write_failures SET status='resolved', updated_at=NOW()
+         WHERE id='$OUTBOX_ID';" >/dev/null
+assert_eq "row marked resolved" "resolved" \
+    "$(PSQL_T "SELECT status FROM economic_event_write_failures WHERE id='$OUTBOX_ID';")"
+
+echo "    behavior ok"
+
+# 11c. Idempotency
+echo "==> 11c. v2_053 idempotency"
+apply "$MIG_DIR/v2_053_economic_event_outbox.sql"
+assert_eq "outbox row preserved after re-apply" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM economic_event_write_failures WHERE id='$OUTBOX_ID';")"
+echo "    second apply ok"
+
+# 11d. Round-trip
+echo "==> 11d. v2_053 round-trip"
+PSQL -f "$MIG_DIR/v2_053_down.sql" >/dev/null
+assert_eq "outbox dropped by down" "0" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='economic_event_write_failures';")"
+apply "$MIG_DIR/v2_053_economic_event_outbox.sql"
+assert_eq "outbox restored after up-again" "1" \
+    "$(PSQL_T "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='economic_event_write_failures';")"
+echo "    v2_053 round-trip ok"
+
+# =============================================================================
+# 12. Final summary
 # =============================================================================
 echo
 echo "============================================================"
@@ -614,6 +712,7 @@ fi
 echo "  v2_050:        13 columns + 7 indexes + 2 CHECKs + 2 FKs + CRUD parity"
 echo "  v2_051:        action_type/task_type cols + request_outcomes (status & quality CHECKs)"
 echo "  v2_052:        ai_economic_events (privacy from day one) + tenant_privacy_settings + scope overrides"
+echo "  v2_053:        economic_event_write_failures outbox (no content columns, status CHECK, retry index)"
 echo "  legacy:        api_keys, traffic_events, departments rows preserved"
 echo "  CRUD parity:   create/lookup/revoke for api_keys; upsert + CHECKs for outcomes + economic events"
 echo "  idempotent:    second apply leaves DB unchanged"
