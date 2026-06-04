@@ -55,3 +55,6 @@ scripts/dune-sync.ts
 
 # Tempo settlement test artifacts (idempotency marker — never commit)
 .tempo-settle-result.json
+
+# Claude Code runtime state (loop / schedule skills)
+.claude/*.lock
