@@ -205,4 +205,55 @@ describe('GET /api/v2/meter/events — list', () => {
         const params = (db.query as any).mock.calls[0][1];
         expect(params[params.length - 1]).toBe(200);
     });
+
+    it('binds privacy_mode filter (only valid enum values)', async () => {
+        (db.query as any).mockResolvedValueOnce({ rows: [] });
+        await GET(getReq('?privacy_mode=fingerprint_only&limit=10'));
+        const call = (db.query as any).mock.calls[0];
+        expect(call[0]).toContain('privacy_mode = $');
+        // Bind order: tenant, privacy_mode, limit
+        expect(call[1]).toEqual([TENANT, 'fingerprint_only', 10]);
+    });
+
+    it('rejects unknown privacy_mode silently (filter not applied)', async () => {
+        (db.query as any).mockResolvedValueOnce({ rows: [] });
+        await GET(getReq('?privacy_mode=galaxy_brain&limit=5'));
+        const call = (db.query as any).mock.calls[0];
+        expect(call[0]).not.toContain('privacy_mode = $');
+        expect(call[1]).toEqual([TENANT, 5]);
+    });
+
+    it('binds multiple owner-id filters', async () => {
+        (db.query as any).mockResolvedValueOnce({ rows: [] });
+        await GET(getReq('?department_id=claims&employee_id=emp_42&provider=openai&limit=10'));
+        const call = (db.query as any).mock.calls[0];
+        expect(call[0]).toContain('department_id = $');
+        expect(call[0]).toContain('employee_id = $');
+        expect(call[0]).toContain('provider = $');
+        // Tenant, department_id, employee_id, provider, limit
+        expect(call[1]).toEqual([TENANT, 'claims', 'emp_42', 'openai', 10]);
+    });
+
+    it('binds evidence_status=present as NOT NULL filter', async () => {
+        (db.query as any).mockResolvedValueOnce({ rows: [] });
+        await GET(getReq('?evidence_status=present&limit=5'));
+        const call = (db.query as any).mock.calls[0];
+        expect(call[0]).toContain('evidence_bundle_id IS NOT NULL');
+    });
+
+    it('binds evidence_status=missing as IS NULL filter', async () => {
+        (db.query as any).mockResolvedValueOnce({ rows: [] });
+        await GET(getReq('?evidence_status=missing&limit=5'));
+        const call = (db.query as any).mock.calls[0];
+        expect(call[0]).toContain('evidence_bundle_id IS NULL');
+    });
+
+    it('ignores oversized filter values', async () => {
+        (db.query as any).mockResolvedValueOnce({ rows: [] });
+        const long = 'x'.repeat(500);
+        await GET(getReq(`?department_id=${long}&limit=5`));
+        const call = (db.query as any).mock.calls[0];
+        expect(call[0]).not.toContain('department_id = $');
+        expect(call[1]).toEqual([TENANT, 5]);
+    });
 });

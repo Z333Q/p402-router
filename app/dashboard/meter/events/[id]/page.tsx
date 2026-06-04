@@ -196,6 +196,26 @@ export default function EventDetailPage({
                         </div>
                         <StorageRow label="Prompt content"   stored={data.event.prompt_stored} />
                         <StorageRow label="Response content" stored={data.event.response_stored} />
+                        {(() => {
+                            const status = (data.event.metadata as any)?.response_capture_status as string | undefined;
+                            if (!status) return null;
+                            const tone =
+                                status === 'captured'                ? 'border-success bg-success/10' :
+                                status === 'not_stored_per_privacy'  ? 'border-neutral-300 bg-neutral-50' :
+                                status === 'not_available_streaming' ? 'border-warning bg-warning/20' :
+                                status === 'truncated'               ? 'border-warning bg-warning/20' :
+                                                                       'border-error bg-error/10';
+                            return (
+                                <div className="flex items-center justify-between py-2 border-b border-neutral-100">
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+                                        Response capture
+                                    </span>
+                                    <span className={`text-[11px] font-black uppercase px-2 py-0.5 border-2 text-black ${tone}`}>
+                                        {status.replace(/_/g, ' ')}
+                                    </span>
+                                </div>
+                            );
+                        })()}
                         <div className="flex items-center justify-between py-2 border-b border-neutral-100">
                             <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
                                 Redaction applied

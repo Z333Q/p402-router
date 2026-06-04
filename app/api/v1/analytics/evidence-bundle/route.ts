@@ -3,8 +3,10 @@ import db from '@/lib/db';
 import { requireTenantAccess } from '@/lib/auth';
 import {
     buildEvidenceBundle,
+    buildBundlePrivacy,
     redactBundle,
     type SettlementInput,
+    type EvidenceBundlePrivacy,
 } from '@/lib/schemas/evidence-bundle';
 
 export const dynamic = 'force-dynamic';
@@ -103,6 +105,34 @@ export async function GET(request: NextRequest) {
             rows = r.rows;
         }
 
+        // Fetch privacy posture for every settlement in one query. Each
+        // bundle joins by request_id; missing rows produce a null privacy
+        // block (intentional — better than guessing).
+        const requestIds = rows
+            .map((r) => r['session_id'])
+            .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+        const privacyByRequestId = new Map<string, EvidenceBundlePrivacy>();
+        if (requestIds.length > 0) {
+            try {
+                const pr = await db.query(
+                    `SELECT request_id, privacy_mode, prompt_stored, response_stored,
+                            redaction_applied, retention_expires_at,
+                            prompt_fingerprint, response_fingerprint, metadata
+                       FROM ai_economic_events
+                       WHERE tenant_id = $1
+                         AND request_id = ANY($2::text[])`,
+                    [tenantId, requestIds],
+                );
+                for (const r of pr.rows) {
+                    privacyByRequestId.set(String(r.request_id), buildBundlePrivacy(r as any));
+                }
+            } catch {
+                // ai_economic_events may not exist on tenants pre-v2_052.
+                // Bundles simply have privacy=null in that case.
+            }
+        }
+
         const bundles = rows.map(row => {
             const settlement: SettlementInput = {
                 id: String(row['id'] ?? ''),
@@ -116,7 +146,8 @@ export async function GET(request: NextRequest) {
                 verified_at: String(row['verified_at'] ?? ''),
                 created_at: String(row['created_at'] ?? ''),
             };
-            return redactBundle(buildEvidenceBundle(settlement, { tenantId }));
+            const privacy = privacyByRequestId.get(settlement.session_id);
+            return redactBundle(buildEvidenceBundle(settlement, { tenantId, privacy }));
         });
 
         const payload = isSingle

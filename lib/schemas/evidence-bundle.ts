@@ -4,11 +4,47 @@
  * A structured, exportable artifact for every settlement.
  * Used for compliance review, dispute resolution, and procurement evidence.
  * Returned by: lib/actions/evidence.ts, /api/v1/analytics/evidence-bundle
+ *
+ * Schema version 1.1 (2026-06-04) adds the privacy block per V5 §27 +
+ * acceptance criterion 26.13: "Evidence bundles include privacy_mode,
+ * prompt_stored, response_stored, redaction_applied, and
+ * retention_expires_at where available." Existing 1.0 consumers continue
+ * to work — the new fields are additive and optional.
  */
+
+export interface EvidenceBundlePrivacy {
+    /** Resolved privacy mode at the time the event was recorded. */
+    mode:
+        | 'metadata_only' | 'fingerprint_only' | 'redacted_trace'
+        | 'private_gateway' | 'full_trace'
+        | null;
+    /** True if raw prompt content was persisted in ai_economic_events. */
+    promptStored: boolean | null;
+    /** True if raw response content was persisted. */
+    responseStored: boolean | null;
+    /** True if redaction was applied before storage (redacted_trace mode). */
+    redactionApplied: boolean | null;
+    /** ISO 8601 expiration of the retention window for this event row. */
+    retentionExpiresAt: string | null;
+    /**
+     * Honest signal about what happened to the response payload. See
+     * docs/follow-ups/2026-06-04-streaming-response-capture-honesty.md.
+     * Possible values: 'captured', 'not_stored_per_privacy',
+     * 'not_available_streaming', 'truncated', 'failed'.
+     */
+    responseCaptureStatus: string | null;
+    /**
+     * Fingerprint excerpts (first 16 hex chars). Full fingerprints stay
+     * in ai_economic_events; bundles only show enough for an auditor to
+     * cross-reference without enabling pre-image attacks.
+     */
+    promptFingerprintExcerpt: string | null;
+    responseFingerprintExcerpt: string | null;
+}
 
 export interface EvidenceBundle {
     /** Schema version for forward compatibility. */
-    bundleVersion: '1.0';
+    bundleVersion: '1.0' | '1.1';
     /** ISO 8601 export timestamp. */
     exportedAt: string;
 
@@ -64,6 +100,14 @@ export interface EvidenceBundle {
 
     // ── Verification helpers ───────────────────────────────────────────────────
     basescanTxUrl: string | null;
+
+    /**
+     * Privacy posture for the underlying AI economic event. Surfaces the
+     * decisions that governed what content (if any) was stored. Null when
+     * the bundle was built from a settlement that has no linked
+     * ai_economic_events row (e.g. payment-only flow).
+     */
+    privacy: EvidenceBundlePrivacy | null;
 }
 
 /** Settlement shape accepted by the builder. Matches lib/db/queries.ts Settlement. */
@@ -88,6 +132,41 @@ export interface EvidenceBundleOptions {
     errorMessage?: string;
     auditFindings?: EvidenceBundle['auditFindings'];
     traceEventCount?: number;
+    /** Optional privacy block — wire from ai_economic_events row by passing
+     *  a row to attachPrivacy() or constructing the block directly. */
+    privacy?: EvidenceBundlePrivacy;
+}
+
+/**
+ * Build the privacy block from an ai_economic_events row. The row need not
+ * have every column — anything missing becomes null in the bundle.
+ *
+ * Fingerprints are truncated to a 16-hex excerpt so the auditor can match
+ * against a side-channel without enabling pre-image attacks against the
+ * full HMAC.
+ */
+export function buildBundlePrivacy(row: {
+    privacy_mode?: string | null;
+    prompt_stored?: boolean | null;
+    response_stored?: boolean | null;
+    redaction_applied?: boolean | null;
+    retention_expires_at?: string | Date | null;
+    prompt_fingerprint?: string | null;
+    response_fingerprint?: string | null;
+    metadata?: Record<string, unknown> | null;
+}): EvidenceBundlePrivacy {
+    const captureStatus = (row.metadata as any)?.response_capture_status ?? null;
+    const exp = row.retention_expires_at;
+    return {
+        mode: (row.privacy_mode as EvidenceBundlePrivacy['mode']) ?? null,
+        promptStored:    row.prompt_stored    ?? null,
+        responseStored:  row.response_stored  ?? null,
+        redactionApplied: row.redaction_applied ?? null,
+        retentionExpiresAt: exp instanceof Date ? exp.toISOString() : (exp ?? null),
+        responseCaptureStatus: typeof captureStatus === 'string' ? captureStatus : null,
+        promptFingerprintExcerpt:   row.prompt_fingerprint   ? row.prompt_fingerprint.slice(0, 16)   : null,
+        responseFingerprintExcerpt: row.response_fingerprint ? row.response_fingerprint.slice(0, 16) : null,
+    };
 }
 
 /**
@@ -102,7 +181,10 @@ export function buildEvidenceBundle(
     const txHash = settlement.tx_hash ?? null;
 
     return {
-        bundleVersion: '1.0',
+        // Bumped to 1.1 to signal the additive `privacy` block. 1.0
+        // consumers can ignore the new field — every prior field is
+        // unchanged.
+        bundleVersion: '1.1',
         exportedAt: new Date().toISOString(),
 
         requestId: settlement.session_id ?? null,
@@ -137,6 +219,8 @@ export function buildEvidenceBundle(
         auditFindings: options.auditFindings ?? null,
 
         basescanTxUrl: txHash ? `https://basescan.org/tx/${txHash}` : null,
+
+        privacy: options.privacy ?? null,
     };
 }
 

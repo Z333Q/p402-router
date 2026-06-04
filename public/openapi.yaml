@@ -168,6 +168,192 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /api/v2/meter/events:
+    get:
+      operationId: listMeterEvents
+      summary: List AI economic events (canonical ledger)
+      description: |
+        Tenant-scoped paged list of ai_economic_events. Supports filters for
+        privacy_mode, owner ids (department / employee / customer / feature /
+        workflow), provider, model, action_type, and evidence_status.
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, maximum: 200, default: 50 } }
+        - { in: query, name: since, schema: { type: string, format: date-time } }
+        - { in: query, name: until, schema: { type: string, format: date-time } }
+        - { in: query, name: privacy_mode, schema: { $ref: '#/components/schemas/PrivacyMode' } }
+        - { in: query, name: department_id,  schema: { type: string } }
+        - { in: query, name: employee_id,    schema: { type: string } }
+        - { in: query, name: customer_id,    schema: { type: string } }
+        - { in: query, name: feature_id,     schema: { type: string } }
+        - { in: query, name: workflow_id,    schema: { type: string } }
+        - { in: query, name: action_type,    schema: { type: string } }
+        - { in: query, name: provider,       schema: { type: string } }
+        - { in: query, name: model_used,     schema: { type: string } }
+        - { in: query, name: evidence_status, schema: { type: string, enum: [present, missing] } }
+      responses:
+        '200':
+          description: List of economic events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:    { type: boolean }
+                  count: { type: integer }
+                  events:
+                    type: array
+                    items: { $ref: '#/components/schemas/EconomicEvent' }
+    post:
+      operationId: createMeterEvent
+      summary: Meter-only event ingestion (Path B)
+      description: |
+        Customer apps that call model providers directly post the economic
+        event back via this endpoint. The endpoint REJECTS any prompt /
+        response / content / file / message field with INVALID_INPUT —
+        P402 meters economics, not content. Privacy mode is resolved
+        server-side from tenant_privacy_settings + privacy_scope_overrides;
+        callers may pass `privacy_mode` to ratchet TIGHTER, never to widen.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeterEventInput'
+      responses:
+        '200':
+          description: Event recorded; response includes resolved privacy posture
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  event_id: { type: string }
+                  request_id: { type: string }
+                  privacy:
+                    type: object
+                    properties:
+                      mode:                 { $ref: '#/components/schemas/PrivacyMode' }
+                      source:                { type: string, enum: [system_default, tenant_default, scope_override] }
+                      prompt_stored:        { type: boolean }
+                      response_stored:      { type: boolean }
+                      redaction_applied:    { type: boolean }
+                      retention_expires_at: { type: string, format: date-time }
+        '400':
+          description: Invalid input (including any forbidden content field)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+
+  /api/v2/meter/events/{id}:
+    get:
+      operationId: getMeterEvent
+      summary: Read a single economic event by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Event detail with full privacy posture
+        '404':
+          description: Not found (or wrong tenant)
+
+  /api/v2/outcomes:
+    post:
+      operationId: recordOutcome
+      summary: Record the outcome of a metered AI request
+      description: |
+        Customers report what happened to a metered request so Optimize can
+        compute cost per accepted output, retry waste, and quality-adjusted
+        recommendations.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [request_id, status]
+              properties:
+                request_id:    { type: string }
+                status:        { type: string, enum: [accepted, rejected, retried, escalated, human_reviewed, failed] }
+                quality_score: { type: number, minimum: 0, maximum: 1 }
+                source:        { type: string }
+                metadata:      { type: object }
+      responses:
+        '200':
+          description: Outcome recorded (UPSERT on tenant_id + request_id)
+
+  /api/v2/privacy/settings:
+    get:
+      operationId: getPrivacySettings
+      summary: Read tenant default privacy posture
+      responses:
+        '200':
+          description: Current tenant settings (or system_default when no row exists)
+    put:
+      operationId: putPrivacySettings
+      summary: Update tenant default privacy posture (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                default_privacy_mode:   { $ref: '#/components/schemas/PrivacyMode' }
+                store_prompts:          { type: boolean }
+                store_responses:        { type: boolean }
+                allow_fingerprints:     { type: boolean }
+                allow_redacted_traces:  { type: boolean }
+                retention_days:         { type: integer, minimum: 1, maximum: 3650 }
+                require_redaction:      { type: boolean }
+                customer_managed_key:   { type: boolean }
+      responses:
+        '200': { description: Updated. }
+        '401': { description: Unauthenticated. }
+        '403': { description: Caller is not tenant admin. }
+
+  /api/v2/privacy/scope-overrides:
+    get:
+      operationId: listScopeOverrides
+      summary: List per-scope privacy overrides
+      responses:
+        '200': { description: Overrides list. }
+    post:
+      operationId: createScopeOverride
+      summary: Add or update a privacy override (admin only — can widen tenant default)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [scope, scope_id, privacy_mode]
+              properties:
+                scope:         { type: string, enum: [tenant, department, employee, workflow, project, agent, customer, feature, api_key] }
+                scope_id:      { type: string }
+                privacy_mode:  { $ref: '#/components/schemas/PrivacyMode' }
+                store_prompts:    { type: boolean, nullable: true }
+                store_responses:  { type: boolean, nullable: true }
+                retention_days:   { type: integer, minimum: 1, maximum: 3650, nullable: true }
+      responses:
+        '200': { description: Override saved. }
+
+  /api/v2/privacy/scope-overrides/{id}:
+    delete:
+      operationId: deleteScopeOverride
+      summary: Remove a privacy override (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Deleted. }
+        '404': { description: Not found. }
+
   /api/a2a:
     post:
       operationId: a2aJsonRpc
@@ -232,6 +418,118 @@ paths:
 
 components:
   schemas:
+    # ── Privacy + Meter ───────────────────────────────────────────────────────
+    PrivacyMode:
+      type: string
+      description: |
+        Privacy posture governing what P402 stores. Default is metadata_only.
+        Per-request callers may ratchet TIGHTER. Admin-saved scope overrides
+        in privacy_scope_overrides can widen.
+      enum:
+        - metadata_only
+        - fingerprint_only
+        - redacted_trace
+        - private_gateway
+        - full_trace
+
+    MeterEventInput:
+      type: object
+      required: [request_id]
+      description: |
+        Meter-only economic event payload. NEVER include prompt, response,
+        content, messages, file, document, chat_history, or transcript at
+        the top level — the endpoint rejects them with INVALID_INPUT.
+      properties:
+        request_id:    { type: string }
+        source:        { type: string, default: meter_only }
+        privacy_mode:  { $ref: '#/components/schemas/PrivacyMode' }
+        attribution:
+          type: object
+          properties:
+            owner_type:    { type: string, enum: [tenant, department, employee, workflow, project, agent, customer, feature, api_key] }
+            owner_id:      { type: string }
+            department_id: { type: string }
+            employee_id:   { type: string }
+            customer_id:   { type: string }
+            project_id:    { type: string }
+            feature_id:    { type: string }
+            workflow_id:   { type: string }
+            api_key_id:    { type: string }
+            task_type:     { type: string }
+            action_type:   { type: string }
+        model:
+          type: object
+          properties:
+            provider:        { type: string }
+            model_used:      { type: string }
+            model_requested: { type: string }
+        usage:
+          type: object
+          properties:
+            input_tokens:      { type: integer }
+            output_tokens:     { type: integer }
+            total_tokens:      { type: integer }
+            cost_usd:          { type: number }
+            direct_cost_usd:   { type: number }
+            route_savings_usd: { type: number }
+            cache_savings_usd: { type: number }
+            retry_cost_usd:    { type: number }
+            context_waste_usd: { type: number }
+            latency_ms:        { type: integer }
+            cache_hit:         { type: boolean }
+        economics:
+          type: object
+          properties:
+            revenue_usd:      { type: number }
+            gross_margin_pct: { type: number }
+        governance:
+          type: object
+          properties:
+            budget_id:  { type: string }
+            policy_id:  { type: string }
+            mandate_id: { type: string }
+            decision:   { type: string, enum: [approved, denied, warned, requires_review, settlement_required, settled, receipt_reused, cached, optimized] }
+            deny_code:  { type: string }
+        evidence:
+          type: object
+          properties:
+            receipt_id:         { type: string }
+            evidence_bundle_id: { type: string }
+        outcome:
+          type: object
+          properties:
+            status:              { type: string, enum: [accepted, rejected, revised, escalated, failed, pending_review, unknown] }
+            quality_score:       { type: number, minimum: 0, maximum: 1 }
+            human_review_status: { type: string, enum: [not_required, required, pending, approved, rejected, escalated, expired] }
+        metadata: { type: object, description: Open JSONB (metadata-only; do not put content here under metadata_only) }
+
+    EconomicEvent:
+      type: object
+      description: |
+        Row from ai_economic_events. Privacy posture fields show what (if
+        anything) P402 stored. See V5 §8.1 + §27.6 for the full schema.
+      properties:
+        id:              { type: string }
+        request_id:      { type: string }
+        event_time:      { type: string, format: date-time }
+        source:          { type: string }
+        provider:        { type: string, nullable: true }
+        model_used:      { type: string, nullable: true }
+        action_type:     { type: string, nullable: true }
+        cost_usd:        { type: string }
+        total_tokens:    { type: integer }
+        latency_ms:      { type: integer, nullable: true }
+        cache_hit:       { type: boolean }
+        governance_decision: { type: string, nullable: true }
+        output_status:   { type: string, nullable: true }
+        privacy_mode:    { $ref: '#/components/schemas/PrivacyMode' }
+        prompt_stored:   { type: boolean }
+        response_stored: { type: boolean }
+        redaction_applied: { type: boolean }
+        retention_expires_at: { type: string, format: date-time, nullable: true }
+        evidence_bundle_id: { type: string, nullable: true }
+        metadata:        { type: object, description: 'May include response_capture_status: captured | not_stored_per_privacy | not_available_streaming | truncated | failed' }
+
     PlanRequest:
       type: object
       required: [policyId, routeId, payment]

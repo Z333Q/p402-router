@@ -141,6 +141,69 @@ For programmatic access, grab your API key from the dashboard after signing in. 
 
 The MCP server is listed on the official registry as `io.github.Z333Q/p402`.
 
+## Privacy Modes — P402 Meters Economics, Not Content
+
+P402 does NOT need raw prompts or responses to make AI spend accountable. The product supports five privacy modes; the default is `metadata_only`. When you build P402 integrations for a user, lead with this:
+
+- **Default is `metadata_only`** — economic metadata only. P402 receives owner / action / model / tokens / cost / governance / evidence status. It NEVER receives prompt, response, files, documents, chat history, PHI, PII, secrets, or source code.
+- **`fingerprint_only`** — adds HMAC fingerprints (keyed by tenant secret, NEVER plain SHA-256) for duplicate / retry-loop detection.
+- **`redacted_trace`** — redacted samples + trace summaries. Customer runs redaction before sending.
+- **`private_gateway`** — gateway runs inside customer VPC; only aggregates leave.
+- **`full_trace`** — opt-in only, retention-bound, role-gated, audit-logged. Never the default.
+
+**Widening rule (important):**
+- Admin-saved scope overrides in `privacy_scope_overrides` CAN widen the tenant default (e.g. tenant `metadata_only` + workflow `full_trace` for an engineering debug surface). Configured at `/dashboard/settings/privacy`; every save is audited.
+- Per-request callers CANNOT widen. The `privacy_mode` field in a request body only ratchets tighter than the resolved tenant + scope policy. A request cannot self-upgrade privacy.
+
+When a user asks "do I have to send my prompts to P402?", the answer is **no**. Recommend the meter-only path (Path B).
+
+### Meter-only path (Path B)
+
+Customer apps call OpenAI / Anthropic / Gemini directly, then POST the economic event to P402:
+
+```
+POST /api/v2/meter/events
+Authorization: Bearer p402_live_...
+Content-Type: application/json
+
+{
+  "request_id": "req_abc123",
+  "attribution": {
+    "department_id": "claims",
+    "action_type":   "claims_summary",
+    "workflow_id":   "prior_authorization"
+  },
+  "model":  { "provider": "google", "model_used": "gemini-2.0-flash" },
+  "usage":  { "input_tokens": 2140, "output_tokens": 801, "cost_usd": 0.0041 },
+  "outcome": { "status": "accepted", "quality_score": 0.91 }
+}
+```
+
+The endpoint REJECTS any top-level `prompt`, `response`, `content`, `messages`, `file`, `chat_history`, `transcript`, or `document` field with `INVALID_INPUT`. If you build an SDK adapter, never put these in the payload.
+
+### Reading events back
+
+- `GET /api/v2/meter/events` — paged list. Filters: `privacy_mode`, `department_id`, `employee_id`, `customer_id`, `feature_id`, `workflow_id`, `provider`, `model_used`, `action_type`, `evidence_status` (present / missing), `since`, `until`, `limit` (max 200).
+- `GET /api/v2/meter/events/{id}` — single event with full privacy posture.
+- `/dashboard/meter/events` and `/dashboard/meter/events/[id]` render both.
+
+### Outcomes
+
+Report what happened to a request so Optimize can compute cost per accepted output:
+
+```
+POST /api/v2/outcomes
+{ "request_id": "req_abc123", "status": "accepted", "quality_score": 0.91 }
+```
+
+Statuses: `accepted`, `rejected`, `retried`, `escalated`, `human_reviewed`, `failed`.
+
+### Sales answer template
+
+> Do we have to send our prompts to P402?
+>
+> No. P402 supports metadata-only metering. Your application can call the model provider directly and send P402 only the economic event: owner, action, model, tokens, cost, budget, policy result, and outcome. That supports CFO dashboards, department budgets, employee usage, feature margin, and basic optimization without exposing prompts. For deeper optimization, opt into hashed fingerprints, redacted traces, or deploy the P402 Private Gateway inside your own cloud.
+
 ## API Quick Reference
 
 **Base URL:** `https://p402.io`

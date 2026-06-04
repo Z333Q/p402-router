@@ -315,9 +315,27 @@ export async function POST(req: NextRequest) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/v2/meter/events  — list endpoint
-//   ?limit=50 (max 200) &since=ISO &until=ISO
-//   tenant-scoped, ordered by event_time DESC
+//
+//   ?limit=50 (max 200)
+//   ?since=ISO &until=ISO
+//   ?privacy_mode=metadata_only|...
+//   ?department_id=<text>
+//   ?employee_id=<text>
+//   ?customer_id=<text>
+//   ?feature_id=<text>
+//   ?workflow_id=<text>
+//   ?provider=<text>
+//   ?model_used=<text>
+//   ?action_type=<text>
+//   ?evidence_status=present|missing
+//
+//   tenant-scoped, ordered by event_time DESC.
 // ─────────────────────────────────────────────────────────────────────────────
+
+const LIST_FILTER_KEYS = [
+    'department_id', 'employee_id', 'customer_id', 'feature_id',
+    'workflow_id',   'provider',    'model_used',  'action_type',
+] as const;
 
 export async function GET(req: NextRequest) {
     const requestId = crypto.randomUUID();
@@ -335,6 +353,7 @@ export async function GET(req: NextRequest) {
 
         const where: string[] = ['tenant_id = $1'];
         const params: unknown[] = [tenantId];
+
         if (since) {
             params.push(new Date(since));
             where.push(`event_time >= $${params.length}`);
@@ -343,6 +362,32 @@ export async function GET(req: NextRequest) {
             params.push(new Date(until));
             where.push(`event_time <= $${params.length}`);
         }
+
+        // privacy_mode is validated against the enum to avoid passing through
+        // arbitrary strings to the parameterized query (defense in depth).
+        const privacyMode = searchParams.get('privacy_mode');
+        if (privacyMode && PRIVACY_MODES.has(privacyMode as any)) {
+            params.push(privacyMode);
+            where.push(`privacy_mode = $${params.length}`);
+        }
+
+        // action_type is also validated only on length; underlying column is
+        // free-text TEXT, no risk beyond size.
+        for (const key of LIST_FILTER_KEYS) {
+            const v = searchParams.get(key);
+            if (v && v.length <= 256) {
+                params.push(v);
+                where.push(`${key} = $${params.length}`);
+            }
+        }
+
+        const evidenceStatus = searchParams.get('evidence_status');
+        if (evidenceStatus === 'present') {
+            where.push(`evidence_bundle_id IS NOT NULL`);
+        } else if (evidenceStatus === 'missing') {
+            where.push(`evidence_bundle_id IS NULL`);
+        }
+
         params.push(limit);
 
         const res = await db.query(
@@ -356,7 +401,8 @@ export async function GET(req: NextRequest) {
                     governance_decision, output_status,
                     privacy_mode, prompt_stored, response_stored, redaction_applied,
                     retention_expires_at,
-                    evidence_bundle_id, receipt_id
+                    evidence_bundle_id, receipt_id,
+                    metadata
                FROM ai_economic_events
                WHERE ${where.join(' AND ')}
                ORDER BY event_time DESC

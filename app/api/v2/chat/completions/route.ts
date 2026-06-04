@@ -68,6 +68,22 @@ import type { Scope } from '@/lib/economic-events/types';
 // Callers cannot widen the privacy mode of a request — only admin-saved
 // scope overrides can do that (V5 widening rule).
 // ─────────────────────────────────────────────────────────────────────────────
+/**
+ * response_capture_status enumerates what happened to the response payload.
+ * Stored in ai_economic_events.metadata so the event detail page + evidence
+ * exports cannot misread response_stored=false as "policy denied storage"
+ * when the truth might be "streaming endpoint did not buffer the response."
+ *
+ * See docs/follow-ups/2026-06-04-streaming-response-capture-honesty.md for
+ * the full design and the planned SSE accumulator.
+ */
+type ResponseCaptureStatus =
+    | 'captured'                   // response passed to writer, policy stored it
+    | 'not_stored_per_privacy'     // policy resolved to not store (metadata_only etc.)
+    | 'not_available_streaming'    // streaming endpoint did not buffer the response
+    | 'truncated'                  // captured but truncated for size
+    | 'failed';                    // capture attempted and errored
+
 function recordHostedEconomicEvent(args: {
     tenantId: string;
     requestId: string;
@@ -76,6 +92,8 @@ function recordHostedEconomicEvent(args: {
     promptContent?: string;
     /** Stringified response content (when available — streaming may pass undefined). */
     responseContent?: string;
+    /** Honest signal about what happened to the response payload. */
+    responseCaptureStatus: ResponseCaptureStatus;
     attribution?: {
         apiKeyId?: string | null; departmentId?: string | null;
         employeeUuid?: string | null; projectId?: string | null;
@@ -127,8 +145,17 @@ function recordHostedEconomicEvent(args: {
         // on resolved tenant + scope policy. NEVER persisted directly here.
         _promptForRedaction:   args.promptContent,
         _responseForRedaction: args.responseContent,
+        metadata: {
+            // Honest signal so the event detail page + evidence exports can
+            // distinguish "policy denied storage" from "streaming didn't
+            // buffer the response". See follow-up doc dated 2026-06-04.
+            response_capture_status: args.responseCaptureStatus,
+        },
     }).catch((e) => {
         // ai_economic_events INSERT must never break a successful response.
+        // TODO durability — see follow-up
+        // 2026-06-04-economic-event-write-durability.md. Console-only is
+        // not acceptable for an economic ledger at scale.
         console.error('[economic-events] hosted-routing write failed:', e instanceof Error ? e.message : e);
     });
 }
@@ -941,11 +968,15 @@ async function handleNonStreamingResponse(
     });
 
     // v2_052 dual-write into ai_economic_events. Privacy-resolver gated.
+    // Non-streaming: response payload IS captured at this call site; the
+    // writer then decides per privacy mode whether to fingerprint or store.
+    const respSerialized = serializeChoices(response.choices);
     recordHostedEconomicEvent({
         tenantId,
         requestId,
-        promptContent:   serializeMessages(request.messages),
-        responseContent: serializeChoices(response.choices),
+        promptContent:        serializeMessages(request.messages),
+        responseContent:      respSerialized,
+        responseCaptureStatus: respSerialized ? 'captured' : 'failed',
         attribution,
         provider:        response.p402?.providerId ?? null,
         modelRequested:  request.model ?? null,
@@ -1125,15 +1156,18 @@ async function handleStreamingResponse(
                     analyticsTag: paymentMeta?.analyticsTag,
                 });
 
-                // v2_052 dual-write. Streaming: response content is not
-                // accumulated server-side; pass undefined for responseContent
-                // so the writer fingerprints/persists only the prompt under
-                // the resolved privacy policy.
+                // v2_052 dual-write. Streaming: response content is NOT
+                // accumulated server-side. responseContent stays undefined
+                // and responseCaptureStatus is stamped 'not_available_streaming'
+                // so audit + evidence can distinguish "policy denied storage"
+                // from "streaming didn't buffer." See follow-up:
+                // docs/follow-ups/2026-06-04-streaming-response-capture-honesty.md
                 recordHostedEconomicEvent({
                     tenantId,
                     requestId,
-                    promptContent:   serializeMessages(request.messages),
-                    responseContent: undefined,
+                    promptContent:        serializeMessages(request.messages),
+                    responseContent:      undefined,
+                    responseCaptureStatus: 'not_available_streaming',
                     attribution,
                     provider:        decision.provider.id,
                     modelRequested:  request.model ?? null,

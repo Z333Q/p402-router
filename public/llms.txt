@@ -48,6 +48,33 @@ P402 Meter is the per-token billing system built on Tempo mainnet (chain 4217) u
 
 ---
 
+## Privacy — P402 Meters Economics, Not Content
+
+P402 does not need your prompts to make AI spend accountable. The product supports five privacy modes; the default is `metadata_only`. Customers control storage, redaction, and retention per scope.
+
+**Privacy modes (V5 §27):**
+- `metadata_only` — economic metadata only (owner, action, model, tokens, cost, governance, evidence status). NEVER stores prompt, response, files, documents, chat history, PHI, PII, secrets, or source code. **Default for enterprise.**
+- `fingerprint_only` — adds HMAC fingerprints (keyed by tenant secret, never plain SHA-256) for duplicate / retry-loop detection. Still no raw content.
+- `redacted_trace` — redacted prompt + response samples and trace summaries; customer runs redaction before sending. Tenant must enable `store_prompts` / `store_responses` for sample retention. Adds context, retry, and prompt-structure analysis to Optimize.
+- `private_gateway` — P402 gateway runs inside customer VPC. P402 cloud receives aggregates and evidence hashes only. Strongest enterprise answer.
+- `full_trace` — explicit opt-in only. Receives prompt, response, tool calls, full trace. Retention-bound, role-gated, audit-logged. Never the default.
+
+**Widening rule:** admin-saved scope overrides in `privacy_scope_overrides` CAN widen the tenant default (e.g. tenant `metadata_only` + workflow `full_trace` for a debug surface). Per-request callers CANNOT widen — `privacy_mode` in a request body only ratchets tighter.
+
+**Endpoints:**
+- `POST /api/v2/meter/events` — meter-only event ingestion. Customer apps call the model provider directly, then POST the economic event here. The endpoint REJECTS any prompt / response / content / file / messages / chat_history / transcript / document field with INVALID_INPUT.
+- `GET  /api/v2/meter/events` — paged list with privacy / owner / model / evidence filters.
+- `GET  /api/v2/meter/events/{id}` — detail with full privacy posture (privacy_mode, prompt_stored, response_stored, redaction_applied, retention_expires_at, response_capture_status).
+- `POST /api/v2/outcomes` — record what happened to a request (accepted / rejected / retried / escalated / human_reviewed / failed) plus optional quality_score.
+- `GET/PUT /api/v2/privacy/settings` — tenant default. PUT is tenant-admin only.
+- `GET/POST /api/v2/privacy/scope-overrides`, `DELETE /.../{id}` — per-scope overrides. POST / DELETE are tenant-admin only and audit who saved each row.
+
+**Hosted routing privacy:** when a request flows through `/api/v2/chat/completions`, the writer resolves the same `tenant_privacy_settings` + scope overrides. Under `metadata_only` the prompt and response are not persisted regardless of what the body contained. Streaming responses stamp `response_capture_status: not_available_streaming` so audit cannot misread an empty payload as "policy denied storage."
+
+**Evidence bundles:** the export (`/api/v1/analytics/evidence-bundle`) includes a `privacy` block (`mode`, `promptStored`, `responseStored`, `redactionApplied`, `retentionExpiresAt`, `responseCaptureStatus`, plus 16-hex fingerprint excerpts) so finance / procurement / compliance exports always show what posture governed the event.
+
+---
+
 ## Core Routing
 
 POST `/api/v2/chat/completions` — OpenAI-compatible. Drop-in replacement for the OpenAI SDK (change one URL). P402 selects the optimal provider, executes the request, settles payment, and logs telemetry.
