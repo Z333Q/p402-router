@@ -34,6 +34,7 @@ import {
     buildControlQs,
 } from './_components/FilterBar';
 import { SimulatorPanel } from './_components/SimulatorPanel';
+import { FlipReadinessPanel } from './_components/FlipReadinessPanel';
 import type {
     AllowlistStatusRow,
     BudgetBurnRow,
@@ -137,6 +138,10 @@ export default function ControlPage() {
             </div>
 
             <FilterBar value={draft} onChange={setDraft} onApply={apply} onReset={reset} isFetching={isFetching} />
+
+            {/* Flip readiness sits above the simulator: operators see the
+                payment-grade gate state first, before any "what if" modeling. */}
+            <FlipReadinessPanel />
 
             {/* Simulator panel sits above the dashboard so operators can model
                 "what would happen?" without scrolling through every panel. */}
