@@ -28,6 +28,7 @@ import {
     Layers,
     ChevronDown,
     ChevronRight,
+    Eye,
 } from "lucide-react"
 import { useSession, signOut } from "next-auth/react"
 import { useDisconnect } from 'wagmi'
@@ -37,6 +38,7 @@ import { usePlanUsage } from "@/hooks/usePlanUsage"
 const NAV_ITEMS = [
     { name: "Mission Control", href: "/dashboard", icon: LayoutDashboard },
     { name: "Live Traffic", href: "/dashboard/traffic", icon: Activity },
+    { name: "Monitor", href: "/dashboard/monitor", icon: Eye, isNew: true },
     { name: "Optimize", href: "/dashboard/optimize", icon: Sparkles, isNew: true },
     { name: "Intelligence", href: "/dashboard/intelligence", icon: Bot },
     { name: "Security Audit", href: "/dashboard/audit", icon: ShieldCheck },
