@@ -29,6 +29,7 @@ import {
     ChevronDown,
     ChevronRight,
     Eye,
+    SlidersHorizontal,
 } from "lucide-react"
 import { useSession, signOut } from "next-auth/react"
 import { useDisconnect } from 'wagmi'
@@ -39,6 +40,7 @@ const NAV_ITEMS = [
     { name: "Mission Control", href: "/dashboard", icon: LayoutDashboard },
     { name: "Live Traffic", href: "/dashboard/traffic", icon: Activity },
     { name: "Monitor", href: "/dashboard/monitor", icon: Eye, isNew: true },
+    { name: "Control", href: "/dashboard/control", icon: SlidersHorizontal, isNew: true },
     { name: "Optimize", href: "/dashboard/optimize", icon: Sparkles, isNew: true },
     { name: "Intelligence", href: "/dashboard/intelligence", icon: Bot },
     { name: "Security Audit", href: "/dashboard/audit", icon: ShieldCheck },

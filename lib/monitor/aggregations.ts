@@ -25,6 +25,8 @@ import {
     type ProviderModelSpendRow,
     type SuccessRateSource,
 } from './types.js';
+import { buildBaseWhere, renderWhere } from '../sql/where-builder.js';
+export { buildBaseWhere } from '../sql/where-builder.js';
 
 /**
  * Minimal pool surface used by every aggregation. The real `pg.Pool` satisfies
@@ -35,65 +37,8 @@ export interface MonitorQueryable {
     query(text: string, values?: unknown[]): Promise<{ rows: Array<Record<string, unknown>> }>;
 }
 
-// ---------------------------------------------------------------------------
-// Filter clause builder
-// ---------------------------------------------------------------------------
-
-/**
- * Owning builder: returns the full WHERE-clause fragments and the full param
- * array. tenant_id is always $1; since/until are bound only if present, with
- * their `$N` positions derived from `params.length` — never hardcoded.
- */
-export interface WhereBuild {
-    /** WHERE-clause fragments, in order, ready to be joined with ' AND '. */
-    where: string[];
-    /** Full parameter array, starting with tenantId. */
-    params: unknown[];
-}
-
-/** Whitelisted attribution/routing filters. Column names are NOT user-supplied. */
-const FILTER_COLUMN_MAP: Record<keyof Omit<MonitorFilters, 'since' | 'until'>, string> = {
-    department_id: 'department_id',
-    employee_id: 'employee_id',
-    workflow_id: 'workflow_id',
-    customer_id: 'customer_id',
-    feature_id: 'feature_id',
-    provider: 'provider',
-    model_used: 'model_used',
-};
-
-export function buildBaseWhere(
-    tenantId: string,
-    filters: MonitorFilters,
-    alias = '',
-): WhereBuild {
-    const prefix = alias ? `${alias}.` : '';
-    const params: unknown[] = [tenantId];
-    const where: string[] = [`${prefix}tenant_id = $1`];
-
-    if (filters.since) {
-        params.push(filters.since);
-        where.push(`${prefix}event_time >= $${params.length}`);
-    }
-    if (filters.until) {
-        params.push(filters.until);
-        where.push(`${prefix}event_time <= $${params.length}`);
-    }
-
-    for (const [key, column] of Object.entries(FILTER_COLUMN_MAP)) {
-        const value = filters[key as keyof MonitorFilters];
-        if (typeof value === 'string' && value.length > 0) {
-            params.push(value);
-            where.push(`${prefix}${column} = $${params.length}`);
-        }
-    }
-    return { where, params };
-}
-
-/** Render `WHERE a AND b AND c` from a {@link WhereBuild}. */
-function renderWhere(b: WhereBuild): string {
-    return `WHERE ${b.where.join(' AND ')}`;
-}
+// Filter-clause builder lives in lib/sql/where-builder.ts (shared with Control).
+// Re-exported above so existing Monitor test imports stay stable.
 
 // ---------------------------------------------------------------------------
 // Totals: headline KPIs + success-rate precedence
