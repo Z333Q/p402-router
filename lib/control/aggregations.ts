@@ -5,6 +5,12 @@
  * tenant-scoped (`tenant_id = $1`) and metadata-only — no prompt/response
  * content is read.
  *
+ * Slice 3C source-of-truth note: every spend aggregation here sources
+ * `ai_economic_events`, matching the shared spend service
+ * (lib/spend/month-to-date.ts) primary. Runtime budget enforcement still
+ * reads `traffic_events` until the Slice 3D flip gate; dashboard and
+ * simulator agree on `ai_economic_events`.
+ *
  * Budget burn semantics:
  *   - Spend is month-to-date (since first instant of current UTC month),
  *     independent of the dashboard filter window. Monthly caps are compared

@@ -36,7 +36,13 @@ function ctx(overrides: Partial<ApiKeyContext> = {}): ApiKeyContext {
     };
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+    vi.clearAllMocks();
+    // Slice 3C: pin source explicitly so these tests assert the legacy
+    // (traffic_events) path that runtime enforcement still uses. The
+    // reconciled-mode behavior is covered in lib/spend/__tests__.
+    process.env.BUDGET_GUARD_SPEND_SOURCE = 'traffic_events';
+});
 
 describe('enforcePreRouting — allow-lists', () => {
     it('passes through when allowedModels is empty (legacy default)', async () => {

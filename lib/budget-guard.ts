@@ -10,11 +10,22 @@
 //   enforcePostRouting(ctx, request) — single-request cost ceiling
 //
 // MTD ("month-to-date") = since the first instant of the current calendar
-// month in UTC. Spend reads from traffic_events where status_code = 200; failed
-// requests do not count against budgets.
+// month in UTC. Spend is delegated to lib/spend/month-to-date.ts.
+//
+// Slice 3C: source defaults to 'reconciled' (env BUDGET_GUARD_SPEND_SOURCE).
+// In reconciled mode the cap check uses the LEGACY (traffic_events) buckets
+// to avoid weakening enforcement before V5 economic-event write coverage is
+// proven. The Control dashboard + simulator consume the primary
+// (ai_economic_events) view. Flip gate lives in Slice 3D.
 
 import db from '@/lib/db';
 import { ApiError } from '@/lib/errors';
+import {
+    enforcementBuckets,
+    getMonthToDateSpend as getSpend,
+    type SpendBuckets,
+    type SpendSource,
+} from '@/lib/spend/month-to-date';
 import type { ApiKeyContext } from '@/lib/types/api-key';
 
 export interface PreRoutingRequest {
@@ -31,41 +42,27 @@ export interface PostRoutingRequest {
     estimatedCostUsd: number;
 }
 
-interface SpendBuckets {
-    keySpendUsd: number;
-    employeeSpendUsd: number;
-    departmentSpendUsd: number;
-}
-
-function startOfMonthUtc(now: Date): Date {
-    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-}
-
+/**
+ * MTD spend buckets for the cap check. Delegates to the shared service.
+ * In `'reconciled'` mode returns the LEGACY (traffic_events) buckets — the
+ * Slice 3C enforcement invariant.
+ */
 export async function getMonthToDateSpend(
     ctx: ApiKeyContext,
     now: Date = new Date(),
+    source?: SpendSource,
 ): Promise<SpendBuckets> {
-    // Single query computes all three buckets so we hit the index once.
-    // The partial indexes (idx_traffic_events_apikey, etc.) require the
-    // *_IS NOT NULL guard to be reachable, which the FILTER clauses satisfy.
-    const monthStart = startOfMonthUtc(now);
-    const res = await db.query(
-        `SELECT
-            COALESCE(SUM(cost_usd) FILTER (WHERE api_key_id    = $2), 0)::float AS key_spend,
-            COALESCE(SUM(cost_usd) FILTER (WHERE employee_id   = $3), 0)::float AS employee_spend,
-            COALESCE(SUM(cost_usd) FILTER (WHERE department_id = $4), 0)::float AS department_spend
-         FROM traffic_events
-         WHERE tenant_id = $1
-           AND status_code = 200
-           AND created_at >= $5`,
-        [ctx.tenantId, ctx.apiKeyId, ctx.employeeId, ctx.departmentId, monthStart],
+    const result = await getSpend(
+        db,
+        {
+            tenantId: ctx.tenantId,
+            apiKeyId: ctx.apiKeyId,
+            employeeId: ctx.employeeId,
+            departmentId: ctx.departmentId,
+        },
+        { now, source },
     );
-    const row = res.rows[0] ?? {};
-    return {
-        keySpendUsd:        Number(row.key_spend ?? 0),
-        employeeSpendUsd:   Number(row.employee_spend ?? 0),
-        departmentSpendUsd: Number(row.department_spend ?? 0),
-    };
+    return enforcementBuckets(result);
 }
 
 export async function enforcePreRouting(

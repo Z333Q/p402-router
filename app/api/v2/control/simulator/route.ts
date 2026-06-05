@@ -25,6 +25,10 @@ import type {
     SimulatorKeyContext,
     SimulatorMandateContext,
 } from '@/lib/control/types';
+import {
+    getMonthToDateSpend as getSharedSpend,
+    primaryBuckets,
+} from '@/lib/spend/month-to-date';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,10 +101,6 @@ function parseInput(raw: unknown, requestId: string): SimulatorInput {
     return input;
 }
 
-function startOfMonthUtc(now: Date): Date {
-    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-}
-
 /**
  * Tenant-scoped lookup of the API key + joined budget caps. Mirrors the
  * runtime resolver but only reads what the simulator needs.
@@ -117,6 +117,8 @@ async function loadKeyContext(
              COALESCE(k.allowed_task_types, '[]'::jsonb) AS allowed_task_types,
              k.max_cost_per_request_usd::float           AS max_cost_per_request_usd,
              k.monthly_budget_usd::float                 AS monthly_budget_usd,
+             k.employee_id::text                         AS employee_id,
+             k.department_id::text                       AS department_id,
              e.monthly_budget_usd::float                 AS employee_monthly_budget_usd,
              d.budget_usd::float                         AS department_budget_usd
          FROM api_keys k
@@ -131,32 +133,17 @@ async function loadKeyContext(
     const row = res.rows[0];
     if (!row) return undefined;
 
-    const monthStart = startOfMonthUtc(now).toISOString();
-    const spendRes = await db.query(
-        `SELECT
-             COALESCE(SUM(cost_usd), 0)::float AS key_spend,
-             COALESCE(SUM(cost_usd) FILTER (
-                 WHERE api_key_id IN (SELECT id FROM api_keys WHERE tenant_id = $1 AND employee_id = $3)
-             ), 0)::float AS employee_spend,
-             COALESCE(SUM(cost_usd) FILTER (
-                 WHERE api_key_id IN (SELECT id FROM api_keys WHERE tenant_id = $1 AND department_id = $4)
-             ), 0)::float AS department_spend
-         FROM ai_economic_events
-         WHERE tenant_id = $1
-           AND event_time >= $5
-           AND api_key_id IS NOT NULL
-           AND (api_key_id = $2
-                OR ($3 IS NOT NULL AND api_key_id IN (SELECT id FROM api_keys WHERE tenant_id = $1 AND employee_id = $3))
-                OR ($4 IS NOT NULL AND api_key_id IN (SELECT id FROM api_keys WHERE tenant_id = $1 AND department_id = $4)))`,
-        [
-            tenantId,
-            apiKeyId,
-            (row as Record<string, unknown>).employee_id ?? null,
-            (row as Record<string, unknown>).department_id ?? null,
-            monthStart,
-        ],
+    // Slice 3C: delegate MTD spend to the shared service. Simulator is a
+    // visibility surface — read the V5 primary (ai_economic_events).
+    const r = row as Record<string, unknown>;
+    const employeeId = r.employee_id == null ? null : String(r.employee_id);
+    const departmentId = r.department_id == null ? null : String(r.department_id);
+    const spendResult = await getSharedSpend(
+        db,
+        { tenantId, apiKeyId, employeeId, departmentId },
+        { now, source: 'ai_economic_events' },
     );
-    const spend = spendRes.rows[0] ?? {};
+    const spend = primaryBuckets(spendResult);
 
     const allowedModels = Array.isArray(row.allowed_models) ? (row.allowed_models as string[]) : [];
     const allowedTaskTypes = Array.isArray(row.allowed_task_types) ? (row.allowed_task_types as string[]) : [];
@@ -170,9 +157,9 @@ async function loadKeyContext(
         employeeMonthlyBudgetUsd: row.employee_monthly_budget_usd == null ? null : Number(row.employee_monthly_budget_usd),
         departmentMonthlyBudgetUsd: row.department_budget_usd == null ? null : Number(row.department_budget_usd),
         mtdSpend: {
-            keySpendUsd: Number(spend.key_spend ?? 0),
-            employeeSpendUsd: Number(spend.employee_spend ?? 0),
-            departmentSpendUsd: Number(spend.department_spend ?? 0),
+            keySpendUsd: spend.keySpendUsd,
+            employeeSpendUsd: spend.employeeSpendUsd,
+            departmentSpendUsd: spend.departmentSpendUsd,
         },
     };
 }
