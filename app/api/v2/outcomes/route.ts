@@ -26,21 +26,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { requireTenantAccess } from '@/lib/auth';
 import { ApiError, toApiErrorResponse } from '@/lib/errors';
+import {
+    STORED_OUTCOME_STATUS_SET,
+    STORED_OUTCOME_STATUSES,
+    isCanonicalSource,
+    scanForForbiddenFields,
+} from '@/lib/prove/outcome';
 
 export const dynamic = 'force-dynamic';
 
-// Slice-2A 6-value enum. V5 §8.3 specifies a 7-value output_status that
-// overlaps but is not identical (revised, pending_review, unknown instead
-// of retried, human_reviewed). Following the slice plan; doc reconciliation
-// tracked in memory/optimize-slice-plan.md.
-const OUTCOME_STATUSES = new Set([
-    'accepted',
-    'rejected',
-    'retried',
-    'escalated',
-    'human_reviewed',
-    'failed',
-]);
+// Slice 3J — transitional superset. The DB CHECK installed by v2_054
+// physically accepts the V5 §8.3 vocabulary PLUS the v2_051 legacy
+// values 'retried' and 'human_reviewed'. Reads in lib/prove/outcome.ts
+// normalize the legacy values to the canonical V5 list. Writers may
+// emit anything in STORED_OUTCOME_STATUSES; the canonical-status
+// promise is held on the read side, not by hard-rejecting legacy SDK
+// payloads here. The set is sourced from lib/prove/outcome.ts so a
+// future deprecation can ratchet down in one place.
+const OUTCOME_STATUSES = STORED_OUTCOME_STATUS_SET;
 
 interface OutcomeBody {
     request_id?: unknown;
@@ -75,6 +78,24 @@ export async function POST(req: NextRequest) {
                 status: 400,
                 message: 'Body must be valid JSON',
                 requestId,
+            });
+        }
+
+        // Slice 3J — payment-grade content-field rejection. The outcomes
+        // table is for METADATA only; prompt / response / messages /
+        // completion / body / transcript / raw_trace / stored_content
+        // must never land in request_outcomes.metadata. Rejecting at the
+        // route boundary keeps the DB clean and the privacy contract
+        // honest. The scan checks both top-level body keys AND first-
+        // level metadata keys (metadata is a flat JSONB bag).
+        const scan = scanForForbiddenFields(body as Record<string, unknown>);
+        if (scan.found) {
+            throw new ApiError({
+                code: 'INVALID_INPUT',
+                status: 400,
+                message: 'outcome body must not include prompt or response content fields',
+                requestId,
+                details: { forbidden_field: scan.field },
             });
         }
 
@@ -118,9 +139,18 @@ export async function POST(req: NextRequest) {
         }
 
         const source = requireString(body.source, 64);
-        const metadata = (body.metadata && typeof body.metadata === 'object')
-            ? body.metadata
+        // Slice 3J — source tagging. Canonical sources pass through; any
+        // other free-text source value is preserved (backward compat per
+        // Decision 4) and tagged via metadata.legacy_source so a future
+        // strict path can find and migrate them. Existing SDK paths keep
+        // working.
+        const rawMetadata = (body.metadata && typeof body.metadata === 'object' && !Array.isArray(body.metadata))
+            ? body.metadata as Record<string, unknown>
             : {};
+        const metadata: Record<string, unknown> = { ...rawMetadata };
+        if (source && !isCanonicalSource(source) && metadata.legacy_source === undefined) {
+            metadata.legacy_source = source;
+        }
 
         // UPSERT on (tenant_id, request_id). Returns the id + recorded_at the
         // caller can use to correlate.

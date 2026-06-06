@@ -28,6 +28,7 @@ import type {
     EventDetailResponse,
     RelatedEventSummary,
 } from '@/lib/prove/event-detail';
+import { getOutcomeTone, type OutcomeView } from '@/lib/prove/outcome';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Formatting helpers
@@ -93,6 +94,7 @@ export default function EventDetailPage() {
 
     const d = detail.data;
     const { event, attribution, governance, privacy, evidence, cost, related_events, explanation } = d;
+    const outcome: OutcomeView | null = d.outcome;
 
     function copyToClipboard(text: string): void {
         navigator.clipboard?.writeText(text).catch(() => { /* noop */ });
@@ -263,6 +265,46 @@ export default function EventDetailPage() {
                 </p>
                 {!privacy.prompt_stored   && <p className="mt-1 text-xs text-neutral-700">Prompt content not stored.</p>}
                 {!privacy.response_stored && <p className="text-xs text-neutral-700">Response content not stored.</p>}
+            </Card>
+
+            {/* ── 5.5 Outcome (Slice 3J) ──────────────────────────────────── */}
+            <Card title="Outcome">
+                <div className="flex items-center gap-2 mb-3">
+                    <SemanticBadge descriptor={getOutcomeTone(outcome?.status ?? null)} />
+                    {outcome?.legacy_status && (
+                        <SemanticBadge descriptor={{ tone: 'gray', label: `legacy: ${outcome.legacy_status}`, glyph: '·' }} />
+                    )}
+                    {outcome && outcome.source && !outcome.source_is_canonical && (
+                        <SemanticBadge descriptor={{ tone: 'gray', label: `legacy source: ${outcome.source}`, glyph: '·' }} />
+                    )}
+                </div>
+                {outcome ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <Field label="Outcome status (V5)" value={outcome.status} mono />
+                        <Field
+                            label="Legacy status"
+                            value={outcome.legacy_status ?? '—'}
+                            mono
+                        />
+                        <Field
+                            label="Quality score"
+                            value={outcome.quality_score == null ? '—' : outcome.quality_score.toFixed(3)}
+                            mono
+                        />
+                        <Field label="Source" value={outcome.source ?? '—'} mono />
+                        <Field label="Recorded at" value={outcome.created_at} mono />
+                        <Field label="Last updated" value={outcome.updated_at} mono />
+                    </div>
+                ) : (
+                    <p className="text-sm text-neutral-700">
+                        No outcome has been recorded for this request. Outcomes are recorded by your SDK,
+                        an agent webhook, or by calling <span className="font-mono">POST /api/v2/outcomes</span>.
+                    </p>
+                )}
+                <p className="mt-3 text-xs text-neutral-600">
+                    Outcome state is derived from <span className="font-mono">request_outcomes</span> and is
+                    metadata-only. Prompt and response content are never read or displayed here.
+                </p>
             </Card>
 
             {/* ── 6. Evidence ────────────────────────────────────────────── */}

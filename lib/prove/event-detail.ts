@@ -9,6 +9,11 @@
  */
 
 import type { EventExplanation } from './explain';
+import {
+    isCanonicalSource,
+    normalizeStoredStatus,
+    type OutcomeView,
+} from './outcome';
 
 export interface EventDetailQueryable {
     query(text: string, values?: unknown[]): Promise<{ rows: Array<Record<string, unknown>> }>;
@@ -136,6 +141,12 @@ export interface EventDetailResponse {
         zero_cost_denied: boolean;
     };
     related_events: RelatedEventSummary[];
+    /**
+     * Slice 3J — outcome state. `null` when no row exists in
+     * request_outcomes for this (tenant_id, request_id). Legacy stored
+     * statuses are normalized on the way out.
+     */
+    outcome: OutcomeView | null;
     explanation: EventExplanation;
 }
 
@@ -265,6 +276,45 @@ export function buildAttributionView(row: EventDetailRow): AttributionView {
  * params (postgres accepts `event_time BETWEEN $N - INTERVAL '24 hours'
  * AND $N + INTERVAL '24 hours'`).
  */
+/**
+ * Slice 3J — load the request_outcomes row for one (tenant, request_id).
+ * Tenant-scoped exact lookup. Returns null when no outcome has been
+ * recorded; otherwise returns the normalized OutcomeView so the page +
+ * API speak the V5 canonical vocabulary, with `legacy_status` preserved.
+ *
+ * This SELECT touches ONLY the request_outcomes table — no content
+ * columns exist there by construction.
+ */
+export async function loadOutcomeForRequest(
+    pool: EventDetailQueryable,
+    tenantId: string,
+    requestId: string,
+): Promise<OutcomeView | null> {
+    const { rows } = await pool.query(
+        `SELECT request_id, status, quality_score, source, metadata, created_at, updated_at
+           FROM request_outcomes
+          WHERE tenant_id = $1 AND request_id = $2
+          LIMIT 1`,
+        [tenantId, requestId],
+    );
+    if (rows.length === 0) return null;
+    const r = rows[0]!;
+    const stored = String(r.status ?? 'unknown');
+    const { status, legacy_status } = normalizeStoredStatus(stored);
+    const source = r.source == null ? null : String(r.source);
+    return {
+        request_id: String(r.request_id ?? requestId),
+        status,
+        legacy_status,
+        quality_score: r.quality_score == null ? null : Number(r.quality_score),
+        source,
+        source_is_canonical: source != null && isCanonicalSource(source),
+        metadata: (r.metadata && typeof r.metadata === 'object') ? r.metadata as Record<string, unknown> : {},
+        created_at: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
+        updated_at: r.updated_at instanceof Date ? r.updated_at.toISOString() : String(r.updated_at),
+    };
+}
+
 export async function loadRelatedEvents(
     pool: EventDetailQueryable,
     tenantId: string,

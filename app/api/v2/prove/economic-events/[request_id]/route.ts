@@ -23,6 +23,7 @@ import { toApiErrorResponse } from '@/lib/errors';
 import {
     buildAttributionView,
     loadEventByRequestId,
+    loadOutcomeForRequest,
     loadRelatedEvents,
     type EventDetailResponse,
 } from '@/lib/prove/event-detail';
@@ -59,9 +60,10 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
             );
         }
 
-        const [attribution, related, explanation] = await Promise.all([
+        const [attribution, related, outcome, explanation] = await Promise.all([
             Promise.resolve(buildAttributionView(event)),
             loadRelatedEvents(db, tenantId, event, 10),
+            loadOutcomeForRequest(db, tenantId, event.request_id),
             Promise.resolve(explainEvent(event)),
         ]);
 
@@ -112,6 +114,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
                 zero_cost_denied: event.governance_decision === 'denied' && cost_usd === 0,
             },
             related_events: related,
+            outcome,
             explanation,
         };
 

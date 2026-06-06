@@ -83,13 +83,20 @@ function deniedDbRow(over: Record<string, unknown> = {}): Record<string, unknown
     });
 }
 
-function mockFound(row: Record<string, unknown>, related: Array<Record<string, unknown>> = []) {
+function mockFound(
+    row: Record<string, unknown>,
+    related: Array<Record<string, unknown>> = [],
+    outcome: Record<string, unknown> | null = null,
+) {
     querySpy.mockImplementation(async (sql: string) => {
         if (/FROM\s+ai_economic_events\s+WHERE\s+tenant_id\s*=\s*\$1\s+AND\s+request_id\s*=\s*\$2/is.test(sql)) {
             return { rows: [row] };
         }
         if (/FROM\s+ai_economic_events\s+WHERE\s+tenant_id\s*=\s*\$1\s+AND\s+request_id\s*<>\s*\$2/is.test(sql)) {
             return { rows: related };
+        }
+        if (/FROM\s+request_outcomes/i.test(sql)) {
+            return { rows: outcome ? [outcome] : [] };
         }
         return { rows: [] };
     });
@@ -166,18 +173,25 @@ describe('Read-only + content-exclusion invariants', () => {
         }
     });
 
-    it('binds tenant_id = $1 on every query, including related-events', async () => {
+    it('binds tenant_id = $1 on every query, including related-events and outcome', async () => {
         mockFound(approvedDbRow(), [deniedDbRow({ match_reason: 'department' })]);
         await GET(req('req-detail-1'), ctx('req-detail-1'));
         const calls = querySpy.mock.calls as Array<[string, unknown[]?]>;
-        expect(calls.length).toBe(2);
+        // Slice 3J adds the request_outcomes join, bringing the count to 3.
+        expect(calls.length).toBe(3);
         for (const [sql, params] of calls) {
             expect(sql).toMatch(/tenant_id\s*=\s*\$1/i);
             expect(params?.[0]).toBe(TENANT);
         }
         // Related events filter on request_id != $2.
-        expect(calls[1]![0]).toMatch(/request_id\s*<>\s*\$2/i);
-        expect(calls[1]![1]?.[1]).toBe('req-detail-1');
+        const relatedCall = calls.find(([s]) => /request_id\s*<>\s*\$2/i.test(s));
+        expect(relatedCall).toBeDefined();
+        expect(relatedCall![1]?.[1]).toBe('req-detail-1');
+        // Outcome join filters on request_id = $2.
+        const outcomeCall = calls.find(([s]) => /FROM\s+request_outcomes/i.test(s));
+        expect(outcomeCall).toBeDefined();
+        expect(outcomeCall![0]).toMatch(/request_id\s*=\s*\$2/i);
+        expect(outcomeCall![1]?.[1]).toBe('req-detail-1');
     });
 });
 
@@ -228,6 +242,40 @@ describe('Response shape', () => {
         mockFound(approvedDbRow());
         const body = await (await GET(req('req-detail-1'), ctx('req-detail-1'))).json();
         expect(body.privacy.content_displayed).toBe(false);
+    });
+
+    // ── Slice 3J — outcome join ──────────────────────────────────────────
+    it('outcome is null when no row exists in request_outcomes', async () => {
+        mockFound(approvedDbRow(), [], null);
+        const body = await (await GET(req('req-detail-1'), ctx('req-detail-1'))).json();
+        expect(body.outcome).toBeNull();
+    });
+
+    it('outcome is included verbatim when canonical', async () => {
+        mockFound(approvedDbRow(), [], {
+            request_id: 'req-detail-1',
+            status: 'accepted',
+            quality_score: 0.85,
+            source: 'sdk',
+            metadata: { rejected_reason: null },
+            created_at: new Date('2026-06-05T10:30:00Z'),
+            updated_at: new Date('2026-06-05T10:30:00Z'),
+        });
+        const body = await (await GET(req('req-detail-1'), ctx('req-detail-1'))).json();
+        expect(body.outcome.status).toBe('accepted');
+        expect(body.outcome.legacy_status).toBeNull();
+        expect(body.outcome.source_is_canonical).toBe(true);
+    });
+
+    it('legacy "retried" stored value normalizes to "revised" on the join', async () => {
+        mockFound(approvedDbRow(), [], {
+            request_id: 'req-detail-1', status: 'retried',
+            quality_score: null, source: 'sdk', metadata: {},
+            created_at: new Date(), updated_at: new Date(),
+        });
+        const body = await (await GET(req('req-detail-1'), ctx('req-detail-1'))).json();
+        expect(body.outcome.status).toBe('revised');
+        expect(body.outcome.legacy_status).toBe('retried');
     });
 });
 

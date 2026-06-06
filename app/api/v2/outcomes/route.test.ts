@@ -139,6 +139,67 @@ describe('POST /api/v2/outcomes', () => {
         expect(sql).toContain('updated_at = NOW()');
     });
 
+    // ── Slice 3J — transitional superset + content-field rejection ──────
+    it('accepts the V5 canonical-only statuses added by v2_054', async () => {
+        for (const status of ['revised', 'pending_review', 'unknown']) {
+            (db.query as any).mockResolvedValueOnce({ rows: [{ id: `out_${status}`, updated_at: 'now' }] });
+            const res = await POST(postReq({ request_id: `req_${status}`, status }));
+            expect(res.status, `status=${status}`).toBe(200);
+            const body = await res.json();
+            expect(body.status).toBe(status);
+        }
+    });
+
+    it('still accepts the legacy v2_051 values during the transition', async () => {
+        for (const status of ['retried', 'human_reviewed']) {
+            (db.query as any).mockResolvedValueOnce({ rows: [{ id: `out_${status}`, updated_at: 'now' }] });
+            const res = await POST(postReq({ request_id: `req_${status}`, status }));
+            expect(res.status, `status=${status}`).toBe(200);
+        }
+    });
+
+    it('rejects a top-level content field with INVALID_INPUT and no DB write', async () => {
+        for (const field of ['prompt','messages','completion','response_body','request_body','transcript','raw_trace','stored_content']) {
+            (db.query as any).mockReset();
+            const res = await POST(postReq({ request_id: 'r', status: 'accepted', [field]: 'X' }));
+            const body = await res.json();
+            expect(res.status, `field=${field}`).toBe(400);
+            expect(body.error.code).toBe('INVALID_INPUT');
+            expect(body.error.details?.forbidden_field).toBe(field);
+            expect(db.query).not.toHaveBeenCalled();
+        }
+    });
+
+    it('rejects a metadata-level content field with INVALID_INPUT and no DB write', async () => {
+        for (const field of ['prompt','messages','response','completion','response_body','request_body','transcript']) {
+            (db.query as any).mockReset();
+            const res = await POST(postReq({
+                request_id: 'r', status: 'accepted',
+                metadata: { [field]: 'X' },
+            }));
+            const body = await res.json();
+            expect(res.status, `metadata.${field}`).toBe(400);
+            expect(body.error.code).toBe('INVALID_INPUT');
+            expect(body.error.details?.forbidden_field).toBe(`metadata.${field}`);
+            expect(db.query).not.toHaveBeenCalled();
+        }
+    });
+
+    it('tags non-canonical sources via metadata.legacy_source (backward compat)', async () => {
+        (db.query as any).mockResolvedValueOnce({ rows: [{ id: 'x', updated_at: 'now' }] });
+        await POST(postReq({ request_id: 'r', status: 'accepted', source: 'webhook' }));
+        const params = (db.query as any).mock.calls[0][1];
+        expect(params[4]).toBe('webhook');
+        expect(params[5]).toMatchObject({ legacy_source: 'webhook' });
+    });
+
+    it('does NOT tag legacy_source when the source IS canonical', async () => {
+        (db.query as any).mockResolvedValueOnce({ rows: [{ id: 'x', updated_at: 'now' }] });
+        await POST(postReq({ request_id: 'r', status: 'accepted', source: 'sdk' }));
+        const params = (db.query as any).mock.calls[0][1];
+        expect(params[5]).toEqual({});
+    });
+
     it('clamps source to a string and ignores non-string metadata', async () => {
         (db.query as any).mockResolvedValueOnce({ rows: [{ id: 'x', updated_at: 'now' }] });
         await POST(postReq({
