@@ -266,6 +266,37 @@ describe('chat/completions pre-routing denial — recordDeniedEvent wiring', () 
         expect(providerRegistryGetCompletion).not.toHaveBeenCalled();
     });
 
+    // ── Slice 3F CI proof linkage ─────────────────────────────────────────
+    // The flip-readiness loader treats AEE_DENIED_EVENT_KIND_TEST_PROVEN as
+    // the test/CI proof that the production denial path reaches
+    // recordDeniedEvent. This test file IS that proof: green here means
+    // every payment-grade denial code wired through the route hits the
+    // recorder before the response leaves. A future regression that
+    // bypassed the recorder (e.g. swallowed the ApiError, fired the
+    // provider call anyway, recorded asynchronously without await) would
+    // turn one of these assertions red and the CI marker should be cleared
+    // in the same change.
+    it('Slice 3F CI proof: every DENY_CODE_MAP code reaches recordDeniedEvent exactly once', async () => {
+        const { DENY_CODE_MAP } = await import('@/lib/economic-events/denied');
+        for (const code of Object.keys(DENY_CODE_MAP) as ApiErrorCode[]) {
+            recordDeniedEventMock.mockReset();
+            enforcePreRoutingMock.mockReset();
+            providerRegistryGetCompletion.mockReset();
+            providerRegistryGetCompletionStream.mockReset();
+
+            enforcePreRoutingMock.mockRejectedValueOnce(buildDenyApiError(code, 402));
+            recordDeniedEventMock.mockResolvedValueOnce({ outcome: 'recorded', requestId: FIXED_REQUEST_ID });
+
+            await POST(makeReq());
+
+            expect(recordDeniedEventMock).toHaveBeenCalledTimes(1);
+            const [, inputArg] = recordDeniedEventMock.mock.calls[0]!;
+            expect(inputArg.deny_code).toBe(code);
+            expect(providerRegistryGetCompletion).not.toHaveBeenCalled();
+            expect(providerRegistryGetCompletionStream).not.toHaveBeenCalled();
+        }
+    });
+
     it('non-denial ApiError: does NOT call recordDeniedEvent', async () => {
         // INTERNAL_ERROR is an ApiError but not in DENY_CODE_MAP — must NOT
         // be persisted as a Control denial.

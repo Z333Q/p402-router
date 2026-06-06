@@ -284,6 +284,7 @@ async function loadDeniedWritePath(
 
 async function loadIdempotency(
     pool: FlipLoaderQueryable,
+    tenantId: string,
 ): Promise<IdempotencyReadiness> {
     let schemaUniqueRequestPresent = false;
     try {
@@ -337,10 +338,12 @@ async function loadIdempotency(
         const res = await pool.query(
             `SELECT 1
                FROM ai_economic_events
-              WHERE governance_decision = 'denied'
+              WHERE tenant_id = $1
+                AND governance_decision = 'denied'
                 AND deny_code IS NOT NULL
                 AND event_time >= NOW() - INTERVAL '7 days'
               LIMIT 1`,
+            [tenantId],
         );
         recentDeniedRowPresent = res.rows.length > 0;
     } catch {
@@ -492,7 +495,7 @@ export async function loadAssessmentInput(
             loadWorstBucketDelta(pool, tenantId, 'department', prev),
             loadOutbox(pool, tenantId, now),
             loadDeniedWritePath(pool, tenantId),
-            loadIdempotency(pool),
+            loadIdempotency(pool, tenantId),
             loadContextBinding(pool),
         ]);
 

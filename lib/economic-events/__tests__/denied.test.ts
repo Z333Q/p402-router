@@ -182,7 +182,7 @@ describe('content-safety — denied event input is metadata-only', () => {
 
     it('buildDeniedEventInput emits NO content-bearing keys', () => {
         for (const code of Object.keys(DENY_CODE_MAP) as DeniedApiErrorCode[]) {
-            const r = buildDeniedEventInput(baseArgs({ denyCode: code })) as Record<string, unknown>;
+            const r = buildDeniedEventInput(baseArgs({ denyCode: code })) as unknown as Record<string, unknown>;
             for (const k of FORBIDDEN_KEYS) {
                 expect(Object.prototype.hasOwnProperty.call(r, k)).toBe(false);
             }
@@ -190,7 +190,7 @@ describe('content-safety — denied event input is metadata-only', () => {
     });
 
     it('buildDeniedEventInput emits NO content-bearing values, even when attribution carries identifiers', () => {
-        const r = buildDeniedEventInput(baseArgs()) as Record<string, unknown>;
+        const r = buildDeniedEventInput(baseArgs()) as unknown as Record<string, unknown>;
         const serialized = JSON.stringify(r);
         for (const needle of FORBIDDEN_VALUE_NEEDLES) {
             expect(serialized).not.toContain(needle);
