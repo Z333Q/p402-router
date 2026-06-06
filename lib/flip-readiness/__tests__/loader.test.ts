@@ -18,11 +18,15 @@ interface MockOpts {
     columns?: string[];
     /** Whether the (tenant_id, request_id) UNIQUE constraint exists. */
     uniqueRequestPresent?: boolean;
+    /** Whether a denied row has been seen in ai_economic_events within
+     *  the 7-day window. Slice 3E payment-grade signal. */
+    recentDeniedRowPresent?: boolean;
 }
 
 function pool(opts: MockOpts) {
     const cols = opts.columns ?? [];
     const uniquePresent = opts.uniqueRequestPresent ?? true;
+    const recentDenied  = opts.recentDeniedRowPresent ?? false;
     return {
         async query(sql: string) {
             if (/information_schema\.columns/i.test(sql)) {
@@ -34,6 +38,12 @@ function pool(opts: MockOpts) {
             if (/economic_event_write_failures/i.test(sql)) {
                 if (/recent_failures/i.test(sql)) return { rows: [{ recent_failures: 0 }] };
                 return { rows: [{ pending: 0, abandoned: 0, oldest_pending: null }] };
+            }
+            // Slice 3E denied-row probe — separate from the coverage COUNT
+            // queries against ai_economic_events because the loader uses
+            // `SELECT 1 ... LIMIT 1`.
+            if (/FROM ai_economic_events/i.test(sql) && /governance_decision\s*=\s*'denied'/i.test(sql)) {
+                return { rows: recentDenied ? [{ '?column?': 1 }] : [] };
             }
             // Coverage + delta queries: empty.
             return { rows: [{ count: 0 }] };
@@ -48,6 +58,7 @@ const ALL_ENV_FLAGS = [
     'AEE_DENIED_WRITE_PATH_CODE_PRESENT',
     'AEE_DENIED_WRITE_PATH_TEST_PROVEN',
     'AEE_DENIED_EVENT_KIND_SUPPORTED',
+    'AEE_DENIED_EVENT_KIND_TEST_PROVEN',
     'AEE_DENY_CODE_BOUND_TO_IDEMPOTENCY',
     'AEE_WRITER_DETERMINISTIC_DENY_CODE',
 ] as const;
@@ -66,11 +77,12 @@ afterEach(() => vi.restoreAllMocks());
  */
 function unlockDeniedWritePathEnv() {
     process.env.AEE_DENIED_WRITE_PATH               = 'enabled';
-    process.env.AEE_DENIED_WRITE_PATH_CODE_PRESENT  = 'true';
     process.env.AEE_DENIED_WRITE_PATH_TEST_PROVEN   = 'true';
-    process.env.AEE_DENIED_EVENT_KIND_SUPPORTED     = 'true';
-    process.env.AEE_DENY_CODE_BOUND_TO_IDEMPOTENCY  = 'true';
-    process.env.AEE_WRITER_DETERMINISTIC_DENY_CODE  = 'true';
+    // Slice 3E: production write-kind support is proven by either a recent
+    // denied row OR this CI marker. Upstream tests that aren't isolating
+    // the kind-support criterion use the CI marker so earlier blockers
+    // don't mask the criterion under test.
+    process.env.AEE_DENIED_EVENT_KIND_TEST_PROVEN   = 'true';
 }
 
 describe('decision_source binding (payment-grade)', () => {
@@ -153,40 +165,67 @@ describe('budget_scope_binding (payment-grade)', () => {
     });
 });
 
-describe('denied-event idempotency (payment-grade)', () => {
-    it('is NOT ready when only the UNIQUE (tenant_id, request_id) constraint exists', async () => {
-        // Slice 3D ships with denied-event writes deferred to 3E. The
-        // schema constraint alone must not satisfy the criterion.
+describe('denied-event idempotency (payment-grade, truth-based)', () => {
+    // Slice 3E signal semantics (payment-grade):
+    //   writer_deterministic_deny_code <- DENY_CODE_MAPPING_DETERMINISTIC
+    //   denied_event_kind_supported    <- recent denied row OR CI proof env
+    //   deny_code_bound_to_idempotency <- schema UNIQUE AND mapping marker
+    //
+    // A compiled code path is NOT a production write. The kind-supported
+    // signal must be backed by either an observed row or an explicit
+    // CI-signed-off marker.
+
+    it('writer_deterministic_deny_code is true at import time (DENY_CODE_MAPPING_DETERMINISTIC marker)', async () => {
         const input = await loadAssessmentInput(pool({
             uniqueRequestPresent: true,
             columns: ['tenant_id', 'request_id'],
         }), TENANT, { now: NOW });
-        expect(input.denied_event_idempotency.schema_unique_request_present).toBe(true);
+        expect(input.denied_event_idempotency.writer_deterministic_deny_code).toBe(true);
+    });
+
+    it('denied_event_kind_supported is FALSE when no recent denied row AND no CI proof marker', async () => {
+        const input = await loadAssessmentInput(pool({
+            uniqueRequestPresent: true,
+            recentDeniedRowPresent: false,
+            columns: ['tenant_id', 'request_id'],
+        }), TENANT, { now: NOW });
         expect(input.denied_event_idempotency.denied_event_kind_supported).toBe(false);
-        expect(input.denied_event_idempotency.deny_code_bound_to_idempotency).toBe(false);
+        // Without kind-supported, the bundle cannot be ready even with the
+        // mapping marker + schema bond.
         expect(input.denied_event_idempotency.ready).toBe(false);
     });
 
-    it('becomes ready only when all four signals are true (simulating Slice 3E)', async () => {
-        process.env.AEE_DENIED_EVENT_KIND_SUPPORTED = 'true';
-        process.env.AEE_DENY_CODE_BOUND_TO_IDEMPOTENCY = 'true';
-        process.env.AEE_WRITER_DETERMINISTIC_DENY_CODE = 'true';
+    it('denied_event_kind_supported is TRUE when a recent denied row exists', async () => {
         const input = await loadAssessmentInput(pool({
             uniqueRequestPresent: true,
+            recentDeniedRowPresent: true,
             columns: ['tenant_id', 'request_id'],
         }), TENANT, { now: NOW });
+        expect(input.denied_event_idempotency.denied_event_kind_supported).toBe(true);
+        expect(input.denied_event_idempotency.deny_code_bound_to_idempotency).toBe(true);
         expect(input.denied_event_idempotency.ready).toBe(true);
     });
 
-    it('stays NOT ready when the schema constraint is missing, even with all env signals', async () => {
-        process.env.AEE_DENIED_EVENT_KIND_SUPPORTED = 'true';
-        process.env.AEE_DENY_CODE_BOUND_TO_IDEMPOTENCY = 'true';
-        process.env.AEE_WRITER_DETERMINISTIC_DENY_CODE = 'true';
+    it('denied_event_kind_supported is TRUE when CI marker is set, even without a recent denied row', async () => {
+        process.env.AEE_DENIED_EVENT_KIND_TEST_PROVEN = 'true';
+        const input = await loadAssessmentInput(pool({
+            uniqueRequestPresent: true,
+            recentDeniedRowPresent: false,
+            columns: ['tenant_id', 'request_id'],
+        }), TENANT, { now: NOW });
+        expect(input.denied_event_idempotency.denied_event_kind_supported).toBe(true);
+        expect(input.denied_event_idempotency.ready).toBe(true);
+    });
+
+    it('deny_code_bound_to_idempotency requires schema UNIQUE AND the mapping marker', async () => {
+        // Schema bond missing -> binding fails even with kind proof present.
         const input = await loadAssessmentInput(pool({
             uniqueRequestPresent: false,
+            recentDeniedRowPresent: true,
             columns: ['tenant_id', 'request_id'],
         }), TENANT, { now: NOW });
         expect(input.denied_event_idempotency.schema_unique_request_present).toBe(false);
+        expect(input.denied_event_idempotency.deny_code_bound_to_idempotency).toBe(false);
         expect(input.denied_event_idempotency.ready).toBe(false);
     });
 });

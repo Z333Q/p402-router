@@ -28,7 +28,9 @@ import {
 } from '@/lib/ai-providers';
 import { requireTenantAccess } from '@/lib/auth';
 import { BillingGuard, BillingGuardError, BillingContext } from '@/lib/providers/openrouter/billing-guard';
-import { toApiErrorResponse } from '@/lib/errors';
+import { ApiError, toApiErrorResponse } from '@/lib/errors';
+import { buildDeniedEventInput, isDenialCode } from '@/lib/economic-events/denied';
+import { recordDeniedEvent } from '@/lib/economic-events/record-denied';
 import {
     checkAgentkitAccess,
     buildAgentkitChallengeExtension,
@@ -424,12 +426,51 @@ export async function POST(req: NextRequest) {
         // paths handle their own limits). Throws ApiError on violation; the
         // outer catch converts to the standard error envelope.
         if (apiKeyCtx) {
-            await enforcePreRouting(apiKeyCtx, {
-                model: body.model,
-                // v2_051 unlocks TASK_TYPE_NOT_ALLOWED enforcement when the
-                // request carries a task_type and the key has an allowlist.
-                taskType: attribution.taskType ?? undefined,
-            });
+            try {
+                await enforcePreRouting(apiKeyCtx, {
+                    model: body.model,
+                    // v2_051 unlocks TASK_TYPE_NOT_ALLOWED enforcement when the
+                    // request carries a task_type and the key has an allowlist.
+                    taskType: attribution.taskType ?? undefined,
+                });
+            } catch (denyErr) {
+                // Slice 3E: persist runtime Control denials into
+                // ai_economic_events. The provider call is already blocked by
+                // the rethrow below; the awaited recordDeniedEvent gives the
+                // INSERT (or its outbox fallback) a real chance to land before
+                // the response is sent. We never let a writer failure mask the
+                // original ApiError — that response must reach the client
+                // unchanged.
+                if (denyErr instanceof ApiError && isDenialCode(denyErr.code)) {
+                    const input = buildDeniedEventInput({
+                        requestId,
+                        apiKeyCtx,
+                        attribution: {
+                            apiKeyId:     attribution.apiKeyId,
+                            departmentId: attribution.departmentId,
+                            employeeUuid: attribution.employeeUuid,
+                            projectId:    attribution.projectId,
+                            actionType:   attribution.actionType,
+                            taskType:     attribution.taskType,
+                        },
+                        denyCode:       denyErr.code,
+                        httpStatus:     denyErr.status,
+                        route:          '/api/v2/chat/completions',
+                        modelRequested: body.model ?? null,
+                        taskType:       attribution.taskType,
+                    });
+                    const result = await recordDeniedEvent(apiKeyCtx.tenantId, input);
+                    if (result.outcome !== 'recorded') {
+                        console.warn('[denied-event] non-recorded outcome', {
+                            outcome: result.outcome,
+                            requestId,
+                            denyCode: denyErr.code,
+                            reason: result.reason,
+                        });
+                    }
+                }
+                throw denyErr;
+            }
         }
 
         // ── mppx dual-protocol payment gate ──────────────────────────────────
