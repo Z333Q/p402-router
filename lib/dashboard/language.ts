@@ -105,3 +105,64 @@ export const PRIMARY_IA = [
 ] as const;
 
 export type PrimaryIaItem = (typeof PRIMARY_IA)[number];
+
+// ─────────────────────────────────────────────────────────────────────────
+// Slice 3O — product path cards on Mission Control.
+//
+// Same canonical order as PRIMARY_IA but minus the landing page itself,
+// with per-card copy + a per-card "next step" link the Mission Control
+// page renders. Pinned by tests so the buyer narrative does not drift.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const PRODUCT_PATH = [
+    {
+        id: 'meter',
+        name: 'Meter',
+        purpose: 'Record every AI request as an economic event.',
+        href: '/dashboard/meter',
+        next_step_href: '/dashboard/prove/outcomes/setup',
+        next_step_label: 'Activation kit',
+    },
+    {
+        id: 'monitor',
+        name: 'Monitor',
+        purpose: 'Watch spend, latency, and outcomes operationally.',
+        href: '/dashboard/monitor',
+        next_step_href: '/dashboard/control',
+        next_step_label: 'Open Control',
+    },
+    {
+        id: 'control',
+        name: 'Control',
+        purpose: 'Govern denied events, deny rules, and flip readiness.',
+        href: '/dashboard/control',
+        next_step_href: '/dashboard/prove?governance_decision=denied',
+        next_step_label: 'Review denied events',
+    },
+    {
+        id: 'prove',
+        name: 'Prove',
+        purpose: 'Search, drill in, and export the canonical ledger.',
+        href: '/dashboard/prove',
+        next_step_href: '/dashboard/prove/report',
+        next_step_label: 'Executive report',
+    },
+    {
+        id: 'outcomes',
+        name: 'Outcomes',
+        purpose: 'Track outcome coverage and Optimize readiness analysis.',
+        href: '/dashboard/prove/outcomes',
+        next_step_href: '/dashboard/prove/outcomes/setup',
+        next_step_label: 'Activation kit',
+    },
+    {
+        id: 'accountability',
+        name: 'Accountability',
+        purpose: 'One executive health view of the full ledger.',
+        href: '/dashboard/accountability',
+        next_step_href: '/dashboard/accountability',
+        next_step_label: 'Open',
+    },
+] as const;
+
+export type ProductPathItem = (typeof PRODUCT_PATH)[number];
