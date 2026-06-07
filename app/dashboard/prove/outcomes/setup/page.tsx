@@ -21,6 +21,13 @@ import {
     SemanticBadge,
     type SemanticTone,
 } from '../../../_components/semantic';
+import { PageHeader } from '../../../_components/PageHeader';
+import { Breadcrumbs } from '../../../_components/Breadcrumbs';
+import {
+    DISCLAIMER_METADATA_ONLY,
+    DISCLAIMER_OPTIMIZE_BLOCKED,
+    DISCLAIMER_READINESS_NOT_RECOMMENDATION,
+} from '@/lib/dashboard/language';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Local types (mirror the API; keep client bundle decoupled from server).
@@ -175,16 +182,31 @@ export default function OutcomeSetupPage() {
     return (
         <div className="p-6 lg:p-8 space-y-8 max-w-6xl">
             {/* ── Header ────────────────────────────────────────────────── */}
-            <header className="space-y-3">
-                <div className="flex items-center gap-3 text-xs">
-                    <Link href="/dashboard/prove/outcomes" className="underline">← Outcome coverage</Link>
-                    <span className="text-neutral-400">/</span>
-                    <span>Setup</span>
-                </div>
-                <h1 className="text-3xl font-extrabold uppercase tracking-tight">Outcome Capture Activation Kit</h1>
-                <p className="text-sm text-neutral-700 max-w-3xl">{d.intro_copy}</p>
-                <p className="text-xs text-neutral-500 max-w-3xl">{d.disclaimer_copy}</p>
-            </header>
+            <PageHeader
+                area="Outcomes"
+                title="Outcome Capture Activation Kit"
+                purpose={d.intro_copy}
+                disclaimers={[
+                    d.disclaimer_copy,
+                    DISCLAIMER_METADATA_ONLY,
+                    DISCLAIMER_READINESS_NOT_RECOMMENDATION,
+                    DISCLAIMER_OPTIMIZE_BLOCKED,
+                ]}
+                primary={[
+                    { label: 'Outcome coverage', href: '/dashboard/prove/outcomes' },
+                    { label: 'Prove search',     href: '/dashboard/prove' },
+                ]}
+                secondary={[
+                    { label: 'Accountability', href: '/dashboard/accountability' },
+                ]}
+                breadcrumbs={
+                    <Breadcrumbs items={[
+                        { label: 'Prove',     href: '/dashboard/prove' },
+                        { label: 'Outcomes',  href: '/dashboard/prove/outcomes' },
+                        { label: 'Activation kit' },
+                    ]} />
+                }
+            />
 
             {/* ── 1. Outcome coverage status ────────────────────────────── */}
             <Card title="1. Where you are today">

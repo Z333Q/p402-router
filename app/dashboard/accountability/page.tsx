@@ -22,6 +22,12 @@ import {
     SemanticBadge,
     type SemanticTone,
 } from '../_components/semantic';
+import { PageHeader } from '../_components/PageHeader';
+import {
+    DISCLAIMER_METADATA_ONLY,
+    DISCLAIMER_OPTIMIZE_BLOCKED,
+    DISCLAIMER_RUNTIME_FLIP_BLOCKED,
+} from '@/lib/dashboard/language';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Local mirror of the API types (decouples client bundle from server).
@@ -214,14 +220,26 @@ export default function AccountabilityPage() {
     return (
         <div className="p-6 lg:p-8 space-y-8 max-w-7xl">
             {/* ── Executive header ──────────────────────────────────────── */}
-            <header className="space-y-3">
-                <h1 className="text-3xl font-extrabold uppercase tracking-tight">Accountability Health Center</h1>
-                <p className="text-sm text-neutral-700 max-w-3xl">
-                    One executive view of whether AI spend is metered, attributed, denied-event-recorded,
-                    outcome-tracked, evidence-covered, and privacy-clear. Read-only. This is readiness
-                    analysis, not an Optimize recommendation. Prompts and responses are never displayed.
-                </p>
-            </header>
+            <PageHeader
+                area="Accountability"
+                title="Accountability Health Center"
+                purpose="One executive view of whether AI spend is metered, attributed, denied-event-recorded, outcome-tracked, evidence-covered, and privacy-clear."
+                disclaimers={[
+                    DISCLAIMER_METADATA_ONLY,
+                    DISCLAIMER_OPTIMIZE_BLOCKED,
+                    DISCLAIMER_RUNTIME_FLIP_BLOCKED,
+                ]}
+                primary={[
+                    { label: 'Monitor',         href: '/dashboard/monitor' },
+                    { label: 'Control',         href: '/dashboard/control' },
+                    { label: 'Prove',           href: '/dashboard/prove' },
+                    { label: 'Outcome coverage', href: '/dashboard/prove/outcomes' },
+                ]}
+                secondary={[
+                    { label: 'Executive report',   href: '/dashboard/prove/report' },
+                    { label: 'Activation kit',     href: '/dashboard/prove/outcomes/setup' },
+                ]}
+            />
 
             {/* ── Overall score card ────────────────────────────────────── */}
             <Card title="Overall health">

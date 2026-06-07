@@ -24,6 +24,9 @@ import {
     SpendRiskBadge,
     StatusCodeBadge,
 } from '../../../_components/semantic';
+import { PageHeader } from '../../../_components/PageHeader';
+import { Breadcrumbs } from '../../../_components/Breadcrumbs';
+import { DISCLAIMER_METADATA_ONLY } from '@/lib/dashboard/language';
 import type {
     EventDetailResponse,
     RelatedEventSummary,
@@ -121,17 +124,25 @@ export default function EventDetailPage() {
     return (
         <div className="p-6 lg:p-8 space-y-8 max-w-7xl">
             {/* ── Header ─────────────────────────────────────────────────── */}
-            <header className="space-y-3">
-                <div className="flex items-center gap-3 text-xs">
-                    <Link href="/dashboard/prove" className="underline">← Prove search</Link>
-                    <span className="text-neutral-400">/</span>
-                    <span className="font-mono">{event.request_id}</span>
-                </div>
-                <h1 className="text-3xl font-extrabold uppercase tracking-tight">Event detail</h1>
-                <p className="text-sm text-neutral-700 max-w-3xl">
-                    This page is rendered from economic metadata only. Prompt and response content are not displayed.
-                </p>
-            </header>
+            <PageHeader
+                area="Prove"
+                title="Event detail"
+                purpose="One row of the canonical economic ledger, rendered as a CFO-readable evidence card."
+                disclaimers={[DISCLAIMER_METADATA_ONLY]}
+                primary={[
+                    { label: 'Prove search',     href: '/dashboard/prove' },
+                    { label: 'Outcome coverage', href: '/dashboard/prove/outcomes' },
+                ]}
+                secondary={[
+                    { label: 'Accountability', href: '/dashboard/accountability' },
+                ]}
+                breadcrumbs={
+                    <Breadcrumbs items={[
+                        { label: 'Prove',  href: '/dashboard/prove' },
+                        { label: event.request_id },
+                    ]} />
+                }
+            />
 
             {/* ── 1. Event summary card ──────────────────────────────────── */}
             <Card title="Summary" action={

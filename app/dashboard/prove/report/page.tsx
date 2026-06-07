@@ -22,6 +22,12 @@ import {
     SemanticBadge,
     StatusCodeBadge,
 } from '../../_components/semantic';
+import { PageHeader } from '../../_components/PageHeader';
+import { Breadcrumbs } from '../../_components/Breadcrumbs';
+import {
+    DISCLAIMER_METADATA_ONLY,
+    DISCLAIMER_OPTIMIZE_BLOCKED,
+} from '@/lib/dashboard/language';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Types mirrored from the API (kept local to avoid coupling client code
@@ -237,18 +243,31 @@ export default function ReportPage() {
             </div>
 
             {/* ── Action bar (hidden in print) ───────────────────────────── */}
+            <div className="print:hidden">
+                <PageHeader
+                    area="Prove"
+                    title="Executive Prove Report"
+                    purpose="Board-ready, tenant-scoped, read-only accountability packet over ai_economic_events."
+                    disclaimers={[
+                        DISCLAIMER_METADATA_ONLY,
+                        DISCLAIMER_OPTIMIZE_BLOCKED,
+                    ]}
+                    primary={[
+                        { label: 'Prove search',     href: '/dashboard/prove' },
+                        { label: 'Outcome coverage', href: '/dashboard/prove/outcomes' },
+                    ]}
+                    secondary={[
+                        { label: 'Accountability', href: '/dashboard/accountability' },
+                    ]}
+                    breadcrumbs={
+                        <Breadcrumbs items={[
+                            { label: 'Prove',  href: '/dashboard/prove' },
+                            { label: 'Executive report' },
+                        ]} />
+                    }
+                />
+            </div>
             <header className="space-y-3 print:hidden">
-                <div className="flex items-center gap-3 text-xs">
-                    <Link href="/dashboard/prove" className="underline">← Prove</Link>
-                </div>
-                <h1 className="text-3xl font-extrabold uppercase tracking-tight">
-                    Executive Prove Report
-                </h1>
-                <p className="text-sm text-neutral-700 max-w-3xl">
-                    Board-ready, tenant-scoped, read-only accountability packet over
-                    <span className="font-mono"> ai_economic_events</span>. Metadata only —
-                    prompts and responses are not displayed in any section of this report.
-                </p>
                 <div className="flex flex-wrap gap-3 items-end">
                     <Input label="Since (UTC)"    placeholder="2026-05-01T00:00:00Z" value={filters.since}    onChange={(v) => set('since', v)} />
                     <Input label="Until (UTC)"    placeholder="2026-05-31T23:59:59Z" value={filters.until}    onChange={(v) => set('until', v)} />

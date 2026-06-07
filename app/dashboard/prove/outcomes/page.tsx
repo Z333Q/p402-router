@@ -25,6 +25,13 @@ import {
     StackedBreakdownBar,
     type SemanticTone,
 } from '../../_components/semantic';
+import { PageHeader } from '../../_components/PageHeader';
+import { Breadcrumbs } from '../../_components/Breadcrumbs';
+import {
+    DISCLAIMER_METADATA_ONLY,
+    DISCLAIMER_OPTIMIZE_BLOCKED,
+    DISCLAIMER_READINESS_NOT_RECOMMENDATION,
+} from '@/lib/dashboard/language';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Mirror the API types locally so the client bundle does not import
@@ -218,18 +225,30 @@ export default function CoveragePage() {
     return (
         <div className="p-6 lg:p-8 space-y-8 max-w-7xl">
             {/* ── Header + filters ──────────────────────────────────────── */}
+            <PageHeader
+                area="Outcomes"
+                title="Outcome coverage & Optimize readiness"
+                purpose="Read-only readiness layer. Tells you whether the tenant has enough outcome data for trustworthy Optimize ANALYSIS."
+                disclaimers={[
+                    DISCLAIMER_METADATA_ONLY,
+                    DISCLAIMER_READINESS_NOT_RECOMMENDATION,
+                    DISCLAIMER_OPTIMIZE_BLOCKED,
+                ]}
+                primary={[
+                    { label: 'Activation kit',     href: '/dashboard/prove/outcomes/setup' },
+                    { label: 'Prove search',       href: '/dashboard/prove' },
+                ]}
+                secondary={[
+                    { label: 'Accountability', href: '/dashboard/accountability' },
+                ]}
+                breadcrumbs={
+                    <Breadcrumbs items={[
+                        { label: 'Prove',    href: '/dashboard/prove' },
+                        { label: 'Outcomes' },
+                    ]} />
+                }
+            />
             <header className="space-y-3">
-                <div className="flex items-center gap-3 text-xs">
-                    <Link href="/dashboard/prove" className="underline">← Prove</Link>
-                </div>
-                <h1 className="text-3xl font-extrabold uppercase tracking-tight">
-                    Outcome coverage &amp; Optimize readiness
-                </h1>
-                <p className="text-sm text-neutral-700 max-w-3xl">
-                    Read-only readiness layer. Tells you whether the tenant has enough outcome data
-                    for trustworthy Optimize ANALYSIS — never produces recommendations or savings
-                    claims. Rendered from economic metadata only; prompts and responses are not displayed.
-                </p>
                 <div className="flex flex-wrap gap-3 items-end">
                     <Input label="Since (UTC)" placeholder="2026-05-01T00:00:00Z" value={filters.since} onChange={(v) => set('since', v)} />
                     <Input label="Until (UTC)" placeholder="2026-05-31T23:59:59Z" value={filters.until} onChange={(v) => set('until', v)} />

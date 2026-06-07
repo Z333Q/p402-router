@@ -36,11 +36,28 @@ import { useDisconnect } from 'wagmi'
 import { Badge } from "@/app/dashboard/_components/ui"
 import { usePlanUsage } from "@/hooks/usePlanUsage"
 
+/**
+ * Slice 3N — AI spend accountability primary path.
+ * Order is load-bearing: Meter -> Monitor -> Control -> Prove -> Outcomes
+ * -> Accountability is the canonical buyer narrative. Tests in
+ * components/layout/__tests__/AppSidebar.test.tsx pin this list.
+ */
+export const ACCOUNTABILITY_ITEMS = [
+    { id: 'mission-control', name: "Mission Control",  href: "/dashboard",                icon: LayoutDashboard },
+    { id: 'meter',           name: "Meter",            href: "/dashboard/meter",          icon: Zap },
+    { id: 'monitor',         name: "Monitor",          href: "/dashboard/monitor",        icon: Eye },
+    { id: 'control',         name: "Control",          href: "/dashboard/control",        icon: SlidersHorizontal },
+    { id: 'prove',           name: "Prove",            href: "/dashboard/prove",          icon: ShieldCheck, isNew: true },
+    { id: 'outcomes',        name: "Outcomes",         href: "/dashboard/prove/outcomes", icon: Sparkles,    isNew: true },
+    { id: 'accountability',  name: "Accountability",   href: "/dashboard/accountability", icon: Layers,      isNew: true },
+] as const;
+
+/**
+ * Secondary operations entries. Every legacy route is preserved so
+ * deep-linked bookmarks still resolve.
+ */
 const NAV_ITEMS = [
-    { name: "Mission Control", href: "/dashboard", icon: LayoutDashboard },
     { name: "Live Traffic", href: "/dashboard/traffic", icon: Activity },
-    { name: "Monitor", href: "/dashboard/monitor", icon: Eye, isNew: true },
-    { name: "Control", href: "/dashboard/control", icon: SlidersHorizontal, isNew: true },
     { name: "Optimize", href: "/dashboard/optimize", icon: Sparkles, isNew: true },
     { name: "Intelligence", href: "/dashboard/intelligence", icon: Bot },
     { name: "Security Audit", href: "/dashboard/audit", icon: ShieldCheck },
@@ -126,7 +143,39 @@ export function AppSidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 space-y-6 px-3 py-6 overflow-y-auto custom-scrollbar">
+            <nav className="flex-1 space-y-6 px-3 py-6 overflow-y-auto custom-scrollbar" data-testid="app-sidebar-nav">
+                {/* Slice 3N — primary accountability path. */}
+                <div className="space-y-1" data-testid="accountability-group">
+                    <div className="px-3 mb-2 text-[10px] font-black text-neutral-600 uppercase tracking-[0.2em]">AI Spend Accountability</div>
+                    {ACCOUNTABILITY_ITEMS.map((item) => {
+                        const isActive = pathname === item.href ||
+                            (item.href !== "/dashboard" && pathname.startsWith(item.href + '/'))
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                data-testid={`nav-${item.id}`}
+                                onClick={() => setIsOpen(false)}
+                                className={`
+                                    group flex items-center gap-3 rounded-none border-l-4 px-3 py-3 text-[11px] font-black uppercase tracking-widest transition-all
+                                    ${isActive
+                                        ? "border-black bg-primary text-black shadow-[4px_0_0_0_rgba(0,0,0,1)]"
+                                        : "border-transparent text-neutral-400 hover:bg-neutral-50 hover:text-black hover:border-neutral-200"
+                                    }
+                                `}
+                            >
+                                <item.icon className={`h-4 w-4 transition-transform group-hover:scale-110 ${isActive ? "text-primary shadow-[0_0_8px_rgba(182,255,46,0.5)]" : "text-neutral-600 group-hover:text-neutral-100"}`} />
+                                <span className="flex-1">{item.name}</span>
+                                {'isNew' in item && item.isNew && (
+                                    <span className={`text-[8px] font-black px-1.5 py-0.5 border ${isActive ? 'border-black bg-black text-primary' : 'border-primary bg-primary/10 text-black'}`}>
+                                        NEW
+                                    </span>
+                                )}
+                            </Link>
+                        )
+                    })}
+                </div>
+
                 <div className="space-y-1">
                     <div className="px-3 mb-2 text-[10px] font-black text-neutral-600 uppercase tracking-[0.2em]">Operations</div>
                     {NAV_ITEMS.map((item) => {
