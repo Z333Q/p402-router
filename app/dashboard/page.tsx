@@ -15,6 +15,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card } from './_components/ui';
@@ -25,11 +26,20 @@ import {
 } from './_components/semantic';
 import { PageHeader } from './_components/PageHeader';
 import {
+    DemoDataDisclaimer,
+    DemoPreviewBanner,
+    EmptyLedgerStory,
+} from './_components/DemoPreview';
+import {
     DISCLAIMER_METADATA_ONLY,
     DISCLAIMER_OPTIMIZE_BLOCKED,
     DISCLAIMER_RUNTIME_FLIP_BLOCKED,
     PRODUCT_PATH,
 } from '@/lib/dashboard/language';
+import {
+    buildDemoAccountabilityHealth,
+    isDemoMode,
+} from '@/lib/demo/accountability-story';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Local mirrors of the accountability/health API shape (decouples client
@@ -157,8 +167,14 @@ function severityTone(s: 'high' | 'medium' | 'low'): SemanticTone {
 // ─────────────────────────────────────────────────────────────────────────
 
 export default function MissionControlPage() {
+    const searchParams = useSearchParams();
+    const demoActive = isDemoMode(searchParams);
+
     const data = useQuery<AccountabilityResponse>({
         queryKey: ['dashboard/accountability'],
+        // In demo mode we never hit the network — the demo builder
+        // returns a fully-formed envelope.
+        enabled: !demoActive,
         queryFn: async () => {
             const r = await fetch('/api/v2/accountability/health');
             if (!r.ok) throw new Error(`health ${r.status}`);
@@ -166,10 +182,31 @@ export default function MissionControlPage() {
         },
     });
 
-    const d = data.data;
+    // When demo=1 is active we substitute the demo envelope. The builder
+    // shape mirrors AccountabilityResponse (with an _demo marker on the
+    // root + on cleanup priorities so a future export-path regression
+    // cannot silently leak demo rows as real audit data).
+    const d: AccountabilityResponse | undefined = demoActive
+        ? (buildDemoAccountabilityHealth() as unknown as AccountabilityResponse)
+        : data.data;
+
+    // Empty ledger: real tenant, fetch succeeded, but zero events. Show
+    // the story state instead of a row of zeros.
+    const showEmptyLedgerStory =
+        !demoActive && !data.isLoading && !data.error && d != null &&
+        d.dimensions.meter.total_events === 0;
 
     return (
         <div className="p-6 lg:p-8 space-y-8 max-w-7xl">
+            {demoActive && <DemoPreviewBanner exitHref="/dashboard" />}
+
+            {showEmptyLedgerStory && (
+                <EmptyLedgerStory
+                    setupHref="/dashboard/prove/outcomes/setup"
+                    demoHref="?demo=1"
+                />
+            )}
+
             {/* ── 1. Executive command header ───────────────────────────── */}
             <PageHeader
                 area="Mission Control"
@@ -206,7 +243,10 @@ export default function MissionControlPage() {
                 <>
                     {/* ── 2. System status strip ────────────────────────────── */}
                     <section data-testid="system-status-strip" className="space-y-3">
-                        <h2 className="text-xs font-extrabold uppercase tracking-wider text-neutral-500">System status</h2>
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                            <h2 className="text-xs font-extrabold uppercase tracking-wider text-neutral-500">System status</h2>
+                            {demoActive && <DemoDataDisclaimer />}
+                        </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             <StatTile
                                 label="Accountability score"
