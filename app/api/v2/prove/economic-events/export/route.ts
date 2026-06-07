@@ -25,6 +25,7 @@ import db from '@/lib/db';
 import { requireTenantAccess } from '@/lib/auth';
 import { ApiError, toApiErrorResponse } from '@/lib/errors';
 import { PRIVACY_MODES } from '@/lib/economic-events/types';
+import { EXPORT_FIELDS } from './_fields';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,49 +60,6 @@ const TEXT_FILTER_KEYS = [
     'governance_decision',
     'deny_code',
 ] as const;
-
-/**
- * Canonical export field order. Used for CSV column headers AND to drive
- * the JSON object key order. The user-facing contract is a CFO-readable
- * row, so we keep payment-grade fields (event_time, request_id, provider,
- * cost) up front and privacy/governance fields next to them.
- */
-export const EXPORT_FIELDS = [
-    'event_time',
-    'request_id',
-    'tenant_id',
-    'source',
-    'route',
-    'provider',
-    'model_used',
-    'status_code',
-    'success',
-    'cost_usd',
-    'input_tokens',
-    'output_tokens',
-    'total_tokens',
-    'department_id',
-    'employee_id',
-    'api_key_id',
-    'workflow_id',
-    'customer_id',
-    'feature_id',
-    'budget_id',
-    'policy_id',
-    'mandate_id',
-    'governance_decision',
-    'deny_code',
-    'privacy_mode',
-    'prompt_stored',
-    'response_stored',
-    'redaction_applied',
-    'retention_expires_at',
-    'evidence_bundle_id',
-    'decision_source',    // metadata->>'decision_source'
-    'deny_rule',          // metadata->>'deny_rule'
-] as const;
-
-export type ExportField = typeof EXPORT_FIELDS[number];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SQL

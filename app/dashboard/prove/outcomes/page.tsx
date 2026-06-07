@@ -1,4 +1,10 @@
 'use client';
+
+// Per-user auth-gated content; never statically cacheable. Marking
+// force-dynamic also satisfies Next 15's useSearchParams CSR-bailout
+// requirement without an explicit Suspense wrapper.
+export const dynamic = 'force-dynamic';
+
 /**
  * Slice 3K — Outcome Coverage and Optimize Readiness dashboard.
  *

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { SafeModeBanner } from './_components/SafeModeBanner';
@@ -36,16 +36,10 @@ import type { HealthcarePersona } from '@/lib/meter/healthcare/types';
 
 const VALID_PERSONAS = new Set<HealthcarePersona>(['medicaid-mco', 'dual-eligible', 'marketplace']);
 
-export default function MeterHealthcarePage() {
-  const error = useMeterStore((s) => s.error);
-  const setError = useMeterStore((s) => s.setError);
-  const reset = useMeterStore((s) => s.reset);
-  const safeMode = useMeterStore((s) => s.safeMode);
-  const lightMode = useMeterStore((s) => s.lightMode);
-  const setLightMode = useMeterStore((s) => s.setLightMode);
+// useSearchParams triggers Next.js 15's CSR bailout during static prerender,
+// so the consumer lives in an inner component wrapped in <Suspense>.
+function PersonaQuerySync() {
   const setPersona = useMeterStore((s) => s.setPersona);
-
-  // Honor ?persona= query parameter on mount.
   const search = useSearchParams();
   useEffect(() => {
     const p = search?.get('persona');
@@ -53,11 +47,24 @@ export default function MeterHealthcarePage() {
       setPersona(p as HealthcarePersona);
     }
   }, [search, setPersona]);
+  return null;
+}
+
+export default function MeterHealthcarePage() {
+  const error = useMeterStore((s) => s.error);
+  const setError = useMeterStore((s) => s.setError);
+  const reset = useMeterStore((s) => s.reset);
+  const safeMode = useMeterStore((s) => s.safeMode);
+  const lightMode = useMeterStore((s) => s.lightMode);
+  const setLightMode = useMeterStore((s) => s.setLightMode);
 
   const themeClass = lightMode ? 'meter-light' : 'meter-dark';
 
   return (
     <div className={`min-h-screen flex flex-col ${lightMode ? 'bg-neutral-50' : 'bg-neutral-900'}`}>
+      <Suspense fallback={null}>
+        <PersonaQuerySync />
+      </Suspense>
       <SafeModeBanner />
 
       <div

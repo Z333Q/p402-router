@@ -118,6 +118,17 @@ const nextConfig = {
 
   // Ignore React Native modules in web build
   webpack: (config, { isServer }) => {
+    // ESM-style relative imports in TS source use `.js` extensions to point
+    // at sibling `.ts` files (tsconfig moduleResolution: "bundler" makes this
+    // work in tsc + vitest). Webpack's default resolver does not auto-swap
+    // `.js` → `.ts`; this extensionAlias rule restores that behavior so
+    // `next build` matches `tsc` + vitest semantics.
+    config.resolve.extensionAlias = {
+      ...config.resolve.extensionAlias,
+      '.js':  ['.ts', '.tsx', '.js', '.jsx'],
+      '.jsx': ['.tsx', '.jsx'],
+    };
+
     config.resolve.alias = {
       ...config.resolve.alias,
       '@react-native-async-storage/async-storage': false,

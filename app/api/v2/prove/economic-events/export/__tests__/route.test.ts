@@ -19,7 +19,8 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { GET, EXPORT_FIELDS } from '@/app/api/v2/prove/economic-events/export/route';
+import { GET } from '@/app/api/v2/prove/economic-events/export/route';
+import { EXPORT_FIELDS } from '@/app/api/v2/prove/economic-events/export/_fields';
 import db from '@/lib/db';
 
 const TENANT = '55555555-5555-5555-5555-555555555555';
