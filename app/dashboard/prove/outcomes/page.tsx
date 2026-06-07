@@ -241,6 +241,12 @@ export default function CoveragePage() {
                     <Input label="Model"       value={filters.model}         onChange={(v) => set('model', v)} />
                     <Button onClick={() => setRunToken((x) => x + 1)}>Apply</Button>
                     <Button onClick={() => { setFilters(EMPTY); setRunToken((x) => x + 1); }}>Reset</Button>
+                    <Link
+                        href="/dashboard/prove/outcomes/setup"
+                        className="px-3 h-11 inline-flex items-center border-2 border-black font-bold uppercase text-[11px] hover:bg-neutral-100"
+                    >
+                        Activation kit →
+                    </Link>
                 </div>
             </header>
 

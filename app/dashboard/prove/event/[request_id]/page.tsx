@@ -296,10 +296,17 @@ export default function EventDetailPage() {
                         <Field label="Last updated" value={outcome.updated_at} mono />
                     </div>
                 ) : (
-                    <p className="text-sm text-neutral-700">
-                        No outcome has been recorded for this request. Outcomes are recorded by your SDK,
-                        an agent webhook, or by calling <span className="font-mono">POST /api/v2/outcomes</span>.
-                    </p>
+                    <div className="text-sm text-neutral-700 space-y-2">
+                        <p>
+                            No outcome has been recorded for this request. Outcomes are recorded by your SDK,
+                            an agent webhook, or by calling <span className="font-mono">POST /api/v2/outcomes</span>.
+                        </p>
+                        <p>
+                            See the <Link href="/dashboard/prove/outcomes/setup" className="underline">activation kit</Link>{' '}
+                            for SDK, REST, and application-callback examples, or watch overall coverage on the{' '}
+                            <Link href="/dashboard/prove/outcomes" className="underline">coverage dashboard</Link>.
+                        </p>
+                    </div>
                 )}
                 <p className="mt-3 text-xs text-neutral-600">
                     Outcome state is derived from <span className="font-mono">request_outcomes</span> and is
