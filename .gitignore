@@ -5,7 +5,7 @@ node_modules
 
 # Testing
 .coverage
-coverage
+/coverage
 playwright-report/
 test-results/
 tests/e2e/live/.auth/*.json
