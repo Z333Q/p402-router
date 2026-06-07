@@ -14,6 +14,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card } from '../_components/ui';
@@ -23,11 +24,17 @@ import {
     type SemanticTone,
 } from '../_components/semantic';
 import { PageHeader } from '../_components/PageHeader';
+import { DemoDataDisclaimer, DemoPreviewBanner } from '../_components/DemoPreview';
 import {
     DISCLAIMER_METADATA_ONLY,
     DISCLAIMER_OPTIMIZE_BLOCKED,
     DISCLAIMER_RUNTIME_FLIP_BLOCKED,
 } from '@/lib/dashboard/language';
+import {
+    buildDemoAccountabilityHealth,
+    isDemoMode,
+} from '@/lib/demo/accountability-story';
+import { getDemoScenario } from '@/lib/demo/scenarios';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Local mirror of the API types (decouples client bundle from server).
@@ -196,8 +203,13 @@ function fmtAge(seconds: number | null): string {
 // ─────────────────────────────────────────────────────────────────────────
 
 export default function AccountabilityPage() {
+    const searchParams = useSearchParams();
+    const demoActive = isDemoMode(searchParams);
+    const scenario = getDemoScenario(searchParams);
+
     const data = useQuery<AccountabilityResponse>({
         queryKey: ['accountability/health'],
+        enabled: !demoActive,
         queryFn: async () => {
             const r = await fetch('/api/v2/accountability/health');
             if (!r.ok) throw new Error(`accountability ${r.status}`);
@@ -205,20 +217,36 @@ export default function AccountabilityPage() {
         },
     });
 
-    if (data.isLoading) return <div className="p-8 text-sm text-neutral-500">Loading accountability health…</div>;
-    if (data.error || !data.data) return (
+    const d: AccountabilityResponse | undefined = demoActive
+        ? (buildDemoAccountabilityHealth(scenario) as unknown as AccountabilityResponse)
+        : data.data;
+
+    if (!demoActive && data.isLoading) return <div className="p-8 text-sm text-neutral-500">Loading accountability health…</div>;
+    if (!demoActive && (data.error || !d)) return (
         <div className="p-8">
             <Card title="Could not load accountability health">
                 <p className="text-sm">Try refreshing the page.</p>
             </Card>
         </div>
     );
+    if (!d) return null;
 
-    const d = data.data;
     const dim = d.dimensions;
 
     return (
         <div className="p-6 lg:p-8 space-y-8 max-w-7xl">
+            {demoActive && (
+                <DemoPreviewBanner
+                    exitHref="/dashboard/accountability"
+                    scenario={scenario}
+                    pathname="/dashboard/accountability"
+                />
+            )}
+            {demoActive && (
+                <div className="flex justify-end">
+                    <DemoDataDisclaimer />
+                </div>
+            )}
             {/* ── Executive header ──────────────────────────────────────── */}
             <PageHeader
                 area="Accountability"

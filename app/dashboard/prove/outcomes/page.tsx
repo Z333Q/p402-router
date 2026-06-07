@@ -14,6 +14,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 
@@ -32,6 +33,12 @@ import {
     DISCLAIMER_OPTIMIZE_BLOCKED,
     DISCLAIMER_READINESS_NOT_RECOMMENDATION,
 } from '@/lib/dashboard/language';
+import {
+    buildDemoOutcomeCoverage,
+    isDemoMode,
+} from '@/lib/demo/accountability-story';
+import { getDemoScenario } from '@/lib/demo/scenarios';
+import { DemoDataDisclaimer, DemoPreviewBanner } from '../../_components/DemoPreview';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Mirror the API types locally so the client bundle does not import
@@ -201,9 +208,13 @@ export default function CoveragePage() {
     const [runToken, setRunToken] = useState(0);
     const set = <K extends keyof FilterUI>(k: K, v: string) => setFilters((p) => ({ ...p, [k]: v }));
     const qs = useMemo(() => toQs(filters).toString(), [runToken]); // eslint-disable-line react-hooks/exhaustive-deps
+    const searchParams = useSearchParams();
+    const demoActive = isDemoMode(searchParams);
+    const scenario = getDemoScenario(searchParams);
 
     const data = useQuery<CoverageResponse>({
         queryKey: ['outcomes/coverage', qs],
+        enabled: !demoActive,
         queryFn: async () => {
             const r = await fetch(`/api/v2/outcomes/coverage?${qs}`);
             if (!r.ok) throw new Error(`coverage ${r.status}`);
@@ -211,19 +222,35 @@ export default function CoveragePage() {
         },
     });
 
-    if (data.isLoading) return <div className="p-8 text-sm text-neutral-500">Loading readiness…</div>;
-    if (data.error || !data.data) return (
+    const d: CoverageResponse | undefined = demoActive
+        ? (buildDemoOutcomeCoverage(scenario) as unknown as CoverageResponse)
+        : data.data;
+
+    if (!demoActive && data.isLoading) return <div className="p-8 text-sm text-neutral-500">Loading readiness…</div>;
+    if (!demoActive && (data.error || !d)) return (
         <div className="p-8">
             <Card title="Could not load coverage"><p className="text-sm">Try again or widen filters.</p></Card>
         </div>
     );
+    if (!d) return null;
 
-    const d = data.data;
     const t = d.totals;
     const v = d.readiness;
 
     return (
         <div className="p-6 lg:p-8 space-y-8 max-w-7xl">
+            {demoActive && (
+                <DemoPreviewBanner
+                    exitHref="/dashboard/prove/outcomes"
+                    scenario={scenario}
+                    pathname="/dashboard/prove/outcomes"
+                />
+            )}
+            {demoActive && (
+                <div className="flex justify-end">
+                    <DemoDataDisclaimer />
+                </div>
+            )}
             {/* ── Header + filters ──────────────────────────────────────── */}
             <PageHeader
                 area="Outcomes"

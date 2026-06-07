@@ -10,7 +10,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card, Button } from '../../../_components/ui';
@@ -32,6 +32,13 @@ import type {
     RelatedEventSummary,
 } from '@/lib/prove/event-detail';
 import { getOutcomeTone, type OutcomeView } from '@/lib/prove/outcome';
+import {
+    buildDemoEventDetail,
+    isDemoMode,
+    isDemoRequestId,
+} from '@/lib/demo/accountability-story';
+import { getDemoScenario } from '@/lib/demo/scenarios';
+import { DemoDataDisclaimer, DemoPreviewBanner } from '../../../_components/DemoPreview';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Formatting helpers
@@ -57,11 +64,15 @@ function fmtPct(n: number | null): string {
 export default function EventDetailPage() {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const requestId = String(params?.request_id ?? '');
+    const demoActive = isDemoMode(searchParams);
+    const scenario = getDemoScenario(searchParams);
+    const useDemoEvent = demoActive && isDemoRequestId(requestId);
 
     const detail = useQuery<EventDetailResponse>({
         queryKey: ['prove/event', requestId],
-        enabled: !!requestId,
+        enabled: !!requestId && !useDemoEvent,
         queryFn: async () => {
             const r = await fetch(`/api/v2/prove/economic-events/${encodeURIComponent(requestId)}`);
             if (r.status === 404) throw new Error('NOT_FOUND');
@@ -70,10 +81,14 @@ export default function EventDetailPage() {
         },
     });
 
-    if (detail.isLoading) {
+    const demoDetail = useDemoEvent
+        ? (buildDemoEventDetail(requestId as 'demo-req-001' | 'demo-req-002' | 'demo-req-003') as unknown as EventDetailResponse)
+        : null;
+
+    if (!useDemoEvent && detail.isLoading) {
         return <div className="p-8 text-sm text-neutral-500">Loading event…</div>;
     }
-    if (detail.error instanceof Error && detail.error.message === 'NOT_FOUND') {
+    if (!useDemoEvent && detail.error instanceof Error && detail.error.message === 'NOT_FOUND') {
         return (
             <div className="p-6 lg:p-8">
                 <Card title="Event not found">
@@ -85,7 +100,7 @@ export default function EventDetailPage() {
             </div>
         );
     }
-    if (detail.error || !detail.data) {
+    if (!useDemoEvent && (detail.error || !detail.data)) {
         return (
             <div className="p-6 lg:p-8">
                 <Card title="Could not load event">
@@ -95,7 +110,7 @@ export default function EventDetailPage() {
         );
     }
 
-    const d = detail.data;
+    const d: EventDetailResponse = demoDetail ?? detail.data!;
     const { event, attribution, governance, privacy, evidence, cost, related_events, explanation } = d;
     const outcome: OutcomeView | null = d.outcome;
 
@@ -123,6 +138,18 @@ export default function EventDetailPage() {
 
     return (
         <div className="p-6 lg:p-8 space-y-8 max-w-7xl">
+            {demoActive && (
+                <DemoPreviewBanner
+                    exitHref={`/dashboard/prove/event/${encodeURIComponent(requestId)}`}
+                    scenario={scenario}
+                    pathname={`/dashboard/prove/event/${encodeURIComponent(requestId)}`}
+                />
+            )}
+            {demoActive && (
+                <div className="flex justify-end">
+                    <DemoDataDisclaimer />
+                </div>
+            )}
             {/* ── Header ─────────────────────────────────────────────────── */}
             <PageHeader
                 area="Prove"

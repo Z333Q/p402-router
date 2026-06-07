@@ -1,3 +1,5 @@
+import { DEFAULT_SCENARIO, getScenarioCleanup, SCENARIO_META, type DemoScenario } from './scenarios';
+
 /**
  * Slice 3P — Demo data and empty-state story mode.
  *
@@ -102,19 +104,21 @@ function demoWindow(now: Date = new Date()): { since: string; until: string } {
     return { since: since.toISOString(), until: until.toISOString() };
 }
 
-export function buildDemoCleanupPriorities(): DemoCleanupPriority[] {
+export function buildDemoCleanupPriorities(scenario: DemoScenario = DEFAULT_SCENARIO): DemoCleanupPriority[] {
+    const s = getScenarioCleanup(scenario);
+    const qs = scenario === DEFAULT_SCENARIO ? 'demo=1' : `demo=1&scenario=${scenario}`;
     return [
         {
             _demo: true,
-            id: 'demo:outcomes:workflow_a',
+            id: `demo:outcomes:${s.workflow_label}`,
             category: 'outcomes',
             severity: 'high',
-            title: 'Add outcomes for workflow=customer_support',
+            title: `Add outcomes for ${s.outcome_segment_label}`,
             count: 412,
             affected_spend_usd: 0,
-            link: '/dashboard/prove/outcomes',
+            link: `/dashboard/prove/outcomes?${qs}`,
             why_it_matters:
-                'Outcome coverage on this workflow is at 4%. Optimize analysis remains blocked until coverage and accepted-count thresholds are reached.',
+                'Outcome coverage on this segment is at 4%. Optimize analysis remains blocked until coverage and accepted-count thresholds are reached.',
         },
         {
             _demo: true,
@@ -124,7 +128,7 @@ export function buildDemoCleanupPriorities(): DemoCleanupPriority[] {
             title: 'Resolve 87 unattributed events',
             count: 87,
             affected_spend_usd: 42.18,
-            link: '/dashboard/prove?attribution_status=unattributed&demo=1',
+            link: `/dashboard/prove?attribution_status=unattributed&${qs}`,
             why_it_matters:
                 'Finance cannot assign this spend to a budget owner until at least one of department, employee, workflow, customer, feature, or api_key is set.',
         },
@@ -136,7 +140,7 @@ export function buildDemoCleanupPriorities(): DemoCleanupPriority[] {
             title: 'Attach evidence bundles for 23 events',
             count: 23,
             affected_spend_usd: 0,
-            link: '/dashboard/prove?evidence_status=missing&demo=1',
+            link: `/dashboard/prove?evidence_status=missing&${qs}`,
             why_it_matters:
                 'Evidence bundles back the canonical ledger with reproducible proof. Missing bundles are not automatically noncompliance but limit what audit can verify.',
         },
@@ -148,15 +152,19 @@ export function buildDemoCleanupPriorities(): DemoCleanupPriority[] {
             title: 'Backfill metadata.deny_rule on 1 denied event',
             count: 1,
             affected_spend_usd: 0,
-            link: '/dashboard/prove?governance_decision=denied&demo=1',
+            link: `/dashboard/prove?governance_decision=denied&${qs}`,
             why_it_matters:
                 'Audit packets need the deny_rule so finance can see which configured limit triggered each denial.',
         },
     ];
 }
 
-export function buildDemoAccountabilityHealth(now: Date = new Date()): DemoAccountabilityHealth {
+export function buildDemoAccountabilityHealth(
+    scenario: DemoScenario = DEFAULT_SCENARIO,
+    now: Date = new Date(),
+): DemoAccountabilityHealth {
     const period = demoWindow(now);
+    const meta = SCENARIO_META[scenario];
     // Subscores derived from the brief's required scenarios:
     //   meter: healthy        -> 100
     //   attribution: warning  -> 60
@@ -190,7 +198,7 @@ export function buildDemoAccountabilityHealth(now: Date = new Date()): DemoAccou
             status: 'needs_cleanup',
             label: 'NEEDS CLEANUP',
             explainer:
-                `Demo score ${score}. The accountability system is operational; outcome coverage and attribution need cleanup before this tenant is audit-ready. Optimize recommendations remain blocked.`,
+                `${meta.name} demo · score ${score}. The accountability system is operational; outcome coverage and attribution need cleanup before this tenant is audit-ready. Optimize recommendations remain blocked.`,
         },
         dimensions: {
             meter: {
@@ -295,7 +303,7 @@ export function buildDemoAccountabilityHealth(now: Date = new Date()): DemoAccou
                     'Optimize readiness reports whether outcome data is sufficient for ANALYSIS. Recommendations and savings claims remain blocked regardless of this status.',
             },
         },
-        cleanup_priorities: buildDemoCleanupPriorities(),
+        cleanup_priorities: buildDemoCleanupPriorities(scenario),
         disclaimers: {
             readiness_not_recommendation:     true,
             no_savings_claim:                 true,
@@ -362,7 +370,11 @@ export interface DemoOutcomeCoverage {
     };
 }
 
-export function buildDemoOutcomeCoverage(now: Date = new Date()): DemoOutcomeCoverage {
+export function buildDemoOutcomeCoverage(
+    scenario: DemoScenario = DEFAULT_SCENARIO,
+    now: Date = new Date(),
+): DemoOutcomeCoverage {
+    const cleanup = getScenarioCleanup(scenario);
     return {
         _demo: true,
         ok: true,
@@ -395,9 +407,10 @@ export function buildDemoOutcomeCoverage(now: Date = new Date()): DemoOutcomeCov
         segments: { by_department: [], by_workflow: [], by_customer: [], by_feature: [] },
         provider_model_matrix: [],
         missing_outcome_leaderboard: [
-            { _demo: true, label: 'workflow=customer_support', dimension: 'workflow',
-              key: 'customer_support', missing_count: 412, total_events: 540, coverage_pct: 23.7,
-              sample_request_id: 'demo-req-cs-001' },
+            { _demo: true, label: cleanup.outcome_segment_label, dimension: 'workflow',
+              key: cleanup.outcome_segment_label.replace(/^workflow=|^matter=/, ''),
+              missing_count: 412, total_events: 540, coverage_pct: 23.7,
+              sample_request_id: cleanup.sample_request_id },
             { _demo: true, label: 'workflow=internal_qa',     dimension: 'workflow',
               key: 'internal_qa',     missing_count: 188, total_events: 240, coverage_pct: 21.7,
               sample_request_id: 'demo-req-qa-001' },
@@ -430,6 +443,22 @@ export interface DemoProveEvent {
     deny_code: string | null;
     privacy_mode: 'metadata_only';
     evidence_bundle_id: string | null;
+}
+
+/**
+ * Canonical demo request_ids. The event-detail page checks this set
+ * before swapping in the demo card; any non-demo request_id falls
+ * through to the real API even with `?demo=1` on the URL.
+ */
+export const DEMO_REQUEST_IDS = [
+    'demo-req-001', // approved, attributed, evidence attached
+    'demo-req-002', // denied, $0 cost, deny rule populated
+    'demo-req-003', // approved, unattributed, missing evidence
+] as const;
+export type DemoRequestId = (typeof DEMO_REQUEST_IDS)[number];
+
+export function isDemoRequestId(value: string): value is DemoRequestId {
+    return (DEMO_REQUEST_IDS as readonly string[]).includes(value);
 }
 
 export function buildDemoProveEvents(now: Date = new Date()): DemoProveEvent[] {
@@ -483,4 +512,453 @@ export function buildDemoProveEvents(now: Date = new Date()): DemoProveEvent[] {
             evidence_bundle_id: null,    // missing evidence
         },
     ];
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Prove search story (Slice 3Q)
+//
+// Mirrors the SearchResponse shape from /api/v2/prove/search. Includes
+// the same story rows surfaced by Mission Control plus a few extras so
+// the search page shows a realistic mix of states (approved, denied,
+// missing evidence, unattributed, accepted outcome, pending review).
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface DemoSearchHit {
+    _demo: true;
+    event_time: string;
+    request_id: string;
+    source: string;
+    route: string | null;
+    provider: string | null;
+    model_used: string | null;
+    status_code: number | null;
+    success: boolean | null;
+    cost_usd: string;
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    department_id: string | null;
+    employee_id: string | null;
+    api_key_id: string | null;
+    workflow_id: string | null;
+    customer_id: string | null;
+    feature_id: string | null;
+    governance_decision: 'approved' | 'denied' | null;
+    deny_code: string | null;
+    privacy_mode: 'metadata_only';
+    evidence_bundle_id: string | null;
+    decision_source: string | null;
+    deny_rule: string | null;
+    attribution_status: 'attributed' | 'partial' | 'unattributed';
+}
+
+export interface DemoSearchResponse {
+    _demo: true;
+    ok: true;
+    generated_at: string;
+    filters_applied: Record<string, string>;
+    explanation: string;
+    count: number;
+    limit: number;
+    offset: number;
+    hits: DemoSearchHit[];
+}
+
+export function buildDemoSearchResponse(
+    scenario: DemoScenario = DEFAULT_SCENARIO,
+    now: Date = new Date(),
+): DemoSearchResponse {
+    const t = (mins: number) => new Date(now.getTime() - mins * 60_000).toISOString();
+    const workflow = scenario === 'enterprise_ai_spend_control' ? 'customer_support'
+        :  scenario === 'healthcare_prior_auth'              ? 'prior_authorization'
+        :  scenario === 'legal_mna_due_diligence'            ? 'mna_due_diligence'
+        :                                                       'tenant_screening';
+    const customer = scenario === 'enterprise_ai_spend_control' ? 'cust_acme'
+        :  scenario === 'healthcare_prior_auth'              ? 'payer_demo_health'
+        :  scenario === 'legal_mna_due_diligence'            ? 'matter_demo_acme'
+        :                                                       'property_demo_north';
+    const featureA = scenario === 'enterprise_ai_spend_control' ? 'reply_assist'
+        :  scenario === 'healthcare_prior_auth'              ? 'evidence_lookup'
+        :  scenario === 'legal_mna_due_diligence'            ? 'conflict_detection'
+        :                                                       'inconsistency_check';
+    const featureB = scenario === 'enterprise_ai_spend_control' ? 'audit_assist'
+        :  scenario === 'healthcare_prior_auth'              ? 'um_summary'
+        :  scenario === 'legal_mna_due_diligence'            ? 'redline_summary'
+        :                                                       'fraud_score';
+    const hits: DemoSearchHit[] = [
+        {
+            _demo: true,
+            event_time: t(6),
+            request_id: 'demo-req-001',
+            source: 'chat_completions',
+            route: '/api/v2/chat/completions',
+            provider: 'openai',
+            model_used: 'gpt-4o-mini',
+            status_code: 200, success: true,
+            cost_usd: '0.0124',
+            input_tokens: 412, output_tokens: 180, total_tokens: 592,
+            department_id: 'engineering', employee_id: 'alice@example.com',
+            api_key_id: 'demo-ak-001', workflow_id: workflow,
+            customer_id: customer, feature_id: featureA,
+            governance_decision: 'approved', deny_code: null,
+            privacy_mode: 'metadata_only',
+            evidence_bundle_id: 'demo-bndl-001',
+            decision_source: null, deny_rule: null,
+            attribution_status: 'attributed',
+        },
+        {
+            _demo: true,
+            event_time: t(12),
+            request_id: 'demo-req-002',
+            source: 'chat_completions',
+            route: '/api/v2/chat/completions',
+            provider: null, model_used: null,
+            status_code: 403, success: false,
+            cost_usd: '0.0000',
+            input_tokens: 0, output_tokens: 0, total_tokens: 0,
+            department_id: 'engineering', employee_id: 'bob@example.com',
+            api_key_id: 'demo-ak-002', workflow_id: 'internal_qa',
+            customer_id: null, feature_id: null,
+            governance_decision: 'denied',
+            deny_code: 'MODEL_NOT_ALLOWED',
+            privacy_mode: 'metadata_only',
+            evidence_bundle_id: null,
+            decision_source: 'budget_guard',
+            deny_rule: 'api_key.allowed_models',
+            attribution_status: 'partial',
+        },
+        {
+            _demo: true,
+            event_time: t(22),
+            request_id: 'demo-req-003',
+            source: 'meter_only',
+            route: '/api/v2/meter/events',
+            provider: 'anthropic', model_used: 'claude-3-5-sonnet',
+            status_code: 200, success: true,
+            cost_usd: '0.0418',
+            input_tokens: 1_204, output_tokens: 420, total_tokens: 1_624,
+            department_id: null, employee_id: null,
+            api_key_id: null, workflow_id: null,
+            customer_id: null, feature_id: null,
+            governance_decision: 'approved', deny_code: null,
+            privacy_mode: 'metadata_only',
+            evidence_bundle_id: null,
+            decision_source: null, deny_rule: null,
+            attribution_status: 'unattributed',
+        },
+        {
+            _demo: true,
+            event_time: t(34),
+            request_id: 'demo-req-004',
+            source: 'chat_completions',
+            route: '/api/v2/chat/completions',
+            provider: 'openai', model_used: 'gpt-4o-mini',
+            status_code: 200, success: true,
+            cost_usd: '0.0091',
+            input_tokens: 312, output_tokens: 90, total_tokens: 402,
+            department_id: 'finance', employee_id: 'carol@example.com',
+            api_key_id: 'demo-ak-003', workflow_id: workflow,
+            customer_id: customer, feature_id: featureB,
+            governance_decision: 'approved', deny_code: null,
+            privacy_mode: 'metadata_only',
+            evidence_bundle_id: 'demo-bndl-004',
+            decision_source: null, deny_rule: null,
+            attribution_status: 'attributed',
+        },
+    ];
+    return {
+        _demo: true,
+        ok: true,
+        generated_at: now.toISOString(),
+        filters_applied: {},
+        explanation: 'Demo preview — example data only; not written to your ledger.',
+        count: hits.length,
+        limit: 100,
+        offset: 0,
+        hits,
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Event detail story (Slice 3Q)
+//
+// Mirrors EventDetailResponse from /api/v2/prove/economic-events/[request_id].
+// Three canonical request_ids resolve; everything else returns null and
+// the page falls back to the real API.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface DemoEventDetail {
+    _demo: true;
+    ok: true;
+    event: Record<string, unknown> & { request_id: DemoRequestId };
+    attribution: {
+        api_key_id: string | null; department_id: string | null;
+        employee_id: string | null; workflow_id: string | null;
+        customer_id: string | null; feature_id: string | null;
+        owner_type: string | null; owner_id: string | null;
+        completeness_count: number; completeness_pct: number;
+        missing: Array<'department' | 'employee' | 'api_key' | 'workflow' | 'customer' | 'feature'>;
+        status: 'attributed' | 'partial' | 'unattributed';
+    };
+    governance: {
+        decision: string | null;
+        deny_code: string | null;
+        deny_rule: string | null;
+        decision_source: string | null;
+        budget_id: string | null;
+        policy_id: string | null;
+        mandate_id: string | null;
+        status_code: number | null;
+        success: boolean | null;
+        provider_call_blocked: boolean;
+    };
+    privacy: {
+        privacy_mode: 'metadata_only';
+        prompt_stored: false;
+        response_stored: false;
+        redaction_applied: boolean;
+        retention_expires_at: string | null;
+        content_displayed: false;
+    };
+    evidence: { evidence_bundle_id: string | null; present: boolean; bundle_url: string | null };
+    cost: {
+        cost_usd: number; direct_cost_usd: number;
+        input_tokens: number; output_tokens: number; total_tokens: number;
+        avg_cost_per_1k_tokens: number | null;
+        zero_cost_denied: boolean;
+    };
+    related_events: Array<Record<string, unknown>>;
+    outcome: null;
+    explanation: { headline: string; details: string[]; notes: string[] };
+}
+
+export function buildDemoEventDetail(
+    request_id: DemoRequestId,
+    now: Date = new Date(),
+): DemoEventDetail {
+    const t = (mins: number) => new Date(now.getTime() - mins * 60_000).toISOString();
+    if (request_id === 'demo-req-002') {
+        // Denied — the headline scenario for the buyer demo.
+        return {
+            _demo: true, ok: true,
+            event: {
+                request_id,
+                event_time: t(12),
+                tenant_id: 'demo-tenant',
+                source: 'chat_completions',
+                route: '/api/v2/chat/completions',
+                provider: null, model_used: null, model_requested: 'gpt-4',
+                status_code: 403, success: false,
+                cost_usd: '0', direct_cost_usd: '0',
+                input_tokens: 0, output_tokens: 0, total_tokens: 0,
+                latency_ms: 12, cache_hit: false,
+                department_id: 'engineering', employee_id: 'bob@example.com',
+                api_key_id: 'demo-ak-002', workflow_id: 'internal_qa',
+                customer_id: null, feature_id: null,
+                owner_type: 'tenant', owner_id: 'demo-tenant',
+                budget_id: null, policy_id: null, mandate_id: null,
+                governance_decision: 'denied',
+                deny_code: 'MODEL_NOT_ALLOWED',
+                privacy_mode: 'metadata_only',
+                prompt_stored: false, response_stored: false, redaction_applied: false,
+                retention_expires_at: null,
+                evidence_bundle_id: null,
+                metadata_decision_source: 'budget_guard',
+                metadata_deny_rule: 'api_key.allowed_models',
+                created_at: t(12), updated_at: t(12),
+            },
+            attribution: {
+                api_key_id: 'demo-ak-002', department_id: 'engineering',
+                employee_id: 'bob@example.com', workflow_id: 'internal_qa',
+                customer_id: null, feature_id: null,
+                owner_type: 'tenant', owner_id: 'demo-tenant',
+                completeness_count: 4, completeness_pct: 66.67,
+                missing: ['customer', 'feature'],
+                status: 'partial',
+            },
+            governance: {
+                decision: 'denied',
+                deny_code: 'MODEL_NOT_ALLOWED',
+                deny_rule: 'api_key.allowed_models',
+                decision_source: 'budget_guard',
+                budget_id: null, policy_id: null, mandate_id: null,
+                status_code: 403, success: false,
+                provider_call_blocked: true,
+            },
+            privacy: {
+                privacy_mode: 'metadata_only',
+                prompt_stored: false, response_stored: false,
+                redaction_applied: false, retention_expires_at: null,
+                content_displayed: false,
+            },
+            evidence: { evidence_bundle_id: null, present: false, bundle_url: null },
+            cost: {
+                cost_usd: 0, direct_cost_usd: 0,
+                input_tokens: 0, output_tokens: 0, total_tokens: 0,
+                avg_cost_per_1k_tokens: null,
+                zero_cost_denied: true,
+            },
+            related_events: [],
+            outcome: null,
+            explanation: {
+                headline: 'MODEL_NOT_ALLOWED, rule api_key.allowed_models. Request blocked before provider call. $0 provider cost.',
+                details: [
+                    'This demo request was denied before provider execution. No provider call was made.',
+                    'The deny rule that fired was api_key.allowed_models.',
+                    'Decision source: budget_guard.',
+                    'Provider cost is $0 because the request never reached the model.',
+                ],
+                notes: [
+                    'This event is missing customer, feature attribution; the rest of the chain is present.',
+                    'This event has no evidence bundle attached.',
+                ],
+            },
+        };
+    }
+    if (request_id === 'demo-req-003') {
+        // Approved, unattributed, missing evidence.
+        return {
+            _demo: true, ok: true,
+            event: {
+                request_id,
+                event_time: t(22),
+                tenant_id: 'demo-tenant',
+                source: 'meter_only',
+                route: '/api/v2/meter/events',
+                provider: 'anthropic',
+                model_used: 'claude-3-5-sonnet',
+                model_requested: 'claude-3-5-sonnet',
+                status_code: 200, success: true,
+                cost_usd: '0.0418', direct_cost_usd: '0.0398',
+                input_tokens: 1_204, output_tokens: 420, total_tokens: 1_624,
+                latency_ms: 1_402, cache_hit: false,
+                department_id: null, employee_id: null,
+                api_key_id: null, workflow_id: null,
+                customer_id: null, feature_id: null,
+                owner_type: null, owner_id: null,
+                budget_id: null, policy_id: null, mandate_id: null,
+                governance_decision: 'approved',
+                deny_code: null,
+                privacy_mode: 'metadata_only',
+                prompt_stored: false, response_stored: false, redaction_applied: false,
+                retention_expires_at: null,
+                evidence_bundle_id: null,
+                metadata_decision_source: null,
+                metadata_deny_rule: null,
+                created_at: t(22), updated_at: t(22),
+            },
+            attribution: {
+                api_key_id: null, department_id: null, employee_id: null,
+                workflow_id: null, customer_id: null, feature_id: null,
+                owner_type: null, owner_id: null,
+                completeness_count: 0, completeness_pct: 0,
+                missing: ['department', 'employee', 'api_key', 'workflow', 'customer', 'feature'],
+                status: 'unattributed',
+            },
+            governance: {
+                decision: 'approved', deny_code: null, deny_rule: null,
+                decision_source: null, budget_id: null, policy_id: null,
+                mandate_id: null, status_code: 200, success: true,
+                provider_call_blocked: false,
+            },
+            privacy: {
+                privacy_mode: 'metadata_only',
+                prompt_stored: false, response_stored: false,
+                redaction_applied: false, retention_expires_at: null,
+                content_displayed: false,
+            },
+            evidence: { evidence_bundle_id: null, present: false, bundle_url: null },
+            cost: {
+                cost_usd: 0.0418, direct_cost_usd: 0.0398,
+                input_tokens: 1_204, output_tokens: 420, total_tokens: 1_624,
+                avg_cost_per_1k_tokens: 0.0258,
+                zero_cost_denied: false,
+            },
+            related_events: [],
+            outcome: null,
+            explanation: {
+                headline: 'This demo request was approved and completed through anthropic using claude-3-5-sonnet. Total provider cost was $0.04.',
+                details: [
+                    'Token usage: 1204 input, 420 output, 1624 total.',
+                    'Prompt content was not stored.',
+                    'Response content was not stored.',
+                ],
+                notes: [
+                    'This event is fully unattributed. Finance cannot assign it to a budget owner until at least one of department, employee, workflow, customer, feature, or api_key is set.',
+                    'This event has no evidence bundle attached.',
+                ],
+            },
+        };
+    }
+    // demo-req-001 — the healthy attributed approved event.
+    return {
+        _demo: true, ok: true,
+        event: {
+            request_id,
+            event_time: t(6),
+            tenant_id: 'demo-tenant',
+            source: 'chat_completions',
+            route: '/api/v2/chat/completions',
+            provider: 'openai', model_used: 'gpt-4o-mini',
+            model_requested: 'gpt-4o-mini',
+            status_code: 200, success: true,
+            cost_usd: '0.0124', direct_cost_usd: '0.0118',
+            input_tokens: 412, output_tokens: 180, total_tokens: 592,
+            latency_ms: 612, cache_hit: false,
+            department_id: 'engineering', employee_id: 'alice@example.com',
+            api_key_id: 'demo-ak-001', workflow_id: 'customer_support',
+            customer_id: 'cust_acme', feature_id: 'reply_assist',
+            owner_type: 'tenant', owner_id: 'demo-tenant',
+            budget_id: null, policy_id: null, mandate_id: null,
+            governance_decision: 'approved', deny_code: null,
+            privacy_mode: 'metadata_only',
+            prompt_stored: false, response_stored: false, redaction_applied: false,
+            retention_expires_at: null,
+            evidence_bundle_id: 'demo-bndl-001',
+            metadata_decision_source: null, metadata_deny_rule: null,
+            created_at: t(6), updated_at: t(6),
+        },
+        attribution: {
+            api_key_id: 'demo-ak-001', department_id: 'engineering',
+            employee_id: 'alice@example.com', workflow_id: 'customer_support',
+            customer_id: 'cust_acme', feature_id: 'reply_assist',
+            owner_type: 'tenant', owner_id: 'demo-tenant',
+            completeness_count: 6, completeness_pct: 100,
+            missing: [], status: 'attributed',
+        },
+        governance: {
+            decision: 'approved', deny_code: null, deny_rule: null,
+            decision_source: null, budget_id: null, policy_id: null,
+            mandate_id: null, status_code: 200, success: true,
+            provider_call_blocked: false,
+        },
+        privacy: {
+            privacy_mode: 'metadata_only',
+            prompt_stored: false, response_stored: false,
+            redaction_applied: false, retention_expires_at: null,
+            content_displayed: false,
+        },
+        evidence: {
+            evidence_bundle_id: 'demo-bndl-001',
+            present: true,
+            bundle_url: '/api/v1/analytics/evidence-bundle/demo-bndl-001',
+        },
+        cost: {
+            cost_usd: 0.0124, direct_cost_usd: 0.0118,
+            input_tokens: 412, output_tokens: 180, total_tokens: 592,
+            avg_cost_per_1k_tokens: 0.0209,
+            zero_cost_denied: false,
+        },
+        related_events: [],
+        outcome: null,
+        explanation: {
+            headline: 'This demo request was approved and completed through openai using gpt-4o-mini. Total provider cost was $0.01.',
+            details: [
+                'Token usage: 412 input, 180 output, 592 total.',
+                'Prompt content was not stored.',
+                'Response content was not stored.',
+            ],
+            notes: [],
+        },
+    };
 }

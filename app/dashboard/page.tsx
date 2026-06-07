@@ -40,6 +40,7 @@ import {
     buildDemoAccountabilityHealth,
     isDemoMode,
 } from '@/lib/demo/accountability-story';
+import { getDemoScenario, withDemoQs } from '@/lib/demo/scenarios';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Local mirrors of the accountability/health API shape (decouples client
@@ -169,6 +170,8 @@ function severityTone(s: 'high' | 'medium' | 'low'): SemanticTone {
 export default function MissionControlPage() {
     const searchParams = useSearchParams();
     const demoActive = isDemoMode(searchParams);
+    const scenario = getDemoScenario(searchParams);
+    const dq = (href: string) => withDemoQs(href, demoActive, scenario);
 
     const data = useQuery<AccountabilityResponse>({
         queryKey: ['dashboard/accountability'],
@@ -187,7 +190,7 @@ export default function MissionControlPage() {
     // root + on cleanup priorities so a future export-path regression
     // cannot silently leak demo rows as real audit data).
     const d: AccountabilityResponse | undefined = demoActive
-        ? (buildDemoAccountabilityHealth() as unknown as AccountabilityResponse)
+        ? (buildDemoAccountabilityHealth(scenario) as unknown as AccountabilityResponse)
         : data.data;
 
     // Empty ledger: real tenant, fetch succeeded, but zero events. Show
@@ -198,7 +201,11 @@ export default function MissionControlPage() {
 
     return (
         <div className="p-6 lg:p-8 space-y-8 max-w-7xl">
-            {demoActive && <DemoPreviewBanner exitHref="/dashboard" />}
+            {demoActive && <DemoPreviewBanner
+                exitHref="/dashboard"
+                scenario={scenario}
+                pathname="/dashboard"
+            />}
 
             {showEmptyLedgerStory && (
                 <EmptyLedgerStory

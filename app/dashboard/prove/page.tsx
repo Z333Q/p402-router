@@ -20,6 +20,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card, Input, Select, Button } from '../_components/ui';
@@ -43,6 +44,12 @@ import type {
     SearchResponse,
 } from '@/lib/prove/types';
 import { SAVED_VIEWS, EXPORT_PRESETS } from './_components/SavedViews';
+import {
+    buildDemoSearchResponse,
+    isDemoMode,
+} from '@/lib/demo/accountability-story';
+import { getDemoScenario } from '@/lib/demo/scenarios';
+import { DemoDataDisclaimer, DemoPreviewBanner } from '../_components/DemoPreview';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Formatting helpers
@@ -131,9 +138,13 @@ export default function ProveDashboardPage() {
     const [runSearchToken, setRunSearchToken] = useState(0); // bump to fetch
     const set = <K extends keyof SearchUI>(k: K, v: string) => setSearch((p) => ({ ...p, [k]: v }));
     const activeSearchQs = useMemo(() => toQs(search).toString(), [runSearchToken]); // eslint-disable-line react-hooks/exhaustive-deps
+    const searchParams = useSearchParams();
+    const demoActive = isDemoMode(searchParams);
+    const scenario = getDemoScenario(searchParams);
 
     const overview = useQuery<ProveOverviewResponse>({
         queryKey: ['prove/overview'],
+        enabled: !demoActive,
         queryFn: async () => {
             const r = await fetch('/api/v2/prove/overview');
             if (!r.ok) throw new Error(`overview ${r.status}`);
@@ -143,6 +154,7 @@ export default function ProveDashboardPage() {
 
     const hits = useQuery<SearchResponse>({
         queryKey: ['prove/search', activeSearchQs],
+        enabled: !demoActive,
         queryFn: async () => {
             const r = await fetch(`/api/v2/prove/search?${activeSearchQs}`);
             if (!r.ok) throw new Error(`search ${r.status}`);
@@ -151,6 +163,13 @@ export default function ProveDashboardPage() {
         // The page does a search on initial load with empty filters to give
         // the audit table something to show.
     });
+
+    // Demo substitution for the audit table results. Overview/breakdowns
+    // remain undefined in demo mode — they would require a separate demo
+    // builder; this slice scopes the demo to the search experience.
+    const demoSearch = demoActive
+        ? (buildDemoSearchResponse(scenario) as unknown as SearchResponse)
+        : undefined;
 
     function applyPreset(id: string) {
         const view = SAVED_VIEWS.find((v) => v.id === id);
@@ -205,6 +224,18 @@ export default function ProveDashboardPage() {
 
     return (
         <div className="p-6 lg:p-8 space-y-8">
+            {demoActive && (
+                <DemoPreviewBanner
+                    exitHref="/dashboard/prove"
+                    scenario={scenario}
+                    pathname="/dashboard/prove"
+                />
+            )}
+            {demoActive && (
+                <div className="flex justify-end">
+                    <DemoDataDisclaimer />
+                </div>
+            )}
             {/* ── Header + global search ─────────────────────────────────── */}
             <header className="space-y-3">
                 <h1 className="text-3xl font-extrabold uppercase tracking-tight">Prove</h1>
@@ -519,9 +550,12 @@ export default function ProveDashboardPage() {
             <section className="space-y-3">
                 <h2 className="text-xs font-extrabold uppercase tracking-wider text-neutral-500">Audit results</h2>
                 <p className="text-xs text-neutral-600">
-                    {hits.data?.explanation ?? 'Run a search to populate the audit table.'}
+                    {(demoSearch ?? hits.data)?.explanation ?? 'Run a search to populate the audit table.'}
                 </p>
-                <AuditTable hits={hits.data?.hits ?? []} loading={hits.isLoading} />
+                <AuditTable
+                    hits={(demoSearch ?? hits.data)?.hits ?? []}
+                    loading={!demoActive && hits.isLoading}
+                />
             </section>
 
             {/* ── 7. Export presets ───────────────────────────────────────── */}

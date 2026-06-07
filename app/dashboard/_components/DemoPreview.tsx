@@ -20,35 +20,109 @@ import {
     DEMO_PREVIEW_LABEL,
     DEMO_STORY_MODE_ENABLED_COPY,
 } from '@/lib/demo/accountability-story';
+import { SCENARIOS, getScenarioBanner, type DemoScenario } from '@/lib/demo/scenarios';
 
 export const DEMO_BANNER_TEST_ID = 'demo-preview-banner';
 
 interface DemoPreviewBannerProps {
     /** Optional CTA href back to a production view. */
     exitHref?: string;
+    /** Slice 3Q — active vertical scenario for label rendering and switcher. */
+    scenario?: DemoScenario;
+    /** Base pathname used by the scenario switcher when rebuilding URLs. */
+    pathname?: string;
 }
 
-export function DemoPreviewBanner({ exitHref = '?' }: DemoPreviewBannerProps) {
+const SCENARIO_SWITCHER_LABELS: Record<DemoScenario, string> = {
+    enterprise_ai_spend_control:    'Enterprise',
+    healthcare_prior_auth:          'Healthcare',
+    legal_mna_due_diligence:        'Legal',
+    real_estate_tenant_screening:   'Real estate',
+};
+
+function scenarioUrl(pathname: string | undefined, scenario: DemoScenario): string {
+    const base = pathname && pathname.length > 0 ? pathname : '?';
+    const sep = base.includes('?') ? '&' : '?';
+    return `${base}${sep}demo=1&scenario=${scenario}`;
+}
+
+export function DemoPreviewBanner({
+    exitHref = '?',
+    scenario,
+    pathname,
+}: DemoPreviewBannerProps) {
+    const meta = scenario ? getScenarioBanner(scenario) : null;
+
     return (
         <div
             data-testid={DEMO_BANNER_TEST_ID}
             role="status"
             aria-live="polite"
-            className="border-4 border-amber-700 bg-amber-50 text-amber-900 p-4 flex flex-wrap items-center gap-3"
+            className="border-4 border-amber-700 bg-amber-50 text-amber-900 p-4 space-y-3"
         >
-            <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 border-2 border-amber-700 bg-amber-700 text-amber-50 font-mono text-[10px] font-bold uppercase tracking-widest"
-                aria-label="demo preview marker"
-            >
-                <span aria-hidden="true">●</span> {DEMO_PREVIEW_LABEL}
-            </span>
-            <p className="text-sm leading-snug grow min-w-[14rem]">{DEMO_STORY_MODE_ENABLED_COPY}</p>
-            <Link
-                href={exitHref}
-                className="px-3 h-9 inline-flex items-center border-2 border-amber-700 text-[11px] font-bold uppercase tracking-wider hover:bg-amber-100"
-            >
-                Exit demo preview
-            </Link>
+            {/* Row 1 — marker + scenario pill + universal copy + exit CTA */}
+            <div className="flex flex-wrap items-center gap-3">
+                <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 border-2 border-amber-700 bg-amber-700 text-amber-50 font-mono text-[10px] font-bold uppercase tracking-widest"
+                    aria-label="demo preview marker"
+                >
+                    <span aria-hidden="true">●</span> {DEMO_PREVIEW_LABEL}
+                </span>
+                {meta && (
+                    <span
+                        data-testid="demo-scenario-pill"
+                        data-scenario={scenario}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 border-2 border-amber-700 text-amber-900 font-bold text-[11px] uppercase tracking-widest"
+                    >
+                        {meta.pill}
+                    </span>
+                )}
+                <p className="text-sm leading-snug grow min-w-[14rem]">{DEMO_STORY_MODE_ENABLED_COPY}</p>
+                <Link
+                    href={exitHref}
+                    className="px-3 h-9 inline-flex items-center border-2 border-amber-700 text-[11px] font-bold uppercase tracking-wider hover:bg-amber-100"
+                >
+                    Exit demo preview
+                </Link>
+            </div>
+
+            {/* Row 2 — framing + safety labels */}
+            {meta && (
+                <div className="space-y-2">
+                    <p className="text-xs leading-relaxed">{meta.body}</p>
+                    <ul className="flex flex-wrap gap-1.5" data-testid="demo-safety-labels">
+                        {meta.safety_labels.map((label) => (
+                            <li
+                                key={label}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 border-2 border-amber-700 bg-white text-amber-900 font-mono text-[10px] font-bold uppercase tracking-wider"
+                            >
+                                <span aria-hidden="true">✓</span> {label}
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="text-[11px] italic text-amber-900">{meta.framing_disclaimer}</p>
+                </div>
+            )}
+
+            {/* Row 3 — scenario switcher */}
+            {scenario && (
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t-2 border-amber-700" data-testid="demo-scenario-switcher">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest">Switch demo:</span>
+                    {SCENARIOS.map((s) => (
+                        <Link
+                            key={s}
+                            href={scenarioUrl(pathname, s)}
+                            data-testid={`scenario-link-${s}`}
+                            aria-current={s === scenario ? 'page' : undefined}
+                            className={`px-2 py-0.5 border-2 border-amber-700 text-[11px] font-bold uppercase tracking-wider ${
+                                s === scenario ? 'bg-amber-700 text-amber-50' : 'bg-white text-amber-900 hover:bg-amber-100'
+                            }`}
+                        >
+                            {SCENARIO_SWITCHER_LABELS[s]}
+                        </Link>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
