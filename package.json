@@ -24,6 +24,7 @@
     "test:e2e:resilience": "playwright test tests/e2e/error-resilience.spec.ts",
     "test:e2e:ui": "playwright test --ui",
     "build:skill": "chmod +x scripts/build-skill.sh && ./scripts/build-skill.sh",
+    "check:marketing-copy": "node scripts/check-marketing-copy.mjs",
     "prebuild": "npm run build:skill",
     "prepare": "husky install",
     "test:e2e:live": "playwright test --project=live-smoke --project=live-api --project=live-dashboard --project=live-admin",
