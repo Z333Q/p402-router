@@ -44,7 +44,7 @@ import { usePlanUsage } from "@/hooks/usePlanUsage"
  */
 export const ACCOUNTABILITY_ITEMS = [
     { id: 'mission-control', name: "Mission Control",  href: "/dashboard",                icon: LayoutDashboard },
-    { id: 'meter',           name: "Meter",            href: "/dashboard/meter",          icon: Zap },
+    { id: 'meter',           name: "Meter",            href: "/dashboard/meter/events",   icon: Zap },
     { id: 'monitor',         name: "Monitor",          href: "/dashboard/monitor",        icon: Eye },
     { id: 'control',         name: "Control",          href: "/dashboard/control",        icon: SlidersHorizontal },
     { id: 'prove',           name: "Prove",            href: "/dashboard/prove",          icon: ShieldCheck, isNew: true },
