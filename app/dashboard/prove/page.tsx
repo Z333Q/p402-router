@@ -26,6 +26,7 @@ export const dynamic = 'force-dynamic';
  */
 
 import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
@@ -54,7 +55,7 @@ import {
     buildDemoSearchResponse,
     isDemoMode,
 } from '@/lib/demo/accountability-story';
-import { getDemoScenario } from '@/lib/demo/scenarios';
+import { getDemoScenario, withDemoQs } from '@/lib/demo/scenarios';
 import { DemoDataDisclaimer, DemoPreviewBanner } from '../_components/DemoPreview';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -147,6 +148,7 @@ export default function ProveDashboardPage() {
     const searchParams = useSearchParams();
     const demoActive = isDemoMode(searchParams);
     const scenario = getDemoScenario(searchParams);
+    const outcomesHref = withDemoQs('/dashboard/prove/outcomes', demoActive, scenario);
 
     const overview = useQuery<ProveOverviewResponse>({
         queryKey: ['prove/overview'],
@@ -321,6 +323,15 @@ export default function ProveDashboardPage() {
                         tone={(totals?.unattributed_spend_usd ?? 0) === 0 ? 'green' : 'amber'}
                         explain={PLAIN_LANGUAGE.unattributed}
                     />
+                </div>
+                <div className="border-l-2 border-black/10 pl-4 py-2 flex flex-wrap items-baseline gap-3">
+                    <span className="text-[11px] font-bold uppercase tracking-wide text-neutral-700">Outcome readiness</span>
+                    <span className="text-[11px] font-mono text-neutral-500">
+                        Cost per accepted output divides spend by accepted outcomes only. Thin data means P402 should not make optimization recommendations yet. This is readiness analysis, not a savings claim.
+                    </span>
+                    <Link href={outcomesHref} className="text-[11px] font-mono font-bold uppercase text-black underline underline-offset-2">
+                        View outcome readiness
+                    </Link>
                 </div>
                 <ColorLegend
                     title="Tones"

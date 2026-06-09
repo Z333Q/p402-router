@@ -16,6 +16,7 @@ export const dynamic = 'force-dynamic';
  */
 
 import React from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
@@ -29,6 +30,8 @@ import {
     ProgressBar,
     Skeleton,
 } from '../_components/ui';
+
+import { getDemoScenario, withDemoQs } from '@/lib/demo/scenarios';
 
 import {
     EMPTY_FILTERS,
@@ -77,6 +80,9 @@ export default function MonitorPage() {
     }, [initialFilters]);
 
     const qs = buildMonitorQs(initialFilters);
+    const demoActive = (searchParams?.get('demo') ?? '') === '1';
+    const scenario = getDemoScenario(searchParams ?? null);
+    const outcomesHref = withDemoQs('/dashboard/prove/outcomes', demoActive, scenario);
 
     const { data, isLoading, isFetching, error, refetch } = useQuery<MonitorOverviewResponse>({
         queryKey: ['monitor-overview', qs],
@@ -161,11 +167,16 @@ export default function MonitorPage() {
                             <div className="space-y-2">
                                 <p className="text-sm text-neutral-700 font-mono">Insufficient outcome data.</p>
                                 <p className="text-[11px] font-mono text-neutral-500">
+                                    Cost per accepted output divides spend by accepted outcomes only.
                                     Need outcome coverage ≥ {data.cost_per_accepted_output.thresholds.min_outcome_coverage_pct}%
                                     {' '}AND accepted count ≥ {data.cost_per_accepted_output.thresholds.min_accepted_count}.{' '}
                                     Current: coverage {fmtPct(data.cost_per_accepted_output.outcome_coverage_pct)},{' '}
                                     accepted {data.cost_per_accepted_output.accepted_count.toLocaleString()}.
+                                    Thin data means P402 should not make optimization recommendations yet.
                                 </p>
+                                <Link href={outcomesHref} className="text-[11px] font-mono font-bold uppercase text-black underline underline-offset-2">
+                                    View outcome readiness
+                                </Link>
                             </div>
                         ) : (
                             <div className="flex flex-wrap items-baseline gap-4">
@@ -218,8 +229,12 @@ export default function MonitorPage() {
                                     {fmtPct(data.outcome_completeness.outcome_coverage_pct)}
                                 </div>
                                 <p className="text-[11px] font-mono text-neutral-500">
+                                    Outcome coverage shows how many AI events have a recorded business result.
                                     Recorded via <code className="bg-neutral-100 px-1">POST /api/v2/outcomes</code>.
                                 </p>
+                                <Link href={outcomesHref} className="text-[11px] font-mono font-bold uppercase text-black underline underline-offset-2">
+                                    View outcome readiness
+                                </Link>
                             </div>
                         </Card>
                     </div>
