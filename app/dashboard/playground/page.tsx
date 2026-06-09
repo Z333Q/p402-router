@@ -461,9 +461,9 @@ export default function ExecutePage() {
                     <div className="space-y-1">
                         <div className="text-[9px] font-black uppercase tracking-widest text-neutral-400 px-1 mb-2">After execution</div>
                         {[
-                            { href: '/dashboard/requests', label: 'View all requests' },
-                            { href: '/dashboard/savings',  label: 'See savings report' },
-                            { href: '/dashboard/evals',    label: 'Check eval scores' },
+                            { href: '/dashboard/requests',       label: 'View all requests' },
+                            { href: '/dashboard/prove/outcomes', label: 'View outcome readiness' },
+                            { href: '/dashboard/evals',          label: 'Check eval scores' },
                         ].map(({ href, label }) => (
                             <Link
                                 key={href}

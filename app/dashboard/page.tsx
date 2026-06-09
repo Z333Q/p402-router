@@ -341,74 +341,74 @@ export default function MissionControlPage() {
                             <PathCard
                                 title="Meter"
                                 purpose={PRODUCT_PATH[0].purpose}
-                                href={PRODUCT_PATH[0].href}
+                                href={dq(PRODUCT_PATH[0].href)}
                                 stats={[
                                     { k: 'Total events', v: fmtInt(d.dimensions.meter.total_events) },
                                     { k: 'In window',    v: fmtInt(d.dimensions.meter.events_in_period) },
                                 ]}
                                 statusLabel="metering"
                                 statusTone={dimensionTone(d.dimensions.meter.status)}
-                                nextStep={{ label: 'Activation kit', href: '/dashboard/prove/outcomes/setup' }}
+                                nextStep={{ label: 'Activation kit', href: dq('/dashboard/prove/outcomes/setup') }}
                             />
                             <PathCard
                                 title="Monitor"
                                 purpose={PRODUCT_PATH[1].purpose}
-                                href={PRODUCT_PATH[1].href}
+                                href={dq(PRODUCT_PATH[1].href)}
                                 stats={[
                                     { k: 'Events in window', v: fmtInt(d.dimensions.meter.events_in_period) },
                                     { k: 'Outbox pending',   v: fmtInt(d.dimensions.meter.outbox_pending) },
                                 ]}
                                 statusLabel={dimensionLabel(d.dimensions.meter.status)}
                                 statusTone={dimensionTone(d.dimensions.meter.status)}
-                                nextStep={{ label: 'Open Control', href: '/dashboard/control' }}
+                                nextStep={{ label: 'Open Control', href: dq('/dashboard/control') }}
                             />
                             <PathCard
                                 title="Control"
                                 purpose={PRODUCT_PATH[2].purpose}
-                                href={PRODUCT_PATH[2].href}
+                                href={dq(PRODUCT_PATH[2].href)}
                                 stats={[
                                     { k: 'Denied events',  v: fmtInt(d.dimensions.control.denied_event_count) },
                                     { k: 'Provider cost',  v: fmtUsd(d.dimensions.control.denied_provider_cost_usd, 4) },
                                 ]}
                                 statusLabel={dimensionLabel(d.dimensions.control.status)}
                                 statusTone={dimensionTone(d.dimensions.control.status)}
-                                nextStep={{ label: 'Review denied events', href: '/dashboard/prove?governance_decision=denied' }}
+                                nextStep={{ label: 'Review denied events', href: dq('/dashboard/prove?governance_decision=denied') }}
                             />
                             <PathCard
                                 title="Prove"
                                 purpose={PRODUCT_PATH[3].purpose}
-                                href={PRODUCT_PATH[3].href}
+                                href={dq(PRODUCT_PATH[3].href)}
                                 stats={[
                                     { k: 'Evidence coverage', v: fmtPct(d.dimensions.evidence.coverage_pct) },
                                     { k: 'Missing evidence',  v: fmtInt(d.dimensions.evidence.events_missing_evidence) },
                                 ]}
                                 statusLabel={dimensionLabel(d.dimensions.evidence.status)}
                                 statusTone={dimensionTone(d.dimensions.evidence.status)}
-                                nextStep={{ label: 'Executive report', href: '/dashboard/prove/report' }}
+                                nextStep={{ label: 'Executive report', href: dq('/dashboard/prove/report') }}
                             />
                             <PathCard
                                 title="Outcomes"
                                 purpose={PRODUCT_PATH[4].purpose}
-                                href={PRODUCT_PATH[4].href}
+                                href={dq(PRODUCT_PATH[4].href)}
                                 stats={[
                                     { k: 'Coverage',  v: fmtPct(d.dimensions.outcomes.coverage_pct) },
                                     { k: 'Accepted',  v: fmtInt(d.dimensions.outcomes.accepted_count) },
                                 ]}
                                 statusLabel={dimensionLabel(d.dimensions.outcomes.status)}
                                 statusTone={dimensionTone(d.dimensions.outcomes.status)}
-                                nextStep={{ label: 'Activation kit', href: '/dashboard/prove/outcomes/setup' }}
+                                nextStep={{ label: 'Activation kit', href: dq('/dashboard/prove/outcomes/setup') }}
                             />
                             <PathCard
                                 title="Accountability"
                                 purpose={PRODUCT_PATH[5].purpose}
-                                href={PRODUCT_PATH[5].href}
+                                href={dq(PRODUCT_PATH[5].href)}
                                 stats={[
                                     { k: 'Score', v: `${d.overall.score} / 100` },
                                     { k: 'State', v: d.overall.label },
                                 ]}
                                 statusLabel={d.overall.label.toLowerCase()}
                                 statusTone={overallTone(d.overall.status)}
-                                nextStep={{ label: 'Open', href: '/dashboard/accountability' }}
+                                nextStep={{ label: 'Open', href: dq('/dashboard/accountability') }}
                             />
                         </div>
                     </section>

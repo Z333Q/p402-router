@@ -1,44 +1,37 @@
 'use client'
 /**
- * IntelligenceSummary — Mission Control widget
- * Shows key intelligence layer metrics with links to drill-down pages.
+ * IntelligenceSummary — Mission Control widget.
+ *
+ * 3N: replaced the legacy "Saved" tile (which fetched a quarantined savings endpoint and
+ * rendered "% off vs baseline") with an Outcome readiness tile pointing
+ * at /dashboard/prove/outcomes. No savings fetch, no savings claim.
  */
 import React from 'react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { MetricBox } from './ui'
-import { formatCost } from './format'
-import { GitBranch, TrendingDown, FlaskConical, ArrowRight } from 'lucide-react'
+import { GitBranch, Sparkles, FlaskConical, ArrowRight } from 'lucide-react'
 
 export function IntelligenceSummary() {
-    const { data: requestsData } = useQuery<{ requests: any[]; total: number }>({
+    const { data: requestsData } = useQuery<{ requests: unknown[]; total: number }>({
         queryKey: ['intelligence-summary-requests'],
         queryFn: () => fetch('/api/v1/requests?limit=100&status=completed').then(r => r.json()),
         refetchInterval: 30_000,
     })
 
-    const { data: savingsData } = useQuery<{ totals: any }>({
-        queryKey: ['intelligence-summary-savings'],
-        queryFn: () => fetch('/api/v1/savings?period=7d').then(r => r.json()),
-        refetchInterval: 60_000,
-    })
-
-    const { data: evalsData } = useQuery<{ aggregate: any }>({
+    const { data: evalsData } = useQuery<{ aggregate: { pass_rate?: number; total_evals?: number } }>({
         queryKey: ['intelligence-summary-evals'],
         queryFn: () => fetch('/api/v1/evals?limit=1').then(r => r.json()),
         refetchInterval: 60_000,
     })
 
     const totalRequests = requestsData?.total ?? null
-    const totalSaved    = savingsData?.totals?.total_savings_usd ?? null
-    const savingsPct    = savingsData?.totals?.savings_pct ?? null
     const passRate      = evalsData?.aggregate?.pass_rate ?? null
     const totalEvals    = evalsData?.aggregate?.total_evals ?? null
 
     const links = [
-        { href: '/dashboard/requests', icon: GitBranch,   label: 'Requests', value: totalRequests !== null ? String(totalRequests) : '—', sub: 'this week' },
-        { href: '/dashboard/savings',  icon: TrendingDown, label: 'Saved',    value: totalSaved !== null ? formatCost(totalSaved) : '—', sub: savingsPct !== null ? `${savingsPct.toFixed(1)}% off` : 'vs baseline' },
-        { href: '/dashboard/evals',    icon: FlaskConical, label: 'Evals',    value: totalEvals !== null ? String(totalEvals) : '—', sub: passRate !== null ? `${(passRate * 100).toFixed(0)}% pass rate` : 'no data yet' },
+        { href: '/dashboard/requests',       icon: GitBranch,   label: 'Requests',         value: totalRequests !== null ? String(totalRequests) : '—', sub: 'this week' },
+        { href: '/dashboard/prove/outcomes', icon: Sparkles,    label: 'Outcome readiness', value: 'View',                                              sub: 'coverage and verdict' },
+        { href: '/dashboard/evals',          icon: FlaskConical, label: 'Evals',            value: totalEvals !== null ? String(totalEvals) : '—',     sub: passRate !== null ? `${(passRate * 100).toFixed(0)}% pass rate` : 'no data yet' },
     ]
 
     return (
