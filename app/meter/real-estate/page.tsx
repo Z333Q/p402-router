@@ -63,7 +63,7 @@ export default function RealEstateDemoPage() {
             ))}
           </div>
           <p className="text-[11px] font-mono text-neutral-500 leading-relaxed mb-6">
-            P402 does not approve or deny tenants. The fraud score shown is illustrative; the leasing decision rests with the property manager and follows fair-housing rules.
+            <span className="text-neutral-200 font-extrabold">Human final decision required.</span> P402 does not approve or deny tenants. The fraud score shown is illustrative; the leasing decision rests with the property manager and follows fair-housing rules.
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <Link href="/dashboard?demo=1&scenario=real_estate_tenant_screening" className="btn btn-primary text-sm px-5">View dashboard proof</Link>

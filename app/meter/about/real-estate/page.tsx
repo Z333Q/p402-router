@@ -52,7 +52,7 @@ export default function RealEstateAboutPage() {
             ))}
           </div>
           <p className="text-[11px] font-mono text-neutral-500 leading-relaxed">
-            {SCENARIO_META.real_estate_tenant_screening.framing_disclaimer}
+            <span className="text-neutral-200 font-extrabold">Human final decision required.</span> {SCENARIO_META.real_estate_tenant_screening.framing_disclaimer}
           </p>
           <div className="flex gap-4 flex-wrap">
             <Link href="/dashboard?demo=1&scenario=real_estate_tenant_screening" className="btn btn-primary text-sm px-6 py-2">
