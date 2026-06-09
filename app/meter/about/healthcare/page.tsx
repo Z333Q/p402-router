@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SCENARIO_META } from '@/lib/demo/scenarios';
 
 export const metadata: Metadata = {
   title: 'Medicaid Prior Authorization Governance · P402 Meter',
@@ -14,7 +15,7 @@ export default function AboutPage() {
       {/* Top bar */}
       <div className="border-b-2 border-neutral-700 px-6 py-3 flex items-center justify-between">
         <Link href="/meter/about" className="text-xs font-mono text-neutral-400 uppercase tracking-widest hover:text-primary transition-colors">
-          ← P402 Meter
+          P402 Meter
         </Link>
         <div className="flex items-center gap-3">
           <span className="border border-primary px-2 py-0.5 text-[10px] font-mono text-primary uppercase tracking-wider">
@@ -39,20 +40,36 @@ export default function AboutPage() {
             <span className="text-primary">AI does next.</span>
           </h1>
           <p className="text-base font-bold text-neutral-50 max-w-2xl leading-relaxed mb-1">
-            Metered AI governance for prior authorization review — built for a multi-state
+            Metered AI governance for prior authorization review, built for a multi-state
             government-program health plan operating across Medicaid, D-SNP, and Marketplace.
           </p>
           <p className="text-base font-mono text-neutral-400 max-w-2xl leading-relaxed">
             Prior authorization is the proof point. It is document-heavy, regulator-bound, and
             high-stakes. Decision clocks are set by CMS. PHI handling is set by HIPAA. State
-            program rules vary. The reviewer makes the coverage decision — not the model. P402
+            program rules vary. The reviewer makes the coverage decision, not the model. P402
             Meter shows what governed AI assistance looks like in that environment: per-operation
             receipts tied to client-level budget controls, a human review gate before any export,
             and an oversight packet ready for audit.
           </p>
+          <div className="flex flex-wrap gap-2">
+            {SCENARIO_META.healthcare_prior_auth.safety_labels.map((label) => (
+              <span key={label} className="border-2 border-neutral-600 text-neutral-300 text-[10px] font-mono uppercase tracking-wide px-3 py-1.5">
+                {label}
+              </span>
+            ))}
+          </div>
+          <p className="text-[11px] font-mono text-neutral-500 leading-relaxed">
+            {SCENARIO_META.healthcare_prior_auth.framing_disclaimer}
+          </p>
           <div className="flex gap-4 flex-wrap">
-            <Link href="/meter/healthcare" className="btn btn-primary text-sm px-6 py-2">
-              Run Medicaid PA Demo →
+            <Link href="/dashboard?demo=1&scenario=healthcare_prior_auth" className="btn btn-primary text-sm px-6 py-2">
+              View dashboard proof
+            </Link>
+            <Link href="/dashboard/prove?demo=1&scenario=healthcare_prior_auth" className="btn btn-secondary text-sm px-6 py-2">
+              See evidence
+            </Link>
+            <Link href="/meter/healthcare" className="btn btn-secondary text-sm px-6 py-2">
+              Run prior auth demo
             </Link>
             <a
               href="https://explore.tempo.xyz"
@@ -60,7 +77,7 @@ export default function AboutPage() {
               rel="noopener noreferrer"
               className="btn btn-secondary text-sm px-6 py-2"
             >
-              Tempo Explorer →
+              Tempo Explorer
             </a>
           </div>
         </section>
@@ -73,7 +90,7 @@ export default function AboutPage() {
           </h2>
           <p className="font-mono text-neutral-400 leading-relaxed">
             Medicaid managed care plans, D-SNPs, and Marketplace issuers are being asked to do more
-            prior authorization, faster, with more reason-specificity, under stricter clocks — at
+            prior authorization, faster, with more reason-specificity, under stricter clocks. At
             the same time AI vendors are pitching workflow tools with no per-action cost attribution
             and no link to reviewer governance. The gap is structural.
           </p>
@@ -108,9 +125,9 @@ export default function AboutPage() {
             Every AI operation produces a receipt. Budgets live in policy.
           </h2>
           <p className="font-mono text-neutral-400 leading-relaxed">
-            P402 sits between the AI agents and the AI providers. Each metered operation —
-            documentation extraction, completeness check, criteria mapping, reviewer-summary draft,
-            RFI reason, escalation recommendation, evidence export — is evaluated against a 5-level
+            P402 sits between the AI agents and the AI providers. Each metered operation
+            (documentation extraction, completeness check, criteria mapping, reviewer-summary draft,
+            RFI reason, escalation recommendation, evidence export) is evaluated against a 5-level
             budget hierarchy before it runs, and produces an operation receipt after it runs. Real
             USDC.e settlement on Tempo mainnet at session close binds the receipts to an on-chain
             proof. The reviewer makes the coverage decision.
@@ -120,10 +137,10 @@ export default function AboutPage() {
               The workflow in one sentence
             </div>
             <p className="text-lg font-bold leading-snug">
-              Synthetic PA packet → 7 governed AI operations, each gated by client / line-of-business
-              / workflow / case / agent budget → per-operation receipts with policy + mandate status
-              → human review gate (approve for sign-off, request more information, escalate) →
-              oversight packet JSON with compliance trace → USDC.e settled on Tempo.
+              Synthetic PA packet feeds 7 governed AI operations, each gated by client, line-of-business,
+              workflow, case, and agent budgets. Per-operation receipts carry policy and mandate status.
+              A human review gate (approve for sign-off, request more information, escalate) precedes
+              oversight packet JSON export with a compliance trace, and USDC.e settles on Tempo.
             </p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -137,7 +154,7 @@ export default function AboutPage() {
         <section className="flex flex-col gap-6">
           <SectionLabel number="03" label="Compliance Anchors" />
           <h2 className="text-2xl font-bold uppercase tracking-tight">
-            What this demo models — and what it deliberately does not.
+            What this demo models, and what it deliberately does not.
           </h2>
           <p className="font-mono text-neutral-500 text-sm">
             Each anchor below maps to something visible in the live demo, not claimed in theory.
@@ -148,7 +165,7 @@ export default function AboutPage() {
               prize="CMS-0057-F · Prior Authorization Decision Timing"
               checks={[
                 'Expedited 72-hour clock and standard seven-calendar-day clock surfaced in the State Program Policy Profile per line of business',
-                'Specific denial or RFI reason generated as structured text — never as a final adverse determination, always as a draft for human review',
+                'Specific denial or RFI reason generated as structured text, never as a final adverse determination, always as a draft for human review',
                 'Per-operation timestamps build a status trace that can support API, portal, fax, phone, mail, or email channels',
                 'FHIR Prior Authorization API readiness shown as a mock surface; production deployment is a separate integration scope',
                 'Annual PA metrics export shown as a future-ready handoff for public reporting requirements',
@@ -157,10 +174,10 @@ export default function AboutPage() {
             <AlignmentRow
               prize="HIPAA Privacy, Security, and Breach Notification"
               checks={[
-                'Synthetic records only — every case ID, member ID, and provider name begins with SYN-',
+                'Synthetic records only; every case ID, member ID, and provider name begins with SYN-',
                 'No upload control accepts user files; no free-text field requests real patient data; no PHI persists in browser state',
-                'Production deployment requires BAA, access controls, encryption, retention policy, and incident response controls — stated in the demo, not assumed',
-                'HIPAA Safety Boundary panel is always visible above the export — the boundary is part of the product',
+                'Production deployment requires BAA, access controls, encryption, retention policy, and incident response controls; stated in the demo, not assumed',
+                'HIPAA Safety Boundary panel is always visible above the export; the boundary is part of the product',
               ]}
             />
             <AlignmentRow
@@ -169,7 +186,7 @@ export default function AboutPage() {
                 'State program rules are modeled as a configurable State Program Policy Profile, not hardcoded universal claims',
                 'Each profile exposes program name, line of business, request category, decision clocks, required documents, reviewer role, escalation role, and appeal-packet relevance',
                 'Default display labels the source as "Demo placeholder" with sourceVerified = false; production deployment requires verified policy source documents and state-specific legal review',
-                'Transparency posture: panels speak in the language of Medicaid enrollees, providers, and audit reviewers — not vendor-jargon',
+                'Transparency posture: panels speak in the language of Medicaid enrollees, providers, and audit reviewers, not vendor-jargon',
               ]}
             />
             <AlignmentRow
@@ -178,14 +195,14 @@ export default function AboutPage() {
                 'Health Equity panel surfaces dual-eligible, disability, language-access, and geographic-access flags as synthetic markers',
                 'Panel supports prior authorization policy impact review and an annual UM equity analysis export placeholder',
                 'Panel is primary in D-SNP mode and collapsed-by-default in Medicaid MCO mode; it supports review, not decision automation',
-                'Plan committee review is the boundary — the panel never produces a clinical decision',
+                'Plan committee review is the boundary; the panel never produces a clinical decision',
               ]}
             />
             <AlignmentRow
               prize="P402 Governance Trust Stack"
               checks={[
                 'AP2 mandates carry client-level spending authority; per-operation receipts evaluate policy and mandate status before they fire',
-                '5-level budget hierarchy enforced at the tenant, line of business, workflow, case, and agent level — receipts are evidence, budgets are policy',
+                '5-level budget hierarchy enforced at the tenant, line of business, workflow, case, and agent level. Receipts are evidence, budgets are policy',
                 'ERC-8004 trustless agent identity on Base (cross-chain) registers the AI agent and supports reputation-aware routing',
                 'Replay protection on EIP-3009 nonces; oversight packet binds receipts, hierarchy state, criteria mapping, draft reason, human decision, and compliance trace',
               ]}
@@ -205,10 +222,10 @@ export default function AboutPage() {
             color="border-primary text-primary"
             headline="Settlement substrate that makes per-operation receipts economically real"
             points={[
-              'USDC.e (TIP-20) as native stablecoin — settlement at <$0.000001/tx via FeeAMM, vs ~$2.85 on ETH mainnet and $0.30 Stripe minimum',
-              'Session-close reconciliation: one real Tempo tx per session aggregates the per-operation receipts into a single onchain proof — no per-operation gas burn',
-              'TIP-20 transfer uses the standard ERC-20 interface — no msg.value, no native gas token separate from stablecoins; gas paid via FeeAMM in USDC.e',
-              'Every settlement is independently verifiable in the Tempo block explorer (explore.tempo.xyz) — the receipt → on-chain tx hash is part of the oversight packet',
+              'USDC.e (TIP-20) as native stablecoin. Settlement at under $0.000001 per tx via FeeAMM, versus roughly $2.85 on ETH mainnet and the $0.30 Stripe minimum',
+              'Session-close reconciliation: one real Tempo tx per session aggregates the per-operation receipts into a single onchain proof; no per-operation gas burn',
+              'TIP-20 transfer uses the standard ERC-20 interface. No msg.value, no native gas token separate from stablecoins; gas paid via FeeAMM in USDC.e',
+              'Every settlement is independently verifiable in the Tempo block explorer (explore.tempo.xyz). The receipt and on-chain tx hash are part of the oversight packet',
             ]}
           />
 
@@ -220,7 +237,7 @@ export default function AboutPage() {
               'Machine Payment Protocol (mppx) orchestrates the per-operation payment authorization and the session-close TIP-20 transfer on Tempo',
               'Authorization: Payment header pattern (dual-402 challenge/response) supports machine-to-machine payment authorization',
               'Pre-funded TEMPO_TREASURY_PRIVATE_KEY wallet submits the session-close transfer on behalf of the metered session; AP2 mandates carry the client-level authority',
-              'Proof Replay mode activates automatically when the treasury key is unset — full demo runs without any real funds, with pre-recorded proof references',
+              'Proof Replay mode activates automatically when the treasury key is unset. Full demo runs without any real funds, with pre-recorded proof references',
             ]}
           />
 
@@ -229,9 +246,9 @@ export default function AboutPage() {
             color="border-warning text-warning"
             headline="Intelligence layer scoped to assistance, never to coverage decisions"
             points={[
-              'Gemini 3.1 Flash drives documentation extraction, completeness check, criteria mapping (synthetic categories), and the reviewer-summary draft — each operation produces a typed receipt',
-              'Gemini 3.1 Pro runs the post-session compliance trace narrative — explaining what was extracted, what is missing, and which categories require reviewer validation',
-              'Output is always labeled as extracted fields, draft summary, completeness check, criteria mapping, suggested next action, or reviewer rationale draft — never as a final decision',
+              'Gemini 3.1 Flash drives documentation extraction, completeness check, criteria mapping (synthetic categories), and the reviewer-summary draft. Each operation produces a typed receipt',
+              'Gemini 3.1 Pro runs the post-session compliance trace narrative, explaining what was extracted, what is missing, and which categories require reviewer validation',
+              'Output is always labeled as extracted fields, draft summary, completeness check, criteria mapping, suggested next action, or reviewer rationale draft; never as a final decision',
               'There is no autonomous denial path. There is no primary "Deny" action. Any adverse-determination reason is treated as a draft for human review',
               'Multimodal intake supports synthetic image/PDF packets; production deployment must use the payer\'s licensed medical policy in place of the synthetic criteria categories',
             ]}
@@ -248,7 +265,7 @@ export default function AboutPage() {
             Medicaid managed care plans run high-volume PA workflows under variable state rules,
             tight decision clocks, and significant audit exposure. The reviewer-time cost is real,
             the documentation-completeness problem is real, and the compliance reporting burden is
-            real. The governance gap is also real — and that is what P402 closes.
+            real. The governance gap is also real; that is what P402 closes.
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ContextCard
@@ -279,16 +296,16 @@ export default function AboutPage() {
           <p className="font-mono text-neutral-500 text-sm">
             Each route handles one step of the workflow. Settlement-producing routes write directly
             to Tempo. The governance overlay (receipts, hierarchy, oversight packet) is derived
-            from the same ledger events the settlement layer emits — one source of truth.
+            from the same ledger events the settlement layer emits, one source of truth.
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 font-mono text-xs">
             {[
               ['/api/meter/packet', 'Ingest synthetic PA packet, SHA-256 hash, persist asset'],
-              ['/api/meter/work-order', 'Gemini extraction → typed WorkOrder + line-of-business context'],
+              ['/api/meter/work-order', 'Gemini extraction produces a typed WorkOrder plus line-of-business context'],
               ['/api/meter/sessions', 'Open metered session with case + agent budget caps'],
               ['/api/meter/wallet', 'Check Tempo settler wallet balance and signer address'],
               ['/api/meter/chat', 'SSE stream · per-operation receipts · session-close Tempo settle'],
-              ['/api/meter/escrow', 'ERC-8183 escrow for specialist handoff (Phase 3 — returns 503 on Tempo Phase 1)'],
+              ['/api/meter/escrow', 'ERC-8183 escrow for specialist handoff (Phase 3; returns 503 on Tempo Phase 1)'],
               ['/api/meter/trust', 'ERC-8004 agent identity + reputation read'],
               ['/api/meter/audit', 'Compliance trace narrative + cost-per-operation breakdown'],
             ].map(([route, desc]) => (
@@ -316,14 +333,14 @@ export default function AboutPage() {
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="border-2 border-neutral-700 p-4 flex flex-col gap-2">
-              <div className="text-lg font-bold text-error tabular-nums">$25-100</div>
-              <div className="text-xs font-bold uppercase tracking-wider text-neutral-50">Manual reviewer time per case</div>
+              <div className="text-lg font-bold text-error tabular-nums">Legacy</div>
+              <div className="text-xs font-bold uppercase tracking-wider text-neutral-50">Operating cost per case in the legacy workflow</div>
               <div className="text-[11px] font-mono text-neutral-400 leading-relaxed">
-                UM nurse or physician advisor time for a standard PA decision. Complex behavioral-health, post-acute, or specialty cases can exceed $200.
+                UM nurse or physician advisor time for a standard PA decision is materially higher per case than the AI-metered path; complex behavioral-health, post-acute, or specialty cases run significantly higher.
               </div>
             </div>
             <div className="border-2 border-primary p-4 flex flex-col gap-2">
-              <div className="text-lg font-bold text-primary tabular-nums">$0.01–$0.03</div>
+              <div className="text-lg font-bold text-primary tabular-nums">Sub-penny</div>
               <div className="text-xs font-bold uppercase tracking-wider text-neutral-50">Governed AI assistance per case</div>
               <div className="text-[11px] font-mono text-neutral-400 leading-relaxed">
                 Seven metered operations against per-agent caps. Every cent attributable to a line of business, workflow, case, and agent. Settlement on Tempo.
@@ -333,19 +350,19 @@ export default function AboutPage() {
               <div className="text-lg font-bold text-success tabular-nums">Full oversight packet</div>
               <div className="text-xs font-bold uppercase tracking-wider text-neutral-50">Audit-ready export per case</div>
               <div className="text-[11px] font-mono text-neutral-400 leading-relaxed">
-                Receipts, hierarchy state, documentation completeness, criteria mapping, draft reason, human decision, and compliance trace — JSON, copyable, gated on reviewer action.
+                Receipts, hierarchy state, documentation completeness, criteria mapping, draft reason, human decision, and compliance trace as JSON, copyable, gated on reviewer action.
               </div>
             </div>
           </div>
           <div className="border border-neutral-700 p-4 flex flex-col gap-3">
             <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">What changes for the plan</div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-[11px] font-mono text-neutral-400 leading-relaxed">
-              <div className="flex items-start gap-2"><span className="text-primary shrink-0">→</span><span>AI spend attributable to client, line of business, workflow, case, and agent — not a monthly black-box invoice</span></div>
-              <div className="flex items-start gap-2"><span className="text-primary shrink-0">→</span><span>CMS-0057-F decision clocks tracked per case with timestamped operations and structured reason text</span></div>
-              <div className="flex items-start gap-2"><span className="text-primary shrink-0">→</span><span>State Program Policy Profiles as configuration — no hardcoded universal claims, no surprise compliance debt</span></div>
-              <div className="flex items-start gap-2"><span className="text-primary shrink-0">→</span><span>HIPAA boundary visible in the workflow — synthetic in demo, BAA-bounded and access-controlled in production</span></div>
-              <div className="flex items-start gap-2"><span className="text-primary shrink-0">→</span><span>Reviewer authority preserved end-to-end — the export packet does not finalize without a human action</span></div>
-              <div className="flex items-start gap-2"><span className="text-primary shrink-0">→</span><span>D-SNP UM equity review support — dual-eligible, disability, language and geographic access flags surfaced for committee review</span></div>
+              <div className="flex items-start gap-2"><span className="text-primary shrink-0">·</span><span>AI spend attributable to client, line of business, workflow, case, and agent, not a monthly black-box invoice</span></div>
+              <div className="flex items-start gap-2"><span className="text-primary shrink-0">·</span><span>CMS-0057-F decision clocks tracked per case with timestamped operations and structured reason text</span></div>
+              <div className="flex items-start gap-2"><span className="text-primary shrink-0">·</span><span>State Program Policy Profiles as configuration: no hardcoded universal claims, no surprise compliance debt</span></div>
+              <div className="flex items-start gap-2"><span className="text-primary shrink-0">·</span><span>HIPAA boundary visible in the workflow: synthetic in demo, BAA-bounded and access-controlled in production</span></div>
+              <div className="flex items-start gap-2"><span className="text-primary shrink-0">·</span><span>Reviewer authority preserved end-to-end. The export packet does not finalize without a human action</span></div>
+              <div className="flex items-start gap-2"><span className="text-primary shrink-0">·</span><span>D-SNP UM equity review support: dual-eligible, disability, language and geographic access flags surfaced for committee review</span></div>
             </div>
           </div>
         </section>
@@ -364,7 +381,7 @@ export default function AboutPage() {
               {
                 step: '01',
                 action: 'Pick a line of business',
-                detail: 'The Line of Business selector switches between Medicaid MCO (default — behavioral health inpatient extension), Medicare D-SNP (post-acute SNF extension), and Marketplace (outpatient imaging PA). The State Program Policy Profile, the synthetic packet, the compliance panels, and the receipt case IDs all update.',
+                detail: 'The Line of Business selector switches between Medicaid MCO (default: behavioral health inpatient extension), Medicare D-SNP (post-acute SNF extension), and Marketplace (outpatient imaging PA). The State Program Policy Profile, the synthetic packet, the compliance panels, and the receipt case IDs all update.',
               },
               {
                 step: '02',
@@ -379,12 +396,12 @@ export default function AboutPage() {
               {
                 step: '04',
                 action: 'Inspect the receipts and the Tempo settlement proof',
-                detail: 'The Operation Receipt Ledger lists each receipt — agent, cost, policy status, evidence hash. Click any row to expand the JSON. The Tempo Settlement Proof panel shows the session-close USDC.e transfer tx hash; every receipt carries it as settlementTxHash for traceability.',
+                detail: 'The Operation Receipt Ledger lists each receipt with agent, cost, policy status, and evidence hash. Click any row to expand the JSON. The Tempo Settlement Proof panel shows the session-close USDC.e transfer tx hash; every receipt carries it as settlementTxHash for traceability.',
               },
               {
                 step: '05',
                 action: 'Select a reviewer action and export the oversight packet',
-                detail: 'The Human Review Gate offers three actions: approve for reviewer sign-off, request more information, escalate to physician advisor. There is no primary Deny. The Oversight Packet export remains disabled until a reviewer action is recorded. Copy the JSON — it carries the full receipt set, budget hierarchy state, documentation completeness, criteria mapping, draft reason, human decision, and a compliance trace with realPhiProcessed: false.',
+                detail: 'The Human Review Gate offers three actions: approve for reviewer sign-off, request more information, escalate to physician advisor. There is no primary Deny. The Oversight Packet export remains disabled until a reviewer action is recorded. Copy the JSON: it carries the full receipt set, budget hierarchy state, documentation completeness, criteria mapping, draft reason, human decision, and a compliance trace with realPhiProcessed: false.',
               },
             ].map(({ step, action, detail }) => (
               <div key={step} className="border border-neutral-700 flex">
@@ -407,8 +424,8 @@ export default function AboutPage() {
             Three modes. Same governance overlay.
           </h2>
           <p className="font-mono text-neutral-400 text-sm leading-relaxed">
-            P402 Meter adapts automatically to the environment. The governance overlay — receipts,
-            hierarchy, human review gate, oversight packet, HIPAA boundary, CMS readiness panel —
+            P402 Meter adapts automatically to the environment. The governance overlay (receipts,
+            hierarchy, human review gate, oversight packet, HIPAA boundary, CMS readiness panel)
             runs identically in every mode. Only the source of the model output and the on-chain
             settlement change.
           </p>
@@ -440,23 +457,23 @@ export default function AboutPage() {
           <div className="border-2 border-neutral-700 flex flex-col">
             <div className="border-b-2 border-neutral-700 px-4 py-3">
               <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">
-                Receipt → Tempo settlement flow (per session)
+                Receipt and Tempo settlement flow (per session)
               </span>
             </div>
             <div className="p-4 font-mono text-[11px] text-neutral-400 flex flex-col gap-1 leading-relaxed">
-              <span><span className="text-primary">1.</span> AI operation runs → cost calculated against the 5-level budget hierarchy</span>
-              <span className="text-neutral-700 ml-4">↓</span>
+              <span><span className="text-primary">1.</span> AI operation runs; cost calculated against the 5-level budget hierarchy</span>
+              <span className="text-neutral-700 ml-4">·</span>
               <span><span className="text-primary">2.</span> Receipt written: agent, model, caseId, costUsd, policyStatus, mandateStatus, evidenceHash</span>
-              <span className="text-neutral-700 ml-4">↓</span>
-              <span><span className="text-primary">3.</span> Repeat for the 7 governed operations — session-close triggered</span>
-              <span className="text-neutral-700 ml-4">↓</span>
+              <span className="text-neutral-700 ml-4">·</span>
+              <span><span className="text-primary">3.</span> Repeat for the 7 governed operations; session-close triggered</span>
+              <span className="text-neutral-700 ml-4">·</span>
               <span><span className="text-primary">4.</span> Tempo settler submits a single USDC.e ERC-20 transfer() on Tempo mainnet (Chain ID 4217)</span>
-              <span className="text-neutral-700 ml-4">↓</span>
-              <span><span className="text-primary">5.</span> waitForTransactionReceipt confirms after 1 block — FeeAMM gas paid in USDC.e</span>
-              <span className="text-neutral-700 ml-4">↓</span>
-              <span><span className="text-primary">6.</span> Reconciliation event written: settlementTxHash + settlementBlock — every receipt is stamped with it</span>
-              <span className="text-neutral-700 ml-4">↓</span>
-              <span><span className="text-primary">7.</span> Reviewer selects an action → oversight packet JSON exported with the on-chain settlement reference and a compliance trace</span>
+              <span className="text-neutral-700 ml-4">·</span>
+              <span><span className="text-primary">5.</span> waitForTransactionReceipt confirms after 1 block; FeeAMM gas paid in USDC.e</span>
+              <span className="text-neutral-700 ml-4">·</span>
+              <span><span className="text-primary">6.</span> Reconciliation event written: settlementTxHash + settlementBlock; every receipt is stamped with it</span>
+              <span className="text-neutral-700 ml-4">·</span>
+              <span><span className="text-primary">7.</span> Reviewer selects an action; oversight packet JSON exported with the on-chain settlement reference and a compliance trace</span>
             </div>
           </div>
         </section>
@@ -473,11 +490,11 @@ export default function AboutPage() {
             Seven governed AI operations. Per-operation receipts. A 5-level budget hierarchy. A
             reviewer gate before export. CMS-0057-F clocks, HIPAA boundary, and a State Program
             Policy Profile in the workflow. Real USDC.e settlement on Tempo. Synthetic records
-            only — no PHI processed.
+            only; no PHI processed.
           </p>
           <div className="flex gap-4 flex-wrap mt-2">
             <Link href="/meter/healthcare" className="btn btn-primary text-sm px-8 py-3">
-              Run Medicaid PA Demo →
+              Run prior auth demo
             </Link>
             <a
               href="https://explore.tempo.xyz"
@@ -485,7 +502,7 @@ export default function AboutPage() {
               rel="noopener noreferrer"
               className="btn btn-secondary text-sm px-8 py-3"
             >
-              Verify on Tempo →
+              Verify on Tempo
             </a>
           </div>
         </section>
@@ -557,7 +574,7 @@ function TechBlock({ badge, color, headline, points }: {
       <div className="p-4 flex flex-col gap-2">
         {points.map((point, i) => (
           <div key={i} className="flex items-start gap-2 text-[11px] font-mono text-neutral-400">
-            <span className="text-primary mt-0.5 shrink-0">→</span>
+            <span className="text-primary mt-0.5 shrink-0">·</span>
             <span>{point}</span>
           </div>
         ))}

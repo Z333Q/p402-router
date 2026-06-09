@@ -14,6 +14,7 @@ import { MeterFunnelFooter } from '../_components/MeterFunnelFooter';
 import { MeterBrand } from '../_components/MeterBrand';
 
 // Governance overlay
+import Link from 'next/link';
 import { HealthcareHero } from './_components/HealthcareHero';
 import { PayerContextPanel } from './_components/PayerContextPanel';
 import { LineOfBusinessSelector } from './_components/LineOfBusinessSelector';
@@ -113,6 +114,26 @@ export default function MeterHealthcarePage() {
         {/* 1. Hero */}
         <HealthcareHero />
 
+        {/* Dashboard CTA strip + scenario safety chips + framing disclaimer */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2">
+            {['Synthetic data', 'No PHI', 'Admin / non-clinical use', 'Human approval required', 'URAC-aligned audit posture'].map((label) => (
+              <span key={label} className="border-2 border-neutral-600 text-neutral-300 text-[10px] font-mono uppercase tracking-wide px-3 py-1.5">
+                {label}
+              </span>
+            ))}
+          </div>
+          <p className="text-[11px] font-mono text-neutral-500 leading-relaxed">
+            P402 does not make medical decisions. Every prior-authorization outcome shown here is illustrative; a licensed clinician must adjudicate the real case.
+          </p>
+          <div className="flex flex-wrap gap-3 items-center">
+            <Link href="/dashboard?demo=1&scenario=healthcare_prior_auth" className="btn btn-primary text-sm px-5">View dashboard proof</Link>
+            <Link href="/dashboard/prove?demo=1&scenario=healthcare_prior_auth" className="btn btn-secondary text-sm">See evidence</Link>
+            <a href="#demo" className="btn btn-secondary text-sm">Run prior auth demo</a>
+            <Link href="/meter/about/healthcare" className="btn btn-secondary text-sm">Case study</Link>
+          </div>
+        </div>
+
         {/* 2. Payer context */}
         <PayerContextPanel />
 
@@ -128,7 +149,7 @@ export default function MeterHealthcarePage() {
         {/* 6. Client budget controls */}
         <ClientBudgetControls />
 
-        {/* Demo runner anchor — kicks off live Tempo settlement pipeline */}
+        {/* Demo runner anchor: kicks off live Tempo settlement pipeline */}
         <div id="demo">
           <GuidedDemoStrip />
         </div>
@@ -179,7 +200,7 @@ export default function MeterHealthcarePage() {
         {/* Compliance trace */}
         <ComplianceTracePanel />
 
-        {/* Tempo settlement proof — the on-chain receipt for this session's reconciliation */}
+        {/* Tempo settlement proof: the on-chain receipt for this session's reconciliation */}
         <TempoSettlementProof />
 
         {/* Trust chain */}

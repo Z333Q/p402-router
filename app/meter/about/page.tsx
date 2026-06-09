@@ -14,7 +14,7 @@ export default function AboutRootPage() {
       {/* Top bar */}
       <div className="border-b-2 border-neutral-700 px-6 py-3 flex items-center justify-between">
         <Link href="/meter" className="text-xs font-mono text-neutral-400 uppercase tracking-widest hover:text-primary transition-colors">
-          ← P402 Meter
+          P402 Meter
         </Link>
         <div className="flex items-center gap-3">
           <span className="border border-primary px-2 py-0.5 text-[10px] font-mono text-primary uppercase tracking-wider">
@@ -49,7 +49,7 @@ export default function AboutRootPage() {
           </p>
           <div className="flex gap-4 flex-wrap">
             <Link href="/meter" className="btn btn-primary text-sm px-6 py-2">
-              See the Demos →
+              See the demos
             </Link>
             <a
               href="https://explore.tempo.xyz"
@@ -57,7 +57,7 @@ export default function AboutRootPage() {
               rel="noopener noreferrer"
               className="btn btn-secondary text-sm px-6 py-2"
             >
-              Tempo Explorer →
+              Tempo Explorer
             </a>
           </div>
         </section>
@@ -66,12 +66,12 @@ export default function AboutRootPage() {
         <section className="flex flex-col gap-6">
           <SectionLabel number="01" label="The Economic Problem" />
           <h2 className="text-2xl font-bold uppercase tracking-tight">
-            Per-token billing is structurally impossible on every existing payment rail.
+            Per-token billing is uneconomic on most existing payment rails.
           </h2>
           <p className="font-mono text-neutral-400 leading-relaxed">
-            It is not a product gap. It is a structural constraint. The economics of settlement
-            on every existing rail make per-action AI billing irrational before you write a
-            line of code.
+            It is an economic constraint, not a hard technical one. Settlement cost on most
+            existing rails exceeds the AI work itself by orders of magnitude, which makes
+            per-action billing irrational at AI volumes.
           </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -79,22 +79,22 @@ export default function AboutRootPage() {
               rail="Stripe"
               cost="$0.30"
               unit="minimum per transaction"
-              problem="A 50-token AI response costs $0.00003. Stripe's minimum is 577× that. You'd need to batch 10,000+ micro-actions before the rail makes economic sense — destroying real-time attribution."
+              problem="A 50-token AI response costs roughly $0.00003. The per-transaction floor on Stripe is much higher, which forces batching of 10,000+ micro-actions before the rail makes economic sense and breaks real-time attribution."
               verdict="structurally broken for AI"
             />
             <RailCard
               rail="Ethereum Mainnet"
               cost="~$2.85"
               unit="per ERC-20 transfer"
-              problem="Settlement costs 95,000× the AI work itself at $0.00003/response. Every per-token settlement burns more in gas than the revenue it records. Non-starter at any volume."
+              problem="Settlement cost on Ethereum mainnet exceeds the AI work itself by several orders of magnitude at $0.00003/response. Every per-token settlement burns more in gas than the revenue it records."
               verdict="economically irrational"
             />
             <RailCard
               rail="Cheap L2s"
-              cost="$0.01–$0.10"
+              cost="$0.01 to $0.10"
               unit="per transaction"
-              problem="Better, but still 300–3,000× the cost of the AI action. At $0.01/settlement, a 55-event session costs $0.55 in gas alone — 1,600× the actual AI compute cost."
-              verdict="still 2–3 orders of magnitude off"
+              problem="Better, but still orders of magnitude above the cost of the AI action. At $0.01/settlement, a 55-event session costs $0.55 in gas alone, well above the actual AI compute cost."
+              verdict="still orders of magnitude off"
             />
           </div>
 
@@ -110,12 +110,12 @@ export default function AboutRootPage() {
                 <span className="text-neutral-500">total for a 55-event healthcare session</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-primary font-bold">577×</span>
-                <span className="text-neutral-500">below Stripe minimum per action</span>
+                <span className="text-primary font-bold">$0.00035</span>
+                <span className="text-neutral-500">covers a 55-event session, end to end</span>
               </div>
             </div>
             <p className="text-[11px] font-mono text-neutral-400 leading-relaxed">
-              Tempo&apos;s FeeAMM settles gas in TIP-20 stablecoins (USDC.e), not a native token.
+              Tempo's FeeAMM settles gas in TIP-20 stablecoins (USDC.e), not a native token.
               There is no ETH, no gas wars, no minimum viable transaction size imposed by the protocol.
               MPP (Machine Payment Protocol) provides the programmable payment orchestration layer on top.
             </p>
@@ -177,8 +177,8 @@ export default function AboutRootPage() {
               workflow="Medicaid Prior Authorization Governance"
               status="live"
               facet="Per-operation receipts tied to a 5-level budget hierarchy (client / line of business / workflow / case / agent). Human review gate before export. Oversight packet JSON with compliance trace. Real USDC.e settlement on Tempo at session close."
-              unitEcon="$0.01–$0.03 per case"
-              vsBaseline="vs $25–100 manual review"
+              unitEcon="$0.01 to $0.03 per case"
+              vsBaseline="operating cost in the legacy workflow is materially higher"
               buyer="VP UM · Director PA · CMO staff · Compliance · Medicaid plan ops"
               regulatory="CMS-0057-F · HIPAA · Medicaid managed care · D-SNP UM equity"
               href="/meter/healthcare"
@@ -189,11 +189,11 @@ export default function AboutRootPage() {
               industry="Legal"
               workflow="M&A Due Diligence Contract Review"
               status="live"
-              facet="8-contract Acme/Beta data room. Flash for simple forms, Pro for complex agreements. Cross-document conflict detection. ABA-compliant audit trail on Tempo mainnet."
+              facet="8-contract synthetic data room. Flash for simple forms, Pro for complex agreements. Cross-document conflict detection. ABA-aligned audit posture on Tempo mainnet."
               unitEcon="&lt;$0.10 per matter"
-              vsBaseline="vs $200–800 paralegal time"
+              vsBaseline="operating cost in the legacy workflow is materially higher"
               buyer="Law firm · In-house GC · Legal ops"
-              regulatory="ABA Formal Opinion 512 (AI in legal practice)"
+              regulatory="ABA-aligned audit posture (Formal Opinion 512 supervision)"
               href="/meter/legal"
               deepDiveHref="/meter/about/legal"
             />
@@ -203,10 +203,10 @@ export default function AboutRootPage() {
               workflow="Tenant Application Screening"
               status="live"
               facet="3 applicant scenarios: clean, income mismatch, likely fraud. Flash extracts 4 documents per applicant. Pro runs cross-document consistency. Fraud score with escalation threshold."
-              unitEcon="$0.02–$0.05 per applicant"
-              vsBaseline="vs $30–80 manual screening"
+              unitEcon="$0.02 to $0.05 per applicant"
+              vsBaseline="operating cost in the legacy workflow is materially higher"
               buyer="Property mgmt · REIT · Leasing platform"
-              regulatory="HUD fair housing / ECOA bias compliance"
+              regulatory="HUD fair-housing audit posture; ECOA fair-lending audit posture"
               href="/meter/real-estate"
               deepDiveHref="/meter/about/real-estate"
             />
@@ -215,11 +215,11 @@ export default function AboutRootPage() {
               industry="Enterprise"
               workflow="AI Cost Management Platform"
               status="demo-live"
-              facet="Org → dept → project → employee → token attribution. Routing optimization recommendations. Budget projections. Immutable session receipts. Synthetic dashboard live now."
-              unitEcon="30–70% model cost reduction"
-              vsBaseline="vs opaque monthly invoices"
+              facet="Org, dept, project, and team attribution down to the token. Routing observations. Budget projections (Optimize recommendations remain blocked in the app). Immutable session receipts. Synthetic dashboard live now."
+              unitEcon="Per-event attribution"
+              vsBaseline="versus opaque monthly invoices"
               buyer="CFO · CTO · Head of AI · Engineering lead"
-              regulatory="SOC2 Type II / financial cost center controls"
+              regulatory="SOC2-aligned audit posture; financial cost-center visibility"
               href="/meter/enterprise"
               deepDiveHref="/meter/about/enterprise"
               accent
@@ -242,11 +242,11 @@ export default function AboutRootPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ProofCard
               claim="Same router, four distinct governance regimes"
-              detail="CMS-0057-F and HIPAA (Medicaid PA), ABA Formal Opinion 512 (legal), HUD and ECOA (housing), SOC2 (enterprise). Different audit artifacts, different compliance requirements. The same P402 session model, budget hierarchy, and human review boundary satisfies all four."
+              detail="CMS-0057-F and HIPAA scope (Medicaid PA), ABA-aligned audit posture (legal), HUD fair-housing and ECOA audit posture (housing), SOC2-aligned audit posture (enterprise). Different audit artifacts, different compliance requirements. The same P402 session model, budget hierarchy, and human review boundary supports all four."
             />
             <ProofCard
               claim="Per-token economics are universal"
-              detail="Healthcare: $0.0000006/token. Legal: routing by document complexity. Real estate: per-applicant at scale. Enterprise: per-employee, per-project, per-department. One pricing model covers all four."
+              detail="Healthcare: $0.0000006/token. Legal: routing by document complexity. Real estate: per-applicant at scale. Enterprise: per-team, per-project, per-department. One pricing model covers all four."
             />
             <ProofCard
               claim="Enterprise is where the vertical workflows run"
@@ -254,7 +254,7 @@ export default function AboutRootPage() {
             />
             <ProofCard
               claim="The audit trail is load-bearing in every use case"
-              detail="Coverage-decision support for Medicaid PA. Contract reviews for ABA. Screening decisions for HUD. Employee AI usage for SOC2. The P402 ledger — with Tempo settlement hashes — provides the tamper-evident record all four require."
+              detail="Coverage-decision support for Medicaid PA. Contract reviews for ABA. Screening decisions for HUD. Employee AI usage for SOC2. The P402 ledger, with Tempo settlement hashes, provides the tamper-evident record all four require."
             />
           </div>
 
@@ -263,7 +263,7 @@ export default function AboutRootPage() {
               The common denominator across all four use cases
             </div>
             <p className="text-sm font-bold text-neutral-50 leading-relaxed">
-              Every AI workflow — vertical or horizontal — has the same gap: no per-action cost
+              Every AI workflow, vertical or horizontal, has the same gap: no per-action cost
               attribution, no sub-cent settlement rail, no onchain audit trail.
               P402 fills it once. The four demos prove it from four different directions:
               clinical, transactional, volumetric, and organizational.
@@ -297,7 +297,7 @@ export default function AboutRootPage() {
                 <span className="text-xs font-bold uppercase tracking-wider">Proof Replay</span>
               </div>
               <span className="border border-info text-info text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider self-start">
-                Default — no keys required
+                Default, no keys required
               </span>
               <p className="text-[11px] font-mono text-neutral-400 leading-relaxed">
                 Pre-recorded session stream. Real proof refs from a prior live run.
@@ -332,7 +332,7 @@ export default function AboutRootPage() {
 
         {/* Footer */}
         <div className="border-t border-neutral-700 pt-6 flex items-center justify-between text-[10px] font-mono text-neutral-600 uppercase tracking-wider flex-wrap gap-3">
-          <span>P402 Meter · Tempo Mainnet · MPP · May 2026</span>
+          <span>P402 Meter · Tempo Mainnet · MPP · 2026</span>
           <div className="flex gap-4">
             <Link href="/meter" className="hover:text-neutral-400 transition-colors">All Demos</Link>
             <a href="https://explore.tempo.xyz" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-400 transition-colors">Tempo Explorer ↗</a>
@@ -430,17 +430,17 @@ function IndustryCard({
       </div>
 
       <div className="flex gap-3 flex-wrap mt-1">
-        {isLive && <Link href={href} className="btn btn-primary text-xs px-4 py-1.5">Run Demo →</Link>}
+        {isLive && <Link href={href} className="btn btn-primary text-xs px-4 py-1.5">Run demo</Link>}
         {isDemoLive && (
           <Link href={href} className="border-2 border-info text-info hover:bg-info hover:text-neutral-900 text-xs font-mono px-4 py-1.5 uppercase tracking-wider transition-colors">
-            View Dashboard →
+            View dashboard
           </Link>
         )}
         {!isLive && !isDemoLive && (
           <span className="border border-neutral-700 text-neutral-600 text-xs font-mono px-4 py-1.5 uppercase cursor-not-allowed">Coming Soon</span>
         )}
         <Link href={deepDiveHref} className="border border-neutral-700 text-neutral-400 hover:text-neutral-200 hover:border-neutral-500 text-xs font-mono px-4 py-1.5 uppercase tracking-wider transition-colors">
-          Case Study →
+          Case study
         </Link>
       </div>
     </div>
@@ -468,7 +468,7 @@ function CtaCard({ label, sub, href, primary }: {
       className={`border-2 p-5 flex flex-col gap-2 transition-colors ${primary ? 'border-primary hover:bg-primary hover:text-neutral-900 group' : 'border-neutral-700 hover:border-neutral-500'}`}
     >
       <span className={`text-lg font-bold uppercase tracking-tight ${primary ? 'text-primary group-hover:text-neutral-900' : 'text-neutral-400'}`}>
-        {label} →
+        {label}
       </span>
       <span className={`text-[10px] font-mono uppercase tracking-wider ${primary ? 'text-neutral-400 group-hover:text-neutral-700' : 'text-neutral-600'}`}>
         {sub}

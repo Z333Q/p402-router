@@ -141,7 +141,7 @@ function buildOptimizations(models: ModelData[], depts: DeptData[]) {
       priority: 'HIGH' as const,
       dept: 'Engineering',
       saving: `$${(engDept.spentUsd * 0.31).toFixed(2)}/mo`,
-      finding: `Code completion and docstring generation represent an estimated 60–70% of Engineering AI usage. These tasks do not require frontier models.`,
+      finding: `Code completion and docstring generation make up a large share of Engineering AI usage in this synthetic run. Counsel a routing review before changing model assignments.`,
       action: `Route code completion tasks (complexity ≤ 3) to claude-haiku or gemini-flash`,
       confidence: 94,
     });
@@ -165,7 +165,7 @@ function buildOptimizations(models: ModelData[], depts: DeptData[]) {
       priority: 'LOW' as const,
       dept: 'Legal',
       saving: 'Do not downgrade',
-      finding: `Contract analysis accuracy drops 7–9% below the current model tier. Legal routing is optimal.`,
+      finding: `Contract analysis quality is sensitive to model tier in this synthetic run. Keep current routing pending a measured baseline.`,
       action: `Maintain current routing. No action needed.`,
       confidence: 97,
     });
@@ -266,7 +266,7 @@ export default function EnterpriseDemoPage() {
     }
   }
 
-  // Resolve data — real or synthetic
+  // Resolve data: real or synthetic
   const isReal = analytics?.hasRealData === true;
   const org = isReal ? analytics!.org! : SYNTHETIC_ORG;
   const departments = isReal ? analytics!.departments! : SYNTHETIC_DEPTS;
@@ -314,6 +314,26 @@ export default function EnterpriseDemoPage() {
 
       <div className="flex-1 px-6 py-6 flex flex-col gap-6 max-w-[1400px] mx-auto w-full">
 
+        {/* Dashboard CTA strip + scenario safety chips + framing disclaimer */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2">
+            {['Synthetic data', 'Not written to your ledger'].map((label) => (
+              <span key={label} className="border-2 border-neutral-600 text-neutral-300 text-[10px] font-mono uppercase tracking-wide px-3 py-1.5">
+                {label}
+              </span>
+            ))}
+          </div>
+          <p className="text-[11px] font-mono text-neutral-500 leading-relaxed">
+            Optimize recommendations remain blocked in the app. Public marketing copy that mentions Opt Savings is a separate artifact; inside this dashboard, P402 measures readiness only and never proposes a model switch or claims savings. Projection assumes synthetic demo velocity holds; not a forecast of real spend.
+          </p>
+          <div className="flex flex-wrap gap-3 items-center">
+            <Link href="/dashboard?demo=1&scenario=enterprise" className="btn btn-primary text-sm px-5">View dashboard proof</Link>
+            <Link href="/dashboard/prove?demo=1&scenario=enterprise" className="btn btn-secondary text-sm">See evidence</Link>
+            <Link href="/get-access?intent=ai-spend-audit" className="btn btn-secondary text-sm">Run AI Spend Audit</Link>
+            <Link href="/meter/about/enterprise" className="btn btn-secondary text-sm">Case study</Link>
+          </div>
+        </div>
+
         {/* Org KPI row */}
         <div className="border-2 border-neutral-700 bg-neutral-800 px-5 py-3 flex flex-wrap items-center gap-6">
           <div className="flex flex-col gap-0.5">
@@ -331,7 +351,7 @@ export default function EnterpriseDemoPage() {
             <span className="text-xl font-bold text-neutral-300 tabular-nums">${velocity.toFixed(2)}/day</span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest">Projected Month-End</span>
+            <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest" title="Projection assumes synthetic demo velocity holds; not a forecast of real spend.">Projected Month-End</span>
             <span className={`text-xl font-bold tabular-nums ${projectedPct > 100 ? 'text-error' : projectedPct > 80 ? 'text-warning' : 'text-success'}`}>
               ${projected.toFixed(2)}
             </span>
@@ -343,10 +363,6 @@ export default function EnterpriseDemoPage() {
           <div className="flex flex-col gap-0.5">
             <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest">Requests</span>
             <span className="text-xl font-bold text-neutral-300 tabular-nums">{org.totalRequests.toLocaleString()}</span>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest">Opt Savings</span>
-            <span className="text-xl font-bold text-success tabular-nums">${totalOptSaving.toFixed(2)}/mo</span>
           </div>
           {!isReal && (
             <div className="ml-auto">
@@ -362,7 +378,7 @@ export default function EnterpriseDemoPage() {
           {([
             ['overview', 'Overview'],
             ['departments', 'Departments'],
-            ['employees', 'Employees'],
+            ['employees', 'By team'],
             ['projects', 'Projects'],
             ['optimize', 'Optimize'],
             ['sessions', 'Sessions'],
@@ -612,16 +628,15 @@ export default function EnterpriseDemoPage() {
         {activeTab === 'employees' && (
           <div className="border-2 border-neutral-700">
             <div className="border-b border-neutral-700 px-5 py-2 grid grid-cols-6 gap-4 text-[9px] font-mono text-neutral-600 uppercase tracking-wider">
-              <span className="col-span-2">Employee</span>
+              <span className="col-span-2">Team member</span>
               <span>Department</span>
               <span>Project</span>
-              <span className="text-right">Spend</span>
+              <span className="text-right">Workflow value</span>
               <span className="text-right">Tokens</span>
             </div>
             {[...employees].sort((a, b) => b.spentUsd - a.spentUsd).map((emp, i) => (
               <div key={`${emp.employeeId}-${i}`} className="border-b border-neutral-800 px-5 py-3 grid grid-cols-6 gap-4 items-center hover:bg-neutral-800 transition-colors">
                 <div className="col-span-2 flex items-center gap-2">
-                  <span className="text-[9px] font-mono text-neutral-700 w-4">{String(i + 1).padStart(2, '0')}</span>
                   <span className="text-xs font-bold text-neutral-50">{emp.employeeId}</span>
                 </div>
                 <span className="text-[10px] font-mono text-neutral-400">{emp.department}</span>
@@ -699,7 +714,7 @@ export default function EnterpriseDemoPage() {
               </div>
             ))}
             <div className="border border-neutral-700 px-4 py-3 text-[10px] font-mono text-neutral-500 flex items-center gap-2">
-              <span className="text-neutral-700">→</span>
+              <span className="text-neutral-700">·</span>
               <span>
                 {isReal
                   ? 'Analysis generated from your actual routing history and task-type distribution this month.'
@@ -747,7 +762,7 @@ export default function EnterpriseDemoPage() {
         <div className="border-2 border-neutral-700 flex flex-col">
           <div className="border-b border-neutral-700 px-5 py-3 flex items-center justify-between">
             <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
-              {isReal ? 'Connected — Live Data' : 'Connect Your Organization'}
+              {isReal ? 'Connected, live data' : 'Connect Your Organization'}
             </span>
             {isReal && (
               <button
@@ -780,7 +795,7 @@ export default function EnterpriseDemoPage() {
                   disabled={connecting || !tenantInput.trim()}
                   className="btn btn-primary text-xs px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {connecting ? 'Connecting…' : 'Connect →'}
+                  {connecting ? 'Connecting…' : 'Connect'}
                 </button>
                 {connectError && (
                   <span className="text-[10px] font-mono text-error">{connectError}</span>
@@ -798,10 +813,10 @@ export default function EnterpriseDemoPage() {
                   onClick={() => connectedTenant && void fetchAnalytics(connectedTenant)}
                   className="border border-neutral-600 text-neutral-300 hover:border-primary hover:text-primary text-xs font-mono px-4 py-1.5 uppercase tracking-wider transition-colors"
                 >
-                  Refresh →
+                  Refresh
                 </button>
                 <Link href="/meter/about/enterprise" className="border border-neutral-600 text-neutral-300 hover:border-primary hover:text-primary text-xs font-mono px-4 py-1.5 uppercase tracking-wider transition-colors">
-                  Case Study →
+                  Case study
                 </Link>
                 <Link href="/meter" className="border border-neutral-700 text-neutral-500 hover:text-neutral-300 text-xs font-mono px-4 py-1.5 uppercase tracking-wider transition-colors">
                   All Demos

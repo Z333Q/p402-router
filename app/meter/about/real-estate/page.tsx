@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SCENARIO_META } from '@/lib/demo/scenarios';
 
 export const metadata: Metadata = {
   title: 'Real Estate Tenant Screening · P402 Meter',
   description:
-    'P402 Meter real estate case study: multimodal AI tenant application screening with fraud detection, per-applicant cost at sub-penny scale, and HUD fair-housing audit trails.',
+    'P402 Meter real estate case study: multimodal AI tenant application screening with fraud signal surfacing, per-applicant cost at sub-penny scale, and a HUD fair-housing audit posture. Human reviewer makes the final decision.',
 };
 
 export default function RealEstateAboutPage() {
@@ -14,7 +15,7 @@ export default function RealEstateAboutPage() {
       {/* Top bar */}
       <div className="border-b-2 border-neutral-700 px-6 py-3 flex items-center justify-between">
         <Link href="/meter/about" className="text-xs font-mono text-neutral-400 uppercase tracking-widest hover:text-primary transition-colors">
-          ← P402 Meter
+          P402 Meter
         </Link>
         <div className="flex items-center gap-3">
           <span className="border border-neutral-700 px-2 py-0.5 text-[10px] font-mono text-neutral-500 uppercase tracking-wider">
@@ -40,26 +41,31 @@ export default function RealEstateAboutPage() {
           </h1>
           <p className="text-base font-bold text-neutral-50 max-w-2xl leading-relaxed">
             Property managers process thousands of applications. The AI that reads them costs
-            $0.02–$0.05 per applicant. P402 makes that cost visible, governed by fair-housing
-            rules, and settled onchain — one Tempo tx per application batch.
+            roughly $0.02 to $0.05 per applicant. P402 makes that cost visible, governed by
+            fair-housing rules, and settled onchain: one Tempo tx per application batch.
           </p>
           <div className="flex flex-wrap gap-2">
-            <span className="border-2 border-primary text-primary text-xs font-bold font-mono px-3 py-1.5">
-              $0.02–$0.05 per applicant
-            </span>
-            <span className="border-2 border-neutral-700 text-neutral-400 text-xs font-mono px-3 py-1.5">
-              vs $30–80 manual screening
-            </span>
-            <span className="border-2 border-neutral-700 text-neutral-400 text-xs font-mono px-3 py-1.5">
-              HUD fair housing · ECOA compliant audit trail
-            </span>
+            {SCENARIO_META.real_estate_tenant_screening.safety_labels.map((label) => (
+              <span key={label} className="border-2 border-neutral-600 text-neutral-300 text-[10px] font-mono uppercase tracking-wide px-3 py-1.5">
+                {label}
+              </span>
+            ))}
           </div>
+          <p className="text-[11px] font-mono text-neutral-500 leading-relaxed">
+            {SCENARIO_META.real_estate_tenant_screening.framing_disclaimer}
+          </p>
           <div className="flex gap-4 flex-wrap">
-            <Link href="/meter/real-estate" className="btn btn-primary text-sm px-6 py-2">
-              Screen Applicant Demo →
+            <Link href="/dashboard?demo=1&scenario=real_estate_tenant_screening" className="btn btn-primary text-sm px-6 py-2">
+              View dashboard proof
+            </Link>
+            <Link href="/dashboard/prove?demo=1&scenario=real_estate_tenant_screening" className="btn btn-secondary text-sm px-6 py-2">
+              See evidence
+            </Link>
+            <Link href="/meter/real-estate" className="btn btn-secondary text-sm px-6 py-2">
+              Run screening demo
             </Link>
             <Link href="/meter/about" className="btn btn-secondary text-sm px-6 py-2">
-              ← All Industries
+              All industries
             </Link>
           </div>
         </section>
@@ -72,14 +78,14 @@ export default function RealEstateAboutPage() {
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ProblemCard
-              stat="$30–80"
-              label="Manual tenant screening cost per applicant"
-              detail="Background check services charge $20–50. Add human review time for income verification and reference checking: $30–80 total per applicant for a thorough review."
+              stat="Legacy"
+              label="Operating cost per applicant in the legacy workflow"
+              detail="Background check fees plus human review time for income verification and reference checking add up to a materially higher per-applicant cost than the AI-metered path; the exact figure depends on the property and the service mix."
             />
             <ProblemCard
-              stat="99.8%"
-              label="AI fraud detection accuracy on document manipulation"
-              detail="Platforms like Snappt achieve 99.8% accuracy detecting falsified bank statements and pay stubs. Document fraud in rental applications is a real, scaled problem — and AI handles it far better than human review."
+              stat="Real"
+              label="Document fraud in rental applications is a scaled problem"
+              detail="Falsified bank statements and pay stubs are a real, scaled problem in rental applications. AI document review surfaces likely inconsistencies for a human reviewer; the property manager makes the final call."
             />
             <ProblemCard
               stat="$0"
@@ -89,7 +95,7 @@ export default function RealEstateAboutPage() {
             <ProblemCard
               stat="0"
               label="Settlement rails for sub-penny per-applicant billing"
-              detail="If you want to charge $0.03 for an AI-assisted tenant screening, you need a settlement rail that handles $0.03. Stripe's $0.30 minimum is 10× too expensive. Tempo handles it at under $0.000001."
+              detail="If you want to charge $0.03 for an AI-assisted tenant screening, you need a settlement rail that handles $0.03. Stripe's per-transaction floor is well above that level. Tempo settles for under $0.000001 per event."
             />
           </div>
         </section>
@@ -103,7 +109,7 @@ export default function RealEstateAboutPage() {
           {[
             {
               step: '01',
-              name: 'Application intake — multimodal',
+              name: 'Application intake (multimodal)',
               detail: 'Upload an applicant packet: rental application form (PNG of a filled-out form), 2 pay stubs (PDFs), 1 bank statement (PDF), 1 ID document (image). Each document is SHA-256 hashed on ingestion. This is the multimodal intake test.',
             },
             {
@@ -118,18 +124,18 @@ export default function RealEstateAboutPage() {
             },
             {
               step: '04',
-              name: 'Fraud signal — specialist escalation',
-              detail: 'If the anomaly score crosses a threshold (inconsistent income, metadata manipulation detected, name mismatch), P402 flags for specialist escalation. A "fraud specialist agent" under MPP escrow runs a deeper forensic check with Gemini Pro extended reasoning. The deliverable hash is recorded on Tempo.',
+              name: 'Fraud signal and escalation',
+              detail: 'If the anomaly score crosses a threshold (inconsistent income, metadata manipulation detected, name mismatch), the application is flagged for escalation. In the current demo, this surfaces the case to the human reviewer with Gemini Pro extended-reasoning analysis attached; a future capability will route the case to a specialist agent under MPP escrow.',
             },
             {
               step: '05',
               name: 'Per-applicant cost readout',
-              detail: 'Every screening costs $0.02–$0.05 in tokens. The ledger shows: extraction cost (Flash), consistency check cost (Pro), fraud escalation cost (Pro + escrow). The total is visible per applicant and aggregatable across a property.',
+              detail: 'Every screening costs roughly $0.02 to $0.05 in tokens. The ledger shows: extraction cost (Flash), consistency check cost (Pro), and any escalated review cost (Pro). The total is visible per applicant and aggregatable across a property.',
             },
             {
               step: '06',
-              name: 'Decision gate — human in the loop',
-              detail: 'The property manager reviews the AI assessment and approves or denies. P402 records the decision without recording PII — only a redacted applicant ID is stored onchain. The decision log satisfies HUD fair housing and ECOA documentation requirements.',
+              name: 'Decision gate: human in the loop',
+              detail: 'The property manager reviews the AI assessment and approves or denies. P402 records the decision without recording PII; only a redacted applicant ID is stored onchain. The decision log supports a HUD fair-housing and ECOA audit posture; the property manager makes the final decision and the audit log does not replace fair-housing compliance.',
             },
           ].map(({ step, name, detail }) => (
             <div key={step} className="border border-neutral-700 flex">
@@ -148,30 +154,30 @@ export default function RealEstateAboutPage() {
         <section className="flex flex-col gap-6">
           <SectionLabel number="03" label="What This Demo Emphasizes" />
           <h2 className="text-2xl font-bold uppercase tracking-tight">
-            Volume economics. Fraud escalation. Fair-housing compliance.
+            Volume economics. Fraud signal surfacing. Fair-housing audit posture.
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <MetricCard value="$0.03" label="Avg per applicant" sublabel="clean application, no escalation" highlight />
-            <MetricCard value="600–2,400×" label="Cost delta vs manual" sublabel="$0.03 AI vs $30–80 manual" />
-            <MetricCard value="4 docs" label="Multimodal intake" sublabel="form · pay stubs · bank stmt · ID" />
+            <MetricCard value="Per-app" label="Cost visible per application" sublabel="legacy workflow operating cost is materially higher" />
+            <MetricCard value="4 docs" label="Multimodal intake" sublabel="form, pay stubs, bank stmt, ID" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <FacetCard
               label="Multimodal volume economics"
-              detail="Property managers screen thousands of applications per year. At $0.03/applicant, 1,000 applications costs $30 in AI compute vs $30,000–80,000 in manual review time. The economics are not marginal — they are categorical."
+              detail="Property managers screen thousands of applications per year. At $0.03 per applicant, 1,000 applications cost roughly $30 in AI compute; the operating cost in the legacy workflow is materially higher. The economics are not marginal."
             />
             <FacetCard
               label="A2A escrow as a real workflow"
-              detail="The fraud specialist escalation is genuinely a different agent doing a different job under a different budget. This is the demo where the agent-to-agent payment loop earns its place — the workflow naturally produces it."
+              detail="The fraud specialist escalation is a future capability: a different agent doing a different job under a different budget envelope. The workflow naturally produces it; the current page surfaces the escalated case for a human reviewer."
             />
             <FacetCard
               label="Fair-housing governance"
-              detail="The audit trail is load-bearing because tenant screening decisions are legally adversarial. P402 records: what AI did, what data it used, what score it produced, and what the human decided — with consistent criteria applied to every applicant."
+              detail="The audit trail is load-bearing because tenant screening decisions are legally adversarial. P402 records what AI did, what data it used, what score it produced, and what the human decided, with consistent criteria applied to every applicant."
             />
             <FacetCard
               label="Three applicant scenarios"
-              detail="Clean applicant (passes all checks). Income mismatch (low fraud score, manual review flagged). Likely fraud (forged pay stub triggers specialist escalation under MPP escrow). Each scenario exercises a different path through the system."
+              detail="Clean applicant (passes all checks). Income mismatch (low fraud score, manual review flagged). Likely fraud (forged pay stub triggers escalation; specialist agent under MPP escrow is a future capability). Each scenario exercises a different path through the system."
             />
           </div>
         </section>
@@ -189,7 +195,7 @@ export default function RealEstateAboutPage() {
                 label: 'All checks pass',
                 color: 'border-success text-success',
                 cost: '~$0.022',
-                path: 'Flash extraction → Pro consistency check → all fields consistent → no fraud signal → property manager approves',
+                path: 'Flash extraction, then Pro consistency check; all fields consistent; no fraud signal; property manager approves',
                 detail: 'Income matches pay stubs. Bank deposits match claimed income. ID name matches application. Address consistent across all four documents. Confidence score: 0.94.',
               },
               {
@@ -197,15 +203,15 @@ export default function RealEstateAboutPage() {
                 label: 'Low fraud, manual review flagged',
                 color: 'border-warning text-warning',
                 cost: '~$0.031',
-                path: 'Flash extraction → Pro consistency check → income flag → anomaly score 0.42 → manual review recommended → property manager reviews',
-                detail: 'Claimed income $95K. Pay stubs show $72K annualized. Bank deposits inconsistent with either figure. Not clear fraud — could be freelance income or recent job change. Flagged for human review.',
+                path: 'Flash extraction, then Pro consistency check; income flag; anomaly score 0.42; manual review recommended; property manager reviews',
+                detail: 'Claimed income $95K. Pay stubs show $72K annualized. Bank deposits inconsistent with either figure. Not clear fraud; could be freelance income or recent job change. Flagged for human review.',
               },
               {
                 scenario: 'Likely Fraud',
                 label: 'Specialist escalation triggered',
                 color: 'border-error text-error',
                 cost: '~$0.065',
-                path: 'Flash extraction → Pro consistency check → anomaly score 0.87 → specialist agent escalated under MPP escrow → deliverable hash on Tempo → property manager denies',
+                path: 'Flash extraction, then Pro consistency check; anomaly score 0.87; escalation surfaced to reviewer (specialist agent under MPP escrow is a future capability); deliverable hash on Tempo; property manager denies',
                 detail: 'Pay stub metadata shows creation date after claimed employment period. Bank statement deposit pattern inconsistent with claimed pay schedule. Gemini Pro forensic analysis confirms document manipulation indicators.',
               },
             ].map(({ scenario, label, color, cost, path, detail }) => (
@@ -239,10 +245,10 @@ export default function RealEstateAboutPage() {
               <span>P402 AI screening cost</span>
             </div>
             {[
-              ['100 apps / month', '$3,000–$8,000', '~$3'],
-              ['500 apps / month', '$15,000–$40,000', '~$15'],
-              ['2,000 apps / month', '$60,000–$160,000', '~$60'],
-              ['10,000 apps / month', '$300,000–$800,000', '~$300'],
+              ['100 apps / month', 'Legacy: materially higher', '~$3'],
+              ['500 apps / month', 'Legacy: materially higher', '~$15'],
+              ['2,000 apps / month', 'Legacy: materially higher', '~$60'],
+              ['10,000 apps / month', 'Legacy: materially higher', '~$300'],
             ].map(([vol, manual, ai]) => (
               <div key={vol} className="grid grid-cols-3 gap-4 py-2 border-t border-neutral-800">
                 <span className="text-neutral-300">{vol}</span>
@@ -264,14 +270,14 @@ export default function RealEstateAboutPage() {
             The demo is the proof.
           </h2>
           <p className="font-mono text-neutral-400 leading-relaxed max-w-xl">
-            Three synthetic applicant scenarios — clean, mismatch, and likely fraud. Multimodal
+            Three synthetic applicant scenarios (clean, mismatch, and likely fraud). Multimodal
             intake across application form, pay stubs, bank statement, and ID. Cross-document
             consistency check. Fraud score with escalation threshold. Real USDC.e settlement on
-            Tempo. HUD fair-housing audit trail on every decision.
+            Tempo. HUD fair-housing audit posture on every decision; the property manager makes the final call.
           </p>
           <div className="flex gap-4 flex-wrap mt-2">
             <Link href="/meter/real-estate" className="btn btn-primary text-sm px-8 py-3">
-              Run Tenant Screening Demo →
+              Run screening demo
             </Link>
             <a
               href="https://explore.tempo.xyz"
@@ -279,7 +285,7 @@ export default function RealEstateAboutPage() {
               rel="noopener noreferrer"
               className="btn btn-secondary text-sm px-8 py-3"
             >
-              Verify on Tempo →
+              Verify on Tempo
             </a>
             <Link href="/meter/about" className="btn btn-secondary text-sm px-8 py-3">
               All Industries
@@ -335,7 +341,7 @@ function FacetCard({ label, detail }: { label: string; detail: string }) {
   return (
     <div className="border border-neutral-700 p-4 flex flex-col gap-2">
       <div className="flex items-start gap-2">
-        <span className="text-primary mt-0.5 shrink-0">→</span>
+        <span className="text-primary mt-0.5 shrink-0">·</span>
         <span className="text-xs font-bold uppercase tracking-wider text-neutral-50">{label}</span>
       </div>
       <p className="text-[11px] font-mono text-neutral-400 leading-relaxed pl-4">{detail}</p>

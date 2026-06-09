@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SCENARIO_META } from '@/lib/demo/scenarios';
 
 export const metadata: Metadata = {
   title: 'Legal M&A Due Diligence · P402 Meter',
   description:
-    'P402 Meter legal case study: per-matter AI contract review with model-tier routing, budget caps, and ABA-compliant audit trails. Under $0.10 per matter vs $200–800 paralegal time.',
+    'P402 Meter legal case study: per-matter AI contract review with model-tier routing, budget caps, and an ABA-aligned audit posture. Under $0.10 per matter; counsel makes the final judgment.',
 };
 
 export default function LegalAboutPage() {
@@ -14,7 +15,7 @@ export default function LegalAboutPage() {
       {/* Top bar */}
       <div className="border-b-2 border-neutral-700 px-6 py-3 flex items-center justify-between">
         <Link href="/meter/about" className="text-xs font-mono text-neutral-400 uppercase tracking-widest hover:text-primary transition-colors">
-          ← P402 Meter
+          P402 Meter
         </Link>
         <div className="flex items-center gap-3">
           <span className="border border-neutral-700 px-2 py-0.5 text-[10px] font-mono text-neutral-500 uppercase tracking-wider">
@@ -41,25 +42,41 @@ export default function LegalAboutPage() {
           <p className="text-base font-bold text-neutral-50 max-w-2xl leading-relaxed">
             M&A due diligence involves hundreds of contracts. The AI that reads them has a
             measurable cost per document. P402 makes that cost visible, governed, and settled
-            onchain — per contract, per clause, per model tier.
+            onchain: per contract, per clause, per model tier.
           </p>
           <div className="flex flex-wrap gap-2">
             <span className="border-2 border-primary text-primary text-xs font-bold font-mono px-3 py-1.5">
               &lt;$0.10 per matter
             </span>
             <span className="border-2 border-neutral-700 text-neutral-400 text-xs font-mono px-3 py-1.5">
-              vs $200–800 paralegal time per matter
+              Operating cost in the legacy workflow is materially higher
             </span>
             <span className="border-2 border-neutral-700 text-neutral-400 text-xs font-mono px-3 py-1.5">
-              ABA Formal Opinion 512 compliant audit trail
+              ABA-aligned audit posture
             </span>
           </div>
+          <div className="flex flex-wrap gap-2">
+            {SCENARIO_META.legal_mna_due_diligence.safety_labels.map((label) => (
+              <span key={label} className="border-2 border-neutral-600 text-neutral-300 text-[10px] font-mono uppercase tracking-wide px-3 py-1.5">
+                {label}
+              </span>
+            ))}
+          </div>
+          <p className="text-[11px] font-mono text-neutral-500 leading-relaxed">
+            {SCENARIO_META.legal_mna_due_diligence.framing_disclaimer}
+          </p>
           <div className="flex gap-4 flex-wrap">
-            <Link href="/meter/legal" className="btn btn-primary text-sm px-6 py-2">
-              Run Legal Demo →
+            <Link href="/dashboard?demo=1&scenario=legal_mna_due_diligence" className="btn btn-primary text-sm px-6 py-2">
+              View dashboard proof
+            </Link>
+            <Link href="/dashboard/prove?demo=1&scenario=legal_mna_due_diligence" className="btn btn-secondary text-sm px-6 py-2">
+              See evidence
+            </Link>
+            <Link href="/meter/legal" className="btn btn-secondary text-sm px-6 py-2">
+              Run M&amp;A demo
             </Link>
             <Link href="/meter/about" className="btn btn-secondary text-sm px-6 py-2">
-              ← All Industries
+              All industries
             </Link>
           </div>
         </section>
@@ -72,9 +89,9 @@ export default function LegalAboutPage() {
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ProblemCard
-              stat="$150–500"
-              label="Manual contract abstraction cost per document"
-              detail="Traditional paralegal or associate time to read, extract key terms, and flag deviations from a playbook. Complex MSAs and employment agreements can exceed $500 each."
+              stat="Legacy"
+              label="Operating cost per document in the legacy workflow"
+              detail="Traditional associate or paralegal time to read, extract key terms, and flag deviations from a playbook is materially higher per document than the AI-metered path; the exact figure depends on the firm and the matter."
             />
             <ProblemCard
               stat="200–500"
@@ -109,7 +126,7 @@ export default function LegalAboutPage() {
             {
               step: '02',
               name: 'Per-document classification and routing',
-              detail: 'Gemini Flash classifies each document: type, jurisdiction, redline complexity score (1–10). The P402 router uses the complexity score to route — simple NDAs get Flash, MSAs get Pro, ambiguous documents escalate. The routing decision is the visible thing in this demo.',
+              detail: 'Gemini Flash classifies each document: type, jurisdiction, redline complexity score (1 to 10). The P402 router uses the complexity score to route: simple NDAs get Flash, MSAs get Pro, ambiguous documents escalate. The routing decision is the visible thing in this demo.',
             },
             {
               step: '03',
@@ -123,13 +140,13 @@ export default function LegalAboutPage() {
             },
             {
               step: '05',
-              name: 'Specialist escalation under MPP escrow',
-              detail: 'When a contract exceeds a complexity threshold, P402 routes to a "specialist agent" with a budget envelope locked in MPP escrow. The specialist produces a conflict analysis report. A cryptographic hash of the deliverable is recorded on Tempo.',
+              name: 'Specialist escalation (future capability)',
+              detail: 'A future capability will route complexity-exceeding contracts to a specialist agent operating under an MPP escrow envelope; that path is not implemented on this page. In the current demo, escalation surfaces the contract for counsel review without delegating it.',
             },
             {
               step: '06',
               name: 'Matter close and approval gate',
-              detail: 'The supervising lawyer reviews the AI assessment and approves or rejects the diligence summary. P402 records the decision. The final ledger is the ABA-audit artifact — every AI action, every cost, every model tier, timestamped and onchain.',
+              detail: 'The supervising lawyer reviews the AI assessment and approves or rejects the diligence summary. P402 records the decision. The final ledger supports an ABA-aligned audit posture: every AI action, every cost, every model tier, timestamped and onchain. The ledger does not replace counsel supervision.',
             },
           ].map(({ step, name, detail }) => (
             <div key={step} className="border border-neutral-700 flex">
@@ -158,9 +175,9 @@ export default function LegalAboutPage() {
               highlight
             />
             <MetricCard
-              value="1,000×+"
-              label="Cost delta vs manual"
-              sublabel="$0.10 AI vs $200–800 paralegal"
+              value="Per-doc"
+              label="Routing visible per document"
+              sublabel="Flash for NDAs, Pro for MSAs"
             />
             <MetricCard
               value="2 tiers"
@@ -184,7 +201,7 @@ export default function LegalAboutPage() {
             />
             <FacetCard
               label="ABA ethics audit trail"
-              detail="ABA Formal Opinion 512 (2024) requires lawyers using AI to understand and supervise its work. The P402 ledger provides the documentation: what model, what input, what output, at what cost, with human review recorded."
+              detail="ABA Formal Opinion 512 (2024) prescribes that lawyers using AI understand and supervise its work. The P402 ledger provides supporting documentation: what model, what input, what output, at what cost, with human review recorded. The ledger does not satisfy supervision; the lawyer does."
             />
           </div>
         </section>
@@ -193,14 +210,14 @@ export default function LegalAboutPage() {
         <section className="flex flex-col gap-6">
           <SectionLabel number="04" label="Unit Economics" />
           <h2 className="text-2xl font-bold uppercase tracking-tight">
-            The 1,000× delta is the headline.
+            Per-document AI cost is materially below the legacy workflow.
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="border-2 border-neutral-700 p-4 flex flex-col gap-2">
-              <div className="text-lg font-bold text-error tabular-nums">$200–800</div>
+              <div className="text-lg font-bold text-error tabular-nums">Legacy</div>
               <div className="text-xs font-bold uppercase tracking-wider text-neutral-50">Manual diligence per matter</div>
               <div className="text-[11px] font-mono text-neutral-400 leading-relaxed">
-                8 contracts × $25–100 per contract = associate/paralegal time for a mid-market deal data room.
+                Associate or paralegal time across 8 contracts for a mid-market deal data room. Operating cost in this path is materially higher per matter than the AI-metered path.
               </div>
             </div>
             <div className="border-2 border-primary p-4 flex flex-col gap-2">
@@ -224,19 +241,19 @@ export default function LegalAboutPage() {
         <section className="flex flex-col gap-6">
           <SectionLabel number="05" label="Sample Matter" />
           <h2 className="text-2xl font-bold uppercase tracking-tight">
-            Acme acquires Beta Co. — synthetic diligence pack.
+            Acme acquires Beta Co. (synthetic diligence pack).
           </h2>
           <p className="font-mono text-neutral-400 text-sm leading-relaxed">
             All documents are synthetic, de-identified, and clearly marked SAMPLE. No real entity names.
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 font-mono text-xs">
             {[
-              ['NDA — Mutual (Acme / Beta)', 'Complexity 2 · Flash · ~$0.003'],
-              ['NDA — Unilateral (Acme / Vendor)', 'Complexity 2 · Flash · ~$0.003'],
+              ['NDA Mutual (Acme / Beta)', 'Complexity 2 · Flash · ~$0.003'],
+              ['NDA Unilateral (Acme / Vendor)', 'Complexity 2 · Flash · ~$0.003'],
               ['Master Services Agreement (Beta / SaaS)', 'Complexity 7 · Pro · ~$0.018'],
               ['Employment Agreement (Beta CTO)', 'Complexity 6 · Pro · ~$0.016'],
               ['Real Estate Side Letter (Beta HQ Lease)', 'Complexity 5 · Pro · ~$0.013'],
-              ['Vendor SaaS Contract (Beta / Salesforce)', 'Complexity 4 · Flash → escalate · ~$0.008'],
+              ['Vendor SaaS Contract (Beta / Salesforce)', 'Complexity 4 · Flash, escalate · ~$0.008'],
               ['Amendment #1 to MSA', 'Complexity 3 · Flash · ~$0.005'],
               ['Amendment #2 to MSA', 'Complexity 3 · Flash · ~$0.005'],
             ].map(([doc, meta]) => (
@@ -247,7 +264,7 @@ export default function LegalAboutPage() {
             ))}
           </div>
           <div className="border border-neutral-700 px-4 py-2 text-[10px] font-mono text-neutral-500">
-            Total estimated matter cost: ~$0.071 · vs $200–800 manual · Model cost breakdown visible per document in ledger
+            Total estimated matter cost: ~$0.071. Legacy workflow operating cost is materially higher per matter. Model cost breakdown visible per document in ledger.
           </div>
         </section>
 
@@ -258,14 +275,14 @@ export default function LegalAboutPage() {
             The demo is the proof.
           </h2>
           <p className="font-mono text-neutral-400 leading-relaxed max-w-xl">
-            Eight contracts in a synthetic M&A data room. Tier routing visible per document
-            — Flash for NDAs and amendments, Pro for the MSA, employment agreement, and merger
+            Eight contracts in a synthetic M&A data room. Tier routing visible per document:
+            Flash for NDAs and amendments, Pro for the MSA, employment agreement, and merger
             agreement. Cross-document conflict detection. Real USDC.e settlement on Tempo. Every
             cent attributable per matter for client passthrough.
           </p>
           <div className="flex gap-4 flex-wrap mt-2">
             <Link href="/meter/legal" className="btn btn-primary text-sm px-8 py-3">
-              Run Legal Demo →
+              Run M&amp;A demo
             </Link>
             <a
               href="https://explore.tempo.xyz"
@@ -273,7 +290,7 @@ export default function LegalAboutPage() {
               rel="noopener noreferrer"
               className="btn btn-secondary text-sm px-8 py-3"
             >
-              Verify on Tempo →
+              Verify on Tempo
             </a>
             <Link href="/meter/about" className="btn btn-secondary text-sm px-8 py-3">
               All Industries
@@ -329,7 +346,7 @@ function FacetCard({ label, detail }: { label: string; detail: string }) {
   return (
     <div className="border border-neutral-700 p-4 flex flex-col gap-2">
       <div className="flex items-start gap-2">
-        <span className="text-primary mt-0.5 shrink-0">→</span>
+        <span className="text-primary mt-0.5 shrink-0">·</span>
         <span className="text-xs font-bold uppercase tracking-wider text-neutral-50">{label}</span>
       </div>
       <p className="text-[11px] font-mono text-neutral-400 leading-relaxed pl-4">{detail}</p>

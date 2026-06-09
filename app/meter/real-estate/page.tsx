@@ -49,30 +49,28 @@ export default function RealEstateDemoPage() {
               3 applicant scenarios. 4 documents each. Gemini Flash extracts structured fields from every document.
             </p>
             <p className="text-base text-neutral-300 leading-relaxed">
-              Gemini Pro cross-checks income, identity, and bank statement arithmetic. Fraud signals trigger escalation.
+              Gemini Pro cross-checks income, identity, and bank statement arithmetic. Inconsistencies surface as ledger events for a human reviewer.
             </p>
             <p className="text-base text-neutral-300 leading-relaxed">
-              Every AI action settles on Tempo mainnet. Total cost: under $0.0001 per applicant.
+              Every AI action settles on Tempo mainnet. Human final decision required: the leasing decision rests with the property manager and follows fair-housing rules.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 mb-6">
-            <span className="border-2 border-primary text-primary text-xs font-bold font-mono px-3 py-1.5">
-              $0.02–$0.05 per applicant
-            </span>
-            <span className="border-2 border-neutral-600 text-neutral-300 text-xs font-mono px-3 py-1.5">
-              3 scenarios: clean · mismatch · fraud
-            </span>
-            <span className="border-2 border-neutral-600 text-neutral-300 text-xs font-mono px-3 py-1.5">
-              Fraud score · escalation threshold
-            </span>
-            <span className="border-2 border-neutral-600 text-neutral-300 text-xs font-mono px-3 py-1.5">
-              HUD fair-housing audit trail · Tempo
-            </span>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {['Synthetic applicants', 'No real PII', 'Human final decision required', 'HUD fair-housing audit posture'].map((label) => (
+              <span key={label} className="border-2 border-neutral-600 text-neutral-300 text-[10px] font-mono uppercase tracking-wide px-3 py-1.5">
+                {label}
+              </span>
+            ))}
           </div>
+          <p className="text-[11px] font-mono text-neutral-500 leading-relaxed mb-6">
+            P402 does not approve or deny tenants. The fraud score shown is illustrative; the leasing decision rests with the property manager and follows fair-housing rules.
+          </p>
           <div className="flex flex-wrap gap-3 items-center">
-            <a href="#demo" className="btn btn-primary text-sm px-5">Screen Applicant →</a>
-            <Link href="/meter/about/real-estate" className="btn btn-secondary text-sm">Case Study</Link>
-            <Link href="/meter" className="btn btn-secondary text-sm">← All Demos</Link>
+            <Link href="/dashboard?demo=1&scenario=real_estate_tenant_screening" className="btn btn-primary text-sm px-5">View dashboard proof</Link>
+            <Link href="/dashboard/prove?demo=1&scenario=real_estate_tenant_screening" className="btn btn-secondary text-sm">See evidence</Link>
+            <a href="#demo" className="btn btn-secondary text-sm">Run screening demo</a>
+            <Link href="/meter/about/real-estate" className="btn btn-secondary text-sm">Case study</Link>
+            <Link href="/meter" className="btn btn-secondary text-sm">All demos</Link>
           </div>
         </div>
 
@@ -109,15 +107,15 @@ export default function RealEstateDemoPage() {
             {[
               {
                 title: 'Multimodal Volume Economics',
-                body: 'The Scenario A clean applicant costs ~$0.000022 total — 4 documents, 2 models, full extraction + consistency check. At 1,000 applications/month, that\'s $22 in AI costs versus $30,000–$80,000 in manual or vendor screening fees.',
+                body: 'The Scenario A clean applicant costs roughly $0.000022 total across 4 documents, 2 models, full extraction and consistency check. The legacy workflow operating cost is materially higher per applicant; the exact gap depends on the manual or vendor process you are replacing.',
               },
               {
                 title: 'Fraud Signal Scoring',
                 body: 'Scenario C triggers escalation at score 87 (threshold: 65). The signals: three-way name inconsistency, bank statement arithmetic error, wrong routing number for the claimed geography, unverifiable employer. Each signal is a ledger event with a Tempo proof.',
               },
               {
-                title: 'HUD Fair-Housing Audit Trail',
-                body: 'Every screening decision is an immutable record on Tempo — which model ran, which documents were checked, what the output was. The AI never makes the final decision (the property manager does), but the AI\'s reasoning is fully auditable under HUD fair-housing guidelines.',
+                title: 'HUD fair-housing audit posture',
+                body: 'Every screening step is an immutable record on Tempo: which model ran, which documents were checked, what the output was. The AI never makes the final decision; the property manager does. The AI reasoning is auditable to support a HUD fair-housing review.',
               },
             ].map(({ title, body }) => (
               <div key={title} className="flex flex-col gap-2">
@@ -128,10 +126,10 @@ export default function RealEstateDemoPage() {
           </div>
           <div className="flex gap-3 pt-1">
             <Link href="/meter/about/real-estate" className="text-[10px] font-mono text-info hover:text-primary uppercase tracking-wider border border-info hover:border-primary px-3 py-1.5 transition-colors">
-              Full Real Estate Case Study →
+              Case study
             </Link>
             <Link href="/meter" className="text-[10px] font-mono text-neutral-500 hover:text-primary uppercase tracking-wider border border-neutral-700 hover:border-primary px-3 py-1.5 transition-colors">
-              ← All Demos
+              All demos
             </Link>
           </div>
         </div>
@@ -147,7 +145,7 @@ export default function RealEstateDemoPage() {
               </div>
               <div className="text-sm font-bold uppercase text-primary">Medicaid PA Governance</div>
               <p className="text-[10px] font-mono text-neutral-500 leading-relaxed">Per-operation receipts. 5-level client budget hierarchy. Human review gate. CMS-0057-F + HIPAA-aligned demo.</p>
-              <span className="text-[10px] font-mono text-primary mt-auto">Run Demo →</span>
+              <span className="text-[10px] font-mono text-primary mt-auto">Run demo</span>
             </Link>
             <Link href="/meter/legal" className="border-2 border-neutral-700 hover:border-primary p-4 flex flex-col gap-2 hover:bg-neutral-800 transition-colors group">
               <div className="flex items-center justify-between">
@@ -156,7 +154,7 @@ export default function RealEstateDemoPage() {
               </div>
               <div className="text-sm font-bold uppercase group-hover:text-primary transition-colors">M&A Due Diligence</div>
               <p className="text-[10px] font-mono text-neutral-500 leading-relaxed">8 contracts. Flash or Pro routing per doc. Cross-document conflict detection. ABA audit trail.</p>
-              <span className="text-[10px] font-mono text-neutral-600 group-hover:text-primary transition-colors mt-auto">Run Demo →</span>
+              <span className="text-[10px] font-mono text-neutral-600 group-hover:text-primary transition-colors mt-auto">Run demo</span>
             </Link>
             <Link href="/meter/enterprise" className="border-2 border-neutral-700 hover:border-info p-4 flex flex-col gap-2 hover:bg-neutral-800 transition-colors group">
               <div className="flex items-center justify-between">
@@ -164,8 +162,8 @@ export default function RealEstateDemoPage() {
                 <span className="border border-info text-info text-[8px] font-mono px-1.5 py-0.5 uppercase">Demo</span>
               </div>
               <div className="text-sm font-bold uppercase group-hover:text-info transition-colors">AI Cost Management</div>
-              <p className="text-[10px] font-mono text-neutral-500 leading-relaxed">Org → dept → project → employee attribution. Routing optimization. Budget projections.</p>
-              <span className="text-[10px] font-mono text-neutral-600 group-hover:text-info transition-colors mt-auto">View Dashboard →</span>
+              <p className="text-[10px] font-mono text-neutral-500 leading-relaxed">Org, dept, project, and team attribution. Routing observations. Budget visibility.</p>
+              <span className="text-[10px] font-mono text-neutral-600 group-hover:text-info transition-colors mt-auto">View dashboard</span>
             </Link>
           </div>
         </div>

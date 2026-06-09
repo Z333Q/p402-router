@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SCENARIO_META } from '@/lib/demo/scenarios';
 
 export const metadata: Metadata = {
   title: 'Enterprise AI Cost Management · P402 Meter',
@@ -14,7 +15,7 @@ export default function EnterpriseAboutPage() {
       {/* Top bar */}
       <div className="border-b-2 border-neutral-700 px-6 py-3 flex items-center justify-between">
         <Link href="/meter/about" className="text-xs font-mono text-neutral-400 uppercase tracking-widest hover:text-primary transition-colors">
-          ← P402 Meter
+          P402 Meter
         </Link>
         <div className="flex items-center gap-3">
           <span className="border border-info px-2 py-0.5 text-[10px] font-mono text-info uppercase tracking-wider">
@@ -45,28 +46,30 @@ export default function EnterpriseAboutPage() {
             model tier used was even necessary.
           </p>
           <p className="text-base font-mono text-neutral-400 max-w-2xl leading-relaxed">
-            P402 Enterprise is the metering layer that makes AI spend auditable — down to the
-            employee, the session, the token, and the model tier choice. And it generates
-            optimization recommendations that cut 30–70% of model costs by routing tasks to
-            the cheapest tier that meets the quality bar.
+            P402 Enterprise is the metering layer that makes AI spend auditable, down to the
+            team, the session, the token, and the model tier choice. Routing observations are
+            surfaced for review; Optimize recommendations remain blocked in the app until a
+            measured baseline is in place.
           </p>
           <div className="flex flex-wrap gap-2">
-            <span className="border-2 border-info text-info text-xs font-bold font-mono px-3 py-1.5">
-              30–70% model cost reduction via routing optimization
-            </span>
-            <span className="border-2 border-neutral-700 text-neutral-400 text-xs font-mono px-3 py-1.5">
-              Per-employee · per-project · per-client attribution
-            </span>
-            <span className="border-2 border-neutral-700 text-neutral-400 text-xs font-mono px-3 py-1.5">
-              SOC2-ready onchain audit trail
-            </span>
+            {SCENARIO_META.enterprise_ai_spend_control.safety_labels.map((label) => (
+              <span key={label} className="border-2 border-neutral-600 text-neutral-300 text-[10px] font-mono uppercase tracking-wide px-3 py-1.5">
+                {label}
+              </span>
+            ))}
           </div>
           <div className="flex gap-4 flex-wrap">
-            <Link href="/meter/enterprise" className="btn btn-primary text-sm px-6 py-2">
-              See Demo Dashboard →
+            <Link href="/dashboard?demo=1&scenario=enterprise" className="btn btn-primary text-sm px-6 py-2">
+              View dashboard proof
+            </Link>
+            <Link href="/dashboard/prove?demo=1&scenario=enterprise" className="btn btn-secondary text-sm px-6 py-2">
+              See evidence
+            </Link>
+            <Link href="/meter/enterprise" className="btn btn-secondary text-sm px-6 py-2">
+              See demo dashboard
             </Link>
             <Link href="/meter/about" className="btn btn-secondary text-sm px-6 py-2">
-              ← All Use Cases
+              All use cases
             </Link>
           </div>
         </section>
@@ -84,9 +87,9 @@ export default function EnterpriseAboutPage() {
               detail="OpenAI, Anthropic, and Google bill the org. The bill is opaque. No department breakdown, no per-project attribution, no per-employee cost center. Finance cannot charge back AI costs. Engineering cannot optimize model tier choices without guessing."
             />
             <ProblemCard
-              stat="30–70%"
-              label="Model cost waste from misrouted requests"
-              detail="Engineers use Claude Opus for simple code completion. Marketing uses GPT-4o for tweet drafts. Neither task needs the premium tier. The routing decision is invisible so it defaults to the best model available. The waste compounds at scale."
+              stat="Opaque"
+              label="Model tier choice for each request"
+              detail="Engineers may use Claude Opus for simple code completion. Marketing may use GPT-4o for tweet drafts. The routing decision is invisible, so requests default to the best model available. Without per-task visibility, the cost difference compounds at scale."
             />
             <ProblemCard
               stat="$0"
@@ -119,13 +122,13 @@ export default function EnterpriseAboutPage() {
                 { level: 'Department', example: 'Engineering · Marketing · Legal · Finance', note: 'Cost center. Each has its own budget cap and model routing policy.' },
                 { level: 'Project', example: 'Project Phoenix · Series B Diligence', note: 'Budget sub-cap per active project. Chargeable to a client.' },
                 { level: 'Client', example: 'Client A · Internal', note: 'Optional passthrough. Law firms and agencies charge clients for AI compute.' },
-                { level: 'Employee', example: 'Alice Chen', note: 'Individual attribution. Who drove this cost? Leaderboard + anomaly detection.' },
+                { level: 'Team member', example: 'Alice Chen', note: 'Per-person attribution for workflow value. Anomaly review without a punitive leaderboard.' },
                 { level: 'Session', example: 'sess_abc123', note: 'A bounded unit of work. Maps to a task, document review, or conversation.' },
-                { level: 'Request → Token', example: '12,847 tok · claude-opus-4-5 · $0.097', note: 'The atomic unit. Model chosen, tokens used, cost settled on Tempo.' },
+                { level: 'Request and token', example: '12,847 tok · claude-opus-4-5 · $0.097', note: 'The atomic unit. Model chosen, tokens used, cost settled on Tempo.' },
               ].map(({ level, example, note }, i) => (
                 <div key={level} className="flex gap-4 py-2 border-b border-neutral-800 last:border-0">
                   <div className="flex items-start gap-2 shrink-0">
-                    <span className="text-neutral-700 mt-0.5 shrink-0">{'  '.repeat(i)}→</span>
+                    <span className="text-neutral-700 mt-0.5 shrink-0">{'  '.repeat(i)}·</span>
                     <span className="text-primary font-bold uppercase tracking-wider text-[9px] mt-0.5 w-24 shrink-0">{level}</span>
                   </div>
                   <div className="flex flex-col gap-0.5">
@@ -157,7 +160,7 @@ export default function EnterpriseAboutPage() {
               },
               {
                 capability: 'Track',
-                detail: 'Real-time spend tracking across the hierarchy. Department dashboards, project burn rates, employee leaderboards. Budget consumption visible live, not at month-end.',
+                detail: 'Real-time spend tracking across the hierarchy. Department dashboards, project burn rates, budget allocation by team. Budget consumption visible live, not at month-end.',
               },
               {
                 capability: 'Receipt',
@@ -173,7 +176,7 @@ export default function EnterpriseAboutPage() {
               },
               {
                 capability: 'Optimize',
-                detail: 'Gemini Pro analyzes 30 days of routing history and task-type similarity scores. Identifies where premium models are used on tasks that economy models handle equally well. Quantifies the savings before you act.',
+                detail: 'Gemini Pro analyzes routing history and task-type similarity scores from your tenant. Surfaces tasks where premium models were used alongside economy alternatives. Optimize recommendations remain blocked until a measured quality baseline is established.',
               },
               {
                 capability: 'Project',
@@ -194,12 +197,13 @@ export default function EnterpriseAboutPage() {
         <section className="flex flex-col gap-6">
           <SectionLabel number="04" label="Routing Optimization" />
           <h2 className="text-2xl font-bold uppercase tracking-tight">
-            The 30–70% cost reduction is real and measurable.
+            Routing observations, not blanket savings claims.
           </h2>
           <p className="font-mono text-neutral-400 leading-relaxed">
-            The optimization engine compares output quality scores across model tiers for each
-            task type in your org. Where quality is equivalent, it routes to the cheaper model.
-            The savings are projected before you commit to any routing change.
+            The engine compares output quality scores across model tiers for each task type in
+            your tenant. It surfaces tasks where economy models match premium-tier output. Any
+            actual savings depend on a measured baseline and a human routing change; the app
+            does not promise a percentage.
           </p>
 
           <div className="border-2 border-neutral-700 flex flex-col">
@@ -213,15 +217,15 @@ export default function EnterpriseAboutPage() {
               { task: 'Code completion (simple)', current: 'claude-opus-4-5', recommended: 'claude-haiku-4-5', saving: '$2.12', confidence: 94 },
               { task: 'Content generation', current: 'gpt-4o', recommended: 'claude-sonnet-4-5', saving: '$1.43', confidence: 89 },
               { task: 'Financial Q&A', current: 'gemini-2.0-pro', recommended: 'gemini-2.0-flash', saving: '$0.87', confidence: 91 },
-              { task: 'Contract analysis', current: 'claude-sonnet-4-5', recommended: 'maintain', saving: '—', confidence: 97 },
-              { task: 'Code review (complex)', current: 'claude-opus-4-5', recommended: 'maintain', saving: '—', confidence: 88 },
+              { task: 'Contract analysis', current: 'claude-sonnet-4-5', recommended: 'maintain', saving: 'n/a', confidence: 97 },
+              { task: 'Code review (complex)', current: 'claude-opus-4-5', recommended: 'maintain', saving: 'n/a', confidence: 88 },
             ].map(({ task, current, recommended, saving, confidence }) => (
               <div key={task} className="border-b border-neutral-800 last:border-0 px-5 py-3 grid grid-cols-4 gap-4 items-center text-[10px] font-mono">
                 <span className="text-neutral-300">{task}</span>
                 <span className="text-warning">{current}</span>
                 <span className={recommended === 'maintain' ? 'text-neutral-600' : 'text-success'}>{recommended}</span>
                 <div className="flex items-center justify-end gap-2">
-                  <span className={`font-bold tabular-nums ${saving === '—' ? 'text-neutral-600' : 'text-success'}`}>{saving}</span>
+                  <span className={`font-bold tabular-nums ${saving === 'n/a' ? 'text-neutral-600' : 'text-success'}`}>{saving}</span>
                   <span className="text-neutral-700 text-[9px]">{confidence}%</span>
                 </div>
               </div>
@@ -242,7 +246,7 @@ export default function EnterpriseAboutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ControlCard
               label="Department budget cap"
-              detail="Each department gets a monthly budget in USD. When projected spend (current velocity × remaining days) exceeds 90% of the cap, the department head is notified. When the cap is reached, requests are blocked or downgraded to economy tier — configurable per policy."
+              detail="Each department gets a monthly budget in USD. When projected spend (current velocity × remaining days) exceeds 90% of the cap, the department head is notified. When the cap is reached, requests are blocked or downgraded to economy tier, configurable per policy."
             />
             <ControlCard
               label="Project budget cap"
@@ -254,7 +258,7 @@ export default function EnterpriseAboutPage() {
             />
             <ControlCard
               label="Anomaly detection"
-              detail="Session costs 3× above the employee's 30-day average are flagged automatically. An employee who suddenly runs $10 of LLM calls in one session triggers a Sentinel review. The session is not blocked — it is surfaced for review within 60 seconds."
+              detail="Session costs 3x above the team member's 30-day average are flagged automatically. A sudden $10 single-session run surfaces in the anomaly review queue within 60 seconds; the session is not blocked."
             />
           </div>
         </section>
@@ -272,7 +276,7 @@ export default function EnterpriseAboutPage() {
 
           <div className="border-2 border-neutral-700 font-mono text-[11px]">
             <div className="border-b border-neutral-700 px-5 py-3 text-[9px] text-neutral-500 uppercase tracking-wider">
-              Session receipt — example
+              Session receipt example
             </div>
             <div className="p-5 flex flex-col gap-2 text-neutral-400">
               <div className="grid grid-cols-2 gap-4">
@@ -326,7 +330,7 @@ export default function EnterpriseAboutPage() {
         <section className="flex flex-col gap-6">
           <SectionLabel number="07" label="Unit Economics" />
           <h2 className="text-2xl font-bold uppercase tracking-tight">
-            The savings are structural, not marginal.
+            Attribution turns AI spend from opaque into reviewable.
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="border-2 border-neutral-700 p-4 flex flex-col gap-2">
@@ -337,10 +341,10 @@ export default function EnterpriseAboutPage() {
               </div>
             </div>
             <div className="border-2 border-info p-4 flex flex-col gap-2">
-              <div className="text-lg font-bold text-info tabular-nums">30–70%</div>
-              <div className="text-xs font-bold uppercase tracking-wider text-neutral-50">Model cost reduction via routing</div>
+              <div className="text-lg font-bold text-info tabular-nums">Per-task</div>
+              <div className="text-xs font-bold uppercase tracking-wider text-neutral-50">Routing visibility by task type</div>
               <div className="text-[11px] font-mono text-neutral-400 leading-relaxed">
-                Routing code completion to Haiku instead of Opus saves 87% on that task type. Across an engineering team of 10, that&apos;s $25–100/month per employee recovered.
+                Per-task attribution lets a routing change be evaluated against your measured baseline. The app does not promise a specific savings percentage. Any cost recovery depends on the quality bar you set and the volume of routable tasks in your tenant.
               </div>
             </div>
             <div className="border-2 border-neutral-700 p-4 flex flex-col gap-2">
@@ -358,7 +362,7 @@ export default function EnterpriseAboutPage() {
               {[
                 ['Without P402', 'Monthly OpenAI invoice: ~$2,400', 'Zero attribution. Zero optimization lever.'],
                 ['With P402 (tracking only)', 'Same $2,400 spend, now attributed', 'Department breakdown. Per-project chargeback.'],
-                ['With P402 (+ routing optimization)', 'Projected spend: ~$1,080', '55% cost reduction via model-tier routing.'],
+                ['With P402 (+ routing review)', 'Reviewable by task type', 'Operator decides which task types to re-route after evaluating their measured baseline.'],
               ].map(([scenario, cost, note]) => (
                 <div key={scenario} className="flex flex-col gap-1.5">
                   <span className="text-[9px] text-neutral-600 uppercase tracking-wider">{scenario}</span>
@@ -379,13 +383,13 @@ export default function EnterpriseAboutPage() {
             The dashboard is live with synthetic data.
           </h2>
           <p className="font-mono text-neutral-400 leading-relaxed max-w-xl">
-            Org KPIs, department breakdown, employee leaderboard, model mix, budget projections,
-            routing optimization panel, and session log — all wired and running with Acme Corp
-            synthetic data. Connect your P402 API key to see real org spend.
+            Org KPIs, department breakdown, workflow value by team, model mix, budget projections,
+            routing observation panel, and session log, all wired and running with synthetic data.
+            Connect your P402 API key to see real org spend.
           </p>
           <div className="flex gap-4 flex-wrap mt-2">
             <Link href="/meter/enterprise" className="btn btn-primary text-sm px-8 py-3">
-              Open Dashboard →
+              Open dashboard
             </Link>
             <Link href="/meter/healthcare" className="btn btn-secondary text-sm px-8 py-3">
               See Healthcare Demo (Live)
@@ -432,7 +436,7 @@ function ControlCard({ label, detail }: { label: string; detail: string }) {
   return (
     <div className="border border-neutral-700 p-4 flex flex-col gap-2">
       <div className="flex items-start gap-2">
-        <span className="text-info mt-0.5 shrink-0">→</span>
+        <span className="text-info mt-0.5 shrink-0">·</span>
         <span className="text-xs font-bold uppercase tracking-wider text-neutral-50">{label}</span>
       </div>
       <p className="text-[11px] font-mono text-neutral-400 leading-relaxed pl-4">{detail}</p>
