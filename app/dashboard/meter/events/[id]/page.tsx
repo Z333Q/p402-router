@@ -267,8 +267,8 @@ export default function EventDetailPage({
                             <KV label="Model used"      value={data.event.model_used} mono />
                             <KV label="Model requested" value={data.event.model_requested} mono />
                             <KV label="Source"          value={data.event.source} mono />
-                            <KV label="Cache savings"   value={fmtUsd(data.event.cache_savings_usd)} mono />
-                            <KV label="Route savings"   value={fmtUsd(data.event.route_savings_usd)} mono />
+                            <KV label="Cache cost delta" value={fmtUsd(data.event.cache_savings_usd)} mono />
+                            <KV label="Route cost delta" value={fmtUsd(data.event.route_savings_usd)} mono />
                         </Card>
 
                         <Card title="Economics + Outcome">
