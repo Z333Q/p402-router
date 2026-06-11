@@ -5,9 +5,71 @@ import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
     title: 'Trust Center | P402',
-    description: 'Verify P402 reliability, on-chain contracts, custody model, replay protection, and evidence artifacts. No sales call required.',
+    description: 'Verify P402 data boundary, privacy modes, subprocessors, retention, on-chain contracts, custody model, replay protection, and evidence artifacts. No sales call required.',
     alternates: { canonical: 'https://p402.io/trust' },
 };
+
+const PRIVACY_MODES = [
+    {
+        id: 'metadata-only',
+        name: 'Metadata-only',
+        default: true,
+        bestFor: 'CFOs, regulated teams, healthcare, finance, legal, privacy-sensitive SaaS',
+        receives: ['request_id', 'tenant_id', 'api_key_id', 'department_id', 'employee_id', 'customer_id', 'feature_id', 'workflow_id', 'task_type', 'action_type', 'model', 'provider', 'input_tokens', 'output_tokens', 'cost_usd', 'latency_ms', 'cache_hit', 'budget_id', 'policy_id', 'governance_decision', 'deny_code', 'output_status', 'quality_score', 'evidence_status'],
+        neverReceives: ['prompt text', 'response text', 'files', 'documents', 'chat history', 'PHI', 'PII', 'secrets', 'source code'],
+        supports: ['Meter', 'Monitor', 'Control', 'budget enforcement', 'department/employee/feature/customer margin', 'forecasting', 'basic optimization', 'evidence exports'],
+        limits: ['Semantic cache is opt-in and privacy-mode dependent', 'Limited prompt-level optimization', 'Limited context-bloat analysis', 'Limited duplicate-work detection'],
+    },
+    {
+        id: 'fingerprint-only',
+        name: 'Fingerprint-only',
+        default: false,
+        bestFor: 'Teams that want duplicate detection without exposing content',
+        receives: ['metadata above, plus:', 'HMAC prompt fingerprint (tenant-secret HMAC, not plain SHA-256)', 'HMAC response fingerprint', 'token shape', 'optional prompt length bands', 'optional document hash'],
+        neverReceives: ['raw prompt or response content', 'embeddings (treated as sensitive — opt-in only)'],
+        supports: ['Duplicate request detection', 'Retry loop detection', 'Repeated task detection', 'Cache opportunity estimates', 'Same-input cost analysis'],
+        limits: ['No prompt-level rewrite suggestions', 'No semantic similarity grouping unless embeddings explicitly enabled'],
+    },
+    {
+        id: 'redacted-trace',
+        name: 'Redacted trace',
+        default: false,
+        bestFor: 'Developers and enterprises wanting stronger optimization with bounded exposure',
+        receives: ['redacted prompt sample', 'redacted response sample', 'trace summary', 'tool-call summary', 'retrieval summary', 'policy summary'],
+        neverReceives: ['unredacted PII, PHI, secrets, API keys, emails, phone numbers, addresses, or custom-regex-matched content (redacted client-side before send)'],
+        supports: ['Context waste detection', 'Prompt compression recommendations', 'Retry-loop diagnosis', 'Tool-call waste analysis', 'Quality review', 'Better model selection by action'],
+        limits: ['Redaction is your responsibility before send', 'Opt-in per tenant/project/key/workflow'],
+    },
+    {
+        id: 'private-gateway',
+        name: 'Private Gateway',
+        default: false,
+        bestFor: 'Large enterprise, regulated enterprise, high-value customers',
+        receives: ['economic events', 'recommendation summaries', 'savings proofs', 'policy results', 'evidence hashes', 'aggregate analytics'],
+        neverReceives: ['raw prompts (planned to stay in customer VPC)', 'raw responses (planned to stay in customer VPC)', 'embeddings unless explicitly exported'],
+        supports: ['Customer-controlled routing path', 'Deeper optimization scope', 'Tenant-scoped semantic cache (opt-in)', 'Tenant-scoped trace inspection', 'Tenant-scoped redaction', 'Tenant-scoped policy enforcement', 'Enterprise evidence export'],
+        limits: ['Enterprise deployment path; availability subject to agreement and deployment scope', 'Operational responsibilities defined per engagement'],
+    },
+    {
+        id: 'full-trace',
+        name: 'Full trace, opt-in',
+        default: false,
+        bestFor: 'Small developer teams wanting maximum debugging and optimization',
+        receives: ['prompt', 'response', 'tool calls', 'trace', 'retrieval context', 'output status', 'quality score'],
+        neverReceives: ['data the customer does not send'],
+        supports: ['Deepest optimization', 'Full trace replay', 'Per-request quality review'],
+        limits: ['Never the default; must be explicitly enabled', 'Short retention required', 'Project-level enablement (planned for enterprise deployment)', 'Role-gated access (planned for enterprise deployment)', 'Audit log of access (planned for enterprise deployment)', 'Delete/export controls (planned for enterprise deployment, subject to agreement)'],
+    },
+] as const;
+
+const SUBPROCESSORS = [
+    { name: 'Google (Gemini)', purpose: 'Sentinel anomaly detection (aggregate cost metadata only in default mode). Forensic analysis available by enterprise agreement and opt-in deployment scope.', region: 'US / multi-region', dataSeen: 'Aggregate spend metadata by default. Prompt content only in Full-trace opt-in mode.' },
+    { name: 'OpenRouter', purpose: 'Upstream model provider aggregator for hosted routing', region: 'US', dataSeen: 'Prompt + response in Hosted Router mode. Not used in Meter-Only SDK or Private Gateway modes.' },
+    { name: 'Neon (PostgreSQL)', purpose: 'Primary database for economic events, sessions, billing, mandates, audit', region: 'US-hosted managed Postgres', dataSeen: 'Whatever the active privacy mode persists. Metadata-only by default. Region documented during onboarding.' },
+    { name: 'Cloudflare', purpose: 'CDN, WAF, optional Cloudflare-based facilitator endpoint', region: 'Global edge', dataSeen: 'HTTP request metadata. Request bodies are not persisted at the CDN/WAF edge. Optional facilitator flows process settlement payloads only.' },
+    { name: 'Stripe', purpose: 'Fiat subscription billing only', region: 'US', dataSeen: 'Customer billing identity and card metadata. Never sees AI prompt or response content.' },
+    { name: 'Coinbase Developer Platform (CDP)', purpose: 'Optional server wallets for agent custody flows', region: 'US', dataSeen: 'Wallet addresses, signed authorizations. No prompt content.' },
+] as const;
 
 const CONTRACTS = [
     {
@@ -146,16 +208,33 @@ export default function TrustPage() {
                     <div className="container mx-auto px-6 max-w-5xl">
                         <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-3"><span className="font-mono">{">_"}</span> Trust Center</div>
                         <h1 className="text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-none mb-5">
-                            Verify our<br />
-                            <span className="heading-accent">infrastructure.</span>
+                            Data boundary<br />
+                            <span className="heading-accent">by design.</span>
                         </h1>
                         <p className="text-lg font-medium text-neutral-600 max-w-2xl leading-relaxed border-l-4 border-black pl-5">
-                            Every contract address, custody role, security check, and evidence artifact is documented here.
-                            No sales call required.
+                            P402 meters economics, not content. Prompt and response storage are off by default. Every privacy mode, subprocessor, contract, custody role, and security check is documented here. No sales call required.
                         </p>
 
                         {/* Quick trust strip */}
                         <div className="mt-10 flex flex-wrap gap-4">
+                            <a
+                                href="#data-boundary"
+                                className="inline-flex items-center gap-2 bg-primary border-2 border-black px-4 py-2 text-[11px] font-black uppercase tracking-wider hover:bg-black hover:text-primary transition-colors no-underline"
+                            >
+                                Privacy modes
+                            </a>
+                            <a
+                                href="#subprocessors"
+                                className="inline-flex items-center gap-2 border-2 border-black px-4 py-2 text-[11px] font-black uppercase tracking-wider hover:bg-black hover:text-primary transition-colors no-underline"
+                            >
+                                Subprocessors
+                            </a>
+                            <a
+                                href="#posture"
+                                className="inline-flex items-center gap-2 border-2 border-black px-4 py-2 text-[11px] font-black uppercase tracking-wider hover:bg-black hover:text-primary transition-colors no-underline"
+                            >
+                                Retention & encryption
+                            </a>
                             <a
                                 href="/status"
                                 className="inline-flex items-center gap-2 border-2 border-black px-4 py-2 text-[11px] font-black uppercase tracking-wider hover:bg-black hover:text-primary transition-colors no-underline"
@@ -181,6 +260,145 @@ export default function TrustPage() {
                                 API reference
                             </Link>
                         </div>
+                    </div>
+                </section>
+
+                {/* Data boundary by design — V5 §27.8 */}
+                <section id="data-boundary" className="py-16 border-b-2 border-black bg-white">
+                    <div className="container mx-auto px-6 max-w-5xl">
+                        <div className="mb-8">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">Data boundary</div>
+                            <h2 className="text-3xl font-black uppercase tracking-tighter">Data boundary by design</h2>
+                            <p className="text-sm text-neutral-600 font-medium mt-3 max-w-3xl leading-relaxed">
+                                P402 separates economic metadata from content. Prompt and response storage are off by default. You choose retention, redaction, privacy mode, and deployment model. The five modes below describe exactly what each tier persists and what it does not.
+                            </p>
+                        </div>
+
+                        <div className="space-y-px border-2 border-black bg-white">
+                            {PRIVACY_MODES.map((m) => (
+                                <details key={m.id} className="group bg-white border-b-2 border-black last:border-b-0" open={m.default}>
+                                    <summary className="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer list-none hover:bg-neutral-50">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <span className="font-black text-lg uppercase tracking-tight text-black">{m.name}</span>
+                                            {m.default && (
+                                                <span className="inline-block bg-primary border-2 border-black px-2 py-0.5 text-[9px] font-black uppercase tracking-widest">Default</span>
+                                            )}
+                                        </div>
+                                        <span className="shrink-0 text-neutral-400 group-open:rotate-45 transition-transform text-2xl leading-none">+</span>
+                                    </summary>
+                                    <div className="px-6 pb-6 grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
+                                        <div className="lg:col-span-2 text-[11px] font-bold text-neutral-500 uppercase tracking-widest">Best for: <span className="text-black normal-case font-medium tracking-normal">{m.bestFor}</span></div>
+                                        <div>
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-black mb-2">P402 receives</div>
+                                            <ul className="space-y-1">
+                                                {m.receives.map((f) => (
+                                                    <li key={f} className="text-xs font-mono text-neutral-700 leading-relaxed flex gap-2"><span className="text-primary">▸</span>{f}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-warning mb-2">P402 never receives</div>
+                                            <ul className="space-y-1">
+                                                {m.neverReceives.map((f) => (
+                                                    <li key={f} className="text-xs font-mono text-neutral-700 leading-relaxed flex gap-2"><span className="text-warning">✕</span>{f}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-black mb-2">Supports</div>
+                                            <ul className="space-y-1">
+                                                {m.supports.map((f) => (
+                                                    <li key={f} className="text-xs text-neutral-600 leading-relaxed flex gap-2"><span className="text-primary">✓</span>{f}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">Limits</div>
+                                            <ul className="space-y-1">
+                                                {m.limits.map((f) => (
+                                                    <li key={f} className="text-xs text-neutral-500 leading-relaxed flex gap-2"><span className="text-neutral-400">·</span>{f}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </details>
+                            ))}
+                        </div>
+
+                        <p className="text-[11px] font-medium text-neutral-500 mt-4 leading-relaxed max-w-3xl">
+                            Privacy mode is recorded on every economic event and shown on every evidence bundle as <code className="font-mono bg-neutral-100 px-1">privacy_mode</code>, alongside <code className="font-mono bg-neutral-100 px-1">prompt_stored</code> and <code className="font-mono bg-neutral-100 px-1">response_stored</code> booleans. You can verify which mode applied to any specific call.
+                        </p>
+                    </div>
+                </section>
+
+                {/* Subprocessors */}
+                <section id="subprocessors" className="py-16 border-b-2 border-black bg-neutral-50">
+                    <div className="container mx-auto px-6 max-w-5xl">
+                        <div className="mb-8">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">Subprocessors</div>
+                            <h2 className="text-3xl font-black uppercase tracking-tighter">Who else touches your data</h2>
+                            <p className="text-sm text-neutral-500 font-medium mt-2 max-w-3xl">
+                                These are the third parties P402 may share data with, what each is used for, and which privacy modes route data to them. We notify customers of material changes to this list.
+                            </p>
+                        </div>
+                        <div className="border-2 border-black bg-white">
+                            <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 border-b-2 border-black bg-neutral-100">
+                                <div className="col-span-3 text-[10px] font-black uppercase tracking-widest text-neutral-500">Subprocessor</div>
+                                <div className="col-span-4 text-[10px] font-black uppercase tracking-widest text-neutral-500">Purpose</div>
+                                <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-neutral-500">Region</div>
+                                <div className="col-span-3 text-[10px] font-black uppercase tracking-widest text-neutral-500">Data exposure</div>
+                            </div>
+                            {SUBPROCESSORS.map((s, i) => (
+                                <div key={s.name} className={`grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-5 ${i < SUBPROCESSORS.length - 1 ? 'border-b border-neutral-100' : ''}`}>
+                                    <div className="md:col-span-3 font-black text-xs uppercase tracking-wider text-black">{s.name}</div>
+                                    <div className="md:col-span-4 text-xs text-neutral-600 font-medium leading-relaxed">{s.purpose}</div>
+                                    <div className="md:col-span-2 text-xs font-mono text-neutral-500">{s.region}</div>
+                                    <div className="md:col-span-3 text-xs text-neutral-600 font-medium leading-relaxed">{s.dataSeen}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Retention, encryption, audit status — honest disclosures */}
+                <section id="posture" className="py-16 border-b-2 border-black bg-white">
+                    <div className="container mx-auto px-6 max-w-5xl">
+                        <div className="mb-8">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">Posture</div>
+                            <h2 className="text-3xl font-black uppercase tracking-tighter">Retention, encryption, audit status</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-black border-2 border-black">
+                            <div className="bg-white p-6">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-black mb-3">Retention</div>
+                                <ul className="space-y-2 text-xs text-neutral-600 font-medium leading-relaxed">
+                                    <li>Economic metadata: 30 days default, configurable per tenant.</li>
+                                    <li>Trace / prompt logs (when opt-in is active): 30 days default, configurable down to 7.</li>
+                                    <li>Evidence bundles and transaction receipts: retained per tenant policy, configurable, and documented during onboarding.</li>
+                                    <li>Tenant-level data deletion: available on request. SLA documented during onboarding.</li>
+                                </ul>
+                            </div>
+                            <div className="bg-white p-6">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-black mb-3">Encryption</div>
+                                <ul className="space-y-2 text-xs text-neutral-600 font-medium leading-relaxed">
+                                    <li>In transit: TLS 1.2+ on all endpoints; HSTS enforced on p402.io.</li>
+                                    <li>At rest: AES-256 via managed Postgres (Neon) storage encryption.</li>
+                                    <li>API keys: SHA-256 stored; raw key returned exactly once.</li>
+                                    <li>Wallet signatures: EIP-712 typed data; no private key custody by P402.</li>
+                                </ul>
+                            </div>
+                            <div className="bg-white p-6">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-black mb-3">Audit status</div>
+                                <ul className="space-y-2 text-xs text-neutral-600 font-medium leading-relaxed">
+                                    <li><span className="font-black">Smart contract audit:</span> P402Settlement, SubscriptionFacilitator — third-party audit not yet engaged. Source verifiable on Basescan. Status will be published here when audit is commissioned.</li>
+                                    <li><span className="font-black">SOC 2:</span> not yet completed. Enterprise compliance roadmap available during procurement review.</li>
+                                    <li><span className="font-black">HIPAA / BAA:</span> BAA path planned for enterprise deployment. Not available on hosted routing today. Public demos use synthetic data only.</li>
+                                    <li><span className="font-black">Security disclosure:</span> security@p402.io. Acknowledgement timing documented during onboarding.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p className="text-[11px] font-medium text-neutral-500 mt-4 leading-relaxed">
+                            This section is intentionally honest. P402 is pre-SOC-2 and pre-third-party-audit. Buyers requiring those before deployment can engage on the Private Gateway path (enterprise deployment, subject to agreement) to scope data exposure to aggregates while those certifications are pursued.
+                        </p>
                     </div>
                 </section>
 
@@ -363,6 +581,30 @@ Authorization: Bearer $P402_API_KEY
                         <div className="space-y-px border-2 border-black">
                             {[
                                 {
+                                    q: 'Does P402 see our prompts?',
+                                    a: 'Not by default. The default privacy mode is Metadata-only: P402 receives token counts, costs, owner attribution, model, latency, and policy results, and does not store prompt or response content. Prompt content reaches P402 cloud only if you explicitly enable Redacted-trace or Full-trace mode. Private Gateway is the enterprise deployment path for customer-controlled routing, where prompt content stays within the customer-controlled boundary defined by the engagement; availability is subject to enterprise agreement and deployment scope.',
+                                },
+                                {
+                                    q: 'Does the Sentinel (Gemini) inspect every prompt?',
+                                    a: 'No. The Sentinel runs cost-anomaly detection on aggregate spend metadata (cost_usd, timestamps, model, tenant) — not on prompt content. Prompt-level jailbreak inspection is an opt-in capability available only when you select a privacy mode that sends content. In Metadata-only mode, no prompt or response content is sent to Google.',
+                                },
+                                {
+                                    q: 'What does each evidence bundle record about privacy?',
+                                    a: 'Every evidence bundle records privacy_mode (the mode that applied to this call), prompt_stored (boolean), and response_stored (boolean). You can audit any specific request to verify which mode was active and whether any content was retained.',
+                                },
+                                {
+                                    q: 'How long is data retained?',
+                                    a: 'Economic metadata: 30 days default, configurable per tenant. Trace/prompt logs (only when opt-in modes are active): 30 days default, configurable down to 7. Evidence bundles and transaction receipts are retained per tenant policy, configurable, and documented during onboarding. Tenant-level data deletion is available on request. SLA documented during onboarding.',
+                                },
+                                {
+                                    q: 'Is the settlement contract third-party audited?',
+                                    a: 'Not yet. P402Settlement and SubscriptionFacilitator source is verifiable on Basescan. A third-party audit has not yet been engaged; status will be published on this page when commissioned. Customers requiring a completed audit before deployment can engage on the Private Gateway path (enterprise deployment, subject to agreement) or wait for audit completion.',
+                                },
+                                {
+                                    q: 'Is there a BAA / HIPAA path?',
+                                    a: 'BAA path planned for enterprise deployment. Not available on hosted routing today. Public demos use synthetic data only.',
+                                },
+                                {
                                     q: 'Does P402 hold user funds at any point?',
                                     a: 'No. The facilitator wallet executes transferWithAuthorization on the USDC contract. Funds move directly from the user\'s wallet to the treasury or resource server. The facilitator is never in the custody chain.',
                                 },
@@ -384,7 +626,7 @@ Authorization: Bearer $P402_API_KEY
                                 },
                                 {
                                     q: 'Where do I report a security issue?',
-                                    a: 'Email security@p402.io. Include reproduction steps, affected endpoint, and requestId if available. We acknowledge within 24 hours.',
+                                    a: 'Email security@p402.io. Include reproduction steps, affected endpoint, and requestId if available. Acknowledgement timing documented during onboarding.',
                                 },
                             ].map((faq, i, arr) => (
                                 <details key={faq.q} className={`group bg-white ${i < arr.length - 1 ? 'border-b border-neutral-100' : ''}`}>
