@@ -32,7 +32,7 @@ P402 (Payment 402) is the unified infrastructure layer for the Agentic Web. It m
 P402 features the **Protocol Economist**, an autonomous oversight engine that acts as the "Brain" of the router.
 
 - **The Brain (Gemini 3 Pro)**: Performs deep forensic analysis on transaction ledgers using 1M token context to identify macro-savings and optimize routing weights.
-- **The Sentinel (Gemini 3 Flash)**: Real-time, sub-second monitoring of every prompt to detect cost anomalies and adversarial prompt injections.
+- **The Sentinel (Gemini 3 Flash)**: Real-time, sub-second cost-anomaly detection over aggregate spend metadata (no prompt content leaves the customer boundary in the default metadata-only mode). Optional prompt-level jailbreak inspection is available as an explicit opt-in privacy mode.
 - **The Memory (Semantic Vector Cache)**: Utilizing `text-embedding-004`, P402 intercepts repetitive queries with >92% similarity, serving responses at **zero cost** and sub-50ms latency.
 - **The Hands (Autonomous Tools)**: The AI doesn't just suggest; it executes. 7 custom tools dynamically adjust model substitutions, rate limits, failover chains, and cache policies.
 - **The Senses (Thinking Trace)**: Real-time observability through a live SSE feed, showing exactly *why* the AI made a fiscal decision.
@@ -101,7 +101,7 @@ Full implementation of the A2A Protocol for autonomous discovery.
 Integrated AI-powered security scanner for agentic code.
 - **Risk Scoring**: Simulates burn rates and identifies "Financial Death Loops."
 - **Privacy Scrubbing**: Automatically redacts sensitive API keys (`sk-...`) from public logs.
-- **Jailbreak Defense**: Sentinel-level blocking of malicious prompt patterns.
+- **Jailbreak Defense** (opt-in): Sentinel-level blocking of malicious prompt patterns. Requires the inspection privacy mode; disabled in default metadata-only mode.
 
 ---
 
@@ -218,7 +218,7 @@ cp -r .claude/skills/p402 ~/.codex/skills/p402
 ### Setup
 ```bash
 # Clone and install
-git clone https://github.com/p402-io/p402-router.git
+git clone https://github.com/Z333Q/p402-router.git
 cd p402-router
 npm install
 

@@ -46,6 +46,9 @@ next-env.d.ts
 # Secrets (IMPORTANT)
 DEPLOYMENT_GUIDE_SECRET.md
 .env*.local
+.mcpregistry_github_token
+.mcpregistry_registry_token
+.mcpregistry_*_token
 
 # Local development directories not part of this project
 # (p402-protocol public repo, Dune analytics scripts)

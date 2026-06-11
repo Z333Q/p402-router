@@ -45,9 +45,12 @@ export function Testimonials() {
     return (
         <section className="py-24 bg-white overflow-hidden border-b-2 border-black">
             <div className="container mx-auto px-6 mb-16">
-                <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-4 text-black italic">Built on the A2A Protocol</h2>
+                <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-4 text-black italic">Built on an open standard</h2>
                 <div className="h-2 w-32 bg-primary border-2 border-black mb-6" />
-                <p className="text-xl font-bold text-neutral-600 uppercase tracking-widest">P402 implements Google's Agent-to-Agent (A2A) Protocol, trusted by leading platforms.</p>
+                <p className="text-xl font-bold text-neutral-600 uppercase tracking-widest">P402 implements Google Cloud's open Agent-to-Agent (A2A) protocol.</p>
+                <p className="mt-4 text-sm font-bold text-neutral-500 uppercase tracking-wide max-w-3xl">
+                    The quotes below are public statements by partners of the A2A standard about the protocol itself, not endorsements of P402. Source: Google Cloud A2A launch announcements.
+                </p>
             </div>
 
             <div
@@ -67,6 +70,7 @@ export function Testimonials() {
                                 <div>
                                     <div className="inline-block bg-primary text-black px-2 py-0.5 border-2 border-black font-black text-xs uppercase tracking-widest mb-2">{t.company}</div>
                                     <div className="text-neutral-500 font-bold text-sm uppercase">{t.author}</div>
+                                    <div className="mt-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Statement about A2A protocol</div>
                                 </div>
                             </div>
                         </div>
