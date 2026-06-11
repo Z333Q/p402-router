@@ -13,24 +13,25 @@ import { PricingStrip } from "@/components/landing/PricingStrip"
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-    title: 'P402 | AI Payment Router for Agent Commerce',
-    description: 'Route LLM calls across 300+ AI models with intelligent cost optimization. Settle micropayments in USDC on Base via the x402 protocol. The economic layer for autonomous AI agents.',
+    title: 'P402 | Make AI spend accountable',
+    description: 'Meter every AI call before it becomes budget leakage. Turn token usage into a live cost ledger with owner, budget, and margin attribution. Private by default, metadata-only metering.',
     alternates: { canonical: 'https://p402.io' },
     keywords: [
-        'AI payment router', 'LLM routing', 'x402 protocol', 'agent payments', 'USDC micropayments',
-        'A2A protocol', 'AI cost optimization', 'Base blockchain', 'EIP-3009', 'Claude Code',
-        'OpenAI compatible', 'multi-model routing', 'agentic commerce', 'AP2 mandates'
+        'AI spend accountability', 'AI cost ledger', 'AI COGS dashboard', 'AI budget control',
+        'AI margin control', 'token usage attribution', 'AI spend audit', 'enterprise AI budget',
+        'embedded AI margin', 'metered AI economic events', 'AP2 mandates', 'A2A protocol',
+        'x402 protocol', 'USDC settlement', 'EIP-3009', 'OpenAI compatible router'
     ],
     openGraph: {
-        title: 'P402 | AI Payment Router — 300+ Models, USDC Settlement',
-        description: 'Route AI calls across 300+ models. Settle USDC micropayments with zero gas fees via EIP-3009. The economic layer for autonomous AI agents.',
+        title: 'P402 | Make AI spend accountable',
+        description: 'Meter every AI call before it becomes budget leakage. Live cost ledger with owner, budget, and margin attribution. Private by default.',
         url: 'https://p402.io',
         type: 'website',
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'P402 — AI Payment Router for Agent Commerce',
-        description: 'Route 300+ AI models. Settle USDC micropayments. Zero gas via EIP-3009. Built for the Agentic Web.',
+        title: 'P402: Make AI spend accountable',
+        description: 'Meter every AI call. Attribute every token. Control every margin. Private by default.',
         site: '@p402_io',
     },
 };

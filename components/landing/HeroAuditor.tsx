@@ -45,17 +45,18 @@ export const HeroAuditor = () => {
                     </div>
 
                     <h1 className="text-5xl lg:text-7xl font-extrabold uppercase tracking-tighter mb-6">
-                        <span className="block leading-[0.95] lg:leading-[0.88]">Pay less</span>
-                        <span className="block leading-[0.95] lg:leading-[0.88]">for AI.</span>
+                        <span className="block leading-[0.95] lg:leading-[0.88]">Make AI</span>
+                        <span className="block leading-[0.95] lg:leading-[0.88]">spend</span>
                         <span className="block leading-normal mt-2">
-                            <span className="heading-accent">Smart routing.</span>
+                            <span className="heading-accent">accountable.</span>
                         </span>
                     </h1>
 
-                    <p className="text-base lg:text-lg font-bold text-neutral-600 max-w-lg mb-6 leading-relaxed border-l-4 border-black pl-5">
-                        We route each request to the cheapest model that meets your quality bar,
-                        optimizing continuously across 300+ models. Payments settle gaslessly on Base.
-                        Every request traced, evaluated, and attributed.
+                    <p className="text-base lg:text-lg font-bold text-neutral-600 max-w-lg mb-4 leading-relaxed border-l-4 border-black pl-5">
+                        P402 turns every AI call into a metered economic event with an owner, a budget, and a margin. Token usage becomes a live cost ledger you can attribute, audit, and optimize.
+                    </p>
+                    <p className="text-sm font-bold text-neutral-500 max-w-lg mb-6 leading-relaxed pl-5">
+                        Every token needs an owner. Every AI feature needs margin control.
                     </p>
 
                     {/* Mode selector preview */}
@@ -77,25 +78,25 @@ export const HeroAuditor = () => {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4">
-                        <Link href="/login">
+                        <Link href="/dashboard">
                             <button className="h-12 px-8 bg-[#B6FF2E] text-black font-mono font-black uppercase tracking-wider hover:-translate-y-1 transition-transform border-2 border-black shadow-[4px_4px_0px_0px_#000] w-full sm:w-auto">
-                                Get Started Free
+                                See dashboard
                             </button>
                         </Link>
-                        <Link href="/developers/quickstart">
+                        <Link href="/meter">
                             <button className="h-12 px-8 bg-white text-black font-mono font-bold uppercase tracking-wider hover:-translate-y-1 transition-transform border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 group w-full sm:w-auto">
-                                Run Quickstart
+                                Install Meter
                                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </button>
                         </Link>
                     </div>
 
-                    {/* Trust signals */}
+                    {/* Trust strip (V5 spec) */}
                     <div className="mt-6 flex flex-wrap gap-5 text-[10px] font-black uppercase tracking-widest text-neutral-500">
-                        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />300+ models</span>
-                        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />Zero gas fees</span>
-                        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />USDC on Base</span>
-                        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />Live intelligence dashboard</span>
+                        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />Private by default</span>
+                        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />No prompt storage required</span>
+                        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />Metadata-only metering</span>
+                        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-[#B6FF2E] stroke-[3]" />Private Gateway: enterprise deployment path</span>
                     </div>
 
                     {/* Compatibility note */}
