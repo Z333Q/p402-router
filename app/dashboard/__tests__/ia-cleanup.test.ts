@@ -36,8 +36,13 @@ const PROVE_ROOT           = read('app/dashboard/prove/page.tsx');
 const PRIMARY_IA_SURFACES = [SIDEBAR, MISSION_CONTROL, PLAYGROUND, MONITOR, PROVE_ROOT, OPTIMIZE];
 
 describe('Sidebar primary IA', () => {
-    it('includes Mission Control, Meter, Monitor, Control, Prove, Outcomes, Accountability in order', () => {
-        const required = ['Mission Control', 'Meter', 'Monitor', 'Control', 'Prove', 'Outcomes', 'Accountability'];
+    it('renders the V5 primary nav in canonical order', () => {
+        // V5 §21.3: Overview → Meter → Monitor → Control → Optimize → Settle
+        // → Prove → Publish → Developers → Billing → Settings
+        const required = [
+            'Overview', 'Meter', 'Monitor', 'Control', 'Optimize',
+            'Settle', 'Prove', 'Publish', 'Developers', 'Billing', 'Settings',
+        ];
         const positions: number[] = [];
         for (const name of required) {
             const pos = SIDEBAR.indexOf(`name: "${name}"`);
@@ -51,7 +56,13 @@ describe('Sidebar primary IA', () => {
         }
     });
 
-    it('includes Optimize without labelling it as live recommendations', () => {
+    it('does not include the legacy "Mission Control" sidebar entry', () => {
+        // The /dashboard route still exists; only its sidebar label was
+        // renamed to Overview per V5 §21.3.
+        expect(SIDEBAR).not.toMatch(/name:\s*"Mission Control"/);
+    });
+
+    it('does not label Optimize as live recommendations', () => {
         expect(SIDEBAR).toMatch(/name:\s*["']Optimize["']/);
         expect(SIDEBAR).not.toMatch(/Optimize recommendations/i);
         expect(SIDEBAR).not.toMatch(/Recommendations\s*\(live\)/i);

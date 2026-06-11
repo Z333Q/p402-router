@@ -29,6 +29,9 @@ import {
     ChevronRight,
     Eye,
     SlidersHorizontal,
+    Coins,
+    Megaphone,
+    Code2,
 } from "lucide-react"
 import { useSession, signOut } from "next-auth/react"
 import { useDisconnect } from 'wagmi'
@@ -36,46 +39,58 @@ import { Badge } from "@/app/dashboard/_components/ui"
 import { usePlanUsage } from "@/hooks/usePlanUsage"
 
 /**
- * Slice 3N — AI spend accountability primary path.
- * Order is load-bearing: Meter -> Monitor -> Control -> Prove -> Outcomes
- * -> Accountability is the canonical buyer narrative. Tests in
- * components/layout/__tests__/AppSidebar.test.tsx pin this list.
+ * V5 §21.3 primary navigation. Eleven top-level entries, flat, ordered as the
+ * canonical buyer narrative:
+ *   Overview → Meter → Monitor → Control → Optimize → Settle → Prove →
+ *   Publish → Developers → Billing → Settings
+ *
+ * Order is load-bearing. Tests in
+ * `components/layout/__tests__/AppSidebar.test.tsx` and
+ * `app/dashboard/__tests__/ia-cleanup.test.ts` pin this list.
+ *
+ * Routes that don't yet have first-class pages point at their closest
+ * existing surface (e.g. Settle → /dashboard/transactions) so deep links
+ * resolve while we build the canonical surface (T2.10).
  */
-export const ACCOUNTABILITY_ITEMS = [
-    { id: 'mission-control', name: "Mission Control",  href: "/dashboard",                icon: LayoutDashboard },
-    { id: 'meter',           name: "Meter",            href: "/dashboard/meter/events",   icon: Zap },
-    { id: 'monitor',         name: "Monitor",          href: "/dashboard/monitor",        icon: Eye },
-    { id: 'control',         name: "Control",          href: "/dashboard/control",        icon: SlidersHorizontal },
-    { id: 'prove',           name: "Prove",            href: "/dashboard/prove",          icon: ShieldCheck, isNew: true },
-    { id: 'outcomes',        name: "Outcomes",         href: "/dashboard/prove/outcomes", icon: Sparkles,    isNew: true },
-    { id: 'accountability',  name: "Accountability",   href: "/dashboard/accountability", icon: Layers,      isNew: true },
+export const PRIMARY_NAV = [
+    { id: 'overview',   name: "Overview",   href: "/dashboard",                icon: LayoutDashboard },
+    { id: 'meter',      name: "Meter",      href: "/dashboard/meter/events",   icon: Zap },
+    { id: 'monitor',    name: "Monitor",    href: "/dashboard/monitor",        icon: Eye },
+    { id: 'control',    name: "Control",    href: "/dashboard/control",        icon: SlidersHorizontal },
+    { id: 'optimize',   name: "Optimize",   href: "/dashboard/optimize",       icon: Sparkles },
+    { id: 'settle',     name: "Settle",     href: "/dashboard/transactions",   icon: Coins },
+    { id: 'prove',      name: "Prove",      href: "/dashboard/prove",          icon: ShieldCheck },
+    { id: 'publish',    name: "Publish",    href: "/dashboard/bazaar",         icon: Megaphone },
+    { id: 'developers', name: "Developers", href: "/dashboard/playground",     icon: Code2, isGroup: true },
+    { id: 'billing',    name: "Billing",    href: "/dashboard/billing",        icon: CreditCard },
+    { id: 'settings',   name: "Settings",   href: "/dashboard/settings",       icon: Settings },
 ] as const;
 
 /**
- * Secondary operations entries. Every legacy route is preserved so
- * deep-linked bookmarks still resolve.
+ * Back-compat export. Older tests (Slice 3N) imported `ACCOUNTABILITY_ITEMS`
+ * the V5 IA collapsed that grouping into the flat PRIMARY_NAV. Keep this
+ * alias so quarantine tests survive without a separate edit pass.
  */
-const NAV_ITEMS = [
-    { name: "Live Traffic", href: "/dashboard/traffic", icon: Activity },
-    { name: "Optimize", href: "/dashboard/optimize", icon: Sparkles, isNew: true },
-    { name: "Intelligence", href: "/dashboard/intelligence", icon: Bot },
-    { name: "Security Audit", href: "/dashboard/audit", icon: ShieldCheck },
-    { name: "Policies", href: "/dashboard/policies", icon: DatabaseZap },
-    { name: "Facilitators", href: "/dashboard/facilitators", icon: Network },
-    { name: "Trust Layer", href: "/dashboard/trust", icon: Shield },
-    { name: "Discovery Bazaar", href: "/dashboard/bazaar", icon: Store },
-    { name: "Billing & Plans", href: "/dashboard/billing", icon: CreditCard },
-    { name: "Settings & API Keys", href: "/dashboard/settings", icon: Settings },
-]
+export const ACCOUNTABILITY_ITEMS = PRIMARY_NAV;
 
-const INTELLIGENCE_ITEMS = [
-    { name: "Execute", href: "/dashboard/playground", icon: Play },
-    { name: "Sessions", href: "/dashboard/sessions", icon: Layers },
-    { name: "Requests", href: "/dashboard/requests", icon: FileText },
-    { name: "Traces", href: "/dashboard/traces", icon: GitBranch },
-    { name: "Evals", href: "/dashboard/evals", icon: FlaskConical },
-    { name: "Knowledge", href: "/dashboard/knowledge", icon: BookOpen },
-    { name: "Tools", href: "/dashboard/tools", icon: Wrench },
+/**
+ * Developers sub-group. Collapsed by default; opens when the active route
+ * matches any entry below. Every legacy route is preserved so deep-linked
+ * bookmarks still resolve.
+ */
+const DEVELOPERS_ITEMS = [
+    { name: "Playground",   href: "/dashboard/playground",   icon: Play },
+    { name: "Sessions",     href: "/dashboard/sessions",     icon: Layers },
+    { name: "Requests",     href: "/dashboard/requests",     icon: FileText },
+    { name: "Traces",       href: "/dashboard/traces",       icon: GitBranch },
+    { name: "Evals",        href: "/dashboard/evals",        icon: FlaskConical },
+    { name: "Tools",        href: "/dashboard/tools",        icon: Wrench },
+    { name: "Knowledge",    href: "/dashboard/knowledge",    icon: BookOpen },
+    { name: "Intelligence", href: "/dashboard/intelligence", icon: Bot },
+    { name: "Policies",     href: "/dashboard/policies",     icon: DatabaseZap },
+    { name: "Facilitators", href: "/dashboard/facilitators", icon: Network },
+    { name: "Audit",        href: "/dashboard/audit",        icon: ShieldCheck },
+    { name: "Trust",        href: "/dashboard/trust",        icon: Shield },
 ]
 
 const ADMIN_ITEMS = [
@@ -90,8 +105,8 @@ export function AppSidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
     const isAdmin = (session?.user as any)?.isAdmin
 
     const [isUpgrading, setIsUpgrading] = useState(false)
-    const intelligenceActive = INTELLIGENCE_ITEMS.some(i => pathname === i.href || pathname.startsWith(i.href + '/'))
-    const [intelligenceOpen, setIntelligenceOpen] = useState(intelligenceActive)
+    const developersActive = DEVELOPERS_ITEMS.some(i => pathname === i.href || pathname.startsWith(i.href + '/'))
+    const [developersOpen, setDevelopersOpen] = useState(developersActive)
 
     const handleUpgrade = async (e: React.MouseEvent) => {
         e.preventDefault()
@@ -140,14 +155,70 @@ export function AppSidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
                 </button>
             </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 space-y-6 px-3 py-6 overflow-y-auto custom-scrollbar" data-testid="app-sidebar-nav">
-                {/* Slice 3N — primary accountability path. */}
-                <div className="space-y-1" data-testid="accountability-group">
-                    <div className="px-3 mb-2 text-[10px] font-black text-neutral-600 uppercase tracking-[0.2em]">AI Spend Accountability</div>
-                    {ACCOUNTABILITY_ITEMS.map((item) => {
-                        const isActive = pathname === item.href ||
-                            (item.href !== "/dashboard" && pathname.startsWith(item.href + '/'))
+            {/* Navigation. V5 §21.3: flat primary IA, single grouping (Developers). */}
+            <nav className="flex-1 space-y-1 px-3 py-6 overflow-y-auto custom-scrollbar" data-testid="app-sidebar-nav">
+                <div className="space-y-1" data-testid="primary-nav">
+                    {PRIMARY_NAV.map((item) => {
+                        // For grouped items (Developers), active when any sub-route matches.
+                        // For leaf items, active on exact match or descendant. Overview
+                        // (/dashboard) matches only its exact path to avoid swallowing every
+                        // other route.
+                        const isActive = item.id === 'developers'
+                            ? developersActive
+                            : item.href === '/dashboard'
+                                ? pathname === item.href
+                                : pathname === item.href || pathname.startsWith(item.href + '/')
+
+                        if ('isGroup' in item && item.isGroup) {
+                            return (
+                                <div key={item.id} className="space-y-0.5">
+                                    <button
+                                        onClick={() => setDevelopersOpen(v => !v)}
+                                        aria-expanded={developersOpen}
+                                        data-testid={`nav-${item.id}`}
+                                        className={`
+                                            w-full group flex items-center gap-3 rounded-none border-l-4 px-3 py-3 text-[11px] font-black uppercase tracking-widest transition-all
+                                            ${isActive
+                                                ? "border-black bg-primary text-black shadow-[4px_0_0_0_rgba(0,0,0,1)]"
+                                                : "border-transparent text-neutral-400 hover:bg-neutral-50 hover:text-black hover:border-neutral-200"
+                                            }
+                                        `}
+                                    >
+                                        <item.icon className={`h-4 w-4 transition-transform group-hover:scale-110 ${isActive ? "text-black" : "text-neutral-600"}`} />
+                                        <span className="flex-1 text-left">{item.name}</span>
+                                        {developersOpen
+                                            ? <ChevronDown size={12} className={isActive ? 'text-black' : 'text-neutral-500'} />
+                                            : <ChevronRight size={12} className={isActive ? 'text-black' : 'text-neutral-500'} />
+                                        }
+                                    </button>
+                                    {developersOpen && (
+                                        <div className="space-y-0.5 pl-3" data-testid="developers-group">
+                                            {DEVELOPERS_ITEMS.map((sub) => {
+                                                const subActive = pathname === sub.href || pathname.startsWith(sub.href + '/')
+                                                return (
+                                                    <Link
+                                                        key={sub.href}
+                                                        href={sub.href}
+                                                        onClick={() => setIsOpen(false)}
+                                                        className={`
+                                                            group flex items-center gap-3 rounded-none border-l-4 px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-all
+                                                            ${subActive
+                                                                ? "border-black bg-primary text-black shadow-[4px_0_0_0_rgba(0,0,0,1)]"
+                                                                : "border-transparent text-neutral-400 hover:bg-neutral-50 hover:text-black hover:border-neutral-200"
+                                                            }
+                                                        `}
+                                                    >
+                                                        <sub.icon className={`h-3.5 w-3.5 transition-transform group-hover:scale-110 ${subActive ? "text-black" : "text-neutral-500 group-hover:text-neutral-700"}`} />
+                                                        {sub.name}
+                                                    </Link>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        }
+
                         return (
                             <Link
                                 key={item.href}
@@ -162,82 +233,11 @@ export function AppSidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: 
                                     }
                                 `}
                             >
-                                <item.icon className={`h-4 w-4 transition-transform group-hover:scale-110 ${isActive ? "text-primary shadow-[0_0_8px_rgba(182,255,46,0.5)]" : "text-neutral-600 group-hover:text-neutral-100"}`} />
+                                <item.icon className={`h-4 w-4 transition-transform group-hover:scale-110 ${isActive ? "text-black" : "text-neutral-600"}`} />
                                 <span className="flex-1">{item.name}</span>
-                                {'isNew' in item && item.isNew && (
-                                    <span className={`text-[8px] font-black px-1.5 py-0.5 border ${isActive ? 'border-black bg-black text-primary' : 'border-primary bg-primary/10 text-black'}`}>
-                                        NEW
-                                    </span>
-                                )}
                             </Link>
                         )
                     })}
-                </div>
-
-                <div className="space-y-1">
-                    <div className="px-3 mb-2 text-[10px] font-black text-neutral-600 uppercase tracking-[0.2em]">Operations</div>
-                    {NAV_ITEMS.map((item) => {
-                        const isActive = pathname === item.href
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                onClick={() => setIsOpen(false)}
-                                className={`
-                                    group flex items-center gap-3 rounded-none border-l-4 px-3 py-3 text-[11px] font-black uppercase tracking-widest transition-all
-                                    ${isActive
-                                        ? "border-black bg-primary text-black shadow-[4px_0_0_0_rgba(0,0,0,1)]"
-                                        : "border-transparent text-neutral-400 hover:bg-neutral-50 hover:text-black hover:border-neutral-200"
-                                    }
-                                `}
-                            >
-                                <item.icon className={`h-4 w-4 transition-transform group-hover:scale-110 ${isActive ? "text-primary shadow-[0_0_8px_rgba(182,255,46,0.5)]" : "text-neutral-600 group-hover:text-neutral-100"}`} />
-                                <span className="flex-1">{item.name}</span>
-                                {'isNew' in item && item.isNew && (
-                                    <span className={`text-[8px] font-black px-1.5 py-0.5 border ${isActive ? 'border-black bg-black text-primary' : 'border-primary bg-primary/10 text-black'}`}>
-                                        NEW
-                                    </span>
-                                )}
-                            </Link>
-                        )
-                    })}
-                </div>
-
-                <div className="space-y-0">
-                    <button
-                        onClick={() => setIntelligenceOpen(v => !v)}
-                        className={`w-full flex items-center justify-between px-3 py-2 mb-1 text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${intelligenceActive ? 'text-black' : 'text-neutral-500 hover:text-black'}`}
-                    >
-                        <span>Intelligence Layer</span>
-                        {intelligenceOpen
-                            ? <ChevronDown size={12} />
-                            : <ChevronRight size={12} />
-                        }
-                    </button>
-                    {intelligenceOpen && (
-                        <div className="space-y-0.5">
-                            {INTELLIGENCE_ITEMS.map((item) => {
-                                const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-                                return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        onClick={() => setIsOpen(false)}
-                                        className={`
-                                            group flex items-center gap-3 rounded-none border-l-4 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all
-                                            ${isActive
-                                                ? "border-black bg-primary text-black shadow-[4px_0_0_0_rgba(0,0,0,1)]"
-                                                : "border-transparent text-neutral-400 hover:bg-neutral-50 hover:text-black hover:border-neutral-200"
-                                            }
-                                        `}
-                                    >
-                                        <item.icon className={`h-3.5 w-3.5 transition-transform group-hover:scale-110 ${isActive ? "text-black" : "text-neutral-500 group-hover:text-neutral-700"}`} />
-                                        {item.name}
-                                    </Link>
-                                )
-                            })}
-                        </div>
-                    )}
                 </div>
 
                 {isAdmin && (

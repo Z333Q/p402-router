@@ -246,7 +246,7 @@ export default function ProveDashboardPage() {
             )}
             {/* ── Header + global search ─────────────────────────────────── */}
             <header className="space-y-3">
-                <h1 className="text-3xl font-extrabold uppercase tracking-tight">Prove</h1>
+                <h1 className="text-4xl font-black uppercase tracking-tighter text-black leading-none">Prove</h1>
                 <p className="text-sm text-neutral-700 max-w-3xl">
                     Tenant-scoped, read-only evidence and analysis layer over <span className="font-mono">ai_economic_events</span>.
                     This dashboard uses economic metadata only. It does not display prompt or response content.
