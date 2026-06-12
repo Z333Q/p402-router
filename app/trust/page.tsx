@@ -18,7 +18,7 @@ const PRIVACY_MODES = [
         receives: ['request_id', 'tenant_id', 'api_key_id', 'department_id', 'employee_id', 'customer_id', 'feature_id', 'workflow_id', 'task_type', 'action_type', 'model', 'provider', 'input_tokens', 'output_tokens', 'cost_usd', 'latency_ms', 'cache_hit', 'budget_id', 'policy_id', 'governance_decision', 'deny_code', 'output_status', 'quality_score', 'evidence_status'],
         neverReceives: ['prompt text', 'response text', 'files', 'documents', 'chat history', 'PHI', 'PII', 'secrets', 'source code'],
         supports: ['Meter', 'Monitor', 'Control', 'budget enforcement', 'department/employee/feature/customer margin', 'forecasting', 'basic optimization', 'evidence exports'],
-        limits: ['Semantic cache is opt-in and privacy-mode dependent', 'Limited prompt-level optimization', 'Limited context-bloat analysis', 'Limited duplicate-work detection'],
+        limits: ['Semantic cache is off in P402 cloud for Metadata-only', 'Limited prompt-level optimization', 'Limited context-bloat analysis', 'Limited duplicate-work detection'],
     },
     {
         id: 'fingerprint-only',
@@ -28,7 +28,7 @@ const PRIVACY_MODES = [
         receives: ['metadata above, plus:', 'HMAC prompt fingerprint (tenant-secret HMAC, not plain SHA-256)', 'HMAC response fingerprint', 'token shape', 'optional prompt length bands', 'optional document hash'],
         neverReceives: ['raw prompt or response content', 'embeddings (treated as sensitive — opt-in only)'],
         supports: ['Duplicate request detection', 'Retry loop detection', 'Repeated task detection', 'Cache opportunity estimates', 'Same-input cost analysis'],
-        limits: ['No prompt-level rewrite suggestions', 'No semantic similarity grouping unless embeddings explicitly enabled'],
+        limits: ['Semantic cache is off in P402 cloud for Fingerprint-only', 'No prompt-level rewrite suggestions', 'No semantic similarity grouping unless embeddings explicitly enabled'],
     },
     {
         id: 'redacted-trace',
@@ -38,7 +38,7 @@ const PRIVACY_MODES = [
         receives: ['redacted prompt sample', 'redacted response sample', 'trace summary', 'tool-call summary', 'retrieval summary', 'policy summary'],
         neverReceives: ['unredacted PII, PHI, secrets, API keys, emails, phone numbers, addresses, or custom-regex-matched content (redacted client-side before send)'],
         supports: ['Context waste detection', 'Prompt compression recommendations', 'Retry-loop diagnosis', 'Tool-call waste analysis', 'Quality review', 'Better model selection by action'],
-        limits: ['Redaction is your responsibility before send', 'Opt-in per tenant/project/key/workflow'],
+        limits: ['Redaction is your responsibility before send', 'Opt-in per tenant/project/key/workflow', 'Semantic cache is off unless the tenant explicitly opts in'],
     },
     {
         id: 'private-gateway',
@@ -47,8 +47,8 @@ const PRIVACY_MODES = [
         bestFor: 'Large enterprise, regulated enterprise, high-value customers',
         receives: ['economic events', 'recommendation summaries', 'savings proofs', 'policy results', 'evidence hashes', 'aggregate analytics'],
         neverReceives: ['raw prompts (planned to stay in customer VPC)', 'raw responses (planned to stay in customer VPC)', 'embeddings unless explicitly exported'],
-        supports: ['Customer-controlled routing path', 'Deeper optimization scope', 'Tenant-scoped semantic cache (opt-in)', 'Tenant-scoped trace inspection', 'Tenant-scoped redaction', 'Tenant-scoped policy enforcement', 'Enterprise evidence export'],
-        limits: ['Enterprise deployment path; availability subject to agreement and deployment scope', 'Operational responsibilities defined per engagement'],
+        supports: ['Customer-controlled routing path', 'Deeper optimization scope', 'Tenant-scoped trace inspection', 'Tenant-scoped redaction', 'Tenant-scoped policy enforcement', 'Enterprise evidence export'],
+        limits: ['Enterprise deployment path; availability subject to agreement and deployment scope', 'Operational responsibilities defined per engagement', 'No P402-cloud semantic cache for Private Gateway'],
     },
     {
         id: 'full-trace',
@@ -58,7 +58,7 @@ const PRIVACY_MODES = [
         receives: ['prompt', 'response', 'tool calls', 'trace', 'retrieval context', 'output status', 'quality score'],
         neverReceives: ['data the customer does not send'],
         supports: ['Deepest optimization', 'Full trace replay', 'Per-request quality review'],
-        limits: ['Never the default; must be explicitly enabled', 'Short retention required', 'Project-level enablement (planned for enterprise deployment)', 'Role-gated access (planned for enterprise deployment)', 'Audit log of access (planned for enterprise deployment)', 'Delete/export controls (planned for enterprise deployment, subject to agreement)'],
+        limits: ['Never the default; must be explicitly enabled', 'Short retention required', 'Semantic cache is off unless the tenant explicitly opts in', 'Project-level enablement (planned for enterprise deployment)', 'Role-gated access (planned for enterprise deployment)', 'Audit log of access (planned for enterprise deployment)', 'Delete/export controls (planned for enterprise deployment, subject to agreement)'],
     },
 ] as const;
 
@@ -327,6 +327,9 @@ export default function TrustPage() {
 
                         <p className="text-[11px] font-medium text-neutral-500 mt-4 leading-relaxed max-w-3xl">
                             Privacy mode is recorded on every economic event and shown on every evidence bundle as <code className="font-mono bg-neutral-100 px-1">privacy_mode</code>, alongside <code className="font-mono bg-neutral-100 px-1">prompt_stored</code> and <code className="font-mono bg-neutral-100 px-1">response_stored</code> booleans. You can verify which mode applied to any specific call.
+                        </p>
+                        <p className="text-[11px] font-medium text-neutral-500 mt-2 leading-relaxed max-w-3xl">
+                            Semantic cache is off unless the tenant opts in and the active privacy mode is Redacted-trace or Full-trace. It is off in P402 cloud for Metadata-only, Fingerprint-only, and Private Gateway, and off when the tenant has not enabled it. Missing tenant configuration and configuration lookup errors fail closed.
                         </p>
                     </div>
                 </section>
