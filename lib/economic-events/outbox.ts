@@ -77,6 +77,24 @@ export interface SanitizedPayload {
 }
 
 /**
+ * Drop any top-level metadata key in FORBIDDEN_METADATA_KEYS (case-insensitive).
+ * Shared between the writer's happy path and the outbox sanitizer so the
+ * privacy contract is enforced regardless of which surface persists.
+ *
+ * Non-object input (null, undefined, arrays, primitives) returns {}.
+ */
+export function sanitizeMetadata(metadata: unknown): Record<string, unknown> {
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return {};
+    const m = metadata as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(m)) {
+        if (FORBIDDEN_METADATA_KEYS.has(k) || FORBIDDEN_METADATA_KEYS.has(k.toLowerCase())) continue;
+        out[k] = m[k];
+    }
+    return out;
+}
+
+/**
  * Strip everything from `input` except the allowlisted keys. For `metadata`,
  * iterate keys and drop any that match the forbidden set (case-insensitive).
  *
@@ -90,15 +108,9 @@ export function sanitizePayload(input: EconomicEventInput & { metadata?: Record<
         const v = (input as any)[key];
         if (v !== undefined) out[key] = v;
     }
-    if (input.metadata && typeof input.metadata === 'object' && !Array.isArray(input.metadata)) {
-        const cleanMeta: Record<string, unknown> = {};
-        for (const k of Object.keys(input.metadata)) {
-            if (FORBIDDEN_METADATA_KEYS.has(k) || FORBIDDEN_METADATA_KEYS.has(k.toLowerCase())) continue;
-            cleanMeta[k] = input.metadata[k];
-        }
-        if (Object.keys(cleanMeta).length > 0) {
-            out.metadata = cleanMeta;
-        }
+    const cleanMeta = sanitizeMetadata(input.metadata);
+    if (Object.keys(cleanMeta).length > 0) {
+        out.metadata = cleanMeta;
     }
     return out;
 }

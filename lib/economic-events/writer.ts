@@ -24,7 +24,7 @@ import {
     fingerprintContent,
     retentionExpiry,
 } from './privacy';
-import { recordWriteFailure } from './outbox';
+import { recordWriteFailure, sanitizeMetadata } from './outbox';
 import type {
     EconomicEventInput,
     EconomicEventRow,
@@ -230,7 +230,11 @@ export async function writeEconomicEvent(
             storage.redactionApplied,
             expiresAt,
 
-            input.metadata ?? {},
+            // Strip forbidden content-bearing keys (prompt/response/messages/
+            // file/...) from caller metadata before persisting. The route-level
+            // contract rejects these at top-level, but a caller could still
+            // nest them under `metadata`. Defense in depth.
+            sanitizeMetadata(input.metadata),
         ],
         );
     } catch (insertErr) {
