@@ -1,5 +1,6 @@
 import pool from './db'
 import { SemanticCache } from './cache-engine'
+import { resolveTenantPrivacy } from './economic-events/privacy'
 import { FacilitatorAdapter, FacilitatorProbe } from './facilitator-adapters'
 import { CoinbaseCDPAdapter } from './facilitator-adapters/cdp'
 import { GenericAdapter } from './facilitator-adapters/generic'
@@ -121,8 +122,13 @@ export class RoutingEngine {
         }
 
         // 1. Semantic Cache Pre-flight (Spec 4.4)
+        // Privacy: resolve the tenant's effective privacy mode and pass it to
+        // the cache. cache-engine fails closed for metadata_only, fingerprint_only,
+        // private_gateway, and unknown modes, and additionally requires a tenant
+        // opt-in row in intelligence_cache_config.
         if (tenantId && prompt) {
-            const cache = await SemanticCache.lookup(prompt, tenantId);
+            const privacy = await resolveTenantPrivacy(tenantId);
+            const cache = await SemanticCache.lookup(prompt, tenantId, privacy.privacyMode);
             if (cache.found) {
                 // Log Decision as Cache Hit
                 if (options?.requestId) {

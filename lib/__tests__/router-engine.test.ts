@@ -17,6 +17,17 @@ vi.mock('../cache-engine', () => ({
     },
 }));
 
+vi.mock('../economic-events/privacy', () => ({
+    resolveTenantPrivacy: vi.fn().mockResolvedValue({
+        privacyMode: 'redacted_trace',
+        storePrompts: false,
+        storeResponses: false,
+        requireRedaction: true,
+        retentionDays: 30,
+        source: 'tenant_default',
+    }),
+}));
+
 describe('RoutingEngine', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -39,7 +50,12 @@ describe('RoutingEngine', () => {
 
             expect(result.cacheHit).toBe(true);
             expect(result.selectedId).toBe('cache_engine');
-            expect(SemanticCache.lookup).toHaveBeenCalled();
+            // Slice E: lookup must be called with the resolved tenant privacy mode.
+            expect(SemanticCache.lookup).toHaveBeenCalledWith(
+                'test prompt',
+                'tenant-123',
+                'redacted_trace',
+            );
         });
 
         it('should correctly score facilitators based on "cost" mode', async () => {

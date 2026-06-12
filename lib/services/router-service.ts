@@ -4,6 +4,7 @@ import { startTrace, addStep, endTrace, DecisionTrace } from '@/lib/trace/decisi
 import { P402Analytics } from '@/lib/analytics'
 import { ApiError } from '@/lib/errors'
 import { SemanticCache } from '@/lib/cache-engine'
+import { resolveTenantPrivacy } from '@/lib/economic-events/privacy'
 import { AP2PolicyEngine, findActiveMandate } from '@/lib/ap2-policy-engine'
 
 // ...
@@ -209,15 +210,18 @@ export class RouterService {
             })
 
             // 3. Cache Storage (Spec 4.4)
+            // Privacy: resolve effective privacy mode and pass to the cache.
+            // store() fails closed for metadata_only, fingerprint_only,
+            // private_gateway, and unknown modes, and requires tenant opt-in.
             const effectiveTenantId = policyResult.tenantId || input.tenantId;
             if (!routePlan.cacheHit && input.prompt && effectiveTenantId) {
-                // We cache the entire plan response for this prompt
-                // In production, you might only cache the top candidate or final execution result
+                const privacy = await resolveTenantPrivacy(effectiveTenantId);
                 await SemanticCache.store(
                     input.prompt,
                     { candidates: routePlan.candidates, selectedId: routePlan.selectedId },
                     effectiveTenantId,
-                    routePlan.candidates[0]?.facilitatorId // Optional model tracking
+                    routePlan.candidates[0]?.facilitatorId,
+                    privacy.privacyMode,
                 );
             }
 
