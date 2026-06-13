@@ -77,6 +77,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { url: `${baseUrl}/meter/about/audit`,              lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
         { url: `${baseUrl}/meter/about/optimization`,       lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
 
+        // ── SEO landing pages (V5 §18.3) ──────────────────────────────
+        { url: `${baseUrl}/ai-spend-audit`,                  lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
+        { url: `${baseUrl}/enterprise-ai-budget-dashboard`,  lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
+        { url: `${baseUrl}/ai-token-usage-dashboard`,        lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
+        { url: `${baseUrl}/embedded-ai-margin-control`,      lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
+        { url: `${baseUrl}/ai-cogs-dashboard`,               lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
+        { url: `${baseUrl}/ai-cost-optimization`,            lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
+
         // ── Changelog ─────────────────────────────────────────────────
         { url: `${baseUrl}/changelog`,                      lastModified: now, changeFrequency: 'weekly',  priority: 0.6  },
 
