@@ -34,16 +34,14 @@ describe('AppSidebar V5 primary IA', () => {
         expect(meter?.href).toBe('/dashboard/meter/events');
     });
 
-    it('Settle points at an existing settlement surface', () => {
+    it('Settle points at /dashboard/settle', () => {
         const settle = PRIMARY_NAV.find((i) => i.id === 'settle');
-        // Until /dashboard/settle is built (T2.10), Settle resolves to the
-        // existing transactions surface so deep links don't 404.
-        expect(settle?.href).toMatch(/^\/dashboard\/(settle|transactions)$/);
+        expect(settle?.href).toBe('/dashboard/settle');
     });
 
-    it('Publish points at the Discovery surface', () => {
+    it('Publish points at /dashboard/publish', () => {
         const publish = PRIMARY_NAV.find((i) => i.id === 'publish');
-        expect(publish?.href).toMatch(/^\/dashboard\/(publish|bazaar)$/);
+        expect(publish?.href).toBe('/dashboard/publish');
     });
 
     it('Developers is the only grouped entry', () => {

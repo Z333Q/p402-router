@@ -48,9 +48,9 @@ import { usePlanUsage } from "@/hooks/usePlanUsage"
  * `components/layout/__tests__/AppSidebar.test.tsx` and
  * `app/dashboard/__tests__/ia-cleanup.test.ts` pin this list.
  *
- * Routes that don't yet have first-class pages point at their closest
- * existing surface (e.g. Settle → /dashboard/transactions) so deep links
- * resolve while we build the canonical surface (T2.10).
+ * Slice G: Settle and Publish now have canonical /dashboard/settle and
+ * /dashboard/publish surfaces. The transactions and bazaar fallbacks
+ * remain reachable directly but are no longer the IA target.
  */
 export const PRIMARY_NAV = [
     { id: 'overview',   name: "Overview",   href: "/dashboard",                icon: LayoutDashboard },
@@ -58,9 +58,9 @@ export const PRIMARY_NAV = [
     { id: 'monitor',    name: "Monitor",    href: "/dashboard/monitor",        icon: Eye },
     { id: 'control',    name: "Control",    href: "/dashboard/control",        icon: SlidersHorizontal },
     { id: 'optimize',   name: "Optimize",   href: "/dashboard/optimize",       icon: Sparkles },
-    { id: 'settle',     name: "Settle",     href: "/dashboard/transactions",   icon: Coins },
+    { id: 'settle',     name: "Settle",     href: "/dashboard/settle",         icon: Coins },
     { id: 'prove',      name: "Prove",      href: "/dashboard/prove",          icon: ShieldCheck },
-    { id: 'publish',    name: "Publish",    href: "/dashboard/bazaar",         icon: Megaphone },
+    { id: 'publish',    name: "Publish",    href: "/dashboard/publish",        icon: Megaphone },
     { id: 'developers', name: "Developers", href: "/dashboard/playground",     icon: Code2, isGroup: true },
     { id: 'billing',    name: "Billing",    href: "/dashboard/billing",        icon: CreditCard },
     { id: 'settings',   name: "Settings",   href: "/dashboard/settings",       icon: Settings },

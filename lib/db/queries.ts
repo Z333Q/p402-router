@@ -172,6 +172,150 @@ export async function getSettlements(tenantId: string, limit = 100): Promise<{ r
   }
 }
 
+export interface SettlementStatsBucket {
+  bucket: '24h' | '7d' | '30d';
+  count: number;
+  total_usd: number;
+  unique_payers: number;
+  by_scheme: Array<{ scheme: 'exact' | 'onchain' | 'receipt'; count: number; total_usd: number }>;
+  by_network: Array<{ network: string; count: number; total_usd: number }>;
+}
+
+/**
+ * Aggregate settlement metrics for the Settle dashboard.
+ *
+ * Reads `processed_tx_hashes` — never writes. The table is on the financial
+ * integrity allowlist; this query is the read-side companion.
+ *
+ * Single round trip per bucket. Three buckets (24h / 7d / 30d) are issued in
+ * parallel by the caller.
+ */
+export async function getSettlementStats(tenantId: string, bucket: '24h' | '7d' | '30d'): Promise<SettlementStatsBucket> {
+  const interval = bucket === '24h' ? '24 hours' : bucket === '7d' ? '7 days' : '30 days';
+  const query = `
+    WITH window_rows AS (
+      SELECT settlement_type, network, amount_usd, request_id
+      FROM processed_tx_hashes
+      WHERE tenant_id = $1
+        AND processed_at >= NOW() - INTERVAL '${interval}'
+    )
+    SELECT
+      (SELECT COUNT(*)::int FROM window_rows) AS count,
+      (SELECT COALESCE(SUM(amount_usd), 0)::numeric FROM window_rows) AS total_usd,
+      (SELECT COUNT(DISTINCT request_id)::int FROM window_rows) AS unique_payers,
+      COALESCE(
+        (SELECT json_agg(json_build_object(
+            'scheme',    settlement_type,
+            'count',     count,
+            'total_usd', total_usd))
+         FROM (
+           SELECT settlement_type,
+                  COUNT(*)::int AS count,
+                  COALESCE(SUM(amount_usd), 0)::numeric AS total_usd
+           FROM window_rows
+           WHERE settlement_type IS NOT NULL
+           GROUP BY settlement_type
+         ) s),
+        '[]'::json
+      ) AS by_scheme,
+      COALESCE(
+        (SELECT json_agg(json_build_object(
+            'network',   network,
+            'count',     count,
+            'total_usd', total_usd))
+         FROM (
+           SELECT network,
+                  COUNT(*)::int AS count,
+                  COALESCE(SUM(amount_usd), 0)::numeric AS total_usd
+           FROM window_rows
+           WHERE network IS NOT NULL
+           GROUP BY network
+         ) n),
+        '[]'::json
+      ) AS by_network
+  `;
+  try {
+    const res = await db.query(query, [tenantId]);
+    const row = res.rows[0] ?? {};
+    return {
+      bucket,
+      count:         Number(row.count ?? 0),
+      total_usd:     Number(row.total_usd ?? 0),
+      unique_payers: Number(row.unique_payers ?? 0),
+      by_scheme:     (row.by_scheme ?? []).map((s: any) => ({
+        scheme:    s.scheme,
+        count:     Number(s.count ?? 0),
+        total_usd: Number(s.total_usd ?? 0),
+      })),
+      by_network:    (row.by_network ?? []).map((n: any) => ({
+        network:   n.network,
+        count:     Number(n.count ?? 0),
+        total_usd: Number(n.total_usd ?? 0),
+      })),
+    };
+  } catch (error) {
+    console.error('Error fetching settlement stats:', error);
+    return { bucket, count: 0, total_usd: 0, unique_payers: 0, by_scheme: [], by_network: [] };
+  }
+}
+
+export interface PublishOverviewStats {
+  network_resources: number;        // bazaar_resources rows owned by this tenant's facilitators
+  network_facilitators: number;     // count of active facilitators owned by this tenant
+  healthy_facilitators: number;     // count where facilitator_health.status = 'healthy' for this tenant's facilitators
+}
+
+/**
+ * Stats for the /dashboard/publish landing surface.
+ *
+ * Tenant-scoped: every count is restricted to facilitators owned by
+ * the calling tenant (facilitators.tenant_id), and bazaar_resources is
+ * joined through facilitators (source_facilitator_id → facilitator_id).
+ *
+ * Reads `bazaar_resources`, `facilitators`, `facilitator_health` only —
+ * no writes. Safe projection: counts only, no content columns.
+ */
+export async function getPublishOverviewStats(tenantId: string): Promise<PublishOverviewStats> {
+  try {
+    const res = await db.query(
+      `
+      WITH tenant_facilitators AS (
+        SELECT facilitator_id, status
+        FROM facilitators
+        WHERE tenant_id = $1
+      )
+      SELECT
+        (
+          SELECT COUNT(*)::int
+          FROM bazaar_resources br
+          WHERE br.source_facilitator_id IN (SELECT facilitator_id FROM tenant_facilitators)
+        ) AS network_resources,
+        (
+          SELECT COUNT(*)::int
+          FROM tenant_facilitators
+          WHERE status = 'active'
+        ) AS network_facilitators,
+        (
+          SELECT COUNT(*)::int
+          FROM facilitator_health fh
+          WHERE fh.status = 'healthy'
+            AND fh.facilitator_id IN (SELECT facilitator_id FROM tenant_facilitators)
+        ) AS healthy_facilitators
+      `,
+      [tenantId],
+    );
+    const row = res.rows[0] ?? {};
+    return {
+      network_resources:     Number(row.network_resources ?? 0),
+      network_facilitators:  Number(row.network_facilitators ?? 0),
+      healthy_facilitators:  Number(row.healthy_facilitators ?? 0),
+    };
+  } catch (error) {
+    console.error('Error fetching publish overview stats:', error);
+    return { network_resources: 0, network_facilitators: 0, healthy_facilitators: 0 };
+  }
+}
+
 /**
  * Get active facilitators and their health status
  */
