@@ -49,12 +49,15 @@ export default function ControlConfigurationPage() {
                 </div>
                 <ul className="text-[13px] text-neutral-700 font-medium space-y-1 list-disc ml-5">
                     <li>This saves tenant-level Control defaults.</li>
-                    <li>This does not affect runtime budget-guard enforcement in this slice.</li>
-                    <li>This does not affect the Control simulator in this slice.</li>
+                    <li>
+                        Saved values shape the Control simulator&apos;s decision walk. They do not affect runtime budget-guard enforcement; runtime wiring requires a later approved slice.
+                    </li>
                     <li>
                         This does not change Optimize, Settle, Publish, Prove, billing, checkout, pricing, Trust Center, or runtime privacy behavior.
                     </li>
-                    <li>Runtime and simulator wiring require later approved slices.</li>
+                    <li>
+                        Runtime enforcement reads from hard-coded fallbacks today. A future slice adds shadow mode, then enforce, with a kill-switch.
+                    </li>
                 </ul>
             </div>
         </div>

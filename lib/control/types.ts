@@ -42,6 +42,7 @@ export type ControlDecisionCode =
     | 'API_KEY_BUDGET_EXCEEDED'
     | 'EMPLOYEE_BUDGET_EXCEEDED'
     | 'DEPARTMENT_BUDGET_EXCEEDED'
+    | 'TENANT_BUDGET_EXCEEDED'
     | 'MODEL_NOT_ALLOWED'
     | 'TASK_TYPE_NOT_ALLOWED'
     | 'MAX_COST_PER_REQUEST_EXCEEDED'
@@ -55,16 +56,37 @@ export type ControlDecisionCode =
     | 'SECURITY_PACK_BLOCKED';
 
 /**
+ * Slice 3W — provenance discriminators for simulator hits. The simulator
+ * augments every hit with where the rule lives (`source`), what scope the
+ * rule applies to (`scope`), and which configured field produced it
+ * (`field`). This lets the UI and API consumers label a tenant-default
+ * decision without confusing it with an API-key decision.
+ *
+ * `source` and `scope` overlap in vocabulary by design: `source` names the
+ * configuration rung that holds the rule (e.g. `api_key`, `tenant_default`);
+ * `scope` names the operational reach of the rule (e.g. `api_key`, `tenant`).
+ * `field` is the specific configured column (e.g. `monthly_budget_usd`).
+ */
+export type DecisionSource =
+    | 'api_key' | 'employee' | 'department' | 'tenant_default'
+    | 'mandate' | 'request' | 'simulator' | 'system';
+export type DecisionScope =
+    | 'api_key' | 'employee' | 'department' | 'tenant'
+    | 'mandate' | 'request' | 'simulator' | 'system';
+
+/**
  * Canonical decision order. The simulator runs checks in this order and
  * `first_definitive_decision` is the first non-approve code emitted. The
  * dashboard simulator panel reflects this exact sequence.
  *
- * Order is part of the contract — tests pin it.
+ * Order is part of the contract — tests pin it. Most-specific-wins:
+ * api_key > employee > department > tenant_default for the budget family.
  */
 export const CANONICAL_DECISION_ORDER: readonly ControlDecisionCode[] = Object.freeze([
     'API_KEY_BUDGET_EXCEEDED',
     'EMPLOYEE_BUDGET_EXCEEDED',
     'DEPARTMENT_BUDGET_EXCEEDED',
+    'TENANT_BUDGET_EXCEEDED',
     'MODEL_NOT_ALLOWED',
     'TASK_TYPE_NOT_ALLOWED',
     'MAX_COST_PER_REQUEST_EXCEEDED',
@@ -160,10 +182,36 @@ export interface SimulatorMandateContext {
     allowedCategories?: string[];
 }
 
+/**
+ * Slice 3W — tenant-default rung. The route loads this from
+ * `tenant_control_settings` and supplies it (or `undefined` when the tenant
+ * has no saved row). The simulator consults this rung after the key /
+ * employee / department rungs and only when a more-specific rung is unset
+ * for the relevant axis (most-specific-wins). For the budget axis, the
+ * tenant rung is independent: it evaluates a tenant-wide MTD aggregate
+ * against `monthlyBudgetUsd` regardless of the lower rungs.
+ *
+ * This rung does NOT participate in runtime enforcement in slice 3W. The
+ * runtime budget-guard (`lib/providers/openrouter/billing-guard.ts`) does
+ * not import this type. Wiring runtime to read this rung is deferred to
+ * 3X (shadow) and 3Y (enforce).
+ */
+export interface SimulatorTenantDefaultContext {
+    monthlyBudgetUsd:         number | null;
+    maxCostPerRequestUsd:     number | null;
+    humanReviewThresholdUsd:  number | null;
+    allowedModels:            string[];
+    allowedTaskTypes:         string[];
+    /** Month-to-date spend across the entire tenant. Tenant-scoped query. */
+    mtdTenantSpendUsd:        number;
+}
+
 export interface SimulatorEvaluationContext {
     tenantId: string;
     key?: SimulatorKeyContext;
     mandate?: SimulatorMandateContext;
+    /** Slice 3W. Loaded from tenant_control_settings; undefined when no row. */
+    tenantDefault?: SimulatorTenantDefaultContext;
 }
 
 /** One triggered check (an evaluator hit). */
@@ -172,6 +220,11 @@ export interface SimulatorCheckHit {
     status: ControlDecisionStatus;
     matched_rule: string;
     detail?: Record<string, unknown>;
+    /** Slice 3W — provenance for the UI label. Always present on simulator
+     *  hits emitted after 3W; absent on legacy callers. */
+    source?: DecisionSource;
+    scope?: DecisionScope;
+    field?: string;
 }
 
 /**
@@ -191,6 +244,12 @@ export interface SimulatorDecision {
         code: ControlDecisionCode;
         status: ControlDecisionStatus;
         matched_rule: string;
+        /** Slice 3W — provenance for the UI. Present when the hit came from
+         *  a configured rung (api_key, employee, department, tenant_default,
+         *  mandate, simulator, request). Absent on plain APPROVED. */
+        source?: DecisionSource;
+        scope?: DecisionScope;
+        field?: string;
     };
     all_triggered_checks: SimulatorCheckHit[];
     margin_floor_status: 'pass' | 'not_met' | 'not_evaluable' | 'not_requested';

@@ -24,7 +24,9 @@ import type {
     SimulatorInput,
     SimulatorKeyContext,
     SimulatorMandateContext,
+    SimulatorTenantDefaultContext,
 } from '@/lib/control/types';
+import { getTenantControlSettings } from '@/lib/control/configuration';
 import {
     getMonthToDateSpend as getSharedSpend,
     primaryBuckets,
@@ -165,6 +167,62 @@ async function loadKeyContext(
 }
 
 /**
+ * Slice 3W — tenant-default rung loader.
+ *
+ * Reads tenant_control_settings via the canonical helper (see
+ * lib/control/configuration.ts). When the tenant has no saved row the
+ * helper returns the system default; the simulator treats that as "no
+ * tenant rung configured" and skips the rung's checks.
+ *
+ * Tenant-wide MTD spend is queried directly here. The shared spend helper
+ * does not expose a tenant-only aggregate; rather than widen that helper
+ * (out of 3W scope), we colocate the small SUM(cost_usd) query here.
+ *
+ * Failure-mode: on any read error, we log via toApiErrorResponse and let
+ * the route return its standard error. We do NOT silently fall through
+ * to "no tenant rung" — a DB error should surface, not silently widen.
+ */
+async function loadTenantDefaultsContext(
+    tenantId: string,
+    now: Date,
+): Promise<SimulatorTenantDefaultContext | undefined> {
+    const settings = await getTenantControlSettings(tenantId);
+    const hasAnyConfig =
+        settings.monthly_budget_usd         !== null ||
+        settings.max_cost_per_request_usd   !== null ||
+        settings.human_review_threshold_usd !== null ||
+        settings.allowed_models.length      > 0      ||
+        settings.allowed_task_types.length  > 0;
+    if (!hasAnyConfig) return undefined;
+
+    // Tenant-wide MTD aggregate. Only needed when a tenant monthly budget
+    // is configured; otherwise we skip the query.
+    let mtdTenantSpendUsd = 0;
+    if (settings.monthly_budget_usd !== null) {
+        const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+        const r = await db.query(
+            `SELECT COALESCE(SUM(cost_usd), 0)::float AS tenant_spend
+               FROM ai_economic_events
+              WHERE tenant_id = $1
+                AND (status_code IS NULL OR status_code = 200)
+                AND event_time >= $2`,
+            [tenantId, monthStart],
+        );
+        const row = r.rows[0] as { tenant_spend?: number } | undefined;
+        mtdTenantSpendUsd = Number(row?.tenant_spend ?? 0);
+    }
+
+    return {
+        monthlyBudgetUsd:        settings.monthly_budget_usd,
+        maxCostPerRequestUsd:    settings.max_cost_per_request_usd,
+        humanReviewThresholdUsd: settings.human_review_threshold_usd,
+        allowedModels:           settings.allowed_models,
+        allowedTaskTypes:        settings.allowed_task_types,
+        mtdTenantSpendUsd,
+    };
+}
+
+/**
  * Tenant-scoped mandate lookup. AP2PolicyEngine.verifyMandate() is NOT
  * tenant-scoped, so we do the scoping here before constructing the ctx.
  */
@@ -219,12 +277,18 @@ export async function POST(req: NextRequest) {
         const input = parseInput(raw, requestId);
 
         const now = new Date();
+        // Two-tier loading: the api_key + mandate hydration may issue
+        // multiple sequential queries each; load them in parallel for
+        // latency. The tenant-default rung is loaded after so that the
+        // observed db.query ordering remains stable for existing tests
+        // (api_keys → spend → mandate? → tcs → tenant_spend?).
         const [key, mandate] = await Promise.all([
             input.api_key_id ? loadKeyContext(tenantId, input.api_key_id, now) : Promise.resolve(undefined),
             input.mandate_id ? loadMandateContext(tenantId, input.mandate_id) : Promise.resolve(undefined),
         ]);
+        const tenantDefault = await loadTenantDefaultsContext(tenantId, now);
 
-        const ctx: SimulatorEvaluationContext = { tenantId, key, mandate };
+        const ctx: SimulatorEvaluationContext = { tenantId, key, mandate, tenantDefault };
         const decision = evaluate(input, ctx);
 
         return NextResponse.json(

@@ -23,6 +23,13 @@ let querySpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
     querySpy = vi.spyOn(db as unknown as { query: (...args: unknown[]) => unknown }, 'query');
+    // Slice 3W: the simulator route now always loads tenant_control_settings
+    // via getTenantControlSettings(). For tests that do not specifically
+    // exercise the tenant-default rung, return an empty row → the loader
+    // treats the tenant as "no config" → simulator behavior unchanged.
+    // Test-specific mockResolvedValueOnce calls are consumed first; this
+    // default fires only after the queue drains.
+    querySpy.mockResolvedValue({ rows: [] } as never);
 });
 
 afterEach(() => {

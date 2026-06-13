@@ -17,6 +17,10 @@ interface SimulatorCheckHit {
     status: 'approved' | 'denied' | 'warned' | 'requires_review';
     matched_rule: string;
     detail?: Record<string, unknown>;
+    /** Slice 3W — provenance for the UI label. */
+    source?: string;
+    scope?: string;
+    field?: string;
 }
 
 interface SimulatorDecision {
@@ -24,6 +28,9 @@ interface SimulatorDecision {
         code: string;
         status: 'approved' | 'denied' | 'warned' | 'requires_review';
         matched_rule: string;
+        source?: string;
+        scope?: string;
+        field?: string;
     };
     all_triggered_checks: SimulatorCheckHit[];
     margin_floor_status: 'pass' | 'not_met' | 'not_evaluable' | 'not_requested';
@@ -159,13 +166,21 @@ export function SimulatorPanel() {
                 {result && (
                     <div className="space-y-4 border-t-2 border-black/10 pt-4">
                         <div className="space-y-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                                 <Badge tone={statusBadgeTone(result.decision.first_definitive_decision.status)}>
                                     {result.decision.first_definitive_decision.status.replace('_', ' ')}
                                 </Badge>
                                 <span className="font-mono font-black text-lg">
                                     {result.decision.first_definitive_decision.code}
                                 </span>
+                                {result.decision.first_definitive_decision.source === 'tenant_default' && (
+                                    <span
+                                        data-testid="tenant-default-applied-chip"
+                                        className="inline-flex items-center px-2 py-0.5 border-2 border-amber-700 bg-amber-50 text-amber-900 font-mono text-[10px] font-bold uppercase tracking-wider"
+                                    >
+                                        tenant default applied
+                                    </span>
+                                )}
                             </div>
                             <p className="text-[11px] font-mono text-neutral-600">
                                 matched rule: {result.decision.first_definitive_decision.matched_rule}
@@ -189,6 +204,7 @@ export function SimulatorPanel() {
                                         <tr className="text-[10px] uppercase tracking-wider text-neutral-500 border-b-2 border-black">
                                             <th className="text-left py-2">Code</th>
                                             <th className="text-left py-2">Status</th>
+                                            <th className="text-left py-2">Source</th>
                                             <th className="text-left py-2">Matched rule</th>
                                         </tr>
                                     </thead>
@@ -200,6 +216,20 @@ export function SimulatorPanel() {
                                                     <Badge tone={statusBadgeTone(h.status)}>
                                                         {h.status.replace('_', ' ')}
                                                     </Badge>
+                                                </td>
+                                                <td className="py-2 text-neutral-600">
+                                                    {h.source === 'tenant_default' ? (
+                                                        <span
+                                                            data-testid={`tenant-default-row-${i}`}
+                                                            className="inline-flex items-center px-1.5 py-0.5 border border-amber-700 bg-amber-50 text-amber-900 text-[10px] font-bold uppercase tracking-wider"
+                                                        >
+                                                            tenant default
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[10px] uppercase tracking-wider text-neutral-500">
+                                                            {h.source ?? '—'}
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="py-2 text-neutral-600">{h.matched_rule}</td>
                                             </tr>
