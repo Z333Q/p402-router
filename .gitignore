@@ -61,3 +61,10 @@ scripts/dune-sync.ts
 
 # Claude Code runtime state (loop / schedule skills)
 .claude/*.lock
+
+# Operator-side SQL scratch files. Real migrations live in scripts/migrations/.
+/neon-sql-*.sql
+
+# Accidental top-level scratch files from shell redirects or autocomplete typos.
+/Search
+/Spotlight
