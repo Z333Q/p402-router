@@ -4,44 +4,94 @@ This guide covers the steps to deploy the P402 Router V2 to production (Vercel +
 
 ## 1. Database Migration (Neon)
 
-Before deploying the code, run all pending migrations against your Neon database in order:
+Migrations live in `scripts/migrations/`. The canonical apply path is the
+gated runner shipped in slice 3T. **Never** run `npx tsx scripts/migrate.ts`
+directly: that file is a deprecation stub and will exit non-zero. **Never**
+run `neon-sql-editor-full-apply.sql`: it is not a migration and is excluded
+from the runner's allowlist.
+
+### Inspect
 
 ```bash
-# Enable extensions first (run once in Neon SQL Editor if not already enabled)
-# CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-# CREATE EXTENSION IF NOT EXISTS vector;
-
-# Then apply migrations in order:
-psql $DATABASE_URL -f scripts/migrations/schema.sql
-psql $DATABASE_URL -f scripts/migrations/v2_001_initial_schema.sql
-psql $DATABASE_URL -f scripts/migrations/002_openrouter_integration.sql
-psql $DATABASE_URL -f scripts/migrations/003_replay_protection.sql
-psql $DATABASE_URL -f scripts/migrations/003_semantic_cache_setup.sql
-psql $DATABASE_URL -f scripts/migrations/004_traffic_events.sql
-psql $DATABASE_URL -f scripts/migrations/005_erc8004_trustless_agents.sql
-psql $DATABASE_URL -f scripts/migrations/006_safety_quarantine.sql
-psql $DATABASE_URL -f scripts/migrations/v2_002_pricing_layer.sql
-psql $DATABASE_URL -f scripts/migrations/v2_003_billing_core.sql
-psql $DATABASE_URL -f scripts/migrations/v2_004_billing_subscriptions.sql
-psql $DATABASE_URL -f scripts/migrations/v2_005_onchain_subscription_ledger.sql
-psql $DATABASE_URL -f scripts/migrations/v2_006_safety_pack_ops.sql
-psql $DATABASE_URL -f scripts/migrations/v2_007_kpi_rollups.sql
-psql $DATABASE_URL -f scripts/migrations/v2_008_audit_funnel.sql
-psql $DATABASE_URL -f scripts/migrations/v2_009_trust_packaging.sql
-psql $DATABASE_URL -f scripts/migrations/v2_010_developer_settings.sql
-psql $DATABASE_URL -f scripts/migrations/v2_011_stripe_integration.sql
-psql $DATABASE_URL -f scripts/migrations/v2_012_webhook_idempotency.sql
-psql $DATABASE_URL -f scripts/migrations/v2_013_drop_tenant_plan.sql
-psql $DATABASE_URL -f scripts/migrations/v2_014_access_requests.sql
-psql $DATABASE_URL -f scripts/migrations/v2_015_cdp_wallets.sql
+npm run migrate:list
 ```
 
-All migrations use `IF NOT EXISTS` / `IF NOT EXISTS` guards — safe to re-run on an existing database.
+Prints every `*.sql` under `scripts/migrations/`, marks `_down.sql`
+rollback files distinctly, and never connects to a database. Safe to run
+anywhere.
 
-> **A2A tables** (if using A2A protocol features):
+### Apply against dev or staging
+
+```bash
+npm run migrate:apply -- --file v2_055_tenant_control_settings.sql --target dev
+```
+
+The runner requires both `--file` and `--target`. It refuses files
+outside `scripts/migrations/`, refuses absolute paths and path
+traversal, and refuses `_down.sql` files unless you also pass
+`--allow-down`. On success it logs the filename, SHA-256, target, db,
+host (password redacted), status, and duration to stderr and appends the
+same line to `.migration-audit.log` (local-only, gitignored).
+
+### Apply against production
+
+```bash
+npm run migrate:apply -- \
+  --file v2_055_tenant_control_settings.sql \
+  --target production \
+  --confirm-production v2_055_tenant_control_settings.sql
+```
+
+`--target production` adds two confirmations on top of the dev flow:
+
+1. `--confirm-production <name>` must equal `--file` byte-for-byte. If
+   they differ, the runner refuses with `PROD_CONFIRM_MISMATCH` and
+   never opens a DB connection.
+2. The runner then prompts on stdin for the filename a third time. If
+   the typed answer does not match, the runner refuses with
+   `INTERACTIVE_MISMATCH` and never opens a DB connection.
+
+In CI (no TTY), add `--ci` to skip the interactive prompt. The other
+two production gates still apply.
+
+### Apply a rollback (`_down.sql`)
+
+Down migrations are refused by default — they are more dangerous than
+additive up migrations and must never be one typo away. Add
+`--allow-down`. Production rollbacks require **all** of:
+
+```bash
+npm run migrate:apply -- \
+  --file v2_055_tenant_control_settings_down.sql \
+  --target production \
+  --confirm-production v2_055_tenant_control_settings_down.sql \
+  --allow-down
+```
+
+…plus the interactive filename confirmation, unless `--ci` is set.
+
+### Dry-run
+
+```bash
+npm run migrate:apply -- --file v2_055_tenant_control_settings.sql --target dev --dry-run
+```
+
+Validates every gate, prints the audit log line that *would* be written
+(including the SHA-256), prints the head and tail of the SQL file, and
+never opens a DB connection. Safe rehearsal.
+
+### Audit log
+
+Every apply (and every refusal) writes a single line to
+`.migration-audit.log` at the repo root. The file is gitignored. It is
+local evidence only, not a durable ledger — the durable ledger is slice
+3T-B.
+
+> **A2A tables** (if using A2A protocol features), apply via the same
+> runner:
 > ```bash
-> psql $DATABASE_URL -f scripts/migrations/a2a_001_task_model.sql
-> psql $DATABASE_URL -f scripts/migrations/a2a_003_x402_payments.sql
+> npm run migrate:apply -- --file a2a_001_task_model.sql  --target dev
+> npm run migrate:apply -- --file a2a_003_x402_payments.sql --target dev
 > ```
 
 ---

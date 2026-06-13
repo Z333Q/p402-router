@@ -68,3 +68,8 @@ scripts/dune-sync.ts
 # Accidental top-level scratch files from shell redirects or autocomplete typos.
 /Search
 /Spotlight
+
+# Slice 3T: local-only migration audit log. Best-effort record of what was
+# applied from this workstation. Not a durable ledger; the durable ledger is
+# 3T-B (schema_migrations table).
+/.migration-audit.log

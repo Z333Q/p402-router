@@ -12,6 +12,8 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts",
+    "migrate:list": "tsx scripts/db/list-migrations.ts",
+    "migrate:apply": "tsx scripts/db/apply-migration.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
