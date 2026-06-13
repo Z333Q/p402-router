@@ -13,6 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
     Card, Input, Select, Button, Badge, Skeleton, ErrorState,
 } from '../../_components/ui';
+import { DashboardDemoBanner } from '../../_components/DashboardDemoBanner';
 
 interface EventRow {
     id: string;
@@ -149,6 +150,7 @@ export default function MeterEventListPage() {
 
     return (
         <div className="space-y-6 max-w-[1400px] mx-auto">
+            <DashboardDemoBanner surface="meter-events" />
             {/* Header */}
             <div className="flex flex-wrap justify-between items-end gap-4 border-b-2 border-black/5 pb-6">
                 <div className="space-y-2">

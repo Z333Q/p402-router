@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { getCurrentTenantId, getPublishOverviewStats } from '@/lib/db/queries';
+import { DashboardDemoBanner } from '../_components/DashboardDemoBanner';
 
 // V5 §18.5: Publish = seller-side surface. Sibling of /meter, /monitor,
 // /control, /optimize, /settle, /prove. Distinct from /dashboard/bazaar
@@ -147,6 +148,8 @@ function PathCard({ path }: { path: PublishPath }) {
 export default async function PublishPage() {
     return (
         <div className="max-w-7xl mx-auto space-y-8">
+
+            <DashboardDemoBanner surface="publish" />
 
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">

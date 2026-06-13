@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getCurrentTenantId, getSettlements, getSettlementStats, type SettlementStatsBucket } from '@/lib/db/queries';
 import { P402_CONFIG } from '@/lib/constants';
 import { TransactionRow } from '../transactions/_components/TransactionRow';
+import { DashboardDemoBanner } from '../_components/DashboardDemoBanner';
 
 // V5 §18.5: Settle = canonical settlement surface. Sibling of /meter, /monitor,
 // /control, /optimize, /prove. Read-only: never writes to processed_tx_hashes
@@ -240,6 +241,8 @@ async function RecentSettlementsTable() {
 export default async function SettlePage() {
     return (
         <div className="max-w-7xl mx-auto space-y-8">
+
+            <DashboardDemoBanner surface="settle" />
 
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">

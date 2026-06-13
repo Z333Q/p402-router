@@ -41,6 +41,7 @@ import {
 } from './_components/FilterBar';
 import { SimulatorPanel } from './_components/SimulatorPanel';
 import { FlipReadinessPanel } from './_components/FlipReadinessPanel';
+import { DashboardDemoBanner } from '../_components/DashboardDemoBanner';
 import type {
     AllowlistStatusRow,
     BudgetBurnRow,
@@ -119,6 +120,7 @@ export default function ControlPage() {
 
     return (
         <div className="space-y-8 max-w-[1200px] mx-auto">
+            <DashboardDemoBanner surface="control" />
             {/* Header */}
             <div className="flex flex-wrap justify-between items-end gap-4 border-b-2 border-black/5 pb-8">
                 <div className="space-y-2">
