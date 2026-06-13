@@ -19,6 +19,7 @@ export const dynamic = 'force-dynamic';
  */
 
 import React from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
@@ -139,6 +140,12 @@ export default function ControlPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
+                    <Link
+                        href="/dashboard/control/configuration"
+                        className="inline-flex items-center h-9 px-4 border-2 border-black font-black text-[11px] uppercase tracking-wider hover:bg-neutral-50 transition-colors no-underline"
+                    >
+                        Configuration
+                    </Link>
                     <Button onClick={() => refetch()} variant="secondary" size="sm" loading={isFetching}>
                         Refresh
                     </Button>
