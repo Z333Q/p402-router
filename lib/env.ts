@@ -19,6 +19,11 @@ const envSchema = z.object({
     STRIPE_WEBHOOK_SECRET: z.string().min(1),
     STRIPE_PRICE_ID_PRO: z.string().min(1),
     STRIPE_PRICE_ID_ENTERPRISE: z.string().min(1),
+    // V5 §17 finance-team purchase surfaces (optional until live prices are
+    // provisioned in Stripe). Checkout falls back to a 'book a demo' redirect
+    // when unset.
+    STRIPE_PRICE_ID_AUDIT: z.string().optional(),            // one-time, $1500
+    STRIPE_PRICE_ID_DEPT_DASHBOARD: z.string().optional(),   // subscription, $1500/mo
     // Facilitator — P402_SIGNER_ADDRESS always required.
     // P402_FACILITATOR_PRIVATE_KEY only required when CDP_SERVER_WALLET_ENABLED != 'true'.
     // When CDP mode is active, the private key lives in CDP's TEE and is never set here.

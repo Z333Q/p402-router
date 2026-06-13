@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Check, Info, HelpCircle } from "lucide-react";
 import { Badge } from "@/app/dashboard/_components/ui";
 import { UpgradeMathCalculator } from "@/components/pricing/UpgradeMathCalculator";
+import { EnterpriseTierCheckout } from "@/components/pricing/EnterpriseTierCheckout";
 
 export const metadata = {
     title: 'Pricing | P402 Router',
@@ -41,6 +42,21 @@ const pricingJsonLd = {
                     price: 'Custom',
                     priceCurrency: 'USD',
                     description: 'Volume-tiered platform fee. Dedicated infrastructure, multi-stage AP2 approvals, moderation queues.',
+                },
+                {
+                    '@type': 'Offer',
+                    name: 'AI Spend Audit',
+                    price: '1500',
+                    priceCurrency: 'USD',
+                    description: 'One-time CFO audit of AI token usage across providers. Per-event attribution, metadata-only mode, delivered report + evidence bundle.',
+                },
+                {
+                    '@type': 'Offer',
+                    name: 'Department Dashboard',
+                    price: '1500',
+                    priceCurrency: 'USD',
+                    description: 'Department + employee budgets enforced at request time. Policy-driven denies, AP2 mandates, live ledger across providers.',
+                    billingIncrement: 1,
                 },
             ],
         },
@@ -254,6 +270,80 @@ export default function PricingPage() {
                             </div>
                         </div>
 
+                    </div>
+                </section>
+
+                {/* 4b. For Finance Teams: V5 §17 finance-team purchase surfaces */}
+                <section className="py-20 px-6 bg-white border-y-2 border-black">
+                    <div className="container mx-auto max-w-5xl">
+                        <div className="mb-12">
+                            <Badge variant="primary" className="mb-4"><span className="font-mono">{">_"}</span> For finance teams</Badge>
+                            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-tight max-w-3xl">
+                                Two purchasable surfaces, no SDK required.
+                            </h2>
+                            <p className="text-base font-mono text-[var(--neutral-700)] mt-4 max-w-2xl">
+                                Run a one-time audit or stand up a department dashboard. Both ship with attribution, evidence, and exports: same ledger as the developer tiers, finance-facing surfaces.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-2 border-black divide-y-2 md:divide-y-0 md:divide-x-2 divide-black">
+
+                            {/* AI Spend Audit: one-time */}
+                            <div className="p-8 flex flex-col gap-5 bg-[var(--neutral-50)]">
+                                <div className="flex items-baseline justify-between">
+                                    <h3 className="text-3xl font-black uppercase tracking-tight">AI Spend Audit</h3>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] border border-[var(--neutral-300)] px-2 py-1">One-time</span>
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-5xl font-black tracking-tighter">$1,500</span>
+                                    <span className="text-sm font-mono text-[var(--neutral-500)]">USD, paid once</span>
+                                </div>
+                                <p className="text-sm font-mono text-[var(--neutral-700)] leading-relaxed">
+                                    Find where AI spend is leaking before the next invoice. Per-event attribution across every provider, finance-ready report, evidence bundles per row.
+                                </p>
+                                <ul className="flex flex-col gap-3 font-mono text-sm font-bold flex-1">
+                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Per-event attribution: owner, dept, workflow, customer, feature</span></li>
+                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Cross-provider: OpenAI, Anthropic, Gemini, Bedrock, OpenRouter</span></li>
+                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Metadata-only mode: no prompt content leaves your env</span></li>
+                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Delivered report + evidence bundle export</span></li>
+                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Plumbing left running becomes a live ledger</span></li>
+                                </ul>
+                                <EnterpriseTierCheckout productKey="audit" label="Buy audit · $1,500" />
+                                <Link href="/ai-spend-audit" className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] hover:text-black text-center">
+                                    Learn more →
+                                </Link>
+                            </div>
+
+                            {/* Department Dashboard: monthly */}
+                            <div className="p-8 flex flex-col gap-5 bg-black text-white">
+                                <div className="flex items-baseline justify-between">
+                                    <h3 className="text-3xl font-black uppercase tracking-tight text-[var(--primary)]">Department Dashboard</h3>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-400)] border border-[var(--neutral-700)] px-2 py-1">Monthly</span>
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-5xl font-black tracking-tighter">$1,500</span>
+                                    <span className="text-sm font-mono text-[var(--neutral-400)]">USD / mo</span>
+                                </div>
+                                <p className="text-sm font-mono text-[var(--neutral-300)] leading-relaxed">
+                                    Department budgets, employee budgets, policy-driven denies. Live ledger across providers. Enforced at request time, not at month-end.
+                                </p>
+                                <ul className="flex flex-col gap-3 font-mono text-sm font-bold flex-1 text-[var(--neutral-300)]">
+                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Budgets per tenant, dept, employee, workflow</span></li>
+                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Policy denies with 6 structured deny codes</span></li>
+                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>AP2 mandates (protocol-enforceable)</span></li>
+                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Live tile per scope, no aggregation lag</span></li>
+                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Up to 25 budget scopes; volume tiers above</span></li>
+                                </ul>
+                                <EnterpriseTierCheckout productKey="dept_dashboard" label="Subscribe · $1,500/mo" variant="dark" />
+                                <Link href="/enterprise-ai-budget-dashboard" className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] hover:text-[var(--primary)] text-center">
+                                    Learn more →
+                                </Link>
+                            </div>
+                        </div>
+
+                        <p className="text-[11px] font-mono text-[var(--neutral-500)] mt-6 max-w-2xl">
+                            Need Business ($5k), Enterprise ($15k+), or Regulated tiers? <Link href="mailto:sales@p402.io" className="text-black hover:underline">sales@p402.io</Link>. Audit and Department Dashboard are self-serve once Stripe prices are configured; until then the buttons route you to a contact form.
+                        </p>
                     </div>
                 </section>
 
