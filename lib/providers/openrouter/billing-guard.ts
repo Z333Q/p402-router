@@ -14,6 +14,7 @@
 
 import redis from '@/lib/redis';
 import pool from '@/lib/db';
+import { computeAndEmitShadow } from '@/lib/runtime-control/shadow';
 
 // =============================================================================
 // CONFIGURATION
@@ -46,6 +47,13 @@ export interface BillingContext {
      * Grants 2× rate limit and lower anomaly sensitivity. (Phase 2.3 Sentinel Enhancement)
      */
     humanVerified?: boolean;
+    /**
+     * Slice 3X-Shadow: optional request id surfaced into the shadow log.
+     * The shadow path never blocks; this is metadata only. Existing
+     * callers that don't pass requestId still work — the log shape
+     * omits the field when absent.
+     */
+    requestId?: string;
 }
 
 export interface CostEstimate {
@@ -279,6 +287,36 @@ export class BillingGuard {
 
         // Layer 6: Reserve budget
         const reservation = await this.reserveBudget(ctx, estimate.estimatedCost);
+
+        // Slice 3X-Shadow: tenant_control_settings shadow evaluation.
+        //
+        // Runs ONLY after all six enforcement layers have allowed the
+        // request and a reservation has been created. Never denies,
+        // never throws, never mutates runtime counters or reservations.
+        // Any failure inside the shadow path is caught and emitted as
+        // a structured tcs_shadow_failed log; the request continues
+        // unchanged and the reservation is returned as before.
+        //
+        // Requires ctx.tenantId; skipped for anonymous or
+        // tenant-less paths (mppx without tenant context).
+        if (ctx.tenantId) {
+            try {
+                await computeAndEmitShadow(
+                    {
+                        tenantId: ctx.tenantId,
+                        requestId: ctx.requestId,
+                        estimatedCostUsd: estimate.estimatedCost,
+                        modelRequested: estimate.model,
+                    },
+                    { redis, db: pool },
+                );
+            } catch {
+                // Belt-and-suspenders: the shadow function already catches
+                // and logs every failure internally. This outer catch is a
+                // hard guarantee that nothing in the shadow path can ever
+                // propagate as a runtime denial.
+            }
+        }
 
         return reservation;
     }

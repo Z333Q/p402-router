@@ -22,7 +22,14 @@ vi.mock('@/lib/db', () => ({
     default: { query: vi.fn() },
 }));
 
+vi.mock('@/lib/redis', () => ({
+    default: {
+        del: vi.fn(),
+    },
+}));
+
 import db from '@/lib/db';
+import redis from '@/lib/redis';
 import { getServerSession } from 'next-auth';
 import { GET, PATCH } from './route';
 
@@ -52,6 +59,9 @@ function setSession(opts: { email?: string; tenantId?: string; isAdmin?: boolean
 beforeEach(() => {
     (db.query as unknown as ReturnType<typeof vi.fn>).mockReset();
     (getServerSession as unknown as ReturnType<typeof vi.fn>).mockReset();
+    ((redis as unknown as { del: ReturnType<typeof vi.fn> }).del).mockReset();
+    // Default: Redis del succeeds. Failure cases override per-test.
+    ((redis as unknown as { del: ReturnType<typeof vi.fn> }).del).mockResolvedValue(1);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -332,6 +342,56 @@ describe('PATCH persistence', () => {
         expect(sql).toContain('$1');
         expect(sql).not.toContain(TENANT);
         expect(params[0]).toBe(TENANT);
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Slice 3X-Shadow: PATCH success invalidates the runtime config cache.
+    // Redis failure does NOT fail the PATCH (best-effort).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    it('on successful PATCH, calls redis.del(p402:tcs:config:{tenantId})', async () => {
+        mockOwnerAndUpsertAndRead({
+            monthly_budget_usd: '50',
+            max_cost_per_request_usd: null,
+            human_review_threshold_usd: null,
+            allowed_models: [],
+            allowed_task_types: [],
+            metadata: { last_modified_by_email: OWNER },
+        });
+        const res = await PATCH(req('PATCH', { monthly_budget_usd: 50 }));
+        expect(res.status).toBe(200);
+        const delMock = (redis as unknown as { del: ReturnType<typeof vi.fn> }).del;
+        expect(delMock).toHaveBeenCalledTimes(1);
+        expect(delMock.mock.calls[0]![0]).toBe(`p402:tcs:config:${TENANT}`);
+    });
+
+    it('Redis failure during cache invalidation does NOT fail the PATCH', async () => {
+        mockOwnerAndUpsertAndRead({
+            monthly_budget_usd: '50',
+            max_cost_per_request_usd: null,
+            human_review_threshold_usd: null,
+            allowed_models: [],
+            allowed_task_types: [],
+            metadata: { last_modified_by_email: OWNER },
+        });
+        ((redis as unknown as { del: ReturnType<typeof vi.fn> }).del)
+            .mockRejectedValueOnce(new Error('redis del fail'));
+        const res = await PATCH(req('PATCH', { monthly_budget_usd: 50 }));
+        // PATCH still succeeds. The saved row is authoritative.
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.ok).toBe(true);
+    });
+
+    it('invalidation does NOT fire on a refused PATCH (e.g. body tenant_id rejected)', async () => {
+        // Setup: ownership SELECT succeeds, but validator rejects body.
+        (db.query as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+            rows: [{ owner_email: OWNER }],
+        });
+        const res = await PATCH(req('PATCH', { tenant_id: 'foo', monthly_budget_usd: 1 }));
+        expect(res.status).toBe(400);
+        const delMock = (redis as unknown as { del: ReturnType<typeof vi.fn> }).del;
+        expect(delMock).not.toHaveBeenCalled();
     });
 
     it('empty allowed_models array clears the allowlist (passes through as empty JSONB array)', async () => {

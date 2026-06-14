@@ -20,11 +20,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { requireTenantAccess, requireTenantAdminAccess } from '@/lib/auth';
 import { ApiError, toApiErrorResponse } from '@/lib/errors';
+import redis from '@/lib/redis';
 import {
     getTenantControlSettings,
     upsertTenantControlSettings,
     validatePatchInput,
 } from '@/lib/control/configuration';
+import { invalidateConfigCache } from '@/lib/runtime-control/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,6 +90,25 @@ export async function PATCH(req: NextRequest) {
             actorEmail,
             patch: parsed,
         });
+
+        // Slice 3X-Shadow: invalidate the runtime config cache so the
+        // saved values become visible to shadow within seconds instead
+        // of waiting for the 60s TTL. Best-effort: Redis unavailable
+        // does NOT fail the PATCH — the saved row is already authoritative
+        // and the cache will refresh on the next miss.
+        try {
+            await invalidateConfigCache(tenantId, redis);
+        } catch (err) {
+            try {
+                process.stderr.write(JSON.stringify({
+                    event: 'cache_invalidation_failed',
+                    tenant_id: tenantId,
+                    cache: 'p402:tcs:config',
+                    reason: err instanceof Error ? err.message : String(err),
+                    enforcement_mode: 'shadow',
+                }) + '\n');
+            } catch { /* swallow */ }
+        }
 
         return NextResponse.json(
             { ok: true, settings },
