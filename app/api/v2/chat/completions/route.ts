@@ -761,15 +761,18 @@ export async function POST(req: NextRequest) {
                 ? await getReputationScore(agentkit.humanId).catch(() => null)
                 : null;
             const creditBalance = await getBalance(agentkit.humanId, tenantId).catch(() => null);
+            // Slice 3Y-Pilot-Diagnostics: `return await` so the outer
+            // catch sees provider rejections instead of Next.js surfacing
+            // an empty 500.
             if (body.stream) {
-                return handleStreamingResponse(
+                return await handleStreamingResponse(
                     getProviderRegistry(), buildCompletionRequest(body),
                     buildRoutingOptions(body, p402Options), requestId, tenantId,
                     start, agentkit, reputationScore, creditBalance?.balance ?? null,
                     undefined, attribution,
                 );
             }
-            return handleNonStreamingResponse(
+            return await handleNonStreamingResponse(
                 getProviderRegistry(), buildCompletionRequest(body),
                 buildRoutingOptions(body, p402Options), requestId, tenantId,
                 start, agentkit, reputationScore, creditBalance?.balance ?? null,
@@ -811,11 +814,19 @@ export async function POST(req: NextRequest) {
         // ── Credit balance for metadata (non-blocking) ────────────────────────
         const creditBalance = await getBalance(agentkit.humanId, tenantId).catch(() => null);
 
-        // Handle streaming vs non-streaming
+        // Handle streaming vs non-streaming.
+        //
+        // Slice 3Y-Pilot-Diagnostics: both calls MUST be `return await ...`.
+        // Without `await`, a rejection inside handleStreamingResponse /
+        // handleNonStreamingResponse exits the try block as a returned
+        // promise; the outer catch below never sees the error and Next.js
+        // surfaces a 500 with no body. The await routes provider failures
+        // (e.g. Google fetch errors) through the catch -> toApiErrorResponse
+        // path, which produces a structured JSON envelope.
         if (body.stream) {
-            return handleStreamingResponse(registry, completionRequest, routingOptions, requestId, tenantId, start, agentkit, reputationScore, creditBalance?.balance ?? null, undefined, attribution);
+            return await handleStreamingResponse(registry, completionRequest, routingOptions, requestId, tenantId, start, agentkit, reputationScore, creditBalance?.balance ?? null, undefined, attribution);
         } else {
-            return handleNonStreamingResponse(registry, completionRequest, routingOptions, requestId, tenantId, start, agentkit, reputationScore, creditBalance?.balance ?? null, undefined, attribution);
+            return await handleNonStreamingResponse(registry, completionRequest, routingOptions, requestId, tenantId, start, agentkit, reputationScore, creditBalance?.balance ?? null, undefined, attribution);
         }
 
     } catch (error: any) {
