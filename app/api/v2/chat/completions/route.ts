@@ -28,6 +28,7 @@ import {
 } from '@/lib/ai-providers';
 import { requireTenantAccess } from '@/lib/auth';
 import { BillingGuard, BillingGuardError, BillingContext } from '@/lib/providers/openrouter/billing-guard';
+import { emitChatShadow } from '@/lib/runtime-control/chat-shadow';
 import { ApiError, toApiErrorResponse } from '@/lib/errors';
 import { buildDeniedEventInput, isDenialCode } from '@/lib/economic-events/denied';
 import { recordDeniedEvent } from '@/lib/economic-events/record-denied';
@@ -757,6 +758,20 @@ export async function POST(req: NextRequest) {
                 await billingGuard.checkDailySpend(billingCtx);
                 await billingGuard.checkConcurrentReservations(billingCtx);
             }
+            // Slice 3Y-Shadow-Wireup — runtime shadow observation only.
+            //
+            // Reads tenant_control_settings via cache and emits structured
+            // tcs_shadow_decision logs when the request would have been
+            // denied by the saved tenant defaults. Never blocks. Never
+            // mutates counters. Never throws (the inner try/catch in
+            // emitChatShadow plus this outer one are belt-and-suspenders;
+            // computeAndEmitShadow itself is structurally void-returning).
+            //
+            // No enforcement key, no reservation, no provider blocking.
+            try {
+                await emitChatShadow({ tenantId, requestId, body });
+            } catch { /* shadow can never propagate as a runtime denial */ }
+
             const reputationScore = agentkit.humanId
                 ? await getReputationScore(agentkit.humanId).catch(() => null)
                 : null;
@@ -801,6 +816,15 @@ export async function POST(req: NextRequest) {
             await billingGuard.checkDailySpend(billingCtx);
             await billingGuard.checkConcurrentReservations(billingCtx);
         }
+
+        // Slice 3Y-Shadow-Wireup — runtime shadow observation only.
+        // Same posture as the mppx path above: log-only, no deny, no
+        // reservation, no enforcement. Runs after the existing three
+        // billing-guard layers have allowed and before any routing or
+        // provider call.
+        try {
+            await emitChatShadow({ tenantId, requestId, body });
+        } catch { /* shadow can never propagate as a runtime denial */ }
 
         const routingOptions = buildRoutingOptions(body, p402Options);
         const completionRequest = buildCompletionRequest(body);
