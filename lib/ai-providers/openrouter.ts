@@ -13,11 +13,30 @@ import {
     StreamChunk,
     Message
 } from './types';
+import {
+    loadLiveCatalog,
+    type FetcherLike,
+} from './openrouter-live-catalog';
+
+const DEFAULT_CATALOG_TTL_MS = 60 * 60 * 1000; // 1 hour
+const FAILURE_BACKOFF_MS     = 5 * 60 * 1000;  // 5 min before retrying after a failure
+
+export interface OpenRouterAdapterConfig extends ProviderConfig {
+    catalogTtlMs?:    number;
+    catalogFetchImpl?: FetcherLike;
+}
 
 export class OpenRouterAdapter extends BaseProviderAdapter {
     id = 'openrouter';
     name = 'OpenRouter';
     baseUrl = 'https://openrouter.ai/api/v1';
+
+    // Slice 3Z-B: hybrid live + static catalog state.
+    private readonly catalogTtlMs:     number;
+    private readonly catalogFetchImpl: FetcherLike | undefined;
+    private lastCatalogRefresh: number = 0;
+    private lastCatalogFailure: number = 0;
+    private inflightRefresh:    Promise<void> | null = null;
 
     models: ModelInfo[] = [
         // OpenAI via OpenRouter
@@ -195,12 +214,74 @@ export class OpenRouterAdapter extends BaseProviderAdapter {
         }
     ];
 
-    constructor(config: ProviderConfig = {}) {
+    constructor(config: OpenRouterAdapterConfig = {}) {
         super({
             apiKey: process.env.OPENROUTER_API_KEY,
             ...config
         });
+        this.catalogTtlMs     = config.catalogTtlMs ?? DEFAULT_CATALOG_TTL_MS;
+        this.catalogFetchImpl = config.catalogFetchImpl;
     }
+
+    /**
+     * Slice 3Z-B — refresh the OpenRouter model catalog from the live
+     * /api/v1/models endpoint.
+     *
+     * Hybrid posture:
+     *   - On success with at least one mappable model: REPLACE `this.models`.
+     *     Stale ids in the static catalog (e.g. `google/gemini-3-flash`
+     *     if absent from the live response) drop out automatically.
+     *   - On failure (network, HTTP non-2xx, malformed response, empty
+     *     mappable list): KEEP the existing catalog (initially the
+     *     static one; subsequently the last successful live snapshot).
+     *     Log a warning and record a failure timestamp so we don't hammer
+     *     OpenRouter while it's down.
+     *
+     * Concurrency: only one in-flight refresh at a time; concurrent callers
+     * share the same Promise. TTL gates re-fetches in the happy path; a
+     * shorter backoff gates retries after a failure.
+     *
+     * Never throws. Safe to call fire-and-forget from a hot path.
+     */
+    async refreshLiveCatalog(opts: { force?: boolean } = {}): Promise<void> {
+        const now = Date.now();
+        if (!opts.force) {
+            const sinceOk   = now - this.lastCatalogRefresh;
+            const sinceFail = now - this.lastCatalogFailure;
+            if (this.lastCatalogRefresh > 0 && sinceOk < this.catalogTtlMs) return;
+            if (this.lastCatalogFailure > 0 && sinceFail < FAILURE_BACKOFF_MS) return;
+        }
+        if (this.inflightRefresh) return this.inflightRefresh;
+
+        this.inflightRefresh = (async () => {
+            try {
+                const live = await loadLiveCatalog({
+                    apiKey:   this.config.apiKey,
+                    referer:  process.env.OPENROUTER_REFERER || 'https://p402.io',
+                    fetchImpl: this.catalogFetchImpl,
+                });
+                if (live.length === 0) {
+                    // Empty live response is treated as a failure: we never
+                    // wipe the catalog and leave the route routable.
+                    this.lastCatalogFailure = Date.now();
+                    console.warn('[OpenRouterAdapter] live catalog returned 0 mappable rows; keeping current catalog');
+                    return;
+                }
+                this.models = live;
+                this.lastCatalogRefresh = Date.now();
+            } catch (err) {
+                this.lastCatalogFailure = Date.now();
+                console.warn('[OpenRouterAdapter] live catalog refresh failed, keeping current catalog:', (err as Error)?.message ?? err);
+            } finally {
+                this.inflightRefresh = null;
+            }
+        })();
+        return this.inflightRefresh;
+    }
+
+    /** Test/inspection helpers (no side effects). */
+    getLastCatalogRefreshTs(): number { return this.lastCatalogRefresh; }
+    getLastCatalogFailureTs(): number { return this.lastCatalogFailure; }
 
     protected getAuthHeaders(): Record<string, string> {
         return {
