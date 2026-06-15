@@ -29,6 +29,7 @@ import {
 import { requireTenantAccess } from '@/lib/auth';
 import { BillingGuard, BillingGuardError, BillingContext } from '@/lib/providers/openrouter/billing-guard';
 import { emitChatShadow } from '@/lib/runtime-control/chat-shadow';
+import type { OpenRouterAdapter } from '@/lib/ai-providers/openrouter';
 import { ApiError, toApiErrorResponse } from '@/lib/errors';
 import { buildDeniedEventInput, isDenialCode } from '@/lib/economic-events/denied';
 import { recordDeniedEvent } from '@/lib/economic-events/record-denied';
@@ -776,19 +777,32 @@ export async function POST(req: NextRequest) {
                 ? await getReputationScore(agentkit.humanId).catch(() => null)
                 : null;
             const creditBalance = await getBalance(agentkit.humanId, tenantId).catch(() => null);
+
+            // Slice 3Z-C-Impl — OpenRouter live catalog refresh, mppx
+            // tenant path. Same fire-and-forget posture as the primary
+            // auth path below; TTL-gated inside the adapter. Never
+            // awaited, never blocks the request, never throws to the
+            // caller (the inner .catch is belt-and-suspenders even
+            // though refreshLiveCatalog already swallows internally).
+            const registryForMppx = getProviderRegistry();
+            const orAdapterMppx = registryForMppx.get('openrouter') as OpenRouterAdapter | undefined;
+            if (orAdapterMppx && orAdapterMppx.isAvailable()) {
+                void orAdapterMppx.refreshLiveCatalog().catch(() => { /* never block the request */ });
+            }
+
             // Slice 3Y-Pilot-Diagnostics: `return await` so the outer
             // catch sees provider rejections instead of Next.js surfacing
             // an empty 500.
             if (body.stream) {
                 return await handleStreamingResponse(
-                    getProviderRegistry(), buildCompletionRequest(body),
+                    registryForMppx, buildCompletionRequest(body),
                     buildRoutingOptions(body, p402Options), requestId, tenantId,
                     start, agentkit, reputationScore, creditBalance?.balance ?? null,
                     undefined, attribution,
                 );
             }
             return await handleNonStreamingResponse(
-                getProviderRegistry(), buildCompletionRequest(body),
+                registryForMppx, buildCompletionRequest(body),
                 buildRoutingOptions(body, p402Options), requestId, tenantId,
                 start, agentkit, reputationScore, creditBalance?.balance ?? null,
                 undefined, attribution,
@@ -829,6 +843,22 @@ export async function POST(req: NextRequest) {
         const routingOptions = buildRoutingOptions(body, p402Options);
         const completionRequest = buildCompletionRequest(body);
         const registry = getProviderRegistry();
+
+        // Slice 3Z-C-Impl — OpenRouter live catalog refresh.
+        //
+        // Fire-and-forget. TTL-gated inside the adapter (default 60 min,
+        // 5 min failure backoff). Never awaited, never blocks the
+        // request. On failure the adapter keeps its current catalog and
+        // logs a warning; the request continues with whatever model list
+        // is currently in adapter.models (static cold-start fallback or
+        // last successful live snapshot).
+        //
+        // No enforcement, no provider blocking, no reservation, no
+        // counter mutation.
+        const orAdapter = registry.get('openrouter') as OpenRouterAdapter | undefined;
+        if (orAdapter && orAdapter.isAvailable()) {
+            void orAdapter.refreshLiveCatalog().catch(() => { /* never block the request */ });
+        }
 
         // Fetch reputation score from cache (non-blocking — null if unavailable)
         const reputationScore = agentkit.humanId
