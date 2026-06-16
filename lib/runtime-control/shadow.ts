@@ -97,12 +97,30 @@ function hasAnyApprovedConfig(s: TenantControlSettings): boolean {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Default emitter — JSON to stderr. The shadow log sink in production
-// captures stderr; in dev this surfaces in the terminal.
+// Default emitter — severity-aware.
+//
+// `tcs_shadow_decision` is informational: a would-have-denial that did
+// NOT block the request. It routes to console.info so log sinks can
+// separate it from real errors and noisy alerting paths.
+//
+// `tcs_shadow_failed` is an operational error: a stage of the shadow
+// pipeline failed (kill-switch, config read, MTD aggregate, evaluator).
+// It routes to console.error so the shadow sink and on-call alerts can
+// surface it like any other runtime failure.
+//
+// Any other event name (defensive default) falls back to console.error
+// to avoid silently downgrading an unknown signal to info.
+//
+// The JSON payload shape is unchanged.
 // ─────────────────────────────────────────────────────────────────────────────
 function defaultLogger(record: Record<string, unknown>): void {
     try {
-        process.stderr.write(JSON.stringify(record) + '\n');
+        const line = JSON.stringify(record);
+        if (record.event === 'tcs_shadow_decision') {
+            console.info(line);
+        } else {
+            console.error(line);
+        }
     } catch {
         // Logger failure must not crash the runtime path.
     }
