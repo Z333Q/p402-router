@@ -42,6 +42,7 @@ import {
 } from './_components/FilterBar';
 import { SimulatorPanel } from './_components/SimulatorPanel';
 import { FlipReadinessPanel } from './_components/FlipReadinessPanel';
+import { ShadowDecisionsPanel } from './_components/ShadowDecisionsPanel';
 import { DashboardDemoBanner } from '../_components/DashboardDemoBanner';
 import type {
     AllowlistStatusRow,
@@ -161,6 +162,12 @@ export default function ControlPage() {
             {/* Simulator panel sits above the dashboard so operators can model
                 "what would happen?" without scrolling through every panel. */}
             <SimulatorPanel />
+
+            {/* Persistent shadow-decision evidence (read-only). Renders a
+                migration-pending state cleanly when the underlying table
+                does not exist, so the dashboard is safe before the v2_056
+                migration is applied. */}
+            <ShadowDecisionsPanel />
 
             {isLoading ? (
                 <div className="space-y-4">

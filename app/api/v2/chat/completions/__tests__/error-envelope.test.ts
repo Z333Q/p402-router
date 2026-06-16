@@ -124,13 +124,15 @@ describe('Slice 3Y-Pilot-Diagnostics — runtime scope confirmations', () => {
     });
 });
 
-describe('Slice 3Y-Pilot-Diagnostics — no migration files changed in this slice', () => {
-    it('does not add a runtime_control_shadow_decisions migration', () => {
+describe('migration isolation — only v2_056 may introduce runtime_control_shadow_decisions', () => {
+    it('no other migration adds runtime_control_shadow_decisions or a shadow_decisions column', () => {
         const { readdirSync } = require('node:fs') as typeof import('node:fs');
         const dir = resolvePath(process.cwd(), 'scripts', 'migrations');
         const files = readdirSync(dir).filter((f: string) => f.endsWith('.sql'));
+        const ALLOWED_PREFIX = 'v2_056_runtime_control_shadow_decisions';
         for (const f of files) {
             const sql = read(`scripts/migrations/${f}`);
+            if (f.startsWith(ALLOWED_PREFIX)) continue; // 3AA-Impl: persistent shadow evidence.
             expect(sql, `${f} must not introduce runtime_control_shadow_decisions`)
                 .not.toMatch(/runtime_control_shadow_decisions/i);
             expect(sql, `${f} must not add a shadow_decisions column`)

@@ -268,3 +268,39 @@ $$ LANGUAGE plpgsql;
 
 -- Schedule cleanup (run this manually or via cron/pg_cron)
 -- SELECT cleanup_expired_data();
+
+-- =============================================================================
+-- runtime_control_shadow_decisions (v2_056) — persistent shadow evidence.
+-- Mirrors scripts/migrations/v2_056_runtime_control_shadow_decisions.sql.
+-- Read-only from the request path's perspective; runtime enforcement
+-- never reads this table.
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS runtime_control_shadow_decisions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    request_id TEXT,
+    emitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    axis              TEXT NOT NULL CHECK (axis IN (
+        'monthly_budget_usd', 'max_cost_per_request_usd', 'allowed_models'
+    )),
+    code              TEXT NOT NULL CHECK (code IN (
+        'TENANT_BUDGET_EXCEEDED', 'MAX_COST_PER_REQUEST_EXCEEDED', 'MODEL_NOT_ALLOWED'
+    )),
+    source            TEXT NOT NULL CHECK (source = 'tenant_default'),
+    scope             TEXT NOT NULL CHECK (scope = 'tenant'),
+    enforcement_mode  TEXT NOT NULL CHECK (enforcement_mode = 'shadow'),
+    field             TEXT NOT NULL,
+    configured_value  JSONB NOT NULL,
+    observed_value    JSONB NOT NULL,
+    would_have_denied BOOLEAN NOT NULL DEFAULT TRUE,
+    provider_called   BOOLEAN NOT NULL DEFAULT TRUE,
+    model_requested   TEXT,
+    schema_version    SMALLINT NOT NULL DEFAULT 1
+);
+CREATE INDEX IF NOT EXISTS idx_rcsd_tenant_emitted
+    ON runtime_control_shadow_decisions (tenant_id, emitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rcsd_tenant_axis_emitted
+    ON runtime_control_shadow_decisions (tenant_id, axis, emitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rcsd_request_id
+    ON runtime_control_shadow_decisions (request_id)
+    WHERE request_id IS NOT NULL;

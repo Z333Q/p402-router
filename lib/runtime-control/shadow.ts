@@ -37,6 +37,7 @@ import {
     type DbLike,
     type RedisLike,
 } from './cache';
+import { persistShadowDecision, type PersistAxis, type PersistCode } from './persistence';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public contract
@@ -277,5 +278,20 @@ export async function computeAndEmitShadow(
             provider_called:   true,
             timestamp:         now.toISOString(),
         });
+        // Best-effort persistence. Default off via
+        // p402:tcs:shadow_persist:enabled. Never awaited; never throws.
+        // Failure is logged as `tcs_shadow_persist_failed` and does not
+        // affect the request or the decision log emit above.
+        void persistShadowDecision({
+            tenant_id:        ctx.tenantId,
+            request_id:       ctx.requestId,
+            axis:             axis as PersistAxis,
+            code:             hit.code as PersistCode,
+            field:            hit.field ?? axis,
+            configured_value: cv.configured_value,
+            observed_value:   cv.observed_value,
+            model_requested:  ctx.modelRequested,
+            enforcement_mode: 'shadow',
+        }).catch(() => { /* writer never throws; defense in depth */ });
     }
 }

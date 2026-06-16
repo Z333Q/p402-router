@@ -170,11 +170,13 @@ describe('Slice 3Y-Shadow-Wireup — runtime-control modules stay clean', () => 
 });
 
 describe('Slice 3Y-Shadow-Wireup — no new migration, no schema changes', () => {
-    it('no migration file introduces runtime_control_shadow_decisions or shadow_decisions', () => {
+    it('only v2_056 may introduce runtime_control_shadow_decisions; no other migration adds a shadow_decisions column', () => {
         const dir = resolvePath(process.cwd(), 'scripts', 'migrations');
         const files = readdirSync(dir).filter((f) => f.endsWith('.sql'));
+        const ALLOWED_PREFIX = 'v2_056_runtime_control_shadow_decisions';
         for (const f of files) {
             const sql = read(`scripts/migrations/${f}`);
+            if (f.startsWith(ALLOWED_PREFIX)) continue; // 3AA-Impl: persistent shadow evidence.
             expect(sql, `${f} must not introduce runtime_control_shadow_decisions`)
                 .not.toMatch(/runtime_control_shadow_decisions/i);
             expect(sql, `${f} must not add a shadow_decisions column`)

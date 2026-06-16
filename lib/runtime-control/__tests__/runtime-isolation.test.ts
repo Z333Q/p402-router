@@ -86,17 +86,20 @@ describe('shadow module isolation guarantees', () => {
     });
 });
 
-describe('Slice 3X-Shadow does not introduce a migration', () => {
-    it('no new migration file references tenant_control_settings shadow / traffic_events.shadow_decisions / runtime_control_shadow_decisions', () => {
+describe('migration isolation', () => {
+    it('only v2_056 may introduce runtime_control_shadow_decisions; no migration introduces a shadow_decisions COLUMN on any other table', () => {
         const { readdirSync } = require('node:fs') as typeof import('node:fs');
         const migrationsDir = resolve(process.cwd(), 'scripts', 'migrations');
         const files = readdirSync(migrationsDir).filter((f: string) => f.endsWith('.sql'));
+        const ALLOWED_PREFIX = 'v2_056_runtime_control_shadow_decisions';
         for (const f of files) {
             const sql = read(`scripts/migrations/${f}`);
-            expect(sql, `${f} must not introduce a shadow_decisions column`)
-                .not.toMatch(/shadow_decisions/i);
+            if (f.startsWith(ALLOWED_PREFIX)) continue; // 3AA-Impl: persistent shadow evidence.
             expect(sql, `${f} must not introduce runtime_control_shadow_decisions`)
                 .not.toMatch(/runtime_control_shadow_decisions/i);
+            // Other migrations must not introduce a `shadow_decisions` column on any unrelated table.
+            expect(sql, `${f} must not introduce a shadow_decisions column`)
+                .not.toMatch(/shadow_decisions/i);
         }
     });
 });

@@ -22,6 +22,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/lib/control/configuration', async () => ({
     getTenantControlSettings: vi.fn(),
 }));
+vi.mock('../persistence', async () => ({
+    persistShadowDecision: vi.fn().mockResolvedValue(undefined),
+    SHADOW_PERSIST_FLAG_KEY: 'p402:tcs:shadow_persist:enabled',
+    APPROVED_PERSIST_AXES: ['monthly_budget_usd', 'max_cost_per_request_usd', 'allowed_models'],
+    APPROVED_PERSIST_CODES: ['TENANT_BUDGET_EXCEEDED', 'MAX_COST_PER_REQUEST_EXCEEDED', 'MODEL_NOT_ALLOWED'],
+}));
 
 import { getTenantControlSettings } from '@/lib/control/configuration';
 import {
@@ -30,6 +36,7 @@ import {
     type ShadowContext,
     type ShadowDependencies,
 } from '../shadow';
+import { persistShadowDecision } from '../persistence';
 import { GLOBAL_SHADOW_KEY, tenantShadowKey } from '../kill-switch';
 import { configCacheKey, mtdCacheKey } from '../cache';
 
@@ -491,5 +498,62 @@ describe('shadow never denies, never returns a code', () => {
         expect(events.length).toBe(3);
         const axes = events.map((e) => e.axis).sort();
         expect(axes).toEqual(['allowed_models', 'max_cost_per_request_usd', 'monthly_budget_usd']);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3AA-Impl — persistence wiring
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('persistShadowDecision wiring', () => {
+    beforeEach(() => {
+        (persistShadowDecision as unknown as ReturnType<typeof vi.fn>).mockClear();
+    });
+
+    it('persistShadowDecision is invoked once per emitted decision', async () => {
+        (getTenantControlSettings as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+            monthly_budget_usd: 1,
+            max_cost_per_request_usd: 0.001,
+            human_review_threshold_usd: null,
+            allowed_models: ['claude-haiku-4-5'],
+            allowed_task_types: [],
+            metadata: {},
+            source: 'tenant_default',
+        });
+        const d = deps({
+            redis: fakeRedis(SHADOW_ON) as never,
+            db: fakeDb([{ tenant_spend: 99999 }]) as never,
+        });
+        await computeAndEmitShadow(defaultCtx({ estimatedCostUsd: 100, modelRequested: 'gpt-5' }), d);
+        // Three approved axes fire → three persist calls.
+        expect((persistShadowDecision as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(3);
+        // First arg is the structured record (no message/body/content fields).
+        const first = (persistShadowDecision as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![0] as Record<string, unknown>;
+        for (const banned of ['messages', 'prompt', 'response', 'tool_calls', 'raw_trace', 'content']) {
+            expect(first).not.toHaveProperty(banned);
+        }
+        expect(first.enforcement_mode).toBe('shadow');
+        expect(first.tenant_id).toBe(TENANT);
+    });
+
+    it('persistShadowDecision failure does not affect emitted decision logs', async () => {
+        (persistShadowDecision as unknown as ReturnType<typeof vi.fn>)
+            .mockRejectedValueOnce(new Error('persistence boom'));
+        (getTenantControlSettings as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+            monthly_budget_usd: null,
+            max_cost_per_request_usd: 0.001,
+            human_review_threshold_usd: null,
+            allowed_models: [],
+            allowed_task_types: [],
+            metadata: {},
+            source: 'tenant_default',
+        });
+        const d = deps({
+            redis: fakeRedis(SHADOW_ON) as never,
+            db: fakeDb([{ tenant_spend: 0 }]) as never,
+        });
+        await computeAndEmitShadow(defaultCtx({ estimatedCostUsd: 0.5 }), d);
+        const events = d.records.filter((r) => r.event === 'tcs_shadow_decision');
+        expect(events.length).toBe(1);
     });
 });
