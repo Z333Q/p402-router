@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
 import { Client } from "pg";
-import Redis from "ioredis";
-
-const redis = new Redis(process.env.UPSTASH_REDIS_URL || "");
 
 /**
  * Bazaar Discovery Sync Cron

@@ -1,10 +1,26 @@
 import { NextResponse } from "next/server";
 import { Client } from "pg";
-import Redis from "ioredis";
 import { tempoMainnetProbe } from "@/lib/facilitator-adapters/tempo";
 
-// Reuse existing Redis connection logic if possible, or initialize here
-const redis = new Redis(process.env.UPSTASH_REDIS_URL || "");
+// Lazy Redis. Prefer REDIS_URL; fall back to UPSTASH_REDIS_URL. If
+// neither is set, returns null and callers degrade to "cursor starts
+// at 0 each run" — the cron stays correct under missing Redis and
+// never constructs ioredis at module scope (which would otherwise
+// connect to localhost:6379 in a serverless deploy).
+let _redis: import('ioredis').Redis | null = null;
+async function getRedis(): Promise<import('ioredis').Redis | null> {
+    const url = process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL;
+    if (!url) return null;
+    if (_redis) return _redis;
+    try {
+        const { default: Redis } = await import('ioredis');
+        _redis = new Redis(url, { lazyConnect: true, maxRetriesPerRequest: 3 });
+        _redis.on('error', () => { /* swallow; cron tolerates missing Redis */ });
+        return _redis;
+    } catch {
+        return null;
+    }
+}
 
 /**
  * Facilitator Health Polling Cron
@@ -92,7 +108,10 @@ export async function GET(req: Request) {
         const batchSize = 2;
         const cursorKey = "cron:fac_health:cursor";
         let cursorRaw: string | null = null;
-        try { cursorRaw = await redis.get(cursorKey); } catch { /* Redis unavailable — start from offset 0 */ }
+        const redis = await getRedis();
+        if (redis) {
+            try { cursorRaw = await redis.get(cursorKey); } catch { /* Redis unavailable — start from offset 0 */ }
+        }
         const offset = Number(cursorRaw || "0");
 
         // Fetch facilitators in batches
@@ -107,7 +126,7 @@ export async function GET(req: Request) {
 
         if (rows.length === 0 && offset > 0) {
             // Reset cursor if we've reached the end
-            try { await redis.set(cursorKey, "0"); } catch { /* Redis unavailable */ }
+            if (redis) { try { await redis.set(cursorKey, "0"); } catch { /* Redis unavailable */ } }
             return NextResponse.json({ ok: true, batch: [], message: "Cursor reset" });
         }
 
@@ -179,7 +198,7 @@ export async function GET(req: Request) {
 
         // Update cursor
         const nextOffset = offset + rows.length;
-        try { await redis.set(cursorKey, String(nextOffset)); } catch { /* Redis unavailable */ }
+        if (redis) { try { await redis.set(cursorKey, String(nextOffset)); } catch { /* Redis unavailable */ } }
 
         return NextResponse.json({ ok: true, batch: results, nextOffset });
     } catch (e: any) {
