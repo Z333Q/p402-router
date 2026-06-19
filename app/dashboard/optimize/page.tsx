@@ -203,6 +203,7 @@ export default function OptimizePage() {
                     <div className="flex items-center gap-2">
                         <h1 className="text-4xl font-black uppercase tracking-tighter text-black">Optimize</h1>
                         <Badge variant="default">Read-only</Badge>
+                        <Badge variant="default">Recommendations blocked</Badge>
                     </div>
                     <p className="text-neutral-600 font-medium max-w-[680px]">
                         Optimize recommendations are not active yet. P402 needs enough outcome data

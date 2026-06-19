@@ -592,7 +592,7 @@ export default function MissionControlPage() {
             )}
 
             <footer className="text-[10px] text-neutral-500 border-t-2 border-black pt-3">
-                Optimize recommendations remain blocked. Runtime flip remains blocked.
+                Optimize and runtime flip remain blocked.
                 {d && <> Generated {d.generated_at.slice(0, 19)}.</>}
             </footer>
         </div>

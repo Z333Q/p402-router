@@ -314,8 +314,8 @@ export default function CoveragePage() {
                 </div>
                 <p className="text-base text-neutral-900 leading-relaxed">{v.explainer}</p>
                 <p className="mt-3 text-xs text-neutral-600">
-                    This is readiness analysis, not a savings claim. Optimize recommendations remain
-                    blocked until explicitly approved in a future slice.
+                    This is readiness analysis, not a savings claim. Recommendations stay blocked.
+                    Outcome readiness does not unlock automatic recommendations.
                 </p>
                 <div className="mt-4">
                     <ColorLegend

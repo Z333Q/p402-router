@@ -136,8 +136,7 @@ export default function ControlPage() {
                         allowlist status, denied spend, human review queue. Plus a policy
                         simulator and a shadow-decisions panel that records what tenant
                         caps would have denied if they were enforcing. No mutations, no
-                        enforcement wired into routing. Runtime enforcement remains blocked
-                        unless explicitly enabled in a later approved slice.
+                        enforcement wired into routing. Runtime enforcement is blocked.
                     </p>
                     <p className="text-[11px] font-mono text-neutral-500">
                         Control reads metadata fields only. No prompt or response content is used.
