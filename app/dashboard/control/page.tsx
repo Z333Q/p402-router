@@ -134,7 +134,10 @@ export default function ControlPage() {
                     <p className="text-neutral-600 font-medium max-w-[720px]">
                         Governance readiness over your AI economic events. Budget burn,
                         allowlist status, denied spend, human review queue. Plus a policy
-                        simulator. No mutations, no enforcement wired into routing.
+                        simulator and a shadow-decisions panel that records what tenant
+                        caps would have denied if they were enforcing. No mutations, no
+                        enforcement wired into routing. Runtime enforcement remains blocked
+                        unless explicitly enabled in a later approved slice.
                     </p>
                     <p className="text-[11px] font-mono text-neutral-500">
                         Control reads metadata fields only. No prompt or response content is used.
