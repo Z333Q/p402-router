@@ -165,7 +165,17 @@ export async function getSettlements(tenantId: string, limit = 100): Promise<{ r
   `;
 
   try {
-    return await db.query(query, [tenantId, limit]);
+    const res = await db.query(query, [tenantId, limit]);
+    // Postgres NUMERIC comes back as a string via node-pg. The client
+    // TransactionRow calls amount_usd.toFixed(...), which throws on a
+    // string. Coerce at the boundary so the rest of the app can treat
+    // amount_usd as the number its interface declares.
+    return {
+      rows: res.rows.map((r: Settlement & { amount_usd: number | string }) => ({
+        ...r,
+        amount_usd: Number(r.amount_usd ?? 0),
+      })),
+    };
   } catch (error) {
     console.error('Error fetching settlements:', error);
     return { rows: [] };
