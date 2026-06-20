@@ -78,4 +78,52 @@ describe('enterprise-auth-sweep source-shape safety', () => {
     expect(src).toMatch(/credentials_stored:\s*false/);
     expect(src).toMatch(/screenshots_saved:\s*false/);
   });
+
+  it('separates required vs optional admin and public route lists', () => {
+    expect(src).toMatch(/ADMIN_PAGES_REQUIRED/);
+    expect(src).toMatch(/ADMIN_PAGES_OPTIONAL/);
+    expect(src).toMatch(/PUBLIC_PAGES_REQUIRED/);
+    expect(src).toMatch(/PUBLIC_PAGES_OPTIONAL/);
+    expect(src).not.toMatch(/const\s+ADMIN_PAGES\s*=/);
+    expect(src).not.toMatch(/const\s+PUBLIC_PAGES\s*=/);
+  });
+
+  it('uses a 60s nav timeout for cold dev compiles', () => {
+    expect(src).toMatch(/NAV_TIMEOUT_MS\s*=\s*60_000/);
+    expect(src).not.toMatch(/timeout:\s*30_000\b/);
+  });
+
+  it('reports optional_missing for routes that 404 in optional lists', () => {
+    expect(src).toMatch(/optional_missing:\s*\[\]/);
+    expect(src).toMatch(/result\.optional_missing\.push/);
+  });
+
+  it('flags required 404s and required nav timeouts as copy_blockers', () => {
+    expect(src).toMatch(/required_admin_404/);
+    expect(src).toMatch(/required_admin_timeout/);
+    expect(src).toMatch(/required_public_missing/);
+  });
+
+  it('checks the disclaimer case-insensitively against all four required phrases', () => {
+    expect(src).toMatch(/internal\\s\+candidate\\s\+review\\s\+only/);
+    expect(src).toMatch(/not\\s\+recommendations/);
+    expect(src).toMatch(/nothing\\s\+is\\s\+applied/);
+    expect(src).toMatch(/no\\s\+savings\\s\+are\\s\+claimed/);
+  });
+
+  it('returns stop only on hard blockers; small_patch on copy/inventory/disclaimer issues', () => {
+    expect(src).toMatch(/const\s+stop\s*=/);
+    expect(src).toMatch(/const\s+smallPatch\s*=/);
+    expect(src).toMatch(/result\.recommendation\s*=\s*stop\s*\?\s*'stop'\s*:\s*smallPatch\s*\?\s*'small_patch'\s*:\s*'pass'/);
+  });
+
+  it('drops /developers in favor of /developers/quickstart for required public routes', () => {
+    expect(src).toMatch(/\/developers\/quickstart/);
+    expect(src).not.toMatch(/PUBLIC_PAGES_REQUIRED\s*=\s*\[[^\]]*['"]\/developers['"][^\]]*\]/);
+  });
+
+  it('moves /admin/facilitators and /admin/routing into optional list', () => {
+    expect(src).toMatch(/ADMIN_PAGES_OPTIONAL\s*=\s*\[[^\]]*\/admin\/facilitators[^\]]*\]/s);
+    expect(src).toMatch(/ADMIN_PAGES_OPTIONAL\s*=\s*\[[^\]]*\/admin\/routing[^\]]*\]/s);
+  });
 });

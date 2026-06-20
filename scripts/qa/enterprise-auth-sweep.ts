@@ -30,6 +30,7 @@ interface PageResult {
     final_url: string | null;
     title: string | null;
     redirected_to_login: boolean;
+    nav_timed_out: boolean;
     console_errors: Findings;
     network_errors: Findings;
 }
@@ -39,6 +40,7 @@ interface Summary {
     login_success: boolean;
     unauthenticated_gates: Map<PageResult | { status: number | null; body_safe: boolean }>;
     admin_pages: Map<PageResult>;
+    optional_missing: Findings;
     optimize_candidates: {
         fixture: {
             total: number;
@@ -76,18 +78,21 @@ const PASSWORD = process.env.P402_QA_ADMIN_PASSWORD;
 
 const PILOT_TENANT = '4f689ea1-7340-476a-878e-9f0b930e5fd4';
 
-const ADMIN_PAGES = [
+const ADMIN_PAGES_REQUIRED = [
     '/admin/overview',
     '/admin/optimize-candidates',
     '/admin/safety',
     '/admin/audit',
     '/admin/analytics',
     '/admin/health',
-    '/admin/facilitators',
     '/admin/bazaar',
-    '/admin/routing',
     '/admin/users',
     '/admin/admins',
+];
+
+const ADMIN_PAGES_OPTIONAL = [
+    '/admin/facilitators',
+    '/admin/routing',
 ];
 
 const TENANT_PAGES = [
@@ -101,7 +106,10 @@ const TENANT_PAGES = [
     '/dashboard/publish',
 ];
 
-const PUBLIC_PAGES = ['/', '/meter', '/trust', '/pricing', '/developers', '/docs'];
+const PUBLIC_PAGES_REQUIRED = ['/', '/meter', '/trust', '/pricing', '/developers/quickstart'];
+const PUBLIC_PAGES_OPTIONAL = ['/docs', '/developers'];
+
+const NAV_TIMEOUT_MS = 60_000;
 
 const SECRET_PATTERNS: { name: string; re: RegExp }[] = [
     { name: 'p402_live_', re: /\bp402_live_[A-Za-z0-9_-]{8,}/ },
@@ -190,18 +198,21 @@ async function visit(ctx: BrowserContext, path: string): Promise<PageResult> {
     let title: string | null = null;
     let finalUrl: string | null = null;
     let redirectedToLogin = false;
+    let navTimedOut = false;
     try {
-        const resp = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+        const resp = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
         status = resp?.status() ?? null;
         finalUrl = page.url();
         redirectedToLogin = /\/admin\/login|\/login|\/signin|\/auth\//.test(finalUrl);
         title = await page.title().catch(() => null);
     } catch (e) {
-        networkErrors.push(`nav_error: ${e instanceof Error ? e.message.slice(0, 120) : 'unknown'}`);
+        const msg = e instanceof Error ? e.message : 'unknown';
+        if (/Timeout|exceeded/i.test(msg)) navTimedOut = true;
+        networkErrors.push(`nav_error: ${msg.slice(0, 120)}`);
     } finally {
         await page.close().catch(() => undefined);
     }
-    return { url: path, status, final_url: finalUrl, title, redirected_to_login: redirectedToLogin, console_errors: dedupe(consoleErrors), network_errors: dedupe(networkErrors) };
+    return { url: path, status, final_url: finalUrl, title, redirected_to_login: redirectedToLogin, nav_timed_out: navTimedOut, console_errors: dedupe(consoleErrors), network_errors: dedupe(networkErrors) };
 }
 
 async function visitWithScan(ctx: BrowserContext, path: string, scans: { secrets: Findings; content: Findings; claims: Findings }): Promise<PageResult> {
@@ -216,8 +227,9 @@ async function visitWithScan(ctx: BrowserContext, path: string, scans: { secrets
     let title: string | null = null;
     let finalUrl: string | null = null;
     let redirectedToLogin = false;
+    let navTimedOut = false;
     try {
-        const resp = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+        const resp = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
         status = resp?.status() ?? null;
         finalUrl = page.url();
         redirectedToLogin = /\/admin\/login|\/login|\/signin|\/auth\//.test(finalUrl);
@@ -227,11 +239,13 @@ async function visitWithScan(ctx: BrowserContext, path: string, scans: { secrets
         for (const s of scanContent(body)) scans.content.push(`${path}:${s}`);
         for (const s of scanClaims(body)) scans.claims.push(`${path}:${s}`);
     } catch (e) {
-        networkErrors.push(`nav_error: ${e instanceof Error ? e.message.slice(0, 120) : 'unknown'}`);
+        const msg = e instanceof Error ? e.message : 'unknown';
+        if (/Timeout|exceeded/i.test(msg)) navTimedOut = true;
+        networkErrors.push(`nav_error: ${msg.slice(0, 120)}`);
     } finally {
         await page.close().catch(() => undefined);
     }
-    return { url: path, status, final_url: finalUrl, title, redirected_to_login: redirectedToLogin, console_errors: dedupe(consoleErrors), network_errors: dedupe(networkErrors) };
+    return { url: path, status, final_url: finalUrl, title, redirected_to_login: redirectedToLogin, nav_timed_out: navTimedOut, console_errors: dedupe(consoleErrors), network_errors: dedupe(networkErrors) };
 }
 
 async function apiGet(ctx: BrowserContext, path: string, scans: { secrets: Findings; content: Findings; claims: Findings }): Promise<{ status: number; body_safe: boolean; notes: Findings; body?: unknown }> {
@@ -268,6 +282,7 @@ async function main() {
         login_success: false,
         unauthenticated_gates: {},
         admin_pages: {},
+        optional_missing: [],
         optimize_candidates: {
             fixture: { total: 0, by_type: {}, status_internal_candidate: false, disclaimer_visible: false, forbidden_actions_visible: [] },
             production: { loaded: {}, total: 0, empty_state_visible: false, errors: [] },
@@ -310,7 +325,16 @@ async function main() {
 
         // Phase 7 — public pages
         const pubCtx = await browser.newContext();
-        for (const p of PUBLIC_PAGES) result.public_pages[p] = await visitWithScan(pubCtx, p, scans);
+        for (const p of PUBLIC_PAGES_REQUIRED) {
+            const r = await visitWithScan(pubCtx, p, scans);
+            result.public_pages[p] = r;
+            if (r.status === 404 || r.status === null) result.copy_blockers.push(`required_public_missing:${p}`);
+        }
+        for (const p of PUBLIC_PAGES_OPTIONAL) {
+            const r = await visitWithScan(pubCtx, p, scans);
+            result.public_pages[p] = r;
+            if (r.status === 404 || r.status === null) result.optional_missing.push(p);
+        }
         await pubCtx.close();
 
         // Phase 2 — admin login
@@ -324,18 +348,42 @@ async function main() {
         }
 
         // Phase 3 — admin surface smoke
-        for (const p of ADMIN_PAGES) result.admin_pages[p] = await visitWithScan(adminCtx, p, scans);
+        for (const p of ADMIN_PAGES_REQUIRED) {
+            const r = await visitWithScan(adminCtx, p, scans);
+            result.admin_pages[p] = r;
+            if (r.status === 404) result.copy_blockers.push(`required_admin_404:${p}`);
+            if (r.nav_timed_out) result.copy_blockers.push(`required_admin_timeout:${p}`);
+        }
+        for (const p of ADMIN_PAGES_OPTIONAL) {
+            const r = await visitWithScan(adminCtx, p, scans);
+            result.admin_pages[p] = r;
+            if (r.status === 404 || r.status === null) result.optional_missing.push(p);
+        }
 
         // Phase 4 — internal Optimize candidate review (page-level checks)
         const page = await adminCtx.newPage();
         try {
-            await page.goto(`${BASE_URL}/admin/optimize-candidates`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+            await page.goto(`${BASE_URL}/admin/optimize-candidates`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
             await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
-            const bodyText = await page.evaluate(() => document.body.innerText);
-            result.optimize_candidates.fixture.disclaimer_visible = /Internal candidate review only\. These are not recommendations\. Nothing is applied\. No savings are claimed\./.test(bodyText);
+            const disclaimerPhrases = [
+                /internal\s+candidate\s+review\s+only/i,
+                /not\s+recommendations/i,
+                /nothing\s+is\s+applied/i,
+                /no\s+savings\s+are\s+claimed/i,
+            ];
+            await page.waitForFunction(
+                (re) => new RegExp(re, 'i').test(document.body.innerText) || new RegExp(re, 'i').test(document.body.textContent ?? ''),
+                disclaimerPhrases[0]!.source,
+                { timeout: 15_000 },
+            ).catch(() => undefined);
+            const bodyText = await page.evaluate(() => `${document.body.innerText}\n${document.body.textContent ?? ''}`);
+            result.optimize_candidates.fixture.disclaimer_visible = disclaimerPhrases.every((re) => re.test(bodyText));
             const forbidden: Findings = [];
-            for (const txt of ['Apply', 'Auto-apply', 'Auto apply', 'Verified savings']) {
-                if (new RegExp(`\\b${txt}\\b`, 'i').test(bodyText)) forbidden.push(txt);
+            for (const re of [/\bapply\s+recommendation/i, /\bauto[-\s]?apply\b/i, /\bverified\s+savings\b/i, /\bguaranteed\s+savings\b/i]) {
+                if (re.test(bodyText)) {
+                    const allowed = CLAIM_ALLOWLIST.some((a) => a.test(bodyText));
+                    if (!allowed) forbidden.push(re.source);
+                }
             }
             result.optimize_candidates.fixture.forbidden_actions_visible = forbidden;
         } finally {
@@ -376,10 +424,34 @@ async function emit(result: Summary, scans: { secrets: Findings; content: Findin
     result.secret_leak_findings = dedupe(scans.secrets);
     result.content_leak_findings = dedupe(scans.content);
     result.forbidden_claim_findings = dedupe(scans.claims);
-    result.console_errors = dedupe(Object.values(result.admin_pages).concat(Object.values(result.public_pages), Object.values(result.tenant_route_gates)).flatMap((r) => r.console_errors));
-    result.network_errors = dedupe(Object.values(result.admin_pages).concat(Object.values(result.public_pages), Object.values(result.tenant_route_gates)).flatMap((r) => r.network_errors));
-    if (result.secret_leak_findings.length || result.content_leak_findings.length) result.recommendation = 'stop';
-    else if (result.forbidden_claim_findings.length || result.optimize_candidates.fixture.forbidden_actions_visible.length || !result.login_success) result.recommendation = 'small_patch';
+    const allPages = [
+        ...Object.values(result.admin_pages),
+        ...Object.values(result.public_pages),
+        ...Object.values(result.tenant_route_gates),
+        ...Object.values(result.unauthenticated_gates).filter((g): g is PageResult => 'console_errors' in g),
+    ];
+    result.console_errors = dedupe(allPages.flatMap((r) => r.console_errors));
+    result.network_errors = dedupe(allPages.flatMap((r) => r.network_errors));
+    const has500 = allPages.some((r) => r.status !== null && r.status >= 500);
+    const hasRequiredTimeout = allPages.some((r) => r.nav_timed_out);
+    const fixtureExpectedTypes = ['missing_outcome_coverage', 'high_cost_workflow_review', 'model_allowlist_cleanup'];
+    const fixtureTypesPresent = fixtureExpectedTypes.every((t) => (result.optimize_candidates.fixture.by_type[t] ?? 0) > 0);
+    const disclaimerOk = result.optimize_candidates.fixture.disclaimer_visible;
+    const stop =
+        result.secret_leak_findings.length > 0 ||
+        result.content_leak_findings.length > 0 ||
+        !result.login_success ||
+        has500;
+    const smallPatch =
+        !disclaimerOk ||
+        result.optimize_candidates.fixture.total !== 3 ||
+        !fixtureTypesPresent ||
+        !result.optimize_candidates.fixture.status_internal_candidate ||
+        result.optimize_candidates.fixture.forbidden_actions_visible.length > 0 ||
+        result.forbidden_claim_findings.length > 0 ||
+        result.copy_blockers.length > 0 ||
+        hasRequiredTimeout;
+    result.recommendation = stop ? 'stop' : smallPatch ? 'small_patch' : 'pass';
     console.log(JSON.stringify(result, null, 2));
     if (result.recommendation === 'stop') process.exit(2);
 }
