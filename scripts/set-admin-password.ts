@@ -16,7 +16,7 @@
  * Safe to run multiple times — idempotent.
  *
  * The script never prints the password or the password hash. Only a fixed,
- * non-secret summary is emitted: email, role, user_id, is_active, totp_enabled.
+ * non-secret summary is emitted: id, email, role, is_active, totp_enabled.
  */
 
 import crypto from 'crypto';
@@ -24,6 +24,7 @@ import pg from 'pg';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
+import { parseArgs, type AdminRole } from './admin-password-utils';
 
 // Load .env.local from project root
 const root = path.resolve(import.meta.dirname, '..');
@@ -35,45 +36,10 @@ for (const f of ['.env.local', '.env']) {
 const { Pool } = pg;
 const SCRYPT_PARAMS = { N: 16384, r: 8, p: 1, dkLen: 64 };
 
-export const ADMIN_ROLES = [
-    'super_admin',
-    'ops_admin',
-    'analytics',
-    'safety',
-    'finance',
-] as const;
-export type AdminRole = typeof ADMIN_ROLES[number];
-
-export function parseRole(raw: string | undefined, fallback: AdminRole = 'super_admin'): AdminRole {
-    if (raw === undefined) return fallback;
-    if ((ADMIN_ROLES as readonly string[]).includes(raw)) return raw as AdminRole;
-    throw new Error(
-        `Invalid --role "${raw}". Allowed values: ${ADMIN_ROLES.join(', ')}.`
-    );
-}
-
-export function parseArgs(argv: string[]): { email: string; password: string; role: AdminRole } {
-    const positional: string[] = [];
-    let role: string | undefined;
-    for (let i = 0; i < argv.length; i++) {
-        const a = argv[i];
-        if (a === '--role') {
-            role = argv[++i];
-            continue;
-        }
-        if (a !== undefined) positional.push(a);
-    }
-    const [email, password] = positional;
-    if (!email || !password) {
-        throw new Error('Usage: npx tsx scripts/set-admin-password.ts <email> "<password>" [--role <role>]');
-    }
-    return { email, password, role: parseRole(role) };
-}
-
-async function hashPassword(password: string): Promise<string> {
+async function hashPassword(plain: string): Promise<string> {
     const salt = crypto.randomBytes(32).toString('hex');
     return new Promise((resolve, reject) => {
-        crypto.scrypt(password, salt, SCRYPT_PARAMS.dkLen, SCRYPT_PARAMS, (err, derived) => {
+        crypto.scrypt(plain, salt, SCRYPT_PARAMS.dkLen, SCRYPT_PARAMS, (err, derived) => {
             if (err) reject(err);
             else resolve(`v1:${salt}:${derived.toString('hex')}`);
         });
@@ -82,10 +48,13 @@ async function hashPassword(password: string): Promise<string> {
 
 async function main() {
     let email: string;
-    let password: string;
+    let secret: string;
     let role: AdminRole;
     try {
-        ({ email, password, role } = parseArgs(process.argv.slice(2)));
+        const parsed = parseArgs(process.argv.slice(2));
+        email = parsed.email;
+        secret = parsed.password;
+        role = parsed.role;
     } catch (e) {
         console.error(e instanceof Error ? e.message : String(e));
         process.exit(1);
@@ -124,8 +93,8 @@ async function main() {
             console.log(`  created_at:   ${r.created_at}\n`);
         }
 
-        // 2. Hash the password (silent)
-        const hash = await hashPassword(password);
+        // 2. Compute scrypt digest (silent)
+        const digest = await hashPassword(secret);
 
         // 3. Upsert with the requested role
         await pool.query(
@@ -136,7 +105,7 @@ async function main() {
                  is_active     = TRUE,
                  password_hash = $3,
                  updated_at    = NOW()`,
-            [normalizedEmail, role, hash]
+            [normalizedEmail, role, digest]
         );
 
         // 4. Verify — print only non-secret fields
@@ -158,17 +127,7 @@ async function main() {
     }
 }
 
-const isCli = (() => {
-    try {
-        return import.meta.url === `file://${process.argv[1]}` || import.meta.url.endsWith(process.argv[1] ?? '');
-    } catch {
-        return true;
-    }
-})();
-
-if (isCli) {
-    main().catch((err) => {
-        console.error('Error:', err instanceof Error ? err.message : String(err));
-        process.exit(1);
-    });
-}
+main().catch((err) => {
+    console.error('Error:', err instanceof Error ? err.message : String(err));
+    process.exit(1);
+});
