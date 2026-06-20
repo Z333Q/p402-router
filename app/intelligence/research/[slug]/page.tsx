@@ -27,7 +27,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         >
             <h2 id="intro">1. Introduction</h2>
             <p>
-                The transition from human-centric commerce to an autonomus agent economy necessitates
+                The transition from human-centric commerce to an autonomous agent economy necessitates
                 a fundamental rethinking of settlement layers. Traditional REST APIs treat payments
                 as an out-of-band exception, typically handled via 3rd party redirects (Stripe Checkout).
                 This is acceptable for humans, but catastrophic for high-velocity agent swarms.
