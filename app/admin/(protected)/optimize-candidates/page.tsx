@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AdminCard, AdminPageHeader, AdminButton } from '../../_components/AdminUI';
 
 type Candidate = {
@@ -30,7 +30,7 @@ type ApiResponse = {
 };
 
 const DISCLAIMER = 'Internal candidate review only. These are not recommendations. Nothing is applied. No savings are claimed.';
-const STATUS_LABEL: 'internal_candidate' = 'internal_candidate';
+const STATUS_LABEL = 'internal_candidate' as const;
 
 export default function InternalOptimizeCandidatesPage() {
     const [mode, setMode] = useState<'fixture' | 'production'>('fixture');
@@ -40,7 +40,7 @@ export default function InternalOptimizeCandidatesPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    async function load() {
+    const load = useCallback(async () => {
         setLoading(true);
         setError('');
         setData(null);
@@ -58,9 +58,11 @@ export default function InternalOptimizeCandidatesPage() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [mode, tenant, windowDays]);
 
-    useEffect(() => { void load(); }, []); // initial fixture load
+    useEffect(() => {
+        if (mode === 'fixture') void load();
+    }, [load, mode]);
 
     return (
         <div className="space-y-6">
@@ -70,7 +72,7 @@ export default function InternalOptimizeCandidatesPage() {
             />
 
             <div className="border-2 border-[#FF9500] bg-[#FF9500]/10 p-4 text-xs font-mono text-[#FF9500] uppercase tracking-wide">
-                {DISCLAIMER}
+                {DISCLAIMER} Every row is rendered with status={STATUS_LABEL}.
             </div>
 
             <AdminCard title="Inputs">
@@ -172,7 +174,7 @@ function CandidateRow({ c }: { c: Candidate }) {
                     <div><span className="text-neutral-500">candidate_id:</span> {c.candidate_id}</div>
                     <div><span className="text-neutral-500">tenant_id:</span> {c.tenant_id}</div>
                     <div><span className="text-neutral-500">slice:</span> {sliceLabel || '(tenant)'}</div>
-                    <div><span className="text-neutral-500">status:</span> <span className="text-[#FF9500]">{c.status === STATUS_LABEL ? c.status : c.status}</span></div>
+                    <div><span className="text-neutral-500">status:</span> <span className="text-[#FF9500]">{c.status}</span></div>
                     <div><span className="text-neutral-500">created_at:</span> {c.created_at}</div>
                 </div>
                 <div className="space-y-1">
