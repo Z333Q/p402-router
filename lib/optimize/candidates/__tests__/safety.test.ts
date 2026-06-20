@@ -22,11 +22,13 @@ function walk(dir: string): string[] {
 }
 
 describe('Phase 1 source-shape safety', () => {
-  it('CLI refuses production execution by default', () => {
+  it('CLI requires explicit flags for production reads', () => {
     const cli = read(join(ROOT, 'scripts', 'optimize', 'generate-candidates.ts'));
-    expect(cli).toMatch(/REFUSED: production execution is not permitted in Phase 1/);
-    expect(cli).toMatch(/--allow-production/);
+    expect(cli).toMatch(/--read-production/);
+    expect(cli).toMatch(/--tenant/);
     expect(cli).toMatch(/--fixture/);
+    expect(cli).toMatch(/REFUSED: --read-production requires --tenant/);
+    expect(cli).toMatch(/REFUSED: --tenant must be a UUID/);
   });
 
   it('Phase 1 sources contain no prompt or response content fields', () => {
