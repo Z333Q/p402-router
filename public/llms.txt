@@ -288,4 +288,4 @@ On-chain agent identity and reputation on Base. Agents registered with a DID, va
 ## Source
 
 - [GitHub](https://github.com/Z333Q/p402-router)
-- [Twitter](https://twitter.com/p402_io)
+- [X / Twitter](https://x.com/p402io)

@@ -32,7 +32,7 @@ export const metadata: Metadata = {
         card: 'summary_large_image',
         title: 'P402: Make AI spend accountable',
         description: 'Meter every AI call. Attribute every token. Control every margin. Private by default.',
-        site: '@p402_io',
+        site: '@p402io',
     },
 };
 

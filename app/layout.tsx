@@ -44,7 +44,7 @@ export const metadata: Metadata = {
         card: 'summary_large_image',
         title: 'P402 — AI Payment Processing & Token Metering',
         description: 'Per-token AI billing, intelligent routing, on-chain settlement, compliance auditing. OpenAI-compatible.',
-        site: '@p402_io',
+        site: '@p402io',
         images: ['/opengraph-image'],
     },
     robots: {
@@ -84,7 +84,7 @@ const jsonLd = [
             'EIP-3009 Gasless Payments', 'A2A Protocol', 'AI Compliance Auditing',
             'Agent-to-Agent Commerce', 'Micropayment Settlement', 'AI Cost Optimization',
         ],
-        sameAs: ['https://twitter.com/p402_io', 'https://github.com/Z333Q/p402-router'],
+        sameAs: ['https://x.com/p402io', 'https://github.com/Z333Q/p402-router'],
         hasOfferCatalog: {
             '@type': 'OfferCatalog',
             name: 'P402 Products',
