@@ -27,6 +27,7 @@
     "test:e2e:ui": "playwright test --ui",
     "build:skill": "chmod +x scripts/build-skill.sh && ./scripts/build-skill.sh",
     "check:marketing-copy": "node scripts/check-marketing-copy.mjs",
+    "qa:enterprise-auth-sweep": "tsx scripts/qa/enterprise-auth-sweep.ts",
     "prebuild": "npm run build:skill",
     "prepare": "husky install",
     "test:e2e:live": "playwright test --project=live-smoke --project=live-api --project=live-dashboard --project=live-admin",
