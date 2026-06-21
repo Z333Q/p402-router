@@ -1,505 +1,314 @@
 import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
 import Link from "next/link";
-import { Check, Info, HelpCircle } from "lucide-react";
-import { Badge } from "@/app/dashboard/_components/ui";
-import { UpgradeMathCalculator } from "@/components/pricing/UpgradeMathCalculator";
-import { EnterpriseTierCheckout } from "@/components/pricing/EnterpriseTierCheckout";
+import {
+    BRIDGE_OFFERS,
+    ENTERPRISE_FLOOR_ARR_USD,
+    PLANS,
+    PLAN_IDS,
+    PRICING_PAGE_SUPPORT_LINE,
+    formatUsd,
+} from "@/lib/pricing/rate-card";
+import { PlanCard } from "./_components/PlanCard";
+import { BridgeOfferCard } from "./_components/BridgeOfferCard";
+import { FAQItem } from "./_components/FAQItem";
+import { BuyerPathTabs } from "./_components/BuyerPathTabs";
+import { AddOnsList } from "./_components/AddOnsList";
 
 export const metadata = {
-    title: 'Pricing | P402 Router',
-    description: 'P402 pricing: Free (1% fee), Pro $499/mo (0.75% fee, Claude Skill), Enterprise (custom). Pay with Stripe or USDC via EIP-2612. AI payment router for agent commerce.',
+    title: 'Pricing | P402 — AI Spend Accountability',
+    description: 'P402 pricing: Sandbox free, Developer $249/mo, Business $2,500/mo annual, Scale $5,000/mo annual, Enterprise from $60k ARR. Pilots from $15k. Usage-based metered AI events. No cost-savings claim.',
     alternates: { canonical: 'https://p402.io/pricing' },
-    openGraph: { title: 'P402 Pricing — Free, Pro $499/mo, Enterprise', description: 'Transparent platform fees for AI routing. Higher fees for experiments, lower for production. Pay with card or USDC.', url: 'https://p402.io/pricing' },
+    openGraph: {
+        title: 'P402 Pricing — AI Spend Accountability',
+        description: 'Start free. Production plans from $249/month. Enterprise pilots from $35k. Usage-based, metadata-only, procurement-ready.',
+        url: 'https://p402.io/pricing',
+    },
 };
 
+// Schema.org Product + Offers JSON-LD per 3AY §16.3
 const pricingJsonLd = {
     '@context': 'https://schema.org',
-    '@graph': [
-        {
-            '@type': 'SoftwareApplication',
-            name: 'P402 Router',
-            applicationCategory: 'DeveloperApplication',
-            offers: [
-                {
-                    '@type': 'Offer',
-                    name: 'Free',
-                    price: '0',
-                    priceCurrency: 'USD',
-                    description: '1.00% platform fee. Standard x402 routing, basic AP2 mandate caps, 5 integration audits/mo.',
-                },
-                {
-                    '@type': 'Offer',
-                    name: 'Pro',
-                    price: '499',
-                    priceCurrency: 'USD',
-                    description: '0.75% platform fee. High priority routing, unlimited audits, 90-day analytics, Claude Skill.',
-                    billingIncrement: 1,
-                },
-                {
-                    '@type': 'Offer',
-                    name: 'Enterprise',
-                    price: 'Custom',
-                    priceCurrency: 'USD',
-                    description: 'Volume-tiered platform fee. Dedicated infrastructure, multi-stage AP2 approvals, moderation queues.',
-                },
-                {
-                    '@type': 'Offer',
-                    name: 'AI Spend Audit',
-                    price: '1500',
-                    priceCurrency: 'USD',
-                    description: 'One-time CFO audit of AI token usage across providers. Per-event attribution, metadata-only mode, delivered report + evidence bundle.',
-                },
-                {
-                    '@type': 'Offer',
-                    name: 'Department Dashboard',
-                    price: '1500',
-                    priceCurrency: 'USD',
-                    description: 'Department + employee budgets enforced at request time. Policy-driven denies, AP2 mandates, live ledger across providers.',
-                    billingIncrement: 1,
-                },
-            ],
-        },
-        {
-            '@type': 'FAQPage',
-            mainEntity: [
-                {
-                    '@type': 'Question',
-                    name: 'What is the difference between the platform fee and the subscription?',
-                    acceptedAnswer: { '@type': 'Answer', text: 'The subscription fee (e.g., $499/mo for Pro) unlocks the SaaS control plane, advanced analytics, and priority infrastructure. The platform fee (e.g., 0.75% for Pro) is taken atomically on-chain during each x402 settlement.' },
-                },
-                {
-                    '@type': 'Question',
-                    name: 'Can I pay for my subscription with crypto?',
-                    acceptedAnswer: { '@type': 'Answer', text: 'Yes. In the Billing dashboard, you can opt to pay via our gasless EIP-2612 wallet flow using USDC on Base, or via traditional Stripe.' },
-                },
-                {
-                    '@type': 'Question',
-                    name: 'Do cache hits count towards my platform fee?',
-                    acceptedAnswer: { '@type': 'Answer', text: 'No. Semantic Cache hits bypass the routing engine and on-chain settlement entirely, making them free of platform fees.' },
-                },
-                {
-                    '@type': 'Question',
-                    name: 'Is there an AI assistant to help with P402 integration?',
-                    acceptedAnswer: { '@type': 'Answer', text: 'Yes. The P402 Claude Skill gives Claude Code and Claude.ai deep knowledge of the routing API, billing guard, x402 payment flows, and A2A protocol. Install it from p402.io/docs/skill.' },
-                },
-                {
-                    '@type': 'Question',
-                    name: 'Does the VS Code extension work on the Free plan?',
-                    acceptedAnswer: { '@type': 'Answer', text: 'Yes. The VS Code extension (p402-protocol.p402) is available on all plans including Free. Install it with ext install p402-protocol.p402 in VS Code, Cursor, or Windsurf. The MCP server is bundled with zero config required.' },
-                },
-                {
-                    '@type': 'Question',
-                    name: 'Why is the escrow fee 2% instead of my plan rate?',
-                    acceptedAnswer: { '@type': 'Answer', text: 'Escrow involves two on-chain transactions and a dispute window. The 2% fee is enforced by the P402Escrow smart contract at release and applies uniformly across all plans. You can disable escrow in Developer Settings to use direct x402 settlement at your plan\'s standard rate.' },
-                },
-            ],
-        },
-    ],
+    '@type': 'Product',
+    name: 'P402 — AI Spend Accountability',
+    description: 'AI spend accountability and governance software for the enterprise. Metered AI events, workflow attribution, shadow controls, outcome ingestion, audit-grade evidence.',
+    brand: { '@type': 'Brand', name: 'P402' },
+    offers: PLAN_IDS.map((id) => {
+        const p = PLANS[id];
+        return {
+            '@type': 'Offer',
+            name: p.name,
+            description: p.audience,
+            price: p.annualPriceUsd === null ? undefined : String(p.annualPriceUsd === 0 ? 0 : p.annualPriceUsd),
+            priceCurrency: 'USD',
+            url: `https://p402.io${p.ctaHref}`,
+        };
+    }),
 };
 
 export default function PricingPage() {
     return (
-        <div className="min-h-screen bg-[var(--neutral-50)] text-[var(--neutral-900)] font-sans selection:bg-[var(--primary)] selection:text-black flex flex-col">
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }} />
+        <main className="min-h-screen bg-white">
             <TopNav />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }} />
 
-            <main className="flex-grow">
-                {/* 1. Hero Section */}
-                <section className="pt-32 pb-16 px-6 max-w-7xl mx-auto text-center">
-                    <Badge variant="primary" className="mb-6 mx-auto"><span className="font-mono">{">_"}</span> Protocol Economics v2.0</Badge>
-                    <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-6 leading-tight">
-                        Agent commerce pricing <br className="hidden md:block" />
-                        <span className="heading-accent">that rewards commitment.</span>
-                    </h1>
-                    <p className="text-lg md:text-xl font-mono text-[var(--neutral-700)] max-w-3xl mx-auto font-bold">
-                        Free: <span className="text-black font-black">1.00%</span> per settled payment.&nbsp;
-                        Pro: <span className="text-black font-black">0.75%</span>.&nbsp;
-                        Enterprise: volume rate.
-                        <br className="hidden sm:block" />
-                        <span className="text-[var(--neutral-500)]">Every basis point is enforced on-chain — not in an SLA.</span>
+            {/* ── Hero ────────────────────────────────────────────────── */}
+            <section className="max-w-6xl mx-auto px-6 lg:px-8 pt-16 pb-12">
+                <h1 className="text-5xl lg:text-6xl font-black text-black uppercase tracking-tight leading-[0.95]">
+                    Simple pricing for<br />accountable AI spend
+                </h1>
+                <p className="mt-6 text-base lg:text-lg font-mono text-neutral-700 max-w-2xl">
+                    {PRICING_PAGE_SUPPORT_LINE}
+                </p>
+            </section>
+
+            {/* ── Buyer-path tabs (3AY §4.2) ───────────────────────────── */}
+            <section className="max-w-6xl mx-auto px-6 lg:px-8 pb-4">
+                <BuyerPathTabs />
+            </section>
+
+            {/* ── "Build" plans: Sandbox + Developer ──────────────────── */}
+            <section id="plans-build" className="max-w-6xl mx-auto px-6 lg:px-8 pb-16 scroll-mt-20">
+                <h2 className="text-2xl font-black text-black uppercase tracking-tight mb-6">
+                    For builders
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <PlanCard plan={PLANS.sandbox} />
+                    <PlanCard plan={PLANS.developer} />
+                </div>
+            </section>
+
+            {/* ── "Govern" plans: Business + Scale + Enterprise ──────── */}
+            <section id="plans-govern" className="bg-neutral-50 border-y-2 border-neutral-200 scroll-mt-20">
+                <div className="max-w-6xl mx-auto px-6 lg:px-8 py-16">
+                    <h2 className="text-2xl font-black text-black uppercase tracking-tight mb-6">
+                        For governance and FinOps
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <PlanCard plan={PLANS.business} highlight />
+                        <PlanCard plan={PLANS.scale} />
+                        <PlanCard plan={PLANS.enterprise} />
+                    </div>
+                    <p className="mt-6 text-xs font-mono text-neutral-500">
+                        Annual prices shown for Business and Scale. Business monthly billing is available at a 40% premium; Scale and Enterprise are annual only.
                     </p>
-                </section>
+                </div>
+            </section>
 
-                {/* 2. Upgrade Math Calculator */}
-                <section className="px-6 py-12 bg-white border-y-2 border-black">
-                    <div className="container mx-auto max-w-7xl">
-                        <div className="text-center mb-4">
-                            <h2 className="text-3xl font-black uppercase tracking-tighter">Prove it to yourself.</h2>
-                            <p className="font-mono text-sm text-[var(--neutral-500)] uppercase">Drop in your monthly AI spend. The math does the talking.</p>
-                        </div>
-                        <UpgradeMathCalculator />
+            {/* ── Event metric explainer ──────────────────────────────── */}
+            <section className="py-12">
+                <div className="max-w-6xl mx-auto px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div>
+                        <h2 className="text-2xl font-black text-black uppercase tracking-tight">How billing works</h2>
                     </div>
-                </section>
-
-                {/* 3. Fee Rate Strip */}
-                <section className="bg-black border-b-2 border-black py-10 px-6">
-                    <div className="max-w-4xl mx-auto">
-                        <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] mb-6">Platform fee per settled payment</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y-2 sm:divide-y-0 sm:divide-x-2 divide-[var(--neutral-800)] border-2 border-[var(--neutral-800)]">
-                            <div className="p-6 sm:p-8 text-center">
-                                <div className="text-4xl sm:text-5xl font-black text-white mb-2">1.00<span className="text-xl sm:text-2xl">%</span></div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] mb-1">Free</div>
-                                <div className="text-[10px] font-bold text-[var(--neutral-600)] font-mono">$0 / mo</div>
-                            </div>
-                            <div className="p-6 sm:p-8 text-center bg-[var(--neutral-900)]">
-                                <div className="text-4xl sm:text-5xl font-black text-[var(--primary)] mb-2">0.75<span className="text-xl sm:text-2xl">%</span></div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-400)] mb-1">Pro</div>
-                                <div className="text-[10px] font-bold text-[var(--neutral-500)] font-mono">$499 / mo</div>
-                                <div className="mt-3 text-[9px] font-black uppercase tracking-wider text-[var(--neutral-600)] border border-[var(--neutral-700)] px-2 py-1 inline-block whitespace-nowrap">
-                                    Pays for itself at ~$200K / mo
-                                </div>
-                            </div>
-                            <div className="p-6 sm:p-8 text-center">
-                                <div className="text-4xl sm:text-5xl font-black text-[var(--neutral-400)] mb-2">Vol. <span className="text-xl sm:text-2xl">rate</span></div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] mb-1">Enterprise</div>
-                                <div className="text-[10px] font-bold text-[var(--neutral-600)] font-mono">Custom / mo</div>
-                            </div>
-                        </div>
-                        <p className="text-center text-[10px] font-bold text-[var(--neutral-700)] mt-4 font-mono uppercase tracking-wider">
-                            Fees deducted atomically at settlement — enforced by contract, not policy
+                    <div className="lg:col-span-2 space-y-4 text-sm font-mono text-neutral-800 leading-relaxed">
+                        <p>
+                            P402 bills primarily on <strong>metered AI events</strong>. One metered AI event is one unique provider-bound, meter-only, or policy-evaluated AI request recorded for your tenant during the billing period.
                         </p>
-                        <p className="text-center text-[10px] font-bold text-[var(--neutral-600)] mt-2 font-mono uppercase tracking-wider">
-                            Escrow-protected payments (Bazaar): <span className="text-[var(--primary)]">2% flat</span> — enforced on-chain at escrow release · <span className="text-[var(--neutral-500)]">toggleable per account</span>
+                        <p>
+                            Outcome records, dashboard views, audit exports, and admin actions are <strong>not</strong> billable.
                         </p>
-                    </div>
-                </section>
-
-                {/* 4. The Three Neo-Brutalist Tier Cards */}
-                <section className="px-6 py-24 max-w-7xl mx-auto">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-
-                        {/* TIER 1: FREE (Experiment) */}
-                        <div className="card bg-white border-2 border-black flex flex-col relative transition-transform hover:-translate-y-1">
-                            <div className="p-8 border-b-2 border-black">
-                                <h2 className="text-3xl font-black uppercase tracking-wide mb-2">Free</h2>
-                                <p className="font-mono text-sm text-[var(--neutral-700)] h-12 leading-tight font-bold">
-                                    Built for testing paid endpoints and early bazaar listings.
-                                </p>
-                                <div className="mt-6 mb-2">
-                                    <span className="text-6xl font-black">$0</span>
-                                    <span className="font-mono text-[var(--neutral-700)] font-bold"> / mo</span>
-                                </div>
-                                <div className="inline-block bg-[var(--neutral-300)] text-black font-black uppercase text-xs px-3 py-1 border-2 border-black">
-                                    1.00% Platform Fee
-                                </div>
-                            </div>
-                            <div className="p-8 flex-1 flex flex-col gap-6">
-                                <ul className="flex flex-col gap-4 font-mono text-sm flex-1 font-bold">
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Standard x402 routing</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Basic AP2 Mandate caps</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>5 Integration Audits / mo</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>7-day runtime trend summary</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>VS Code extension — embedded MCP, zero config</span></li>
-                                </ul>
-                                <Link
-                                    href="/login"
-                                    className="btn w-full bg-white text-black text-center font-black uppercase py-5 border-2 border-black hover:bg-[var(--neutral-300)] transition-colors mt-auto text-sm tracking-widest"
-                                >
-                                    Start Building
-                                </Link>
-                            </div>
-                        </div>
-
-                        {/* TIER 2: PRO (Operate) */}
-                        <div className="card bg-white border-2 border-black flex flex-col relative shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] z-10 scale-100 lg:scale-105 transition-all">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--primary)] border-2 border-black px-6 py-2 font-black uppercase tracking-widest text-sm shadow-[4px_4px_0px_#000]">
-                                Most Popular
-                            </div>
-                            <div className="p-8 border-b-2 border-black bg-[var(--neutral-900)] text-white">
-                                <h2 className="text-3xl font-black uppercase tracking-wide mb-2 text-[var(--primary)]">Pro</h2>
-                                <p className="font-mono text-sm text-[var(--neutral-300)] h-12 leading-tight font-bold">
-                                    Built for production routing, advanced analytics, auto-retries, and verified publishing.
-                                </p>
-                                <div className="mt-6 mb-2">
-                                    <span className="text-6xl font-black">$499</span>
-                                    <span className="font-mono text-[var(--neutral-400)] font-bold"> / mo</span>
-                                </div>
-                                <div className="inline-block bg-[var(--primary)] text-black font-black uppercase text-xs px-3 py-1 border-2 border-black">
-                                    0.75% Platform Fee
-                                </div>
-                            </div>
-                            <div className="p-8 flex-1 flex flex-col gap-6 bg-white">
-                                <ul className="flex flex-col gap-4 font-mono text-sm flex-1 font-black">
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-[var(--primary)] bg-black" strokeWidth={3} /> <span>High priority routing cluster</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-[var(--primary)] bg-black" strokeWidth={3} /> <span>Unlimited integration audits</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-[var(--primary)] bg-black" strokeWidth={3} /> <span>90-day route-level analytics</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-[var(--primary)] bg-black" strokeWidth={3} /> <span>Scheduled daily health audits</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-[var(--primary)] bg-black" strokeWidth={3} /> <span>Verified Publisher Workflow</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-[var(--primary)] bg-black" strokeWidth={3} /> <span><Link href="/docs/skill" className="underline">Claude Skill</Link> — AI integration assistant</span></li>
-                                    <li className="flex items-start gap-3 text-xs bg-[var(--neutral-100)] p-2 border border-black border-dashed"><Info className="w-4 h-4 shrink-0" /> <span>Pay via Stripe or EIP-2612</span></li>
-                                </ul>
-                                <Link
-                                    href="/dashboard/billing"
-                                    className="btn w-full bg-[var(--primary)] text-black text-center font-black uppercase py-5 border-2 border-black hover:bg-[var(--primary-hover)] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all mt-auto text-sm tracking-widest"
-                                >
-                                    Upgrade to Pro
-                                </Link>
-                            </div>
-                        </div>
-
-                        {/* TIER 3: ENTERPRISE (Govern) */}
-                        <div className="card bg-[var(--neutral-900)] text-white border-2 border-black flex flex-col relative transition-transform hover:-translate-y-1">
-                            <div className="p-8 border-b-2 border-black">
-                                <h2 className="text-3xl font-black uppercase tracking-wide mb-2">Enterprise</h2>
-                                <p className="font-mono text-sm text-[var(--neutral-400)] h-12 leading-tight font-bold">
-                                    Built for strict policy controls, attestation workflows, and safety ops.
-                                </p>
-                                <div className="mt-6 mb-2">
-                                    <span className="text-6xl font-black text-[var(--neutral-300)]">Custom</span>
-                                </div>
-                                <div className="inline-block bg-white text-black font-black uppercase text-xs px-3 py-1 border-2 border-black">
-                                    Volume-Tiered Platform Fee
-                                </div>
-                            </div>
-                            <div className="p-8 flex-1 flex flex-col gap-6">
-                                <ul className="flex flex-col gap-4 font-mono text-sm flex-1 text-[var(--neutral-300)] font-bold">
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Dedicated routing infrastructure</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Policy-linked scheduled audits</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Multi-stage AP2 approvals</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Moderation & Incident Queues</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Signed Evidence & CSV Exports</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Dedicated Slack support</span></li>
-                                </ul>
-                                <Link
-                                    href="mailto:sales@p402.io"
-                                    className="btn w-full bg-black text-white text-center font-black uppercase py-5 border-2 border-[var(--neutral-400)] hover:bg-white hover:text-black hover:border-white transition-colors mt-auto text-sm tracking-widest"
-                                >
-                                    Contact Sales
-                                </Link>
-                            </div>
-                        </div>
-
-                    </div>
-                </section>
-
-                {/* 4b. For Finance Teams: V5 §17 finance-team purchase surfaces */}
-                <section className="py-20 px-6 bg-white border-y-2 border-black">
-                    <div className="container mx-auto max-w-5xl">
-                        <div className="mb-12">
-                            <Badge variant="primary" className="mb-4"><span className="font-mono">{">_"}</span> For finance teams</Badge>
-                            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-tight max-w-3xl">
-                                Two purchasable surfaces, no SDK required.
-                            </h2>
-                            <p className="text-base font-mono text-[var(--neutral-700)] mt-4 max-w-2xl">
-                                Run a one-time audit or stand up a department dashboard. Both ship with attribution, evidence, and exports: same ledger as the developer tiers, finance-facing surfaces.
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-2 border-black divide-y-2 md:divide-y-0 md:divide-x-2 divide-black">
-
-                            {/* AI Spend Audit: one-time */}
-                            <div className="p-8 flex flex-col gap-5 bg-[var(--neutral-50)]">
-                                <div className="flex items-baseline justify-between">
-                                    <h3 className="text-3xl font-black uppercase tracking-tight">AI Spend Audit</h3>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] border border-[var(--neutral-300)] px-2 py-1">One-time</span>
-                                </div>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl font-black tracking-tighter">$1,500</span>
-                                    <span className="text-sm font-mono text-[var(--neutral-500)]">USD, paid once</span>
-                                </div>
-                                <p className="text-sm font-mono text-[var(--neutral-700)] leading-relaxed">
-                                    Find where AI spend is leaking before the next invoice. Per-event attribution across every provider, finance-ready report, evidence bundles per row.
-                                </p>
-                                <ul className="flex flex-col gap-3 font-mono text-sm font-bold flex-1">
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Per-event attribution: owner, dept, workflow, customer, feature</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Cross-provider: OpenAI, Anthropic, Gemini, Bedrock, OpenRouter</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Metadata-only mode: no prompt content leaves your env</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Delivered report + evidence bundle export</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-black" strokeWidth={3} /> <span>Plumbing left running becomes a live ledger</span></li>
-                                </ul>
-                                <EnterpriseTierCheckout productKey="audit" label="Buy audit · $1,500" />
-                                <Link href="/ai-spend-audit" className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] hover:text-black text-center">
-                                    Learn more →
-                                </Link>
-                            </div>
-
-                            {/* Department Dashboard: monthly */}
-                            <div className="p-8 flex flex-col gap-5 bg-black text-white">
-                                <div className="flex items-baseline justify-between">
-                                    <h3 className="text-3xl font-black uppercase tracking-tight text-[var(--primary)]">Department Dashboard</h3>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-400)] border border-[var(--neutral-700)] px-2 py-1">Monthly</span>
-                                </div>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl font-black tracking-tighter">$1,500</span>
-                                    <span className="text-sm font-mono text-[var(--neutral-400)]">USD / mo</span>
-                                </div>
-                                <p className="text-sm font-mono text-[var(--neutral-300)] leading-relaxed">
-                                    Department budgets, employee budgets, policy-driven denies. Live ledger across providers. Enforced at request time, not at month-end.
-                                </p>
-                                <ul className="flex flex-col gap-3 font-mono text-sm font-bold flex-1 text-[var(--neutral-300)]">
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Budgets per tenant, dept, employee, workflow</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Policy denies with 6 structured deny codes</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>AP2 mandates (protocol-enforceable)</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Live tile per scope, no aggregation lag</span></li>
-                                    <li className="flex items-start gap-3"><Check className="w-5 h-5 shrink-0 text-white" strokeWidth={3} /> <span>Up to 25 budget scopes; volume tiers above</span></li>
-                                </ul>
-                                <EnterpriseTierCheckout productKey="dept_dashboard" label="Subscribe · $1,500/mo" variant="dark" />
-                                <Link href="/enterprise-ai-budget-dashboard" className="text-[10px] font-black uppercase tracking-widest text-[var(--neutral-500)] hover:text-[var(--primary)] text-center">
-                                    Learn more →
-                                </Link>
-                            </div>
-                        </div>
-
-                        <p className="text-[11px] font-mono text-[var(--neutral-500)] mt-6 max-w-2xl">
-                            Need Business ($5k), Enterprise ($15k+), or Regulated tiers? <Link href="mailto:sales@p402.io" className="text-black hover:underline">sales@p402.io</Link>. Audit and Department Dashboard are self-serve once Stripe prices are configured; until then the buttons route you to a contact form.
+                        <p>
+                            Every paid plan includes alerts at 50%, 80%, 100%, and 120% of included usage. Self-serve plans support optional hard caps.
                         </p>
+                        <Link
+                            href="/pricing/metric-definition"
+                            className="inline-flex items-center gap-2 text-sm font-black text-black uppercase tracking-wide border-b-2 border-black hover:text-primary hover:border-primary"
+                        >
+                            Read the full metric definition →
+                        </Link>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                {/* 5. Plan Comparison */}
-                <section className="py-24 bg-white border-y-2 border-black">
-                    <div className="container mx-auto px-6 max-w-5xl">
-                        <div className="text-center mb-16">
-                            <h2 className="text-5xl font-black uppercase tracking-tighter mb-4 italic">Everything included.</h2>
-                            <p className="font-mono text-sm text-[var(--neutral-500)] uppercase tracking-widest font-bold">Every limit. Every feature. Nothing hidden.</p>
-                        </div>
+            {/* ── "Pilot" bridge offers ───────────────────────────────── */}
+            <section id="bridge-offers" className="max-w-6xl mx-auto px-6 lg:px-8 py-16 scroll-mt-20">
+                <div className="mb-8">
+                    <h2 className="text-3xl font-black text-black uppercase tracking-tight">
+                        Launch a pilot
+                    </h2>
+                    <p className="mt-3 text-sm font-mono text-neutral-700 max-w-2xl">
+                        Two paid bridge engagements, each producing executive-grade evidence and a clear next step.
+                    </p>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <BridgeOfferCard offer={BRIDGE_OFFERS.proof_sprint} />
+                    <BridgeOfferCard offer={BRIDGE_OFFERS.paid_pilot} />
+                    <BridgeOfferCard offer={BRIDGE_OFFERS.regulated_pilot} />
+                </div>
+            </section>
 
-                        <div className="overflow-x-auto border-2 border-black">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b-2 border-black uppercase text-[10px] font-black tracking-widest">
-                                        <th className="p-5 bg-[var(--neutral-100)] w-2/5"></th>
-                                        <th className="p-5 bg-[var(--neutral-100)] text-center">Free</th>
-                                        <th className="p-5 bg-[var(--primary)] border-x-2 border-black text-center text-black">
-                                            Pro
-                                            <span className="block text-[9px] font-bold normal-case tracking-wide mt-0.5 opacity-70">Most popular</span>
-                                        </th>
-                                        <th className="p-5 bg-[var(--neutral-100)] text-center">Enterprise</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="text-sm">
-                                    <CategoryRow label="Pricing" />
-                                    <ComparisonRow label="Platform fee per settlement" free="1.00%" pro="0.75%" enterprise="Volume rate" />
-                                    <ComparisonRow label="Escrow-protected payments (Bazaar)" free="2% flat" pro="2% flat" enterprise="2% flat" />
-                                    <ComparisonRow label="Monthly subscription" free="$0 / mo" pro="$499 / mo" enterprise="Custom" />
-
-                                    <CategoryRow label="Routing" />
-                                    <ComparisonRow label="Settlement priority" free="Standard" pro="High priority" enterprise="Dedicated cluster" />
-
-                                    <CategoryRow label="Analytics" />
-                                    <ComparisonRow label="Usage history" free="7 days" pro="90 days" enterprise="1 year" />
-                                    <ComparisonRow label="Integration audits" free="5 / month" pro="Unlimited" enterprise="Unlimited" />
-                                    <ComparisonRow label="Scheduled audits" free="—" pro="Daily or weekly" enterprise="Policy-linked" />
-
-                                    <CategoryRow label="Governance" />
-                                    <ComparisonRow label="Spend mandate rules" free="Basic caps" pro="Advanced rules" enterprise="Multi-stage approvals" />
-                                    <ComparisonRow label="Compliance export" free="—" pro="Preview" enterprise="Signed bundles + CSV" />
-                                    <ComparisonRow label="Agent trust & publishing" free="Public scanner" pro="Verified workflow" enterprise="Moderation queue" />
-
-                                    <CategoryRow label="Developer tools" />
-                                    <ComparisonRow label="Claude Skill" free="✓" pro="✓" enterprise="✓" />
-                                    <ComparisonRow label="VS Code / Cursor / Windsurf" free="✓" pro="✓" enterprise="✓" />
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                {/* 6. Frequently Asked Questions (FAQ) */}
-                <section className="py-24 bg-[var(--neutral-50)]">
-                    <div className="container mx-auto px-6 max-w-4xl">
-                        <div className="flex items-center justify-center gap-3 mb-12">
-                            <HelpCircle className="w-8 h-8 text-[var(--primary)]" />
-                            <h2 className="text-4xl font-black uppercase tracking-tighter italic text-center">
-                                Frequently Asked Questions
-                            </h2>
-                        </div>
-
-                        <div className="space-y-6">
-                            {[
-                                {
-                                    q: "What is the difference between the platform fee and the subscription?",
-                                    a: "The subscription fee (e.g., $499/mo for Pro) unlocks the SaaS control plane, advanced analytics, and priority infrastructure. The platform fee (e.g., 0.75% for Pro) is taken atomically on-chain during each x402 settlement to cover routing and facilitation costs."
-                                },
-                                {
-                                    q: "Can I pay for my subscription with crypto?",
-                                    a: "Yes. In the Billing dashboard, you can opt to pay via our gasless EIP-2612 wallet flow using USDC on Base, or via traditional Stripe (Credit Card/Apple Pay)."
-                                },
-                                {
-                                    q: "Do cache hits count towards my platform fee?",
-                                    a: "No. Our Semantic Cache is designed to save you money. Cache hits bypass the routing engine and on-chain settlement, making them free of platform fees."
-                                },
-                                {
-                                    q: "What happens if my agent loses its Trustless Reputation?",
-                                    a: "If an agent's reputation drops below your defined threshold, the ERC-8004 validation guard will intercept requests. On the Enterprise tier, these incidents are routed to a Moderation Queue for manual review and override."
-                                },
-                                {
-                                    q: "Is there an AI assistant to help with P402 integration?",
-                                    a: "Yes. The P402 Claude Skill gives Claude Code and Claude.ai deep knowledge of the routing API, billing guard, TypeScript interfaces, x402 payment flows, and A2A protocol. Install it from p402.io/docs/skill and ask Claude to generate integration code, debug routing decisions, set up agent spending controls, or compare model pricing across 300+ models."
-                                },
-                                {
-                                    q: "Does the VS Code extension work on the Free plan?",
-                                    a: "Yes — the extension is available on all plans including Free. Install it with 'ext install p402-protocol.p402' in VS Code, Cursor, or Windsurf. The MCP server is bundled inside the extension; tools appear in Copilot agent mode immediately with no config files required. Run 'P402: Configure API Key' from the command palette to connect your account."
-                                },
-                                {
-                                    q: "Why is the escrow fee 2% instead of my plan rate?",
-                                    a: "Escrow involves two on-chain transactions (deposit + release) and a 48-hour dispute window. The 2% fee covers settlement gas and dispute infrastructure. It is enforced directly by the P402Escrow smart contract at release — not by the platform layer — so it applies uniformly across all plans. You can disable escrow in Developer Settings and fall back to direct x402 settlement at your plan's standard rate."
-                                }
-                            ].map((faq, i) => (
-                                <div key={i} className="bg-white border-2 border-black p-8 hover:bg-[var(--neutral-100)] transition-all shadow-[4px_4px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#000] cursor-default">
-                                    <h3 className="text-xl font-black uppercase tracking-tight mb-4 flex items-center gap-2">
-                                        <span className="text-[var(--primary)] bg-black px-1.5 py-0.5 text-xs">Q</span> {faq.q}
-                                    </h3>
-                                    <p className="text-[var(--neutral-600)] font-bold text-sm leading-relaxed border-l-4 border-black pl-4">
-                                        {faq.a}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* Final CTA */}
-                <section className="py-32 bg-black text-center border-t-2 border-black overflow-hidden relative">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--primary)] to-transparent opacity-50"></div>
-                    <div className="container mx-auto px-6 relative z-10">
-                        <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-8 leading-none italic text-white hover:text-[var(--primary)] transition-colors cursor-default">
-                            Ready <br /> to Route?
+            {/* ── Enterprise procurement section ──────────────────────── */}
+            <section className="bg-black text-white py-16">
+                <div className="max-w-6xl mx-auto px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div>
+                        <h2 className="text-2xl font-black uppercase tracking-tight text-primary">
+                            Enterprise
                         </h2>
-                        <p className="max-w-xl mx-auto text-[var(--neutral-400)] font-black text-lg mb-12 uppercase">
-                            Stop guessing economics. Start verifying them. Join the first economic layer built specifically for the Agentic Web.
+                        <p className="mt-3 text-3xl font-black tracking-tight text-white">
+                            From {formatUsd(ENTERPRISE_FLOOR_ARR_USD)} ARR
                         </p>
-                        <div className="flex flex-col sm:flex-row justify-center gap-6">
-                            <Link href="/login" className="btn btn-primary bg-[var(--primary)] text-black text-xl px-12 py-6 h-auto font-black uppercase tracking-widest border-2 border-black shadow-[8px_8px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
-                                Get Started Free
+                    </div>
+                    <div className="lg:col-span-2 space-y-4 text-sm font-mono text-neutral-300 leading-relaxed">
+                        <p className="text-white">
+                            Enterprise customers typically allocate <strong>1 to 3 percent</strong> of their annual governed AI spend to P402 for accountability, attribution, controls, and audit-grade evidence.
+                        </p>
+                        <p>
+                            Includes SSO and SAML, SCIM, fine-grained RBAC, custom retention, DPA, SLA, procurement pack, custom support, and optional private deployment design.
+                        </p>
+                        <Link
+                            href="/contact?intent=enterprise"
+                            className="inline-flex items-center justify-center h-11 px-6 bg-primary text-black font-black text-[11px] uppercase tracking-widest border-2 border-primary hover:bg-black hover:text-primary transition-colors no-underline"
+                        >
+                            Request enterprise pricing
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── Add-ons (3AX §29.1) + future cost-measurement module note ── */}
+            <AddOnsList />
+
+            {/* ── Settlement / protocol pricing transition ────────────── */}
+            <section className="bg-neutral-50 border-y-2 border-neutral-200">
+                <div className="max-w-6xl mx-auto px-6 lg:px-8 py-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div>
+                        <h2 className="text-2xl font-black text-black uppercase tracking-tight">Settlement pricing</h2>
+                    </div>
+                    <div className="lg:col-span-2 space-y-3 text-sm font-mono text-neutral-800 leading-relaxed">
+                        <p>
+                            Settlement is optional. Direct x402 settlement, EIP-3009 facilitator usage, and on-chain escrow remain documented under protocol pricing. Customers can run P402&apos;s accountability layer without enabling settlement.
+                        </p>
+                        <p>
+                            Add-on settlement is priced above (0.5% of settled value with a $500/mo floor). For protocol-level details and facilitator usage, see the docs.
+                        </p>
+                        <div className="flex flex-wrap gap-3 mt-2">
+                            <Link
+                                href="/docs/facilitator"
+                                className="inline-flex items-center gap-2 text-sm font-black text-black uppercase tracking-wide border-b-2 border-black hover:text-primary hover:border-primary"
+                            >
+                                Facilitator docs →
                             </Link>
-                            <Link href="/demo" className="btn border-2 border-white text-white text-xl px-12 py-6 h-auto font-black uppercase tracking-widest bg-transparent hover:bg-white hover:text-black transition-all">
-                                See Live Demo
+                            <Link
+                                href="/docs/router"
+                                className="inline-flex items-center gap-2 text-sm font-black text-black uppercase tracking-wide border-b-2 border-black hover:text-primary hover:border-primary"
+                            >
+                                Router docs →
                             </Link>
                         </div>
                     </div>
-                </section>
-            </main>
+                </div>
+            </section>
+
+            {/* ── Trust badges ────────────────────────────────────────── */}
+            <section className="max-w-6xl mx-auto px-6 lg:px-8 py-12 border-b-2 border-neutral-200">
+                <div className="flex flex-wrap gap-x-8 gap-y-3 justify-center text-[11px] font-mono uppercase tracking-widest text-neutral-600">
+                    <span>Metadata-only</span>
+                    <span>•</span>
+                    <span>Tenant-scoped</span>
+                    <span>•</span>
+                    <span>Usage-based</span>
+                    <span>•</span>
+                    <span>No prompt storage</span>
+                    <span>•</span>
+                    <span>Audit trail</span>
+                    <span>•</span>
+                    <span>Shadow-mode first</span>
+                </div>
+            </section>
+
+            {/* ── FAQ ─────────────────────────────────────────────────── */}
+            <section className="max-w-4xl mx-auto px-6 lg:px-8 py-16">
+                <h2 className="text-3xl font-black text-black uppercase tracking-tight mb-8">
+                    Frequently asked questions
+                </h2>
+                <div className="space-y-3">
+                    <FAQItem question="What is a metered AI event?">
+                        <p>
+                            One unique provider-bound, meter-only, or policy-evaluated AI request event recorded by P402 for your tenant during the billing period. Hosted requests, SDK-submitted meter events, policy-evaluated requests, settled work events, and unique customer-caused retries all count.
+                        </p>
+                        <p>
+                            Dashboard views, outcome records, duplicate replays of the same event id, internal heartbeats, support actions, admin audit reads, and synthetic QA events do not count.
+                        </p>
+                    </FAQItem>
+                    <FAQItem question="Are outcome records billed?">
+                        <p>
+                            No. Outcome records are permanently non-billable. They are the proof asset that supports later Optimize Readiness; billing them would create the wrong incentive.
+                        </p>
+                    </FAQItem>
+                    <FAQItem question="Do you store prompts or responses?">
+                        <p>
+                            No. P402 is metadata-only. Prompts, responses, messages, raw traces, stored content, completion text, request bodies, and response bodies are rejected at the API boundary by the forbidden-field scan and at the foundation layer by metadata sanitization.
+                        </p>
+                    </FAQItem>
+                    <FAQItem question="What happens when I exceed included events?">
+                        <p>
+                            You receive in-product and email alerts at 50%, 80%, 100%, and 120% of included usage. Sandbox stops recording at the cap. Developer, Business, and Scale apply the published overage rate ($0.25, $0.12, and $0.08 per 1,000 events respectively). Enterprise uses a committed annual rate, with overage trued up at renewal by default.
+                        </p>
+                        <p>
+                            Self-serve plans support optional hard caps. No customer is surprised by a bill.
+                        </p>
+                    </FAQItem>
+                    <FAQItem question="Do you support annual contracts?">
+                        <p>
+                            Yes. Business is annual-default with a 40% monthly premium if you prefer month-to-month. Scale and Enterprise are annual-only. Multi-year prepay discounts are available; ask sales.
+                        </p>
+                    </FAQItem>
+                    <FAQItem question="Do you support SSO and SCIM?">
+                        <p>
+                            SSO and SCIM ship with Enterprise. Scale customers can add SSO as an add-on. Business and below use email plus role-based permissions.
+                        </p>
+                    </FAQItem>
+                    <FAQItem question="Do you offer regulated pilots?">
+                        <p>
+                            Yes. Regulated Pilots start at $50,000 for a 90-day engagement covering healthcare, finance, legal, insurance, and public sector buyers. Privacy mode and evidence requirements are included. BAA path available for regulated pilots after security and contracting review.
+                        </p>
+                    </FAQItem>
+                    <FAQItem question="Is settlement required?">
+                        <p>
+                            No. P402&apos;s accountability layer works whether or not you use the settlement layer. Settlement is an optional add-on for customers who want on-chain payment for AI services through P402.
+                        </p>
+                    </FAQItem>
+                    <FAQItem question="When do cost-savings claims appear?">
+                        <p>
+                            P402 does not claim cost savings until a later measurement methodology ships. There is no success fee, no revenue share, and no specific percentage claim on any P402 surface today. Pricing is flat usage, not performance-based.
+                        </p>
+                    </FAQItem>
+                    <FAQItem question="How does Proof Sprint credit work?">
+                        <p>
+                            100% of the $15,000 Proof Sprint fee is credited toward a Paid Pilot if the Paid Pilot is signed within 30 days of Proof Sprint readout. The credit is one-time and does not apply to annual contract.
+                        </p>
+                    </FAQItem>
+                </div>
+            </section>
+
+            {/* ── Final CTA footer ────────────────────────────────────── */}
+            <section className="bg-neutral-50 border-t-2 border-neutral-200 py-16">
+                <div className="max-w-4xl mx-auto px-6 lg:px-8 text-center">
+                    <h2 className="text-3xl font-black text-black uppercase tracking-tight">
+                        Make AI spend accountable
+                    </h2>
+                    <p className="mt-3 text-sm font-mono text-neutral-700">
+                        Start free or book a scoping call.
+                    </p>
+                    <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                        <Link
+                            href="/dashboard"
+                            className="inline-flex items-center justify-center h-12 px-8 bg-black border-2 border-black text-white font-black text-[11px] uppercase tracking-widest hover:bg-primary hover:text-black transition-colors no-underline"
+                        >
+                            Start free sandbox
+                        </Link>
+                        <Link
+                            href="/contact?intent=scoping-call"
+                            className="inline-flex items-center justify-center h-12 px-8 bg-white border-2 border-black text-black font-black text-[11px] uppercase tracking-widest hover:bg-black hover:text-primary transition-colors no-underline"
+                        >
+                            Book a scoping call
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
             <Footer />
-        </div>
-    );
-}
-
-function CategoryRow({ label }: { label: string }) {
-    return (
-        <tr className="border-b border-black bg-black">
-            <td colSpan={4} className="px-5 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">{label}</td>
-        </tr>
-    );
-}
-
-function ComparisonRow({ label, free, pro, enterprise }: { label: string; free: string; pro: string; enterprise: string }) {
-    const isDash = (val: string) => val === '—';
-    const isCheck = (val: string) => val === '✓';
-
-    const renderCell = (val: string) => {
-        if (isDash(val)) return <span className="text-[var(--neutral-300)] text-lg leading-none">—</span>;
-        if (isCheck(val)) return <Check className="w-5 h-5 text-[var(--success)] mx-auto" strokeWidth={3} />;
-        return <span className="font-bold text-black">{val}</span>;
-    };
-
-    return (
-        <tr className="border-b border-[var(--neutral-200)] hover:bg-[var(--neutral-100)] transition-colors">
-            <td className="p-5 font-medium text-[var(--neutral-600)] border-r-2 border-black">{label}</td>
-            <td className="p-5 text-center">{renderCell(free)}</td>
-            <td className="p-5 bg-[var(--primary)]/10 border-x-2 border-black text-center">{renderCell(pro)}</td>
-            <td className="p-5 text-center">{renderCell(enterprise)}</td>
-        </tr>
+        </main>
     );
 }
