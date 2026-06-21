@@ -157,7 +157,7 @@ export default function PricingPage() {
                             Includes SSO and SAML, SCIM, fine-grained RBAC, custom retention, DPA, SLA, procurement pack, custom support, and optional private deployment design.
                         </p>
                         <Link
-                            href="/contact?intent=enterprise"
+                            href="/get-access?intent=enterprise"
                             className="inline-flex items-center justify-center h-11 px-6 bg-primary text-black font-black text-[11px] uppercase tracking-widest border-2 border-primary hover:bg-black hover:text-primary transition-colors no-underline"
                         >
                             Request enterprise pricing
@@ -299,7 +299,7 @@ export default function PricingPage() {
                             Start free sandbox
                         </Link>
                         <Link
-                            href="/contact?intent=scoping-call"
+                            href="/get-access?intent=scoping-call"
                             className="inline-flex items-center justify-center h-12 px-8 bg-white border-2 border-black text-black font-black text-[11px] uppercase tracking-widest hover:bg-black hover:text-primary transition-colors no-underline"
                         >
                             Book a scoping call

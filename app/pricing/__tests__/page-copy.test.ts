@@ -220,6 +220,46 @@ describe('3AY-1 blocker fixes (tabs, add-ons, settlement, BAA, Developer CTA)', 
     });
 });
 
+describe('3AY-3 CTA integrity (no broken /contact links, no false checkout copy)', () => {
+    const pageSrc = readFileSync(PRICING_PAGE, 'utf8');
+
+    it('contains no href to /contact (which 404s on production)', () => {
+        // Extract every href attribute and assert none start with "/contact".
+        const hrefs = [...pageSrc.matchAll(/href="(\/[^"]+)"/g)].map((m) => m[1]);
+        for (const h of hrefs) {
+            expect(h, `href ${h} would 404 on production`).not.toMatch(/^\/contact($|\?|\/)/);
+        }
+    });
+
+    it('every pricing CTA points at /dashboard, /get-access, /docs, or /pricing/*', () => {
+        const hrefs = [...pageSrc.matchAll(/href="(\/[^"]+)"/g)].map((m) => m[1]);
+        const allowed = /^\/(dashboard|get-access(\?.*)?|docs\/.*|pricing(\/.+)?)$/;
+        for (const h of hrefs) {
+            expect(h, `href ${h} is not on the approved destination list`).toMatch(allowed);
+        }
+    });
+
+    it('contains no Stripe Checkout or external billing host', () => {
+        expect(pageSrc).not.toMatch(/checkout\.stripe\.com/i);
+        expect(pageSrc).not.toMatch(/billing\.stripe\.com/i);
+        expect(pageSrc).not.toMatch(/metronome\.com\/checkout/i);
+        expect(pageSrc).not.toMatch(/Start paid plan/i);
+    });
+
+    it('intent params remain meaningful and stable', () => {
+        const intents = [...pageSrc.matchAll(/\?intent=([a-z][a-z0-9-]*)/g)].map((m) => m[1]);
+        const meaningful = new Set([
+            'developer', 'business', 'scale', 'enterprise',
+            'proof-sprint', 'paid-pilot', 'regulated-pilot',
+            'scoping-call', 'procurement', 'finance',
+        ]);
+        for (const intent of intents) {
+            expect(meaningful.has(intent!), `intent=${intent} is not on the approved intent list`).toBe(true);
+        }
+        expect(intents.length).toBeGreaterThan(0);
+    });
+});
+
 describe('Plan card invariants', () => {
     const src = readFileSync(join(PRICING_DIR, '_components', 'PlanCard.tsx'), 'utf8');
 

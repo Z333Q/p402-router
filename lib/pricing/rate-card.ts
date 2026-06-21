@@ -95,7 +95,7 @@ export const PLANS: Readonly<Record<PlanId, PlanDefinition>> = {
         // 3AY-8 billing infrastructure ships (3AY plan §11). Until then the
         // CTA routes to /contact so no surface implies paid self-serve exists.
         ctaLabel: 'Start Developer',
-        ctaHref: '/contact?intent=developer',
+        ctaHref: '/get-access?intent=developer',
         inclusions: [
             'All Sandbox features',
             '90-day retention',
@@ -117,7 +117,7 @@ export const PLANS: Readonly<Record<PlanId, PlanDefinition>> = {
         retentionDays: 365,
         audience: 'Department or multi-workflow team',
         ctaLabel: 'Talk to sales',
-        ctaHref: '/contact?intent=business',
+        ctaHref: '/get-access?intent=business',
         inclusions: [
             'All Developer features',
             '1-year retention',
@@ -141,7 +141,7 @@ export const PLANS: Readonly<Record<PlanId, PlanDefinition>> = {
         retentionDays: 730,
         audience: 'Multi-department or governance-led teams',
         ctaLabel: 'Request quote',
-        ctaHref: '/contact?intent=scale',
+        ctaHref: '/get-access?intent=scale',
         inclusions: [
             'All Business features',
             'Multi-department views',
@@ -164,7 +164,7 @@ export const PLANS: Readonly<Record<PlanId, PlanDefinition>> = {
         retentionDays: null, // custom
         audience: 'Procurement-led or regulated buyers',
         ctaLabel: 'Request enterprise pricing',
-        ctaHref: '/contact?intent=enterprise',
+        ctaHref: '/get-access?intent=enterprise',
         inclusions: [
             'All Scale features',
             'SSO and SAML',
@@ -222,7 +222,7 @@ export const BRIDGE_OFFERS: Readonly<Record<BridgeOfferId, BridgeOfferDefinition
         creditPolicy: '100% credited toward Paid Pilot if signed within 30 days',
         audience: 'Buyers ready to scope a paid diagnostic before committing to a Pilot',
         ctaLabel: 'Book proof sprint',
-        ctaHref: '/contact?intent=proof-sprint',
+        ctaHref: '/get-access?intent=proof-sprint',
     },
     paid_pilot: {
         id: 'paid_pilot',
@@ -234,7 +234,7 @@ export const BRIDGE_OFFERS: Readonly<Record<BridgeOfferId, BridgeOfferDefinition
         creditPolicy: '50% credited toward annual if signed within 30 days of pilot close',
         audience: 'Multi-workflow buyers with procurement involvement',
         ctaLabel: 'Design pilot',
-        ctaHref: '/contact?intent=paid-pilot',
+        ctaHref: '/get-access?intent=paid-pilot',
     },
     regulated_pilot: {
         id: 'regulated_pilot',
@@ -246,7 +246,7 @@ export const BRIDGE_OFFERS: Readonly<Record<BridgeOfferId, BridgeOfferDefinition
         creditPolicy: '50% credited toward annual if signed within 30 days of pilot close',
         audience: 'Buyers with security and procurement-heavy verticals',
         ctaLabel: 'Discuss regulated pilot',
-        ctaHref: '/contact?intent=regulated-pilot',
+        ctaHref: '/get-access?intent=regulated-pilot',
     },
 } as const;
 

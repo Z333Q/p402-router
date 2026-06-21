@@ -45,9 +45,29 @@ describe('Rate card v1 — invariants from 3AX §4', () => {
 
     it('Developer is sales-assisted (not self-serve) until 3AY-8 billing ships', () => {
         // Until paid self-serve checkout exists, Developer routes through
-        // /contact so no surface implies paid card-on-file is wired.
+        // /get-access so no surface implies paid card-on-file is wired.
         expect(PLANS.developer.salesMotion).toBe('sales-assisted');
-        expect(PLANS.developer.ctaHref).toBe('/contact?intent=developer');
+        expect(PLANS.developer.ctaHref).toBe('/get-access?intent=developer');
+    });
+
+    it('every plan CTA href routes to a live destination (/dashboard or /get-access)', () => {
+        // /contact does not exist on production; routing CTAs there would 404.
+        // 3AY-4 may introduce a dedicated /contact route, at which point the
+        // rate card flips. Until then, /get-access?intent=... is the safe path.
+        for (const id of PLAN_IDS) {
+            const href = PLANS[id].ctaHref;
+            expect(href.startsWith('/dashboard') || href.startsWith('/get-access?intent='), `${id} href=${href}`).toBe(true);
+            expect(href.startsWith('/contact'), `${id} must not route to /contact (404)`).toBe(false);
+        }
+    });
+
+    it('every bridge offer CTA href routes through /get-access (not /contact, not Stripe)', () => {
+        for (const id of BRIDGE_OFFER_IDS) {
+            const href = BRIDGE_OFFERS[id].ctaHref;
+            expect(href.startsWith('/get-access?intent='), `${id} href=${href}`).toBe(true);
+            expect(href).not.toMatch(/checkout\.stripe\.com/i);
+            expect(href).not.toMatch(/^https?:/);
+        }
     });
 
     it('Business is $2,500/mo annual with 5M events and 1-year retention', () => {
