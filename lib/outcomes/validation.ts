@@ -58,8 +58,12 @@ function isValidType(value: unknown): value is OutcomeType {
     return typeof value === 'string' && (OUTCOME_TYPES as readonly string[]).includes(value);
 }
 
-function isValidSource(value: unknown): boolean {
+function isValidStrictSource(value: unknown): boolean {
     return typeof value === 'string' && (OUTCOME_SOURCES as readonly string[]).includes(value);
+}
+
+function isValidFreeformSource(value: unknown): value is string {
+    return typeof value === 'string' && value.length > 0 && value.length <= 64;
 }
 
 function isUuidV4ish(value: unknown): value is string {
@@ -82,15 +86,27 @@ function sanitizeQualityAxes(raw: unknown): Record<string, number> | null {
 }
 
 /**
- * Strips forbidden keys, drops keys not on the allow-list, and bounds string
- * length. Throws OutcomeValidationError if any forbidden key was present
- * (defense in depth — the caller should treat the call as invalid input).
+ * Strips forbidden keys, validates allow-listed keys with type-specific
+ * sanitization, and bounds total JSON size. Throws OutcomeValidationError if
+ * any forbidden key was present (defense in depth — the caller should treat
+ * the call as invalid input).
+ *
+ * Options:
+ *   allowUnknownKeys (default false) — when true, keys outside
+ *   ALLOWED_METADATA_KEYS are passed through unchanged (still subject to the
+ *   forbidden-key reject and the byte-size ceiling). Used by the legacy
+ *   /api/v2/outcomes route to preserve the slice 3J free-form passthrough.
+ *   When false, unknown keys are silently dropped (3AT §5 strict allow-list).
  */
-export function sanitizeMetadata(raw: unknown): Record<string, unknown> {
+export function sanitizeMetadata(
+    raw: unknown,
+    options: { allowUnknownKeys?: boolean } = {},
+): Record<string, unknown> {
     if (raw == null) return {};
     if (typeof raw !== 'object' || Array.isArray(raw)) {
         throw new OutcomeValidationError('METADATA_INVALID', 'metadata must be an object', 'metadata');
     }
+    const allowUnknown = options.allowUnknownKeys ?? false;
 
     const forbiddenFound: string[] = [];
     const out: Record<string, unknown> = {};
@@ -100,7 +116,10 @@ export function sanitizeMetadata(raw: unknown): Record<string, unknown> {
             forbiddenFound.push(key);
             continue;
         }
-        if (!isAllowedKey(key)) continue;
+        if (!isAllowedKey(key)) {
+            if (allowUnknown) out[key] = value;
+            continue;
+        }
 
         switch (key as AllowedMetadataKey) {
             case 'caller_workflow_step':
@@ -150,7 +169,7 @@ export interface ValidatedOutcome {
     outcome_type: OutcomeType;
     outcome_status: OutcomeStatus;
     quality_score: number | null;
-    source: OutcomeInput['source'];
+    source: string | null;
     metadata: Record<string, unknown>;
     occurred_at: string | null;
 }
@@ -170,7 +189,10 @@ export function validateContext(input: { tenant_id: unknown; reported_by: unknow
     return { tenant_id: input.tenant_id, reported_by: input.reported_by };
 }
 
-export function validateOutcome(input: unknown): ValidatedOutcome {
+export function validateOutcome(
+    input: unknown,
+    options: { allowUnknownMetadataKeys?: boolean; allowFreeformSource?: boolean } = {},
+): ValidatedOutcome {
     if (!input || typeof input !== 'object' || Array.isArray(input)) {
         throw new OutcomeValidationError('INPUT_INVALID', 'outcome input must be an object');
     }
@@ -185,8 +207,26 @@ export function validateOutcome(input: unknown): ValidatedOutcome {
     if (!isValidStatus(obj.outcome_status)) {
         throw new OutcomeValidationError('OUTCOME_STATUS_INVALID', `outcome_status must be one of ${OUTCOME_STATUSES.join(', ')}`, 'outcome_status');
     }
-    if (!isValidSource(obj.source)) {
-        throw new OutcomeValidationError('SOURCE_INVALID', `source must be one of ${OUTCOME_SOURCES.join(', ')}`, 'source');
+    let validatedSource: string | null;
+    if (options.allowFreeformSource) {
+        // Legacy /api/v2/outcomes contract: any valid string source is kept,
+        // null/non-string sources are persisted as null. The route is
+        // responsible for adding metadata.legacy_source for non-canonical
+        // values (this validator preserves the caller's string as-is).
+        if (obj.source == null) {
+            validatedSource = null;
+        } else if (isValidFreeformSource(obj.source)) {
+            validatedSource = obj.source;
+        } else {
+            // Non-string or out-of-range string: persist null and continue
+            // (mirrors slice 3J's silent clamp behavior).
+            validatedSource = null;
+        }
+    } else {
+        if (!isValidStrictSource(obj.source)) {
+            throw new OutcomeValidationError('SOURCE_INVALID', `source must be one of ${OUTCOME_SOURCES.join(', ')}`, 'source');
+        }
+        validatedSource = obj.source as string;
     }
 
     let qualityScore: number | null = null;
@@ -205,14 +245,14 @@ export function validateOutcome(input: unknown): ValidatedOutcome {
         occurredAt = new Date(obj.occurred_at).toISOString();
     }
 
-    const metadata = sanitizeMetadata(obj.metadata);
+    const metadata = sanitizeMetadata(obj.metadata, { allowUnknownKeys: options.allowUnknownMetadataKeys });
 
     return {
         request_id: obj.request_id,
         outcome_type: obj.outcome_type,
         outcome_status: obj.outcome_status,
         quality_score: qualityScore,
-        source: obj.source as ValidatedOutcome['source'],
+        source: validatedSource,
         metadata,
         occurred_at: occurredAt,
     };

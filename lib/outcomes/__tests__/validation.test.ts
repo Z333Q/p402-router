@@ -61,8 +61,21 @@ describe('validation: validateOutcome', () => {
         expect(() => validateOutcome({ ...validInput(), outcome_status: 'maybe' })).toThrow(/outcome_status/);
     });
 
-    it('rejects unknown source', () => {
+    it('rejects unknown source in strict mode (default)', () => {
         expect(() => validateOutcome({ ...validInput(), source: 'curl' })).toThrow(/source/);
+    });
+
+    it('accepts any non-empty bounded string source in freeform mode', () => {
+        const out = validateOutcome({ ...validInput(), source: 'webhook' }, { allowFreeformSource: true });
+        expect(out.source).toBe('webhook');
+    });
+
+    it('persists null source in freeform mode when absent or non-string', () => {
+        expect(validateOutcome({ ...validInput(), source: undefined }, { allowFreeformSource: true }).source).toBeNull();
+        expect(validateOutcome({ ...validInput(), source: null }, { allowFreeformSource: true }).source).toBeNull();
+        expect(validateOutcome({ ...validInput(), source: 42 as unknown as string }, { allowFreeformSource: true }).source).toBeNull();
+        expect(validateOutcome({ ...validInput(), source: '' }, { allowFreeformSource: true }).source).toBeNull();
+        expect(validateOutcome({ ...validInput(), source: 'x'.repeat(65) }, { allowFreeformSource: true }).source).toBeNull();
     });
 
     it('rejects out-of-range quality_score', () => {

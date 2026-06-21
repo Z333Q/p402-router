@@ -1,25 +1,35 @@
 /**
  * POST /api/v2/outcomes
  *
- * v2_051 — Outcome API. Customers report what happened to a metered AI
- * request so Optimize can compute cost per accepted output, retry waste,
+ * Tenant-scoped outcome ingestion. Customers report what happened to a metered
+ * AI request so Optimize can compute cost per accepted output, retry waste,
  * quality-adjusted model choice, and other downstream metrics.
+ *
+ * Slice 3AU-2: this route now delegates persistence to the
+ * lib/outcomes/recordOutcome foundation shipped in 3AU. The legacy request
+ * body shape and response shape are preserved byte-for-byte for existing
+ * callers; the response additively carries outcome_type, reported_by,
+ * occurred_at, economic_event_id, and orphan fields per the 3AU-2 plan.
  *
  * Body:
  *   {
  *     "request_id": "req_...",            // required
- *     "status":     "accepted" | ...,     // required, see OUTCOME_STATUSES
+ *     "status":     "accepted" | ...,     // required, see STORED_OUTCOME_STATUSES
  *     "quality_score": 0.91,              // optional, [0, 1]
  *     "source": "sdk" | "api" | "mcp" | "cli" | "webhook" | ...,  // optional
- *     "metadata": {...}                   // optional, JSONB
+ *     "metadata": {...},                  // optional, JSONB; content fields rejected
+ *     "outcome_type": "request_completion"| "caller_action" | "human_review"
+ *                  | "instrumentation",   // optional, defaults to request_completion
+ *     "occurred_at": "2026-06-21T12:00Z"  // optional ISO timestamp
  *   }
  *
- * Idempotent per (tenant_id, request_id): a repeat POST updates the row
- * (e.g. "pending" -> "accepted") and bumps updated_at.
+ * Idempotent per (tenant_id, request_id): a repeat POST updates the row and
+ * bumps updated_at.
  *
- * Privacy: metadata-only. The endpoint does not accept prompt or response
- * content. If callers put sensitive data in `metadata`, the tenant's
- * privacy mode rules still govern retention.
+ * Privacy: metadata-only. Prompt, response, messages, raw_trace, stored_content,
+ * completion_text, request_body, response_body, and similar synonyms are
+ * rejected at two layers — the route boundary via scanForForbiddenFields, and
+ * the foundation's sanitizeMetadata via the layered forbidden-key set.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -28,22 +38,22 @@ import { requireTenantAccess } from '@/lib/auth';
 import { ApiError, toApiErrorResponse } from '@/lib/errors';
 import {
     STORED_OUTCOME_STATUS_SET,
-    STORED_OUTCOME_STATUSES,
     isCanonicalSource,
     scanForForbiddenFields,
 } from '@/lib/prove/outcome';
+import { recordOutcome } from '@/lib/outcomes/service';
+import { OutcomeValidationError, rejectClientTenantFields } from '@/lib/outcomes/validation';
+import type { OutcomeType } from '@/lib/outcomes/types';
 
 export const dynamic = 'force-dynamic';
 
-// Slice 3J — transitional superset. The DB CHECK installed by v2_054
-// physically accepts the V5 §8.3 vocabulary PLUS the v2_051 legacy
-// values 'retried' and 'human_reviewed'. Reads in lib/prove/outcome.ts
-// normalize the legacy values to the canonical V5 list. Writers may
-// emit anything in STORED_OUTCOME_STATUSES; the canonical-status
-// promise is held on the read side, not by hard-rejecting legacy SDK
-// payloads here. The set is sourced from lib/prove/outcome.ts so a
-// future deprecation can ratchet down in one place.
-const OUTCOME_STATUSES = STORED_OUTCOME_STATUS_SET;
+const DEFAULT_OUTCOME_TYPE: OutcomeType = 'request_completion';
+const OUTCOME_TYPE_VALUES: readonly OutcomeType[] = [
+    'request_completion',
+    'caller_action',
+    'human_review',
+    'instrumentation',
+];
 
 interface OutcomeBody {
     request_id?: unknown;
@@ -51,6 +61,8 @@ interface OutcomeBody {
     quality_score?: unknown;
     source?: unknown;
     metadata?: unknown;
+    outcome_type?: unknown;
+    occurred_at?: unknown;
 }
 
 function requireString(v: unknown, max = 256): string | null {
@@ -58,6 +70,15 @@ function requireString(v: unknown, max = 256): string | null {
     const t = v.trim();
     if (!t || t.length > max) return null;
     return t;
+}
+
+function deriveReportedBy(req: NextRequest): string {
+    const header = req.headers.get('x-p402-reported-by');
+    if (header) {
+        const trimmed = header.trim().slice(0, 128);
+        if (trimmed.length > 0) return trimmed;
+    }
+    return 'tenant-api';
 }
 
 export async function POST(req: NextRequest) {
@@ -81,13 +102,25 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // Slice 3J — payment-grade content-field rejection. The outcomes
-        // table is for METADATA only; prompt / response / messages /
-        // completion / body / transcript / raw_trace / stored_content
-        // must never land in request_outcomes.metadata. Rejecting at the
-        // route boundary keeps the DB clean and the privacy contract
-        // honest. The scan checks both top-level body keys AND first-
-        // level metadata keys (metadata is a flat JSONB bag).
+        // Defense in depth: callers may not pass tenant_id in the body.
+        try {
+            rejectClientTenantFields(body);
+        } catch (e) {
+            if (e instanceof OutcomeValidationError) {
+                throw new ApiError({
+                    code: 'INVALID_INPUT',
+                    status: 400,
+                    message: e.message,
+                    requestId,
+                    details: { field: e.field ?? 'tenant_id' },
+                });
+            }
+            throw e;
+        }
+
+        // Slice 3J — payment-grade content-field rejection at the route
+        // boundary (unchanged from pre-3AU-2). The foundation's
+        // sanitizeMetadata is a second layer below this.
         const scan = scanForForbiddenFields(body as Record<string, unknown>);
         if (scan.found) {
             throw new ApiError({
@@ -99,7 +132,7 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // request_id is required and non-empty.
+        // Required: request_id.
         const outcomeRequestId = requireString(body.request_id, 128);
         if (!outcomeRequestId) {
             throw new ApiError({
@@ -110,19 +143,20 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // status must be one of the enum values.
+        // Required: status — accept the transitional DB superset (V5 §8.3 +
+        // legacy v2_051 values still allowed by the DB CHECK).
         const status = typeof body.status === 'string' ? body.status : '';
-        if (!OUTCOME_STATUSES.has(status)) {
+        if (!STORED_OUTCOME_STATUS_SET.has(status)) {
             throw new ApiError({
                 code: 'INVALID_OUTCOME_STATUS',
                 status: 400,
-                message: `status must be one of: ${[...OUTCOME_STATUSES].join(', ')}`,
+                message: `status must be one of: ${[...STORED_OUTCOME_STATUS_SET].join(', ')}`,
                 requestId,
-                details: { status, allowed: [...OUTCOME_STATUSES] },
+                details: { status, allowed: [...STORED_OUTCOME_STATUS_SET] },
             });
         }
 
-        // quality_score: optional, [0, 1]; reject non-finite or out-of-range.
+        // Optional: quality_score, [0, 1].
         let qualityScore: number | null = null;
         if (body.quality_score !== undefined && body.quality_score !== null) {
             const n = Number(body.quality_score);
@@ -138,45 +172,107 @@ export async function POST(req: NextRequest) {
             qualityScore = n;
         }
 
-        const source = requireString(body.source, 64);
-        // Slice 3J — source tagging. Canonical sources pass through; any
-        // other free-text source value is preserved (backward compat per
-        // Decision 4) and tagged via metadata.legacy_source so a future
-        // strict path can find and migrate them. Existing SDK paths keep
-        // working.
+        // Optional: outcome_type. Default to request_completion when absent.
+        let outcomeType: OutcomeType = DEFAULT_OUTCOME_TYPE;
+        if (body.outcome_type !== undefined && body.outcome_type !== null) {
+            if (typeof body.outcome_type !== 'string' || !(OUTCOME_TYPE_VALUES as readonly string[]).includes(body.outcome_type)) {
+                throw new ApiError({
+                    code: 'INVALID_OUTCOME_TYPE',
+                    status: 400,
+                    message: `outcome_type must be one of: ${OUTCOME_TYPE_VALUES.join(', ')}`,
+                    requestId,
+                    details: { received: body.outcome_type, allowed: OUTCOME_TYPE_VALUES },
+                });
+            }
+            outcomeType = body.outcome_type as OutcomeType;
+        }
+
+        // Optional: occurred_at. Accept only strict ISO 8601 / RFC 3339
+        // datetimes with a date AND a time AND a UTC offset. Examples:
+        //   2026-06-21T10:00:00Z
+        //   2026-06-21T10:00:00.000Z
+        //   2026-06-21T10:00:00+04:00
+        // Examples explicitly rejected: 'tomorrow', '06/21/2026', '2026-06-21',
+        // '10:00'.
+        let occurredAt: string | null = null;
+        if (body.occurred_at !== undefined && body.occurred_at !== null) {
+            const v = body.occurred_at;
+            const ISO_DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
+            if (typeof v !== 'string' || !ISO_DATETIME_RE.test(v) || Number.isNaN(Date.parse(v))) {
+                throw new ApiError({
+                    code: 'INVALID_OCCURRED_AT',
+                    status: 400,
+                    message: 'occurred_at must be a full ISO 8601 datetime with timezone offset (e.g. 2026-06-21T10:00:00Z)',
+                    requestId,
+                    details: { received: body.occurred_at },
+                });
+            }
+            occurredAt = new Date(v).toISOString();
+        }
+
+        // Source canonicalization (preserves slice 3J behavior). Non-canonical
+        // source strings are preserved in metadata.legacy_source so callers
+        // are never silently coerced.
         const rawMetadata = (body.metadata && typeof body.metadata === 'object' && !Array.isArray(body.metadata))
             ? body.metadata as Record<string, unknown>
             : {};
+        const sourceRaw = requireString(body.source, 64);
         const metadata: Record<string, unknown> = { ...rawMetadata };
-        if (source && !isCanonicalSource(source) && metadata.legacy_source === undefined) {
-            metadata.legacy_source = source;
+        if (sourceRaw && !isCanonicalSource(sourceRaw) && metadata.legacy_source === undefined) {
+            metadata.legacy_source = sourceRaw;
         }
 
-        // UPSERT on (tenant_id, request_id). Returns the id + recorded_at the
-        // caller can use to correlate.
-        const res = await db.query(
-            `INSERT INTO request_outcomes (tenant_id, request_id, status, quality_score, source, metadata)
-             VALUES ($1, $2, $3, $4, $5, $6)
-             ON CONFLICT (tenant_id, request_id) DO UPDATE
-                SET status = EXCLUDED.status,
-                    quality_score = EXCLUDED.quality_score,
-                    source = COALESCE(EXCLUDED.source, request_outcomes.source),
-                    metadata = EXCLUDED.metadata,
-                    updated_at = NOW()
-             RETURNING id, created_at, updated_at`,
-            [tenantId, outcomeRequestId, status, qualityScore, source, metadata],
-        );
-        const row = res.rows[0] ?? {};
+        const reportedBy = deriveReportedBy(req);
 
+        // Foundation call. Three legacy-compatibility flags:
+        //   allowOrphan=true                — outcomes accepted before metered
+        //                                     event row lands.
+        //   allowUnknownMetadataKeys=true   — preserve slice 3J's free-form
+        //                                     metadata passthrough.
+        //   allowFreeformSource=true        — caller's source string persists
+        //                                     as-is (or null if absent /
+        //                                     non-string). Non-canonical
+        //                                     sources are also tagged in
+        //                                     metadata.legacy_source above.
+        const result = await recordOutcome(
+            {
+                request_id: outcomeRequestId,
+                outcome_type: outcomeType,
+                outcome_status: status as never,
+                quality_score: qualityScore,
+                source: sourceRaw as never,
+                metadata,
+                occurred_at: occurredAt,
+            },
+            { tenant_id: tenantId, reported_by: reportedBy },
+            { db, allowOrphan: true, allowUnknownMetadataKeys: true, allowFreeformSource: true },
+        );
+
+        const o = result.outcome;
         return NextResponse.json({
             ok: true,
-            outcome_id: row.id,
-            request_id: outcomeRequestId,
-            status,
-            quality_score: qualityScore,
-            recorded_at: row.updated_at ?? row.created_at,
+            outcome_id: o.id,
+            request_id: o.request_id,
+            status: o.outcome_status,
+            quality_score: o.quality_score,
+            recorded_at: o.updated_at,
+            outcome_type: o.outcome_type,
+            reported_by: o.reported_by,
+            occurred_at: o.occurred_at,
+            economic_event_id: result.economic_event_id,
+            orphan: result.orphan,
         }, { status: 200, headers: { 'X-P402-Request-ID': requestId } });
     } catch (err) {
+        if (err instanceof OutcomeValidationError) {
+            const apiErr = new ApiError({
+                code: 'INVALID_INPUT',
+                status: 400,
+                message: err.message,
+                requestId,
+                details: err.field !== undefined ? { field: err.field } : undefined,
+            });
+            return toApiErrorResponse(apiErr, requestId);
+        }
         return toApiErrorResponse(err, requestId);
     }
 }

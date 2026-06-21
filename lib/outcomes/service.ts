@@ -2,7 +2,7 @@ import { OutcomeValidationError, validateContext, validateOutcome, type Validate
 import type { OutcomeRecord } from './types';
 
 export interface Queryable {
-    query(text: string, params?: unknown[]): Promise<{ rows: Record<string, unknown>[]; rowCount?: number }>;
+    query(text: string, params?: unknown[]): Promise<{ rows: Record<string, unknown>[]; rowCount?: number | null }>;
 }
 
 const SQL_LOOKUP_EVENT = `
@@ -14,13 +14,17 @@ const SQL_LOOKUP_EVENT = `
 
 const SQL_UPSERT_OUTCOME = `
     INSERT INTO request_outcomes (
-        tenant_id, request_id, status, quality_score, source, metadata
-    ) VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+        tenant_id, request_id, status, quality_score, source, metadata,
+        outcome_type, reported_by, occurred_at
+    ) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9)
     ON CONFLICT (tenant_id, request_id) DO UPDATE
         SET status         = EXCLUDED.status,
             quality_score  = EXCLUDED.quality_score,
             source         = EXCLUDED.source,
             metadata       = EXCLUDED.metadata,
+            outcome_type   = EXCLUDED.outcome_type,
+            reported_by    = EXCLUDED.reported_by,
+            occurred_at    = EXCLUDED.occurred_at,
             updated_at     = NOW()
     RETURNING
         id::text          AS id,
@@ -30,6 +34,9 @@ const SQL_UPSERT_OUTCOME = `
         quality_score,
         source,
         metadata,
+        outcome_type,
+        reported_by,
+        occurred_at,
         created_at,
         updated_at
 ` as const;
@@ -43,28 +50,42 @@ export interface RecordOutcomeResult {
 export interface RecordOutcomeOptions {
     db: Queryable;
     allowOrphan?: boolean;
+    allowUnknownMetadataKeys?: boolean;
+    allowFreeformSource?: boolean;
     nowFn?: () => string;
+}
+
+function isoOrPassthrough(value: unknown): string {
+    if (value instanceof Date) return value.toISOString();
+    return String(value ?? '');
 }
 
 function buildRecord(
     row: Record<string, unknown>,
     validated: ValidatedOutcome,
     context: ValidatedContext,
-    occurredAt: string,
+    occurredAtFallback: string,
 ): OutcomeRecord {
+    const rowOutcomeType = typeof row.outcome_type === 'string' && row.outcome_type.length > 0
+        ? (row.outcome_type as OutcomeRecord['outcome_type'])
+        : validated.outcome_type;
+    const rowReportedBy = typeof row.reported_by === 'string' && row.reported_by.length > 0
+        ? row.reported_by
+        : context.reported_by;
+    const rowOccurredAt = row.occurred_at == null ? occurredAtFallback : isoOrPassthrough(row.occurred_at);
     return {
         id: String(row.id),
         tenant_id: String(row.tenant_id),
         request_id: String(row.request_id),
-        outcome_type: validated.outcome_type,
+        outcome_type: rowOutcomeType,
         outcome_status: validated.outcome_status,
         quality_score: row.quality_score == null ? null : Number(row.quality_score),
         source: validated.source,
         metadata: (row.metadata as Record<string, unknown> | null) ?? {},
-        reported_by: context.reported_by,
-        occurred_at: occurredAt,
-        created_at: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
-        updated_at: row.updated_at instanceof Date ? row.updated_at.toISOString() : String(row.updated_at),
+        reported_by: rowReportedBy,
+        occurred_at: rowOccurredAt,
+        created_at: isoOrPassthrough(row.created_at),
+        updated_at: isoOrPassthrough(row.updated_at),
     };
 }
 
@@ -74,7 +95,10 @@ export async function recordOutcome(
     options: RecordOutcomeOptions,
 ): Promise<RecordOutcomeResult> {
     const context = validateContext(contextInput);
-    const validated = validateOutcome(input);
+    const validated = validateOutcome(input, {
+        allowUnknownMetadataKeys: options.allowUnknownMetadataKeys,
+        allowFreeformSource: options.allowFreeformSource,
+    });
     const allowOrphan = options.allowOrphan ?? false;
     const occurredAt = validated.occurred_at ?? (options.nowFn ? options.nowFn() : new Date().toISOString());
 
@@ -96,6 +120,9 @@ export async function recordOutcome(
         validated.quality_score,
         validated.source,
         JSON.stringify(validated.metadata),
+        validated.outcome_type,
+        context.reported_by,
+        validated.occurred_at ?? occurredAt,
     ];
     const result = await options.db.query(SQL_UPSERT_OUTCOME, params);
     const row = result.rows[0];
