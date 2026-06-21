@@ -1,624 +1,440 @@
-# 3AY-8R: Revenue Billing Foundation Plan
+# 3AY-8R: Revenue Billing Foundation — Inventory and Plan
 
-**Status:** plan only. No code. No SQL execution. No Neon mutation. No Redis. No migration. No deploy. No Stripe live call. No production mutation.
-**Predecessors:** 3AX rate card v1, 3AY pricing surface plan, 3AY-1 pricing page, 3AY-4 get-access intent handling.
-**Successor:** to be approved per phase. Implementation is **explicitly blocked** by the pricing-decision gate in §1.
+**Status:** plan and inventory only. No code edits. No SQL execution. No Neon mutation. No Redis mutation. No migration authoring. No deploy. No Stripe live calls. No production mutation.
+**Predecessors:** 3AX rate card, 3AY pricing surface, 3AY-1 pricing page, 3AY-4 get-access intent handling, **3AY-Pricing-Realign-Impl (shipped at e1b20c2, V5-led hybrid ladder live)**.
+**Successor:** 3AY-8R-Impl, approved phase by phase. No implementation begins from this plan without explicit operator approval.
 
-## 0. Hard boundaries (true throughout 3AY-8R)
+## 0. Hard boundaries (true throughout this plan)
 
-- No code in this slice.
-- No SQL execution. No Neon mutation. No Redis. No migration.
+- No code edits in this slice.
+- No SQL execution. No Neon mutation. No Redis mutation. No migration authoring.
 - No deploy. No Stripe live call. No production mutation.
 - No tenant-visible Optimize recommendations.
-- No verified savings claim.
-- No policy auto-apply.
-- No runtime enforcement.
+- No verified savings, guaranteed savings, save N%, auto-apply, runtime enforcement live, SOC 2 / HIPAA / ISO compliant claims.
 - No customer logo or unsupported compliance claim.
-
-This document is a **plan**. Every section below describes work that requires separate, explicit approval before any keystroke of implementation code is written.
+- No paid self-serve checkout claim until §6 routes are live and the kill switch is enabled.
 
 ---
 
-## 1. Pricing Decision Gate (must clear before implementation)
+## 1. Existing billing inventory
 
-Billing implementation **must not begin** until one of these is true:
+The repo is **not greenfield**. There is substantial live Stripe scaffolding and on-chain settlement code already shipped. The first job of 3AY-8R is to reconcile and extend, not rebuild.
 
-- **3AY-Pricing-Realign ships and is approved**, locking the final launch rate card; or
-- **The operator explicitly confirms in writing that the current 3AX governance-priced ladder remains the billing source of truth** (Sandbox / Developer $249 / Business $2,500 / Scale $5,000 / Enterprise from $60k ARR + Proof Sprint $15k + Paid Pilot $35k).
+### 1.1 Critical finding: three-way plan vocabulary drift
 
-### 1.1 Context
-
-A V5 alignment review found that the current commercial ladder may be misaligned with the V5 source of truth. Two candidate ladders are in play:
-
-| Tier | 3AX (currently shipped) | V5 candidate |
+| Source of truth | Plan vocabulary | Status |
 |---|---|---|
-| Free entry | Sandbox $0, 25k events | Free Sandbox $0, 10k events |
-| Paid entry | **Developer $249/mo** | **Build $49/mo** |
-| Mid-developer | — | Growth $199/mo |
-| High-developer | Scale $5,000/mo annual | Scale $799/mo |
-| Enterprise floor | $60,000 ARR | $15,000/mo ($180k ARR) |
-| One-time first purchase | Proof Sprint $15,000 | **AI Spend Audit $1,500** |
-| Recurring first enterprise purchase | — | **Department Dashboard $1,500/mo** |
-| Pilot | Paid Pilot $35,000 | (not in V5 ladder) |
+| `lib/pricing/rate-card.ts` (V5, RATE_CARD_VERSION `v2`) | sandbox / build / growth / scale / enterprise | **Public ladder — just shipped 3AY-Pricing-Realign-Impl** |
+| `lib/billing/plans.ts` | free / pro / enterprise | **Drifted — used by live billing routes and entitlements** |
+| Stripe env vars (`.env.example`) | `STRIPE_PRICE_ID_PRO`, `_ENTERPRISE`, `_AUDIT`, `_DEPT_DASHBOARD` | **Drifted — names map to old `pro` vocabulary** |
+| Retired 3AX | developer / business | Removed from public surfaces; only present in `LEGACY_INTENT_MAP` |
 
-These are not the same products. They produce different funnels, different webhook volumes, different Stripe product IDs, and different self-serve checkout SKUs.
+**Implication:** Before any new Build checkout SKU can be wired, `lib/billing/plans.ts`, `lib/billing/entitlements.ts`, and the Stripe env-var names must be reconciled to the V5 ladder. Tenants currently flagged `plan = 'pro'` must be migrated to a defined V5 tier (most likely `growth`).
 
-### 1.2 What this gate forbids
+### 1.2 File-by-file inventory
 
-Until the gate clears, the following are **forbidden**:
+| Path | Responsibility | Domain | Disposition |
+|---|---|---|---|
+| `lib/billing/provider.ts` | `BillingProvider` interface (subscription create/cancel/verify webhook) | abstraction | **Reuse**. Stable interface. |
+| `lib/billing/providers/stripe.ts` | Stripe SDK wrapper. Calls `checkout.sessions.create`, `subscriptions.cancel/update`, `webhooks.constructEvent` | Stripe subscription | **Reuse, extend** for Build SKU. Add invoice.paid / invoice.payment_failed handling. |
+| `lib/billing/providers/onchain.ts` | EIP-2612 USDC permit + recurring charge via `SubscriptionFacilitator` | on-chain x402/USDC settlement | **Leave untouched**. Separate billing surface. |
+| `lib/billing/providers/onchain-client.ts` | (file not present in inventory output; treat as absent) | — | **N/A** |
+| `lib/billing/subscription-service.ts` | Webhook → DB sync orchestrator. Cascades plan updates and triggers partner commissions. Idempotent via `processed_webhook_events`. | Stripe + partner | **Reuse, extend** plan-id mapping to V5 vocabulary. |
+| `lib/billing/entitlements.ts` | Feature gates (semantic cache, safety pack, advanced analytics), platform fee compute | tenant entitlements | **Reuse, rewrite** plan keys to V5 (sandbox/build/growth/scale/enterprise). |
+| `lib/billing/plans.ts` | Plan matrix: free / pro / enterprise with pricing, concurrency, features | tenant entitlements | **Replace** with V5 plan matrix sourced from `lib/pricing/rate-card.ts`. Do **not** duplicate prices. |
+| `lib/billing/plan-guard.ts` | Hard cap enforcement against `billing_usage_events` | usage metering | **Reuse**. Update plan key references after §1.1 reconcile. |
+| `lib/billing/enforcement.ts` | Legacy usage limit check from `router_decisions` + `a2a_tasks` | usage metering | **Leave untouched** in v1; mark as deprecated path. Removal is out of scope for 3AY-8R. |
+| `lib/billing/usage.ts` | Records to `billing_usage_events` ledger; free cache hits | usage metering | **Reuse**. No changes required for v1. |
+| `lib/actions/billing.ts` | Server action: initialize EIP-2612 permit flow | on-chain settlement | **Leave untouched**. |
+| `lib/actions/billing-finalize.ts` | Server action: finalize on-chain subscription via `setupAndCharge()` | on-chain settlement | **Leave untouched**. |
+| `app/api/v2/billing/checkout/route.ts` | POST creates Stripe checkout session; product key allowlist (pro / audit / dept_dashboard); writes `stripe_customer_id` | Stripe subscription | **Reuse, extend**. Add `build` product key. Replace `pro` once §1.1 reconcile completes. |
+| `app/api/v2/billing/portal/route.ts` | POST creates Stripe billing portal session | Stripe subscription | **Reuse as-is**. |
+| `app/api/v2/billing/webhook/route.ts` | POST verifies signature (raw body, `dynamic = 'force-dynamic'`), dispatches to `SubscriptionService.syncFromWebhook` | Stripe subscription | **Reuse, extend** event coverage (invoice.paid, invoice.payment_failed). |
+| `app/api/v2/billing/usage/route.ts` | GET current monthly spend % | usage metering | **Reuse**. |
+| `app/api/v1/billing/webhook/route.ts` | Alternate webhook via `stripeProvider.verifyWebhookSignature` | Stripe subscription | **Leave untouched** in v1; v2 route is primary. Document as alternate. |
+| `app/api/v1/billing/onchain/subscribe/route.ts` | POST executes first on-chain charge | on-chain settlement | **Leave untouched**. |
+| `app/api/v1/billing/upgrade-math/route.ts` | GET ROI math for upgrade pitch | tenant entitlements analysis | **Leave untouched**. May need refresh after §1.1 but out of scope. |
+| `app/api/internal/cron/billing/reconcile/route.ts` | Vercel cron: sweep due on-chain subscriptions | on-chain settlement | **Leave untouched**. |
+| `app/api/internal/cron/billing/sync/route.ts` | Vercel cron: bulk-sync Stripe subscriptions | Stripe subscription | **Reuse**. |
+| `app/api/partner-admin/commissions/route.ts` | Partner commission admin | partner commissions | **Leave untouched**. Must remain functional through `SubscriptionService` extension. |
+| `app/api/partner-admin/payouts/route.ts` | Payout batch admin | partner commissions | **Leave untouched**. |
+| `app/api/partner/commissions/route.ts` | Partner self-serve view | partner commissions | **Leave untouched**. |
+| `lib/providers/openrouter/billing-guard.ts` (`BillingGuard`) | Fail-close LLM-routing guard (rate limit, daily circuit breaker, anomaly, reservation) | request-path guard | **Leave untouched**. Separate from subscription billing. |
 
-1. Creating any Stripe product or price in test or live mode.
-2. Picking a single `STRIPE_*_PRICE_ID` env var as the only checkout target.
-3. Writing migration files that reference one ladder by name.
-4. Routing `/pricing` Developer CTA to a checkout URL.
-5. Disabling the `/get-access?intent=developer` sales-assisted fallback.
-6. Any frontend copy that names a paid-checkout SKU as live.
-7. Any documentation that asserts billing v1 ships with Developer-$249 or Build-$49 specifically.
+### 1.3 Existing tables relevant to billing
 
-### 1.3 What this gate permits
+| Table | Source migration | Columns of interest | Reuse? |
+|---|---|---|---|
+| `tenants` | base + `v2_011_stripe_integration.sql` | `stripe_customer_id`, `stripe_subscription_id`, `plan` | **Reuse**. Migrate `plan` values from `pro` → `growth` (or chosen mapping) in §5. |
+| `billing_subscriptions` | `v2_002_pricing_layer.sql`, extended in `v2_004_billing_subscriptions.sql` | tenant_id, provider, wallet_address, plan_id, status, period bounds, provider_subscription_id, provider_customer_id, cancel_at_period_end | **Reuse**. Already provider-agnostic. |
+| `processed_webhook_events` | `v2_012_webhook_idempotency.sql` | provider, event_id, processed_at | **Reuse** for idempotency. No need for separate `stripe_events`. |
+| `billing_usage_events` | (existing) | tenant_id, event metadata | **Reuse**. |
+| `access_requests` | `v2_014_access_requests.sql` | email, company, role, rpd, status | **Extend**. Missing `intent`, `resolved_intent`, `plan_id`, `offer_id` — see §10. |
 
-Until the gate clears, this is permitted:
+### 1.4 Existing env vars
 
-1. **Designing** the price-ladder-agnostic billing architecture (this document).
-2. **Planning** schema, routes, webhook handling, and entitlements that work for either ladder.
-3. **Drafting** test fixtures that exercise multiple SKUs without committing to a launch SKU.
-4. **Reviewing** Stripe documentation, webhook contracts, customer portal contracts.
+From `.env.example` lines 68–78:
 
-### 1.4 Required pre-implementation deliverables
+- `STRIPE_SECRET_KEY` (required)
+- `STRIPE_WEBHOOK_SECRET` (required)
+- `STRIPE_PRICE_ID_PRO` (required)
+- `STRIPE_PRICE_ID_ENTERPRISE` (required)
+- `STRIPE_PRICE_ID_AUDIT` (optional, falls back to `CONTACT_SALES`)
+- `STRIPE_PRICE_ID_DEPT_DASHBOARD` (optional, falls back to `CONTACT_SALES`)
 
-Before 3AY-8R-Impl begins:
+### 1.5 Existing dashboard wiring
 
-- Pricing realignment slice (3AY-Pricing-Realign) merged, OR a one-line memo from the operator confirming the 3AX ladder.
-- The **final launch SKU table** captured in `lib/pricing/rate-card.ts` and `docs/internal/3AX-*` (or a successor versioned doc).
-- A written decision on whether the first checkout SKU is one of: Build $49/mo, Developer $249/mo, AI Spend Audit $1,500 one-time, Department Dashboard $1,500/mo, or a combination.
-- A written decision on whether monthly + annual prices ship together or monthly only in v1.
-- A written decision on whether Proof Sprint / Paid Pilot enter Stripe as manual one-time invoices in v1 or remain entirely off-Stripe.
-
-### 1.5 Acceptance check for this gate
-
-Operator answers each of these before the gate is treated as cleared:
-
-- [ ] Final rate card version locked.
-- [ ] First self-serve checkout SKU named.
-- [ ] Monthly-only vs monthly+annual decision recorded.
-- [ ] Pilot/sprint Stripe-invoice posture chosen.
-- [ ] Confirmation that this plan supports the chosen ladder without rewriting webhook logic.
-
-If any answer is "not yet," 3AY-8R-Impl does not start.
-
----
-
-## 2. Price-Ladder-Agnostic Billing Design (required)
-
-The architecture below is mandatory whether the launch ladder is 3AX, V5, or a future v2.
-
-### 2.1 Design rules
-
-1. **Billing tables store `plan_id` and `stripe_price_id` separately.** `plan_id` is the app's stable identifier (e.g. `'developer'`, `'build'`, `'growth'`, `'business'`). `stripe_price_id` is whatever Stripe assigned. The two are joined via a config-driven map; the schema does not assume a particular name.
-2. **Entitlements derive from `lib/pricing/rate-card.ts` or a normalized pricing registry.** The rate-card module is the single source of truth for the app's view of included events, retention, support level, etc. Stripe is the source of truth only for billed amount and subscription state.
-3. **Stripe price IDs map to plan IDs through configuration.** A `lib/pricing/stripe-price-map.ts` (planned, not implemented) takes `stripe_price_id` → `plan_id`. The map is env-driven so different price IDs can be loaded for test mode vs live mode.
-4. **Adding Build, Growth, AI Spend Audit, or Department Dashboard later must not require rewriting webhook logic.** The webhook handler reads the price-ID-to-plan-ID map. New SKUs are added by extending the map + the rate card; webhook code is untouched.
-5. **Checkout route accepts a controlled allowlist of self-serve SKUs.** The list lives in `lib/pricing/checkout-allowlist.ts` (planned). Today it is empty until the gate clears. Tomorrow it may contain `'developer'`, `'build'`, `'ai_spend_audit'`, etc. The route refuses any plan id not on the allowlist.
-6. **Business, Enterprise, Proof Sprint, and Paid Pilot remain sales-assisted unless explicitly moved to checkout.** Even when their SKUs exist in the rate card, their checkout-allowlist entries are off by default.
-
-### 2.2 Why this matters
-
-If 3AY-8R-Impl hardcodes "Developer $249 = the Stripe checkout SKU," realigning to the V5 ladder later requires editing the webhook handler, the migration that pinned the column, the env-var name, the frontend route target, and the entitlement lookup. That's a multi-day rework with regression risk.
-
-If 3AY-8R-Impl is config-driven from day one, switching ladders is a config + rate-card edit. Same webhook code, same routes, same schema. That's a one-hour change.
+- `app/dashboard/billing/page.tsx` calls `/api/v2/billing/checkout` for free→pro upgrade and `/api/v2/billing/portal` when `planId === 'pro'`.
+- Free→Pro is the only currently live self-serve flow.
 
 ---
 
-## 3. Current billing posture
+## 2. Billing v1 product decision
 
-### 3.1 What exists
+### 2.1 In scope
 
-- **Pricing source of truth:** `lib/pricing/rate-card.ts` (v1, locked from 3AX §4).
-- **Intent capture on `/get-access`:** `lib/pricing/intent.ts` + `app/get-access/page.tsx` (shipped in 3AY-4). The frontend submits `intent`, `plan_id`, and `offer_id` to `/api/v1/access-request`.
-- **Access-request API:** `app/api/v1/access-request/route.ts`. Zod schema is permissive (non-strict object); unknown keys including `intent`, `plan_id`, `offer_id` are silently dropped.
-- **Tenant / user / account model:** existing `tenants`, `users`, `admin_users`, `api_keys` tables.
-- **Auth model:** NextAuth (Google OAuth + session); admin auth via `lib/admin/auth.ts`; tenant API access via `requireTenantAccess`.
-- **No Stripe wiring for self-serve checkout.** No Stripe product, no Stripe price ID, no checkout route, no customer portal route, no webhook receiver in this product flow.
-- **Legacy Stripe references:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and a webhook handler exist for the existing billing/subscription path (per CLAUDE.md §critical gotchas, the webhook must use `await req.text()` for signature verification). The 3AY-8R foundation must integrate cleanly with this path, not replace it.
+- Free **Sandbox** (default, no checkout).
+- **Build $49/month** as the first self-serve checkout SKU.
+- Stripe Checkout for Build.
+- Stripe customer creation (already partially wired in `app/api/v2/billing/checkout/route.ts`).
+- Stripe subscription creation (already partially wired).
+- Stripe customer portal (already live).
+- Webhook-confirmed subscription state (already partially wired via `SubscriptionService`).
+- Tenant plan state (`tenants.plan` reconciled to V5 vocabulary).
+- Plan entitlement lookup keyed on V5 plan ids.
+- Manual sales-assisted path for **Growth, Scale, Enterprise, AI Spend Audit, Paid Pilot, Regulated Pilot** (existing `/get-access?intent=…` funnel).
+- Access-request intent persistence (`intent`, `resolved_intent`, `plan_id`, `offer_id`) — see §10.
 
-### 3.2 Current gaps (resolved by this plan)
+### 2.2 Out of scope (deferred)
 
-1. Access-request `intent`, `plan_id`, `offer_id` are dropped, not persisted. No lead attribution.
-2. No Stripe Checkout for any SKU on `/pricing` or `/get-access`.
-3. No tenant subscription-state column or table that downstream code can query for entitlements.
-4. No webhook idempotency table specific to the new billing path.
-5. No Stripe-price-ID → plan-ID mapping module.
-6. No checkout-allowlist module.
-
----
-
-## 4. Billing v1 product decisions (subject to gate)
-
-Locked when the gate clears. Until then, the decisions below are **defaults**, not approvals.
-
-| Decision | Default position |
-|---|---|
-| Sandbox | Remains no-card. No change. |
-| First self-serve checkout SKU | **To be determined by pricing gate.** Plan supports Developer $249 (3AX) or Build $49 (V5) or other. |
-| Business and above | Remain sales-assisted via `/get-access?intent=business` (or scale/enterprise). |
-| Proof Sprint, Paid Pilot, Regulated Pilot | Remain manual invoice / SOW. Optionally enter Stripe as one-time invoice records (no checkout flow). |
-| Automated overage billing | Not in v1. Deferred. |
-| Hard paid enforcement beyond plan state | Not in v1. Sandbox event cap remains; paid plan enforcement is plan-state lookup only. |
-| Monthly vs annual SKU | To be determined by pricing gate. Plan supports both. |
-| Multi-currency | USD only in v1. |
+- Metronome.
+- Automated overage invoicing (the V5 overage rates of $0.25 / $0.15 / $0.08 per 1k events remain documented but unbilled).
+- Enterprise commit drawdown.
+- Automated partner commission **payout changes** (existing commission-trigger compatibility must be preserved; no new automation).
+- Automated AI Spend Audit / Paid Pilot credit application.
+- Invoice usage appendix.
+- Cryptographic invoice appendix.
+- Enterprise procurement automation (SOC2 evidence pipelines, MSA automation, etc.).
+- Multi-year contract automation.
+- Growth, Scale, Enterprise self-serve checkout (sales-assisted only in v1).
+- Public AI Spend Audit / Paid Pilot self-serve checkout.
 
 ---
 
-## 5. Stripe product model (subject to gate)
+## 3. Pricing source of truth
 
-### 5.1 Products and prices to create
+**Single source of truth:** `lib/pricing/rate-card.ts`, `RATE_CARD_VERSION = 'v2'`.
 
-**The list below is conditional.** No Stripe product or price is created until the pricing gate clears and the operator confirms which SKUs ship as Stripe products in v1.
+Rules:
 
-Possible v1 SKUs (the implementation slice picks a subset):
-
-| Stripe product | Stripe price | Cadence | Plan ID | Notes |
-|---|---|---|---|---|
-| P402 Build | Build Monthly | recurring | `build` | If V5 ladder |
-| P402 Growth | Growth Monthly | recurring | `growth` | If V5 ladder |
-| P402 Developer | Developer Monthly | recurring | `developer` | If 3AX ladder |
-| P402 AI Spend Audit | one-time | one-time | `ai_spend_audit` | If V5 + one-time checkout approved |
-| P402 Department Dashboard | Department Monthly | recurring | `department_dashboard` | If V5 + monthly Dashboard approved |
-| P402 Business / Scale / Enterprise | invoice only | n/a | n/a | Not Stripe Checkout; manual invoice or no Stripe entry |
-| P402 Proof Sprint / Paid Pilot / Regulated Pilot | invoice only | n/a | n/a | Not Stripe Checkout |
-
-### 5.2 Mapping config (the module that absorbs ladder change)
-
-Planned module: `lib/pricing/stripe-price-map.ts`.
-
-```
-StripePriceMap shape (planned, not implemented):
-
-{
-  [stripePriceId: string]: {
-    plan_id: PlanIdOrOfferId;
-    billing_cycle: 'one_time' | 'monthly' | 'annual';
-    rate_card_ref: 'plan' | 'bridge_offer';
-  }
-}
-```
-
-The map is populated **from environment variables**, not from hardcoded constants. The Stripe price IDs themselves never appear in source.
-
-### 5.3 Rate-card alignment
-
-Every Stripe product and price must trace back to `lib/pricing/rate-card.ts`:
-
-- `Build` (if shipped) reads its included events / retention from `PLANS.build` (added to rate card by 3AY-Pricing-Realign, not by 3AY-8R).
-- `Developer` (if shipped) reads from `PLANS.developer` (already present in rate card).
-- `AI Spend Audit` (if shipped) reads price from a new `BRIDGE_OFFERS.ai_spend_audit` entry.
-- Adding a new SKU to the rate card and the Stripe map is the only edit required to expand v1.
+- No hardcoded public prices outside `lib/pricing/rate-card.ts` or the Stripe env-var → plan_id mapping.
+- No `developer` $249, no `business` $2,500, no `pro` $499 references in any public copy or route response.
+- No public checkout for Proof Sprint (internal-only via `visibility: 'internal'`).
+- `plan_id` (V5 vocabulary) and `stripe_price_id` (Stripe object id) must remain separate. The mapping lives in env vars, not in code constants.
+- First checkout SKU is **Build $49/month**. Confirmed by directive.
 
 ---
 
-## 6. Required environment variables (names only, no values)
+## 4. Stripe model
 
-Conditional on which ladder the operator approves. The implementation slice loads only the env vars matching the chosen ladder.
+### 4.1 Stripe objects
 
-**Always required:**
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET` (the webhook secret for the new billing-v1 endpoint; may share or differ from existing webhook)
-- `NEXT_PUBLIC_APP_URL` (already exists; used to build checkout return URLs)
+- **Stripe Product:** `P402 Build` (one product).
+- **Stripe Price:** Build monthly, $49 USD, recurring monthly. One Price object.
+- Optional future: a second Price for Build annual (deferred; v1 is monthly-only).
+- Optional future: Growth Price ($199/mo). Created but **not** wired to public checkout in v1.
+- **No public checkout** for Scale, Enterprise, AI Spend Audit, Paid Pilot, Regulated Pilot in v1. Manual invoice path only.
 
-**Conditional on chosen launch SKUs (load only those approved):**
-- `STRIPE_PRICE_ID_BUILD_MONTHLY` — if V5 ladder approved
-- `STRIPE_PRICE_ID_GROWTH_MONTHLY` — if V5 ladder approved
-- `STRIPE_PRICE_ID_DEVELOPER_MONTHLY` — if 3AX ladder remains approved
-- `STRIPE_PRICE_ID_DEVELOPER_ANNUAL` — if 3AX ladder + annual approved
-- `STRIPE_PRICE_ID_AI_SPEND_AUDIT` — if V5 + one-time checkout approved
-- `STRIPE_PRICE_ID_DEPARTMENT_DASHBOARD_MONTHLY` — if V5 + Dashboard checkout approved
+### 4.2 Env vars (names only — no values in this doc, no values in any commit)
 
-**Optional:**
-- `STRIPE_CUSTOMER_PORTAL_RETURN_URL` — defaults to `${NEXT_PUBLIC_APP_URL}/dashboard/billing` if absent.
-- `BILLING_V1_ENABLED` — feature flag for staged rollout. When `false`, checkout route returns 404 and Developer CTA continues to route through `/get-access?intent=developer`.
+- `STRIPE_SECRET_KEY` *(existing — reuse)*
+- `STRIPE_WEBHOOK_SECRET` *(existing — reuse)*
+- `STRIPE_PRICE_ID_BUILD_MONTHLY` *(new — required for v1)*
+- `STRIPE_PRICE_ID_GROWTH_MONTHLY` *(new — optional, reserved for future self-serve)*
+- `STRIPE_CUSTOMER_PORTAL_RETURN_URL` *(optional — derives from `NEXT_PUBLIC_APP_URL` if absent)*
+- `NEXT_PUBLIC_APP_URL` *(existing — reuse for success / cancel redirects)*
+- `BILLING_CHECKOUT_ENABLED` *(new — recommended kill switch, default `false`)*
 
-No secret values are printed in this document. The implementation slice fetches them from the deployment environment only.
-
----
-
-## 7. Database schema plan
-
-All changes are additive. No drops, no destructive renames.
-
-### 7.1 Access-request intent persistence (REQUIRED before any paid launch)
-
-**Decision: Option A (extend `access_requests`).**
-
-Rationale: the existing table is the lead-capture sink today; adding three nullable columns is additive and avoids a join for every CRM read. A separate `lead_intents` table buys little (the columns are 1:1 with access requests) and adds an unnecessary join. The cost of Option A is three columns; the cost of Option B is one new table + one new foreign key + an additional query in every CRM lookup.
-
-```sql
--- v2_05N_access_requests_intent.sql (planned, not implemented)
-ALTER TABLE access_requests
-    ADD COLUMN IF NOT EXISTS intent TEXT,
-    ADD COLUMN IF NOT EXISTS plan_id TEXT,
-    ADD COLUMN IF NOT EXISTS offer_id TEXT;
-```
-
-Constraints deliberately omitted (no CHECK enum) so the migration is reusable across ladder changes. Application validation continues to gate the values written.
-
-### 7.2 Billing subscription state
-
-```sql
--- v2_05N_billing_subscriptions_v1.sql (planned, not implemented)
-CREATE TABLE IF NOT EXISTS billing_subscriptions_v1 (
-    id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id             UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id               UUID,                    -- optional; the user who initiated checkout
-    stripe_customer_id    TEXT NOT NULL,
-    stripe_subscription_id TEXT,                   -- null for one-time SKUs
-    stripe_price_id       TEXT NOT NULL,
-    plan_id               TEXT NOT NULL,           -- resolved at webhook time from the map
-    billing_cycle         TEXT NOT NULL,           -- 'one_time' | 'monthly' | 'annual'
-    subscription_status   TEXT NOT NULL,           -- mirrors Stripe statuses
-    current_period_start  TIMESTAMPTZ,
-    current_period_end    TIMESTAMPTZ,
-    cancel_at_period_end  BOOLEAN NOT NULL DEFAULT FALSE,
-    last_event_id         TEXT,                    -- last Stripe event id observed; idempotency cursor
-    created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (stripe_customer_id, stripe_subscription_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_billing_subscriptions_v1_tenant
-    ON billing_subscriptions_v1 (tenant_id);
-CREATE INDEX IF NOT EXISTS idx_billing_subscriptions_v1_status
-    ON billing_subscriptions_v1 (tenant_id, subscription_status);
-```
-
-Notes:
-- `plan_id` is stored alongside `stripe_price_id` so a tenant's effective plan is queryable without consulting the Stripe map at every read.
-- `subscription_status` strings mirror Stripe (`incomplete`, `incomplete_expired`, `trialing`, `active`, `past_due`, `canceled`, `unpaid`, `paused`). No app-specific enum; we trust Stripe's vocabulary.
-- For one-time SKUs (AI Spend Audit), `subscription_status` is set to `active` at `invoice.paid` and remains until manually marked.
-
-### 7.3 Webhook event idempotency
-
-```sql
--- v2_05N_billing_webhook_events.sql (planned, not implemented)
-CREATE TABLE IF NOT EXISTS billing_webhook_events_v1 (
-    stripe_event_id      TEXT PRIMARY KEY,
-    event_type           TEXT NOT NULL,
-    received_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    processed_at         TIMESTAMPTZ,
-    processing_status    TEXT NOT NULL DEFAULT 'received',  -- 'received' | 'processed' | 'failed'
-    error_message        TEXT,
-    raw_event_summary    JSONB NOT NULL DEFAULT '{}'::jsonb   -- bounded summary; no secrets
-);
-```
-
-Notes:
-- Stripe sends every event with a unique `id`; the PK enforces idempotency. A duplicate event hits the PK and is short-circuited as "already received."
-- `raw_event_summary` stores **bounded** non-secret fields (event type, customer id prefix, subscription id, price id, status). It does **not** store the full event payload or any token.
-- `error_message` is bounded to ≤ 256 chars and is sanitized (no Stripe API keys, no PII).
-
-### 7.4 What is NOT in the schema plan
-
-- No customer invoice line storage. Stripe owns this; the app does not duplicate.
-- No payment method storage. Stripe owns this; the app does not duplicate.
-- No price history beyond `stripe_price_id` on the subscription row. Historical pricing lives in Stripe.
-- No tenant `is_premium` boolean. Plan state is derived from `subscription_status` + `plan_id`.
+**Deprecation note:** `STRIPE_PRICE_ID_PRO`, `STRIPE_PRICE_ID_ENTERPRISE`, `STRIPE_PRICE_ID_AUDIT`, `STRIPE_PRICE_ID_DEPT_DASHBOARD` remain in `.env.example` until the live `pro`-tier tenants are migrated. Removal is a follow-up slice, not part of 3AY-8R v1.
 
 ---
 
-## 8. Routes plan
+## 5. Schema plan
 
-No route is implemented in this slice. Each row below describes the contract a future implementation slice would satisfy.
+**Strategy: additive + one targeted reconciliation.** Choose **option C with a one-row reconciliation migration**, justified below.
 
-### 8.1 `POST /api/billing/checkout/[sku]`
+### 5.1 Choice and justification
 
-**Path parameter:** `sku` ∈ checkout allowlist. Implementations refuse any other value.
+- **Option A (extend existing tables only):** insufficient. `access_requests` lacks intent persistence; without that, /get-access leads are unsearchable by plan.
+- **Option B (add `billing_subscriptions` and `stripe_events`):** redundant. Both already exist as `billing_subscriptions` and `processed_webhook_events`.
+- **Option C (use existing billing tables if present and compatible):** **chosen**. `billing_subscriptions` is already provider-agnostic and stores everything required. `processed_webhook_events` provides idempotency. The one gap is plan-vocabulary drift (§1.1).
 
-| Field | Detail |
-|---|---|
-| Auth | Authenticated tenant (NextAuth session). Refuses anonymous. |
-| Input | `{ return_url?: string }` (optional override of default success URL) |
-| Output | `{ url: string }` — the Stripe Checkout Session URL the frontend redirects to |
-| Side effects | Creates a Stripe Customer if the tenant has no `stripe_customer_id`; creates a Checkout Session in Stripe; **does NOT** create a `billing_subscriptions_v1` row (that happens on `checkout.session.completed`); does **not** mark the tenant as paid |
-| Forbidden side effects | No DB row marking the tenant as paid before Stripe confirms; no credit / refund / discount logic in v1; no plan downgrade or upgrade logic outside the webhook |
-| Test coverage | Returns 404 when `BILLING_V1_ENABLED=false`; returns 400 when `sku` is not on the allowlist; returns 401 when unauthenticated; happy path uses a fake Stripe client and returns a non-empty `url`; never trusts a client-supplied `plan_id` |
+### 5.2 Required schema work for v1 (all additive or value-mapping; no destructive change)
 
-### 8.2 `POST /api/billing/portal`
-
-| Field | Detail |
-|---|---|
-| Auth | Authenticated tenant with an existing `stripe_customer_id` |
-| Input | `{ return_url?: string }` |
-| Output | `{ url: string }` — Stripe Customer Portal Session URL |
-| Side effects | Creates a Stripe portal session via `customer_portal.sessions.create({ customer, return_url })` |
-| Forbidden side effects | No DB write; the portal route is read-through to Stripe |
-| Test coverage | 401 when unauthenticated; 404 when the tenant has no Stripe customer; happy path returns a non-empty URL |
-
-### 8.3 `POST /api/billing/webhook`
-
-| Field | Detail |
-|---|---|
-| Auth | Stripe webhook signature (header `Stripe-Signature`) verified against `STRIPE_WEBHOOK_SECRET` using the raw request body |
-| Input | Stripe event payload (raw bytes; **must use `await req.text()`** per CLAUDE.md to avoid Next.js JSON auto-parse breaking the signature) |
-| Output | `{ received: true }` with 200 on success; 400 on signature failure; 200 + `{ received: true, already_processed: true }` on duplicate event |
-| Side effects | Per event type, updates `billing_subscriptions_v1` and `billing_webhook_events_v1` |
-| Forbidden side effects | Never grants paid plan without a Stripe event; never trusts client-side `plan_id`; never logs the raw event body |
-| Test coverage | Signature verification with valid + invalid signatures; idempotency on duplicate events; every event type handled in §9; tenant resolution from `stripe_customer_id`; failure path logged without secrets |
-
-### 8.4 Server helper for entitlements (not a route)
-
-`lib/billing/entitlements.ts` (planned).
-
-| Function | Signature | Notes |
+| Migration | Purpose | Risk |
 |---|---|---|
-| `getEntitlementsForTenant(tenantId)` | returns `{ plan_id, included_events_per_month, retention_days, support_level, checkout_enabled, billing_source }` | Reads from `billing_subscriptions_v1` + rate card. Returns Sandbox defaults if no row. |
-| `hasActivePlan(tenantId)` | returns boolean | Wraps the above; true if `subscription_status` in `('active', 'trialing')`. |
-| `requirePlan(tenantId, planId)` | throws if plan does not match | For server-side feature gating. |
+| `v2_NNN_access_requests_intent_columns.sql` | `ALTER TABLE access_requests ADD COLUMN intent TEXT, resolved_intent TEXT, plan_id TEXT NULL, offer_id TEXT NULL`. All nullable. | Low. Additive only. |
+| `v2_NNN_tenant_plan_v5_vocabulary.sql` | Data-migration only: `UPDATE tenants SET plan = 'growth' WHERE plan = 'pro'; UPDATE tenants SET plan = 'sandbox' WHERE plan = 'free';`. No column changes. Idempotent guard via `WHERE plan IN (...)`. | Medium — touches live tenant rows. Must run on staging first and be backed by `SELECT` verification + rollback `UPDATE`. |
+| `v2_NNN_billing_subscriptions_plan_v5_vocabulary.sql` | Data-migration only on `billing_subscriptions.plan_id` to V5 ids. Same idempotent shape. | Medium — same constraints. |
+
+**No new tables required for v1.** All three migrations are deferred until 3AY-8R-Impl is approved.
+
+### 5.3 Capabilities covered by reused tables
+
+| Capability | Table.column |
+|---|---|
+| Tenant ↔ Stripe customer | `tenants.stripe_customer_id` |
+| Tenant ↔ Stripe subscription | `tenants.stripe_subscription_id`, `billing_subscriptions.provider_subscription_id` |
+| Plan id (V5) | `tenants.plan`, `billing_subscriptions.plan_id` |
+| Stripe price id | `billing_subscriptions.plan_id` is **not** the Stripe price id. The Stripe price id is resolved from env at request time. |
+| Subscription status | `billing_subscriptions.status` |
+| Current period start/end | `billing_subscriptions.current_period_start`, `_end` |
+| `cancel_at_period_end` | `billing_subscriptions.cancel_at_period_end` |
+| Idempotency / processed event | `processed_webhook_events (provider, event_id)` unique |
+| Access-request intent persistence | `access_requests.intent`, `resolved_intent`, `plan_id`, `offer_id` *(new in §5.2)* |
 
 ---
 
-## 9. Webhook plan
+## 6. API route plan
 
-Events to handle in v1:
+### 6.1 `POST /api/billing/checkout/build`
+
+> Implementation note: the existing `POST /api/v2/billing/checkout` route already creates Stripe sessions keyed on a product key. v1 extends it by adding `'build'` to the allowlist. A dedicated `/build` route is **not** required; the existing route with an added key is preferred to keep the surface narrow.
+
+- **Auth:** dashboard session (cookie auth via `app/dashboard/layout.tsx`). Tenant resolved server-side from session, never from request body.
+- **Input:** `{ productKey: 'build' }` only. No plan id, no price id, no amount from the client.
+- **Output:** `{ url: string }` (Stripe-hosted checkout URL) or `{ code: 'CONTACT_SALES' }` for unmapped keys.
+- **Side effects:** creates Stripe Customer for tenant if absent; writes `tenants.stripe_customer_id`; **does not** grant plan entitlement (webhook does).
+- **Forbidden side effects:** no plan grant, no direct row write to `billing_subscriptions`, no `tenants.plan` update.
+- **Gated by:** `BILLING_CHECKOUT_ENABLED === 'true'`. When disabled or env missing → respond `{ code: 'CHECKOUT_DISABLED' }`. UI falls back to `/get-access?intent=build`.
+- **Tests:** kill-switch off → disabled; price env missing → disabled; unauthenticated → 401; spoofed `plan_id` in body → rejected; valid call → Stripe Customer created idempotently.
+
+### 6.2 `POST /api/billing/portal`
+
+> Existing route `app/api/v2/billing/portal/route.ts` covers this. No structural change required.
+
+- **Auth:** dashboard session.
+- **Input:** none.
+- **Output:** `{ url: string }` portal URL.
+- **Side effects:** creates Stripe billing portal session.
+- **Forbidden side effects:** no plan grant.
+- **Gated by:** tenant has `stripe_customer_id`.
+- **Tests:** no customer id → 404; valid → portal URL.
+
+### 6.3 `POST /api/billing/webhook`
+
+> Existing route `app/api/v2/billing/webhook/route.ts` covers this. v1 extends event coverage in `SubscriptionService.syncFromWebhook`.
+
+- **Auth:** Stripe signature verification (raw body via `req.text()`, `export const dynamic = 'force-dynamic'` — required by Next.js 15, per CLAUDE.md gotcha #3).
+- **Input:** Stripe event payload (raw body) + `stripe-signature` header.
+- **Output:** `{ received: true }` on success; `400` on invalid signature.
+- **Side effects:** updates `billing_subscriptions`, `tenants.plan`, `tenants.stripe_subscription_id` based on event type. Inserts into `processed_webhook_events` for idempotency.
+- **Forbidden side effects:** trusting any plan id from client; writing entitlements before signature verified.
+- **Tests:** signature invalid → 400; replayed `event.id` → no-op (idempotent); each event type → correct state transition.
+
+### 6.4 `GET /api/billing/state` (helper)
+
+- **Auth:** dashboard session.
+- **Input:** none.
+- **Output:** `{ plan_id, billing_source, subscription_status, current_period_end, cancel_at_period_end, checkout_enabled, portal_available }`.
+- **Side effects:** read-only.
+- **Use:** dashboard renders correct CTA without inferring from `/usage` plus client state.
+
+---
+
+## 7. Webhook plan
+
+Stripe events handled in v1:
 
 | Event | Action |
 |---|---|
-| `checkout.session.completed` | Look up tenant via `client_reference_id` (set at checkout); upsert `billing_subscriptions_v1` row using `stripe_customer_id` + `stripe_subscription_id`; resolve `plan_id` from price-ID map; set `subscription_status` from session's subscription object |
-| `customer.subscription.created` | Same as above; idempotent upsert |
-| `customer.subscription.updated` | Update `subscription_status`, `cancel_at_period_end`, `current_period_start/end`, `stripe_price_id`, `plan_id` (if price changed); preserve `tenant_id` |
-| `customer.subscription.deleted` | Set `subscription_status='canceled'`; do NOT delete the row; downgrade entitlements to Sandbox on next read |
-| `invoice.paid` | For one-time SKUs (AI Spend Audit): upsert a `billing_subscriptions_v1` row with `subscription_status='active'`, `billing_cycle='one_time'`. For recurring SKUs: record `last_event_id` and keep status |
-| `invoice.payment_failed` | Set `subscription_status='past_due'`; downstream feature gates downgrade until status flips back to `active` |
+| `checkout.session.completed` | Resolve tenant from `client_reference_id` or `customer`. Mark intent: subscription pending activation. Do **not** grant plan yet; wait for `customer.subscription.created`. |
+| `customer.subscription.created` | Upsert `billing_subscriptions`; set `tenants.plan = 'build'` if Price matches `STRIPE_PRICE_ID_BUILD_MONTHLY`; set `tenants.stripe_subscription_id`. |
+| `customer.subscription.updated` | Update period bounds, status, `cancel_at_period_end`. Update `tenants.plan` if Price changed. |
+| `customer.subscription.deleted` | Set `billing_subscriptions.status = 'canceled'`; set `tenants.plan = 'sandbox'`. Do **not** delete tenant or data. |
+| `invoice.paid` | Optional in v1: log a billing event row for audit. No plan change. |
+| `invoice.payment_failed` | Mark `billing_subscriptions.status = 'past_due'`. Do **not** delete tenant. Email path optional in v1. |
 
-### 9.1 Webhook handler rules
+### 7.1 Rules
 
-1. **Verify signature** before any DB write. Failed signature → 400, no DB write, no log of body content.
-2. **Look up `stripe_event_id` in `billing_webhook_events_v1`**; if present with `processing_status='processed'`, return 200 immediately (idempotency).
-3. **Insert the event row** with `processing_status='received'` before any other DB write. This guards against concurrent duplicate delivery.
-4. **Resolve the tenant** from `stripe_customer_id` (set by `/api/billing/checkout` when the customer was created). Never trust a `tenant_id` field in the event payload.
-5. **Resolve `plan_id`** from the Stripe price ID via the static map. Never trust a `plan_id` field in the event payload.
-6. **Upsert the subscription row** in a single transaction with the event row's `processing_status` flip to `processed`.
-7. **On any error**: set `processing_status='failed'` with a bounded, sanitized `error_message`; do not throw past the route handler; return 500 so Stripe retries.
-8. **Never log secrets**: error logs reference `stripe_event_id`, `event_type`, `stripe_customer_id` prefix only.
-
-### 9.2 Idempotency invariants (asserted by tests)
-
-- Replaying any event 2× produces identical DB state.
-- Replaying the same event with stale data does not overwrite newer data (compare `last_event_id`).
-- A `customer.subscription.deleted` followed by re-receiving an older `customer.subscription.updated` does not revive the subscription as `active`.
+- **Raw body** via `req.text()`; `export const dynamic = 'force-dynamic'` (CLAUDE.md gotcha #3).
+- Verify Stripe signature with `stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET)`.
+- Idempotency: `INSERT ... ON CONFLICT (provider, event_id) DO NOTHING INTO processed_webhook_events`; if conflict, return `{ received: true }` without re-processing (matches CLAUDE.md gotcha #6).
+- Never trust client-side plan state. Plan id is derived only from Stripe Price → env-var mapping.
+- Grant Build entitlement only after `customer.subscription.created` with confirmed Price match.
+- On `invoice.payment_failed`, **never** delete tenant rows. Status flips to `past_due`; data preserved.
+- On `customer.subscription.deleted`, **never** drop tenant rows. Plan resets to `sandbox`; data preserved.
+- Log failures via existing logging path. **No secrets in logs**; redact Stripe ids when logging at warn level.
 
 ---
 
-## 10. Entitlements plan
+## 8. Entitlements plan
 
-### 10.1 Plan lookup
+### 8.1 V5 plan matrix (sourced from `lib/pricing/rate-card.ts`, not duplicated)
 
-For tenant `T` at request time:
+| plan_id | billing_source | subscription_status default | included_events_per_month | retention_days | support_level | checkout_enabled |
+|---|---|---|---|---|---|---|
+| `sandbox` | none | `active` | 25,000 (hard cap) | 14 | community | n/a |
+| `build` | stripe | derived from webhook | 250,000 | 30 | email | yes (v1) |
+| `growth` | stripe-manual | sales-assisted | 2,000,000 | 90 | priority email | no (v1 — deferred) |
+| `scale` | stripe-manual / invoice | sales-led | 20,000,000 | 365 | named CSM | no |
+| `enterprise` | invoice | sales-led | custom | custom | named CSM + SLO | no |
 
-```
-SELECT plan_id, subscription_status, stripe_price_id
-  FROM billing_subscriptions_v1
- WHERE tenant_id = T
- ORDER BY updated_at DESC
- LIMIT 1
-```
+### 8.2 Lookup rules
 
-- No row → tenant is on **Sandbox** with rate-card Sandbox defaults.
-- Row with `subscription_status='active'` or `'trialing'` → tenant is on the row's `plan_id`.
-- Row with `subscription_status='past_due'` → downgrade to Sandbox for feature-gate reads (the row is preserved for billing-side visibility).
-- Row with `subscription_status='canceled'` or `'unpaid'` → Sandbox.
+- Entitlement lookup reads `tenants.plan` (V5 vocabulary) from app DB. **Never** query Stripe per request.
+- Feature gates (semantic cache, safety pack, advanced analytics) re-mapped from `lib/billing/entitlements.ts` `free/pro/enterprise` keys to `sandbox/build/growth/scale/enterprise`. This is a code change deferred to 3AY-8R-Impl §5.
+- `BillingGuard` (request-path fail-close guard) remains untouched. Subscription billing and request-path guards are separate concerns.
 
-### 10.2 Entitlement fields returned
+---
 
-For every plan, the entitlements helper returns:
+## 9. Frontend plan
 
-| Field | Source |
+Applied only after the routes in §6 are live and `BILLING_CHECKOUT_ENABLED === 'true'`.
+
+- `/pricing` Build CTA:
+  - When `BILLING_CHECKOUT_ENABLED` and tenant authenticated → POST `/api/v2/billing/checkout` with `productKey: 'build'`, redirect to returned URL.
+  - When disabled, unauthenticated, or env missing → fall back to `/get-access?intent=build` (current behavior).
+- Customer portal link in `app/dashboard/billing/page.tsx` appears only when `tenants.stripe_customer_id` is non-null.
+- New `/billing/success` page: read-only confirmation; no entitlement grant from this page.
+- New `/billing/cancel` page: read-only cancellation acknowledgment.
+- No copy claiming "paid self-serve checkout" until the route is verifiably live in production. Locked by source-shape test (already enforced for `/pricing` and `/get-access`).
+
+---
+
+## 10. Access-request intent persistence
+
+### 10.1 Problem
+
+- `/get-access` form (3AY-4) emits `intent`, `plan_id`, `offer_id` in the submission.
+- POST handler at `app/api/v1/access-request/route.ts` writes only `email`, `company`, `role`, `rpd`. The intent fields are dropped.
+- Founder cannot query leads by plan or offer before billing goes live.
+
+### 10.2 Resolution: extend `access_requests`
+
+- Migration `v2_NNN_access_requests_intent_columns.sql` (§5.2) adds nullable columns: `intent TEXT`, `resolved_intent TEXT`, `plan_id TEXT`, `offer_id TEXT`.
+- Route extension: persist all four. `resolved_intent` is the canonical id after `resolveIntent` (e.g., `proof-sprint` → `ai-spend-audit`).
+- Backfill: not required; null is the documented "unknown" state for pre-existing rows.
+
+### 10.3 What it preserves
+
+- `intent` = the raw value the user landed on (may be legacy).
+- `resolved_intent` = the canonical V5 intent id after `LEGACY_INTENT_MAP` resolution.
+- `plan_id` (nullable) = V5 plan if intent maps to a plan tier.
+- `offer_id` (nullable) = bridge offer id if intent maps to an offer.
+
+### 10.4 Operator query path before billing ships
+
+- Read-only SQL: `SELECT email, company, intent, resolved_intent, plan_id, offer_id, created_at FROM access_requests WHERE resolved_intent = $1 ORDER BY created_at DESC;`.
+- Optional admin route deferred to a later slice; not part of 3AY-8R v1.
+
+### 10.5 Alternative considered
+
+- Add a separate `lead_intents` table. **Rejected** — splits a single logical lead into two rows, adds join cost, and yields no new capability v1 needs.
+
+---
+
+## 11. Manual revenue operations
+
+Until self-serve checkout exists for Growth, Scale, Enterprise, AI Spend Audit, Paid Pilot, Regulated Pilot:
+
+- **AI Spend Audit** ($1,500): operator receives `/get-access?intent=ai-spend-audit` lead → manual scoping call → manual Stripe Invoice (one-time) or wire instructions → on payment, operator manually flips `tenants.plan` if a follow-on plan is part of the engagement.
+- **Paid Pilot** ($35,000): operator receives `/get-access?intent=paid-pilot` → contract → Stripe Invoice or wire → manual entry. Credit policy (50%) tracked in operator notes, **not** automated.
+- **Regulated Pilot** (from $50,000): same as Paid Pilot. BAA path documented post-engagement; not automated.
+- **Growth** ($199/mo): operator receives `/get-access?intent=growth` → manual Stripe Customer + Subscription via dashboard or invoice → tenant flagged `plan = 'growth'`.
+- **Scale** ($799/mo annual): manual quote → Stripe Invoice or MSA → manual entry as `plan = 'scale'`.
+- **Enterprise** (from $60k ARR): MSA → wire → manual entry as `plan = 'enterprise'`.
+- **Operator manual plan flip:** a single internal write via DB (no UI in v1). Documented in operator runbook (to be drafted in 3AY-8R-Impl).
+- **Refunds and credits:** tracked in operator notes outside the app database in v1. No automated credit ledger.
+
+---
+
+## 12. Security plan
+
+- No secrets in client bundle. All Stripe SDK calls server-side only.
+- No secret values in this doc, in any commit, or in any test fixture.
+- Webhook signature verification on every event (`stripe.webhooks.constructEvent`).
+- Tenant resolved server-side from session, never from request body.
+- Plan id never trusted from client. Plan derived from Stripe Price → env-var mapping.
+- Live and test Stripe must use disjoint keys. `STRIPE_SECRET_KEY` env value differs per environment.
+- `BILLING_CHECKOUT_ENABLED` kill switch defaults to `false`. Production flip requires explicit operator approval.
+- Idempotency: `processed_webhook_events (provider, event_id)` unique. Replays return `{ received: true }` no-op.
+- Replay protection: Stripe's own signature + `event.id` uniqueness. No additional nonce required.
+- Audit logging: each plan-state change writes a row to an existing audit-capable log table (deferred decision: reuse `billing_usage_events` with a typed event, or add `billing_audit_events`. Resolved in 3AY-8R-Impl §6.).
+- Redacted errors: route responses to clients never include Stripe error messages verbatim. Server logs may contain Stripe ids at debug level; warn level redacts.
+
+---
+
+## 13. Testing plan
+
+- **Unit:** Stripe Price → plan_id mapping (`STRIPE_PRICE_ID_BUILD_MONTHLY` → `'build'`). Rejection of unknown Price.
+- **Route — checkout:** kill switch off → disabled; env missing → disabled; unauth → 401; valid → URL returned; spoofed `plan_id` in body ignored.
+- **Route — portal:** no `stripe_customer_id` → 404; valid → URL.
+- **Route — webhook:** invalid signature → 400; each event type → correct state transition; replay → idempotent no-op; failed-payment → status `past_due`, no row deletion.
+- **Idempotency:** insert duplicate `event_id` → no-op, no extra row.
+- **Env-missing:** missing `STRIPE_PRICE_ID_BUILD_MONTHLY` → checkout disabled, UI fallback verified.
+- **Client plan spoof:** body `{ productKey: 'build', plan_id: 'enterprise' }` → server ignores `plan_id`.
+- **No Stripe live calls in tests:** Stripe SDK mocked via Vitest. CI fails on real Stripe TCP attempt.
+- **No hardcoded prices:** vitest source-shape test scans `app/api/v2/billing/**` for `\$49(?![0-9])`, `\$199(?![0-9])`, etc. and forbids them outside the env-var mapping.
+- **Forbidden public claims:** existing `app/pricing` and `app/get-access` source-shape tests already cover this; webhook + checkout route source files added to the scan list.
+
+---
+
+## 14. Deployment plan
+
+1. **Test mode first.** Stripe test keys only. Local Stripe CLI webhook tunnel (`stripe listen`) for end-to-end verification.
+2. **Local webhook test.** Run all event types via Stripe CLI `stripe trigger ...`. Verify idempotency by triggering the same event twice.
+3. **Staging / preview verification** if a staging environment exists. Otherwise, Vercel preview deploys with test keys.
+4. **Production env checklist** (gated on explicit operator approval per item):
+   - `STRIPE_SECRET_KEY` set to live key.
+   - `STRIPE_WEBHOOK_SECRET` set to production webhook secret (after creating the live webhook endpoint).
+   - `STRIPE_PRICE_ID_BUILD_MONTHLY` set to live Build Price id.
+   - `BILLING_CHECKOUT_ENABLED` set to `false` initially; flip to `true` only after the next step.
+5. **Production webhook endpoint setup:** create the Stripe webhook in dashboard, point at `/api/v2/billing/webhook`, subscribe to the six events in §7, store secret in env.
+6. **One end-to-end checkout in Stripe test mode** against production code path (kill switch off) using a test-mode key swap, or in a staging Stripe account. Verify webhook delivery + DB state.
+7. **Operator approval** required before flipping `BILLING_CHECKOUT_ENABLED` to `true` in production.
+
+---
+
+## 15. Rollback plan
+
+- **Soft disable:** set `BILLING_CHECKOUT_ENABLED = 'false'`. UI immediately falls back to `/get-access?intent=build`. No data deleted, no Stripe records touched.
+- **Route Build CTA back to /get-access?intent=build:** automatic when kill switch off.
+- **Sandbox stays alive** independently of billing state.
+- **Manual sales path stays alive** independently — all bridge offers and Growth+ tiers continue to flow through `/get-access`.
+- **Do not delete Stripe records.** Cancel subscriptions in Stripe dashboard if required; do not delete Customer or Subscription objects.
+- **Do not drop billing tables** without a separate approval slice. Schema-level rollback is out of scope here.
+- **Tenant data preservation:** failed payments and cancellations never delete tenant rows. Plan reverts to `sandbox`; data and audit history preserved.
+
+---
+
+## 16. Acceptance criteria
+
+The plan is considered complete only because it answers every question below.
+
+| Question | Answer |
 |---|---|
-| `plan_id` | `billing_subscriptions_v1` or Sandbox default |
-| `included_events_per_month` | `lib/pricing/rate-card.ts` PLANS[plan_id].includedEventsPerMonth |
-| `retention_days` | rate card |
-| `support_level` | rate card / derived from `salesMotion` |
-| `checkout_enabled` | true if `plan_id` is on the checkout allowlist; false otherwise |
-| `billing_source` | `'stripe'` if a `billing_subscriptions_v1` row exists; `'sandbox'` otherwise; `'manual'` for admin-assigned (future) |
-
-### 10.3 Rules
-
-- **Reads from app DB, not from Stripe on every request.** Stripe is consulted only by the webhook.
-- **Plan ID never round-trips through the client.** Even if a client sends `plan_id` in a header, the server ignores it.
-- **Business/Scale/Enterprise are not assignable via Stripe in v1.** A tenant is on those plans only via a manual admin path (planned but not implemented in v1; admin tooling deferred to a successor slice).
-
----
-
-## 11. Usage and limits plan
-
-### 11.1 What v1 includes
-
-- **Monthly event-count lookup per tenant.** Reuses existing `ai_economic_events` queries (or whatever the current canonical metering query is). Returns `{ tenant_id, period_start, period_end, events_consumed }`.
-- **Sandbox limit state.** When `events_consumed >= 25,000` (or whatever the rate card says), Sandbox tenants see a "Sandbox is paused" state. **No DB enforcement** in v1 beyond UI surface; the actual ingest path may still record events. Hard caps are a separate slice.
-- **Developer/Build/Growth allowance display.** The dashboard meter widget (a separate slice, 3AY-9R) reads `included_events_per_month` from entitlements and shows utilization.
-- **No automated overage billing.** When a tenant exceeds their plan, no automatic Stripe invoice is generated in v1.
-- **No projected invoice amount.** No UI surface that says "you'll owe $X next month" until overage billing exists.
-
-### 11.2 Required minimal counter (must exist before paid launch)
-
-A queryable monthly event count for `(tenant_id, current_month)`. This must exist before billing v1 ships because:
-
-- The dashboard meter widget needs it.
-- Sandbox cap enforcement needs it (UI only in v1).
-- Customer support needs it to answer "am I close to my limit."
-
-If the current schema does not support a fast `count(*)` over `ai_economic_events WHERE tenant_id = $1 AND event_time >= $2`, the implementation slice **must** ship an aggregate table or materialized view before opening checkout. The current path of "SELECT count(*) FROM ai_economic_events" may not scale to multi-million-event tenants; this is a known concern flagged for the implementation slice.
-
-### 11.3 What v1 does NOT include
-
-- Automated overage billing.
-- Real-time meter aggregation to Stripe.
-- Prepaid credits.
-- Enterprise commit drawdown.
-- Multi-currency billing.
-- Discount or coupon application (Stripe-side coupons can still be applied manually; the app does not surface them).
+| What existing billing code exists? | See §1.2. Substantial Stripe scaffolding (checkout, portal, webhook, subscription-service), on-chain settlement, partner commissions, entitlements, plan-guard, BillingGuard. |
+| What is reused? | `provider.ts`, `providers/stripe.ts`, `subscription-service.ts`, `plan-guard.ts`, `usage.ts`, `entitlements.ts`, all three `/api/v2/billing/*` routes, `processed_webhook_events`, `billing_subscriptions`, `tenants.stripe_*`. |
+| What is left untouched? | On-chain settlement (`providers/onchain.ts`, `actions/billing*`, on-chain cron, on-chain subscribe route), partner commission routes, `BillingGuard`, `enforcement.ts`. |
+| What is the first checkout SKU? | **Build $49/month**. |
+| What does Stripe create? | One Product (`P402 Build`), one Price (Build monthly $49), one Customer per paying tenant, one Subscription per paying tenant. |
+| What app state stores billing truth? | `tenants.plan`, `tenants.stripe_customer_id`, `tenants.stripe_subscription_id`, `billing_subscriptions` row per active subscription, `processed_webhook_events` per processed Stripe event. |
+| What webhook events update plan state? | `customer.subscription.created` (grant), `customer.subscription.updated` (period / price change), `customer.subscription.deleted` (revert to sandbox), `invoice.payment_failed` (status → past_due). `checkout.session.completed` and `invoice.paid` are audit-only. |
+| How does a tenant become Build? | Authenticated tenant clicks Build CTA → `/api/v2/billing/checkout` with `productKey: 'build'` → Stripe-hosted checkout → user pays → Stripe sends `customer.subscription.created` → webhook verifies + maps Price → flips `tenants.plan = 'build'`. |
+| What happens on payment failure? | `invoice.payment_failed` → `billing_subscriptions.status = 'past_due'`. Tenant row preserved. Plan revert decision is per-Stripe-retry-policy; v1 leaves plan as `build` until `customer.subscription.deleted`. |
+| What happens on cancellation? | `customer.subscription.deleted` → `billing_subscriptions.status = 'canceled'`, `tenants.plan = 'sandbox'`. Tenant + data preserved. |
+| How is access intent persisted? | `access_requests` gets `intent`, `resolved_intent`, `plan_id`, `offer_id` columns (additive migration). POST handler writes them. |
+| What remains manual? | Growth, Scale, Enterprise self-serve checkout. AI Spend Audit / Paid Pilot / Regulated Pilot self-serve. Refund and credit ledgers. Operator manual plan flips for sales-assisted tiers. |
+| What remains deferred? | Metronome, automated overage invoicing, enterprise commit drawdown, partner-commission payout automation changes, cryptographic invoice appendix, multi-year contract automation, Department Dashboard SKU, automated credit application. |
+| What is forbidden? | Trusting client plan id; granting entitlements before webhook signature verified; hardcoded prices outside rate card or env mapping; live Stripe calls in tests; deleting tenant rows on payment failure or cancellation; verified savings / auto-apply / runtime enforcement / unsupported compliance claims; secrets in docs, fixtures, or logs. |
 
 ---
 
-## 12. Frontend plan
+## Appendix A — open questions for 3AY-8R-Impl
 
-### 12.1 Pricing page changes
-
-- **No change** to `/pricing` until 3AY-8R-Impl ships and the operator approves the Developer (or Build) CTA flip.
-- When approved, the Developer (or Build) CTA on `/pricing` flips from `/get-access?intent=developer` to a checkout entry route. The flip is **gated by `BILLING_V1_ENABLED=true`**. While the flag is `false`, the CTA continues to route through `/get-access`.
-
-### 12.2 Get-access page
-
-- The intent-aware copy from 3AY-4 remains in place.
-- The Developer (or Build) banner copy ("Paid self-serve checkout for Developer is in progress and will ship with our Revenue Billing Foundation (3AY-8R)") is updated to point at the live checkout flow **only after** `BILLING_V1_ENABLED=true`.
-- All other intents continue to use `/get-access` as a sales-assisted form.
-
-### 12.3 New routes
-
-- `/dashboard/billing` — dashboard subroute showing current plan, billing portal link, invoice history (read from Stripe via the portal). No new product surface; this is an extension of existing dashboard.
-- `/billing/success` — Stripe Checkout success return URL. Renders a confirmation, links to `/dashboard`.
-- `/billing/cancel` — Stripe Checkout cancel return URL. Renders the same `/pricing` content with a "checkout cancelled" banner.
-
-### 12.4 What is forbidden in frontend
-
-- No paid claim that the system cannot honor.
-- No Business/Scale/Enterprise checkout button.
-- No hidden `plan_id` form fields that the server is expected to trust.
-- No customer name/logo display until written permission.
-
----
-
-## 13. Admin / manual operations plan
-
-### 13.1 First Business / Scale / Enterprise customers
-
-- Sales/founder takes the deal manually via the existing CRM path (lead enters via `/get-access?intent=…`).
-- Once an annual contract is signed, an admin tool (planned, not in v1) marks the tenant with `plan_id`, `billing_source='manual'`, `subscription_status='active'`, and a manual `current_period_end`.
-- In v1 (until admin tooling ships), this can be done by a direct SQL UPDATE on `billing_subscriptions_v1` with operator approval; the implementation slice ships a `scripts/billing/` one-off for the operator to execute against staging, then production, with audit logging.
-
-### 13.2 Proof Sprint and Paid Pilot payment recording
-
-- Engagement fees collected via Stripe Invoicing (manual Stripe Dashboard action; no app code).
-- Optional: a `billing_subscriptions_v1` row with `billing_cycle='one_time'` and `plan_id='proof_sprint'` or `'paid_pilot'` can be inserted by the same admin one-off so the dashboard reflects the engagement.
-
-### 13.3 Lead intent visibility for founder
-
-- Once the access-request intent column migration ships (§7.1), the admin tooling (already exists at `/admin/users` etc.) reads the new columns. A small UI patch (separate slice) surfaces `intent`, `plan_id`, `offer_id` in the admin lead view.
-
-### 13.4 Refunds and credits in v1
-
-- All refunds executed manually via the Stripe Dashboard.
-- The webhook handler observes `charge.refunded` (optional v1 addition) and updates `subscription_status='canceled'` if the refund cancels the period. No automatic credit notes in app.
-
----
-
-## 14. Security plan
-
-1. **No secret values in code or docs.** All `STRIPE_*` env vars are read from process env at runtime only. Source-shape tests in the implementation slice forbid any `sk_live_` / `whsec_` literal anywhere in the tree.
-2. **Webhook signature verification.** `await req.text()` + Stripe SDK's `webhooks.constructEvent` (or equivalent manual signature check). Failed signature → 400 with no DB write.
-3. **No Stripe secret in client bundle.** The Stripe SDK is used only on the server. The frontend never imports the Stripe Node SDK. Source-shape test asserts `'use client'` files do not import `stripe`.
-4. **No trust in client `plan_id`.** Every checkout and webhook resolves `plan_id` from the server-side Stripe price map.
-5. **Server-side tenant resolution.** The webhook uses `stripe_customer_id` → `tenant_id` lookup. The checkout route uses the authenticated session's `tenant_id`.
-6. **Idempotent webhook processing.** Per §9.1.
-7. **Access log redaction.** Webhook error logs contain `stripe_event_id`, `event_type`, `stripe_customer_id` (prefix only), and a bounded `error_message`. No event payload, no card details, no PII.
-8. **Test-mode / live-mode separation.** The price ID map keys on env values; loading test-mode price IDs against live mode never resolves any plan. The implementation slice asserts at boot that env var prefixes match expected mode.
-
----
-
-## 15. Testing plan
-
-### 15.1 Unit / integration tests
-
-- **Plan mapping.** `stripe-price-map.ts` resolves every approved price ID to the right plan id. Unknown price ID returns `null`. Map is loaded from env in test fixtures.
-- **Checkout route.** Returns 404 when `BILLING_V1_ENABLED=false`. Returns 400 when SKU not on the allowlist. Returns 401 when unauthenticated. Happy path uses a fake Stripe client and asserts the request payload (customer id, success/cancel URLs, line items) is correct.
-- **Portal route.** Returns 404 when tenant has no `stripe_customer_id`. Returns 401 when unauthenticated. Happy path asserts the Stripe SDK was called with the right customer id.
-- **Webhook route.** Every event type in §9 has a test fixture. Signature verification tested with valid + invalid signatures. Duplicate event returns 200 with `already_processed`. Tenant resolution failure (unknown `stripe_customer_id`) logs and returns 500.
-- **Idempotency.** Replay each event 2× and assert identical DB state.
-- **Client-side plan spoof.** Submitting `{ plan_id: 'enterprise' }` to the checkout route does not produce an Enterprise checkout session. The route ignores body `plan_id` and uses the path parameter only.
-- **No Stripe live calls in tests.** A fake Stripe client is injected via a `Queryable`-style dependency. The real Stripe SDK is never invoked from CI.
-- **No hardcoded price literals.** Source-shape test scans `lib/billing/`, `app/api/billing/`, and `app/dashboard/billing/` for hardcoded dollar amounts. All amounts must flow from `lib/pricing/rate-card.ts`. No `$249`, `$49`, `$1,500`, etc. in route source.
-
-### 15.2 Forbidden-phrase / safety scans
-
-- No `verified savings`, `guaranteed savings`, `auto-apply`, `SOC 2 compliant`, `HIPAA compliant`, `ISO certified` anywhere in billing source.
-- No `sk_live_` / `whsec_` / `pk_live_` / `acct_` literal.
-- No `Stripe Checkout` substring on the get-access fallback page once billing is live (the page should route to the new checkout, not advertise it inline).
-
-### 15.3 Operator-driven smoke tests (manual, in test mode)
-
-Before live mode is enabled:
-- Test-mode Stripe Customer creation via checkout route → asserts `billing_subscriptions_v1` row appears post-webhook.
-- Test-mode subscription cancellation → row's `subscription_status` flips to `canceled`.
-- Test-mode payment failure → row's `subscription_status` flips to `past_due`.
-- Test-mode portal session creation → returns a usable URL.
-
----
-
-## 16. Deployment plan
-
-1. **Stripe test mode first.** All implementation work happens against Stripe test mode. Live mode is gated by `STRIPE_SECRET_KEY` value (test vs live).
-2. **Local webhook testing.** Use `stripe listen` or the Stripe CLI to forward webhooks to localhost during development.
-3. **Staging verification.** If a staging environment exists, deploy with test-mode keys and run the operator-driven smoke tests in §15.3.
-4. **Production env variable checklist.** Operator confirms each `STRIPE_PRICE_ID_*` variable is set before the production deploy.
-5. **Production webhook endpoint registration.** Operator creates the webhook endpoint in the Stripe Dashboard pointing at `https://p402.io/api/billing/webhook`. Operator confirms `STRIPE_WEBHOOK_SECRET` matches.
-6. **Test purchase in Stripe test mode only.** No real card purchase until §16.7.
-7. **Live mode only after operator approval.** Explicit written approval required. `BILLING_V1_ENABLED=true` flipped to `true` in production env. First real purchase by operator personally.
-
----
-
-## 17. Rollback plan
-
-1. **Disable checkout route by env flag.** Setting `BILLING_V1_ENABLED=false` returns 404 on `/api/billing/checkout/*`. Pricing page Developer CTA reverts to `/get-access?intent=developer` automatically (the flag is checked in the page render path).
-2. **Sandbox alive.** Sandbox signup path is never gated by billing; it continues to work.
-3. **Manual sales path alive.** `/get-access?intent=*` continues to route every non-Developer intent through the existing CRM.
-4. **Do not delete Stripe records.** Customer rows in Stripe remain so historical data is preserved.
-5. **Do not drop billing tables without separate approval.** `billing_subscriptions_v1` and `billing_webhook_events_v1` persist even if billing v1 is rolled back. They are referenced by historical webhook events.
-6. **Downgrade tenants.** If a rollback requires removing access for paid tenants, the operator uses the existing admin path to flip `subscription_status='canceled'`. The data is preserved; only the entitlement read returns Sandbox.
-
----
-
-## 18. Acceptance criteria
-
-This plan is complete only when it answers each question below.
-
-| Question | Section |
-|---|---|
-| How does a Sandbox user upgrade to Developer (or Build)? | §8.1, §12.1 |
-| What does Stripe create? | §5, §8.1 |
-| What app tables store billing state? | §7.2, §7.3 |
-| What webhook events update plan state? | §9 |
-| How is access-request intent persisted? | §7.1 |
-| How does the app know a tenant is Developer (or Build)? | §10 |
-| What happens if payment fails? | §9 (invoice.payment_failed → past_due) |
-| What happens if subscription cancels? | §9 (subscription.deleted → canceled; entitlements downgrade to Sandbox) |
-| What is manual versus automated? | §4, §13 |
-| What is explicitly deferred? | §11.3 |
-| What is forbidden to claim? | §0, §14 |
-| **Does this billing plan work if the first paid SKU is Build $49 instead of Developer $249?** | §2, §5, §6 |
-| **Does this billing plan support AI Spend Audit $1,500 one-time?** | §5.1, §7.2 (`billing_cycle='one_time'`) |
-| **Does this billing plan support Department Dashboard $1,500/mo later?** | §5.1, §6 |
-| **Is billing implementation explicitly blocked until pricing realignment is resolved?** | §1 |
-
----
-
-## 19. Reaffirmed boundaries
-
-- No code shipped by this slice.
-- No SQL execution. No Neon mutation. No Redis touched. No migration applied. No deploy.
-- No Stripe live call. No production mutation.
-- No claim of verified savings.
-- No claim of policy auto-apply.
-- No claim of runtime enforcement being live.
-- No unsupported compliance claim.
-- No customer logo or name used without written permission.
-
----
-
-## 20. Final report self-check (for the operator)
-
-When this document is reviewed, the following claims must be true:
-
-1. **Pricing-decision gate was added** — §1.
-2. **Developer $249 is not hardcoded as the only checkout SKU** — §2, §5.1, §6 list every conditional SKU; no env var or schema column names a specific dollar amount or plan as "the" SKU.
-3. **Plan supports V5 ladder if approved** — Build / Growth / AI Spend Audit / Department Dashboard all appear in §5.1 and §6 with conditional env vars.
-4. **Billing implementation remains blocked until pricing realignment or explicit operator approval** — §1.2 lists what's forbidden; §1.4 lists the pre-implementation deliverables.
-
-If any of the above is not visibly true in this document, the plan does not pass.
+1. **`tenants.plan = 'pro'` migration target.** Confirm `pro → growth` is the correct mapping. (Pro is currently priced at $499/mo per `lib/billing/plans.ts`; Growth is $199/mo. Operator must explicitly approve the price-difference handling — credit, grandfather, or migrate-at-renewal.)
+2. **`STRIPE_PRICE_ID_PRO` deprecation timing.** Keep until all `pro`-tier tenants are migrated; remove in a follow-up slice.
+3. **Webhook event for audit logging.** Reuse `billing_usage_events` (typed event) vs. add `billing_audit_events`. Default: reuse, decide at impl.
+4. **Build CTA on `/get-access` after checkout ships.** Current flow keeps `/get-access?intent=build` as the form-based path. After self-serve ships, does the Build CTA on `/get-access` change, or does `/get-access` remain the sales-assisted fallback only? Default: keep `/get-access` as form fallback, no change.
+5. **`enforcement.ts` removal.** Out of scope for 3AY-8R, but flagged for a later cleanup slice.
