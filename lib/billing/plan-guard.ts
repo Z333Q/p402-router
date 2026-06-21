@@ -1,5 +1,6 @@
 import db from '@/lib/db';
 import { getPlan } from './plans';
+import { normalizeBillingPlanId } from './plan-compat';
 import { ApiError } from '@/lib/errors';
 
 export async function getTenantPlan(tenantId: string): Promise<string> {
@@ -42,7 +43,7 @@ export async function assertWithinCap(tenantId: string, requestedCostUsd: number
             message: `Usage cap of $${maxSpendUsd.toFixed(2)} exceeded for ${plan.name} plan.`,
             requestId: `cap_check_${Date.now()}`,
             metadata: {
-                requiredPlan: planId === 'free' ? 'pro' : 'enterprise',
+                requiredPlan: normalizeBillingPlanId(planId) === 'sandbox' ? 'growth' : 'enterprise',
                 usagePercent: ((currentUsageUsd + requestedCostUsd) / maxSpendUsd) * 100
             }
         });

@@ -1,5 +1,13 @@
 // P402 Billing Plans - Source of Truth
 // Defined in code rather than DB to ensure strict typing across the app.
+//
+// 3AY-8R-2: this matrix is still keyed on the legacy `free / pro / enterprise`
+// vocabulary. The V5 canonical ladder (`sandbox / build / growth / scale /
+// enterprise`) is accepted at the public API of `getPlan` via the read-side
+// adapter in `./plan-compat`. Rewriting this matrix onto canonical keys is a
+// later slice; do not change write sites here.
+
+import { toLegacyBillingPlanId } from './plan-compat';
 
 export type PlanTier = 'free' | 'pro' | 'enterprise';
 
@@ -68,8 +76,7 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
 export const DEFAULT_PLAN = PLANS.free;
 
 export function getPlan(id: string | null | undefined): PlanDefinition {
-    if (!id) return DEFAULT_PLAN;
-
-    const plan = PLANS[id as PlanTier];
-    return plan || DEFAULT_PLAN;
+    if (id === null || id === undefined) return DEFAULT_PLAN;
+    const legacyId = toLegacyBillingPlanId(id);
+    return PLANS[legacyId];
 }

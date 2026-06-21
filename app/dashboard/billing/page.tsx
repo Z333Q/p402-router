@@ -6,6 +6,7 @@ import { AuditGateBanner } from '../_components/audit/AuditGateBanner';
 import { useSearchParams } from 'next/navigation';
 import { Zap, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
 import { usePlanUsage } from '@/hooks/usePlanUsage';
+import { normalizeBillingPlanId } from '@/lib/billing/plan-compat';
 
 interface UpgradeMath {
     monthly_volume_usd: number;
@@ -18,6 +19,12 @@ function BillingContent() {
     const searchParams = useSearchParams();
     const { planId, isLoading: planLoading } = usePlanUsage();
     const [isActionPending, setIsActionPending] = useState(false);
+
+    // 3AY-8R-2: tolerate both legacy ('pro'/'free') and canonical
+    // ('growth'/'sandbox') ids during the vocabulary transition.
+    const canonicalPlan = normalizeBillingPlanId(planId);
+    const isPaidPlan = canonicalPlan !== 'sandbox';
+    const isSandboxPlan = canonicalPlan === 'sandbox';
 
     const success = searchParams.get('success');
     const canceled = searchParams.get('canceled');
@@ -41,7 +48,7 @@ function BillingContent() {
 
     const handlePlanAction = async () => {
         setIsActionPending(true);
-        const endpoint = planId === 'pro' ? '/api/v2/billing/portal' : '/api/v2/billing/checkout';
+        const endpoint = isPaidPlan ? '/api/v2/billing/portal' : '/api/v2/billing/checkout';
         try {
             const res = await fetch(endpoint, { method: 'POST' });
             const data = await res.json();
@@ -74,8 +81,8 @@ function BillingContent() {
                         disabled={isActionPending || planLoading}
                         className="inline-flex items-center px-4 py-2 bg-[var(--primary)] text-[var(--neutral-900)] border-2 border-black rounded-none text-sm font-bold uppercase tracking-wide hover:brightness-110 transition-all shadow-[4px_4px_0_#000] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50"
                     >
-                        {isActionPending ? 'Connecting...' : (planId === 'pro' ? 'Manage Subscription' : 'Upgrade to Pro')}
-                        {planId === 'pro' ? <ExternalLink className="ml-2 w-4 h-4" /> : <Zap className="ml-2 w-4 h-4" />}
+                        {isActionPending ? 'Connecting...' : (isPaidPlan ? 'Manage Subscription' : 'Upgrade')}
+                        {isPaidPlan ? <ExternalLink className="ml-2 w-4 h-4" /> : <Zap className="ml-2 w-4 h-4" />}
                     </button>
                 </div>
             </div>
@@ -106,7 +113,7 @@ function BillingContent() {
                 </div>
 
                 {/* Audit-Driven Upgrade Math */}
-                {planId === 'free' && upgradeMath && upgradeMath.estimated_savings_usd > 0 && (
+                {isSandboxPlan && upgradeMath && upgradeMath.estimated_savings_usd > 0 && (
                     <div className="md:col-span-2">
                         <AuditGateBanner
                             state="preview"
@@ -132,8 +139,8 @@ function BillingContent() {
                         </h3>
                         <div className="flex items-center gap-2">
                             <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Current Plan:</span>
-                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 border border-black ${planId === 'pro' ? 'bg-primary' : 'bg-neutral-100'}`}>
-                                {planId?.toUpperCase() || 'FREE'}
+                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 border border-black ${isPaidPlan ? 'bg-primary' : 'bg-neutral-100'}`}>
+                                {canonicalPlan.toUpperCase()}
                             </span>
                         </div>
                     </div>
