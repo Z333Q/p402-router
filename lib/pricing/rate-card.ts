@@ -1,8 +1,8 @@
 /**
- * P402 Rate Card v1 — single code-level source of truth for pricing.
+ * P402 Rate Card v2 — single code-level source of truth for pricing.
  *
- * Locked from docs/internal/3AX-pricing-strategy-rate-card-and-conversion-funnel.md §4.
- * Effective on the commit date of 3AX (commit 789eb58).
+ * Locked from docs/internal/3AY-Pricing-Realign-plan.md (V5-led hybrid ladder).
+ * Effective on the commit date of 3AY-Pricing-Realign-Impl.
  *
  * Any surface that displays a price (pricing page, homepage, trust page,
  * dashboard, sales artifacts, partner pages) MUST read from this module.
@@ -12,24 +12,29 @@
  * Do not edit prices in this file without:
  *   - founder approval per 3AX §27.2
  *   - a versioned rate card bump (RATE_CARD_VERSION)
- *   - a corresponding edit to docs/internal/3AX-*.md
+ *   - a corresponding edit to docs/internal/3AY-Pricing-Realign-plan.md
  */
 
-export const RATE_CARD_VERSION = 'v1' as const;
+export const RATE_CARD_VERSION = 'v2' as const;
 export const RATE_CARD_EFFECTIVE_DATE = '2026-06-21' as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Plan identifiers
+// Plan identifiers (public ladder, in tier order)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const PLAN_IDS = ['sandbox', 'developer', 'business', 'scale', 'enterprise'] as const;
+export const PLAN_IDS = ['sandbox', 'build', 'growth', 'scale', 'enterprise'] as const;
 export type PlanId = typeof PLAN_IDS[number];
 
-export const BRIDGE_OFFER_IDS = ['proof_sprint', 'paid_pilot', 'regulated_pilot'] as const;
+export const BRIDGE_OFFER_IDS = [
+    'ai_spend_audit',
+    'proof_sprint',
+    'paid_pilot',
+    'regulated_pilot',
+] as const;
 export type BridgeOfferId = typeof BRIDGE_OFFER_IDS[number];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Plan definitions (3AX §4.1)
+// Plan definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface PlanDefinition {
@@ -49,7 +54,7 @@ export interface PlanDefinition {
     readonly retentionDays: number | null;
     /** Buyer-facing one-line audience description. */
     readonly audience: string;
-    /** Primary CTA label per 3AX §15.2. */
+    /** Primary CTA label. */
     readonly ctaLabel: string;
     /** Primary CTA href. */
     readonly ctaHref: string;
@@ -81,24 +86,24 @@ export const PLANS: Readonly<Record<PlanId, PlanDefinition>> = {
         ],
         salesMotion: 'self-serve',
     },
-    developer: {
-        id: 'developer',
-        name: 'Developer',
-        monthlyPriceAnnualUsd: 249,
-        monthlyPriceMonthlyUsd: 249,
-        annualPriceUsd: 249 * 12,
-        includedEventsPerMonth: 500_000,
+    build: {
+        id: 'build',
+        name: 'Build',
+        monthlyPriceAnnualUsd: 49,
+        monthlyPriceMonthlyUsd: 49,
+        annualPriceUsd: 49 * 12,
+        includedEventsPerMonth: 250_000,
         overageUsdPer1kEvents: 0.25,
-        retentionDays: 90,
-        audience: 'Production-ready small teams',
-        // Sales-assisted today; flips to self-serve Stripe Checkout once
-        // 3AY-8 billing infrastructure ships (3AY plan §11). Until then the
-        // CTA routes to /contact so no surface implies paid self-serve exists.
-        ctaLabel: 'Start Developer',
-        ctaHref: '/get-access?intent=developer',
+        retentionDays: 30,
+        audience: 'Small teams shipping production AI workflows',
+        // Sales-assisted until 3AY-8R billing ships Stripe Checkout for Build/Growth.
+        // Until then the CTA routes to /get-access so no surface implies paid
+        // self-serve exists yet.
+        ctaLabel: 'Start Build',
+        ctaHref: '/get-access?intent=build',
         inclusions: [
             'All Sandbox features',
-            '90-day retention',
+            '30-day retention',
             'Unlimited users, projects, workflows',
             'Outcome coverage',
             'API exports',
@@ -106,62 +111,63 @@ export const PLANS: Readonly<Record<PlanId, PlanDefinition>> = {
         ],
         salesMotion: 'sales-assisted',
     },
-    business: {
-        id: 'business',
-        name: 'Business',
-        monthlyPriceAnnualUsd: 2_500,
-        monthlyPriceMonthlyUsd: 3_500, // 40% monthly premium (3AX §27.9)
-        annualPriceUsd: 2_500 * 12,
-        includedEventsPerMonth: 5_000_000,
-        overageUsdPer1kEvents: 0.12,
-        retentionDays: 365,
-        audience: 'Department or multi-workflow team',
-        ctaLabel: 'Talk to sales',
-        ctaHref: '/get-access?intent=business',
+    growth: {
+        id: 'growth',
+        name: 'Growth',
+        monthlyPriceAnnualUsd: 199,
+        monthlyPriceMonthlyUsd: 199,
+        annualPriceUsd: 199 * 12,
+        includedEventsPerMonth: 2_000_000,
+        overageUsdPer1kEvents: 0.15,
+        retentionDays: 90,
+        audience: 'Production AI products with paying customers',
+        ctaLabel: 'Start Growth',
+        ctaHref: '/get-access?intent=growth',
         inclusions: [
-            'All Developer features',
-            '1-year retention',
-            'Workflow attribution',
-            'Shadow controls',
-            'Audit exports',
-            'Team roles',
-            'Slack or email alerts',
-            'Monthly review',
+            'All Build features',
+            'Customer-level cost attribution',
+            'Feature-level margin reporting',
+            'Retry and context waste detection',
+            'Cache savings reporting',
+            '90-day retention',
+            'Slack alerts',
         ],
         salesMotion: 'sales-assisted',
     },
     scale: {
         id: 'scale',
         name: 'Scale',
-        monthlyPriceAnnualUsd: 5_000,
-        monthlyPriceMonthlyUsd: null, // monthly not offered (3AX §4.1)
-        annualPriceUsd: 5_000 * 12,
-        includedEventsPerMonth: 15_000_000,
+        monthlyPriceAnnualUsd: 799,
+        monthlyPriceMonthlyUsd: null, // annual-only
+        annualPriceUsd: 799 * 12,
+        includedEventsPerMonth: 20_000_000,
         overageUsdPer1kEvents: 0.08,
-        retentionDays: 730,
-        audience: 'Multi-department or governance-led teams',
-        ctaLabel: 'Request quote',
+        retentionDays: 365,
+        audience: 'High-volume AI products and platform teams',
+        ctaLabel: 'Talk to sales',
         ctaHref: '/get-access?intent=scale',
         inclusions: [
-            'All Business features',
-            'Multi-department views',
-            'Advanced controls',
+            'All Growth features',
+            'Team seats',
+            'Advanced routing controls',
+            'Customer budgets',
+            'Margin floor enforcement',
+            'Policy enforcement',
+            'Optimization queue',
+            'Audit exports',
             'Priority support',
-            'Expanded retention',
-            'Procurement-ready exports',
-            'Quarterly business review',
         ],
         salesMotion: 'sales-led',
     },
     enterprise: {
         id: 'enterprise',
         name: 'Enterprise',
-        monthlyPriceAnnualUsd: null, // custom; floor 60k ARR per 3AX §4.1
+        monthlyPriceAnnualUsd: null,
         monthlyPriceMonthlyUsd: null,
         annualPriceUsd: null,
-        includedEventsPerMonth: null, // custom commit, 25M+ floor
-        overageUsdPer1kEvents: null, // custom committed rate
-        retentionDays: null, // custom
+        includedEventsPerMonth: null,
+        overageUsdPer1kEvents: null,
+        retentionDays: null,
         audience: 'Procurement-led or regulated buyers',
         ctaLabel: 'Request enterprise pricing',
         ctaHref: '/get-access?intent=enterprise',
@@ -181,13 +187,13 @@ export const PLANS: Readonly<Record<PlanId, PlanDefinition>> = {
     },
 } as const;
 
-/** Public Enterprise floor in ARR USD (3AX §1.2 + §7). */
+/** Public Enterprise floor in ARR USD. */
 export const ENTERPRISE_FLOOR_ARR_USD = 60_000 as const;
-/** Enterprise event commit floor per year (3AX §4.1). */
+/** Enterprise event commit floor per year. */
 export const ENTERPRISE_EVENT_COMMIT_FLOOR_PER_YEAR = 25_000_000 as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bridge offers (3AX §4.2)
+// Bridge offers (with public vs internal visibility)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface BridgeOfferDefinition {
@@ -197,8 +203,8 @@ export interface BridgeOfferDefinition {
     readonly priceUsd: number;
     /** True if priceUsd is a floor and may be higher. */
     readonly priceIsFloor: boolean;
-    /** Engagement length in days. */
-    readonly durationDays: number;
+    /** Engagement length in days; null for one-time engagements without a fixed duration. */
+    readonly durationDays: number | null;
     /** Buyer-facing scope summary. */
     readonly scope: string;
     /** Credit policy description. */
@@ -209,9 +215,24 @@ export interface BridgeOfferDefinition {
     readonly ctaLabel: string;
     /** CTA href. */
     readonly ctaHref: string;
+    /** Whether the offer appears on the public /pricing page. */
+    readonly visibility: 'public' | 'internal';
 }
 
 export const BRIDGE_OFFERS: Readonly<Record<BridgeOfferId, BridgeOfferDefinition>> = {
+    ai_spend_audit: {
+        id: 'ai_spend_audit',
+        name: 'AI Spend Audit',
+        priceUsd: 1_500,
+        priceIsFloor: false,
+        durationDays: null,
+        scope: 'One vendor invoice review, one usage import, one dashboard preview, workflow-level cost analysis, executive report',
+        creditPolicy: '100% credited toward Paid Pilot if signed within 30 days',
+        audience: 'Enterprise teams looking for an executive-grade first look at AI spend',
+        ctaLabel: 'Book AI Spend Audit',
+        ctaHref: '/get-access?intent=ai-spend-audit',
+        visibility: 'public',
+    },
     proof_sprint: {
         id: 'proof_sprint',
         name: 'Proof Sprint',
@@ -220,21 +241,23 @@ export const BRIDGE_OFFERS: Readonly<Record<BridgeOfferId, BridgeOfferDefinition
         durationDays: 14,
         scope: '1 workflow, 1 tenant, 1 provider integration path, executive readout',
         creditPolicy: '100% credited toward Paid Pilot if signed within 30 days',
-        audience: 'Buyers ready to scope a paid diagnostic before committing to a Pilot',
-        ctaLabel: 'Book proof sprint',
+        audience: 'Buyers who need a larger, multi-stakeholder engagement than AI Spend Audit',
+        ctaLabel: 'Discuss Proof Sprint',
         ctaHref: '/get-access?intent=proof-sprint',
+        visibility: 'internal', // Not surfaced on /pricing in v2; AI Spend Audit is the public on-ramp.
     },
     paid_pilot: {
         id: 'paid_pilot',
         name: 'Paid Pilot',
         priceUsd: 35_000,
         priceIsFloor: false,
-        durationDays: 60, // 60-90 day range per 3AX §4.2; minimum surfaced
+        durationDays: 60,
         scope: 'Up to 3 workflows, target event volume, outcome coverage goal, stakeholder map, executive readout',
         creditPolicy: '50% credited toward annual if signed within 30 days of pilot close',
         audience: 'Multi-workflow buyers with procurement involvement',
         ctaLabel: 'Design pilot',
         ctaHref: '/get-access?intent=paid-pilot',
+        visibility: 'public',
     },
     regulated_pilot: {
         id: 'regulated_pilot',
@@ -247,11 +270,17 @@ export const BRIDGE_OFFERS: Readonly<Record<BridgeOfferId, BridgeOfferDefinition
         audience: 'Buyers with security and procurement-heavy verticals',
         ctaLabel: 'Discuss regulated pilot',
         ctaHref: '/get-access?intent=regulated-pilot',
+        visibility: 'public',
     },
 } as const;
 
+/** Public bridge offer ids in display order. */
+export const PUBLIC_BRIDGE_OFFER_IDS: readonly BridgeOfferId[] = BRIDGE_OFFER_IDS.filter(
+    (id) => BRIDGE_OFFERS[id].visibility === 'public',
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Overage warning thresholds (3AX §5.2)
+// Overage warning thresholds
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const OVERAGE_WARNING_THRESHOLDS_PERCENT = [50, 80, 100, 120] as const;
@@ -263,7 +292,7 @@ export const OVERAGE_WARNING_THRESHOLDS_PERCENT = [50, 80, 100, 120] as const;
 /**
  * Returns the smallest plan whose included monthly event allowance is >=
  * the given event volume. Returns 'enterprise' for volumes above the Scale
- * inclusion (3AX §12.5 upgrade triggers).
+ * inclusion.
  */
 export function getPlanByMonthlyEvents(events: number): PlanId {
     if (!Number.isFinite(events) || events < 0) return 'sandbox';
@@ -321,17 +350,17 @@ export function getMonthlyPremiumPercent(planId: PlanId): number | null {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Locked copy strings (3AX §14, §15, §17.1)
+// Locked copy strings
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Locked support line on the homepage hero (3AX §14.2). */
+/** Locked support line on the homepage hero. */
 export const HOMEPAGE_PRICING_SUPPORT_LINE =
-    'Start free. Production plans from $249/month. Enterprise pilots from $35k.';
+    'Start free. Production plans from $49/month. Enterprise audits from $1.5k.';
 
-/** Locked support line on the pricing page hero (3AX §15.1). */
+/** Locked support line on the pricing page hero. */
 export const PRICING_PAGE_SUPPORT_LINE =
     'Start free. Upgrade when usage and governance needs grow.';
 
-/** Locked trust microcopy under hero CTAs (3AX §14.2). */
+/** Locked trust microcopy under hero CTAs. */
 export const HOMEPAGE_TRUST_MICROCOPY =
     'Metadata-first. Tenant-scoped. Usage-based. Procurement-ready path.';

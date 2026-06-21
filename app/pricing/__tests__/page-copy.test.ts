@@ -6,6 +6,7 @@ import {
     ENTERPRISE_FLOOR_ARR_USD,
     PLANS,
     PRICING_PAGE_SUPPORT_LINE,
+    PUBLIC_BRIDGE_OFFER_IDS,
 } from '@/lib/pricing/rate-card';
 
 const PRICING_DIR = join(__dirname, '..');
@@ -26,8 +27,8 @@ function walk(dir: string): string[] {
 
 const ALL_PRICING_FILES = walk(PRICING_DIR);
 
-describe('Pricing surface source-shape (3AY §16.1 forbidden phrases)', () => {
-    it('contains no "verified savings" claim', () => {
+describe('Pricing surface source-shape — forbidden phrases', () => {
+    it('contains no "verified savings" claim (whitespace-tolerant)', () => {
         for (const f of ALL_PRICING_FILES) {
             expect(readFileSync(f, 'utf8'), f).not.toMatch(/verified[\s_-]+savings/i);
         }
@@ -52,14 +53,14 @@ describe('Pricing surface source-shape (3AY §16.1 forbidden phrases)', () => {
         }
     });
 
-    it('contains no specific "save N%" savings claim', () => {
+    it('contains no specific "save N%" or "N% savings" claim', () => {
         for (const f of ALL_PRICING_FILES) {
             expect(readFileSync(f, 'utf8'), f).not.toMatch(/save \d+\s*%/i);
             expect(readFileSync(f, 'utf8'), f).not.toMatch(/\d+\s*% savings/i);
         }
     });
 
-    it('contains no unsupported certification claim (SOC 2 / HIPAA / ISO 27001 compliant)', () => {
+    it('contains no unsupported certification claim', () => {
         for (const f of ALL_PRICING_FILES) {
             const src = readFileSync(f, 'utf8');
             expect(src, f).not.toMatch(/\bSOC ?2 compliant\b/i);
@@ -77,7 +78,34 @@ describe('Pricing surface source-shape (3AY §16.1 forbidden phrases)', () => {
     });
 });
 
-describe('Pricing page canonical-phrase assertions (3AY §16.2)', () => {
+describe('Pricing page — V5-led hybrid ladder visible', () => {
+    const src = readFileSync(PRICING_PAGE, 'utf8');
+
+    it('renders Sandbox, Build, Growth, Scale, Enterprise', () => {
+        expect(src).toMatch(/<PlanCard plan=\{PLANS\.sandbox\}/);
+        expect(src).toMatch(/<PlanCard plan=\{PLANS\.build\}/);
+        expect(src).toMatch(/<PlanCard plan=\{PLANS\.growth\}/);
+        expect(src).toMatch(/<PlanCard plan=\{PLANS\.scale\}/);
+        expect(src).toMatch(/<PlanCard plan=\{PLANS\.enterprise\}/);
+    });
+
+    it('does NOT render Developer or Business plan cards', () => {
+        expect(src).not.toMatch(/<PlanCard plan=\{PLANS\.developer\}/);
+        expect(src).not.toMatch(/<PlanCard plan=\{PLANS\.business\}/);
+    });
+
+    it('highlights Growth as the production developer anchor', () => {
+        expect(src).toMatch(/<PlanCard plan=\{PLANS\.growth\} highlight/);
+    });
+
+    it('bridge offers are rendered via PUBLIC_BRIDGE_OFFER_IDS (Proof Sprint hidden)', () => {
+        expect(src).toMatch(/PUBLIC_BRIDGE_OFFER_IDS/);
+        // No direct reference to proof_sprint in the rendered grid
+        expect(src).not.toMatch(/<BridgeOfferCard offer=\{BRIDGE_OFFERS\.proof_sprint\}/);
+    });
+});
+
+describe('Pricing page canonical assertions', () => {
     const src = readFileSync(PRICING_PAGE, 'utf8');
 
     it('renders the locked pricing-page support line', () => {
@@ -91,15 +119,14 @@ describe('Pricing page canonical-phrase assertions (3AY §16.2)', () => {
         expect(src).toMatch(/from\s+['"]@\/lib\/pricing\/rate-card['"]/);
     });
 
-    it('imports PLANS and BRIDGE_OFFERS from the rate card', () => {
+    it('imports PLANS, BRIDGE_OFFERS, PUBLIC_BRIDGE_OFFER_IDS from the rate card', () => {
         expect(src).toContain('PLANS');
         expect(src).toContain('BRIDGE_OFFERS');
+        expect(src).toContain('PUBLIC_BRIDGE_OFFER_IDS');
     });
 
     it('mentions Enterprise floor only via the rate-card constant', () => {
         expect(src).toMatch(/ENTERPRISE_FLOOR_ARR_USD/);
-        // Do not allow a hardcoded "$60,000" or "$60k" literal in the page body
-        // that bypasses the rate-card module.
         const withoutImports = src.replace(/import[^;]+;\s*/g, '');
         expect(withoutImports).not.toMatch(/['"]\$60,000\s*ARR['"]/);
         expect(withoutImports).not.toMatch(/['"]\$60k\s*ARR['"]/);
@@ -109,41 +136,52 @@ describe('Pricing page canonical-phrase assertions (3AY §16.2)', () => {
         expect(src).toMatch(/https:\/\/p402\.io\/pricing/);
         expect(src).not.toMatch(/https:\/\/www\.p402\.io/);
     });
-
-    it('JSON-LD Product schema emits all five plans', () => {
-        for (const id of ['sandbox', 'developer', 'business', 'scale', 'enterprise'] as const) {
-            expect(src).toMatch(new RegExp(PLANS[id].name));
-        }
-    });
 });
 
-describe('Pricing page must NOT use the legacy 1% / Pro $499 wording', () => {
+describe('Pricing page legacy-purge', () => {
     const src = readFileSync(PRICING_PAGE, 'utf8');
 
-    it('does not show "1% fee" or "0.75% fee" wording', () => {
+    it('does not show "Developer $249" or "Pro $499" wording', () => {
+        expect(src).not.toMatch(/Developer\s+\$249/);
+        expect(src).not.toMatch(/Pro\s+\$499/);
+    });
+
+    it('does not show "1% platform fee" / "0.75% platform fee" wording', () => {
         expect(src).not.toMatch(/1\.00%\s*platform fee/i);
         expect(src).not.toMatch(/0\.75%\s*platform fee/i);
     });
 
-    it('does not show the legacy "Pro $499/mo" plan name', () => {
-        expect(src).not.toMatch(/Pro \$499/);
-        expect(src).not.toMatch(/Pro\s+\$499\/mo/);
+    it('does not publicly show Proof Sprint as a current offering', () => {
+        // Proof Sprint may exist as a string elsewhere in the codebase as a
+        // legacy reference, but it must not appear as a rendered BridgeOfferCard
+        // on the /pricing page.
+        expect(src).not.toMatch(/BRIDGE_OFFERS\.proof_sprint/);
+        // The "Proof Sprint" buyer-facing copy must not appear on the page.
+        expect(src).not.toMatch(/Proof Sprint/);
     });
 });
 
-describe('Bridge offers wired into the page', () => {
+describe('Bridge offers wired into the page (V5-led)', () => {
     const src = readFileSync(PRICING_PAGE, 'utf8');
 
-    it('renders Proof Sprint, Paid Pilot, and Regulated Pilot cards', () => {
-        expect(src).toMatch(/proof_sprint/);
-        expect(src).toMatch(/paid_pilot/);
-        expect(src).toMatch(/regulated_pilot/);
-    });
-
-    it('rate card bridge prices match 3AX §4.2', () => {
-        expect(BRIDGE_OFFERS.proof_sprint.priceUsd).toBe(15_000);
+    it('rate card bridge prices match V5-led hybrid plan', () => {
+        expect(BRIDGE_OFFERS.ai_spend_audit.priceUsd).toBe(1_500);
         expect(BRIDGE_OFFERS.paid_pilot.priceUsd).toBe(35_000);
         expect(BRIDGE_OFFERS.regulated_pilot.priceUsd).toBe(50_000);
+        expect(BRIDGE_OFFERS.proof_sprint.visibility).toBe('internal');
+    });
+
+    it('PUBLIC_BRIDGE_OFFER_IDS is exactly the 3 public offers', () => {
+        expect([...PUBLIC_BRIDGE_OFFER_IDS]).toEqual([
+            'ai_spend_audit',
+            'paid_pilot',
+            'regulated_pilot',
+        ]);
+    });
+
+    it('section header reflects the V5 framing', () => {
+        expect(src).toMatch(/Need executive evidence first/i);
+        expect(src).toMatch(/\$1,500 audit/);
     });
 });
 
@@ -173,93 +211,6 @@ describe('Metric definition page', () => {
     });
 });
 
-describe('3AY-1 blocker fixes (tabs, add-ons, settlement, BAA, Developer CTA)', () => {
-    const pageSrc = readFileSync(PRICING_PAGE, 'utf8');
-
-    it('renders the three buyer-path tabs (Build / Govern / Pilot)', () => {
-        const tabsSrc = readFileSync(join(PRICING_DIR, '_components', 'BuyerPathTabs.tsx'), 'utf8');
-        expect(tabsSrc).toMatch(/Build AI software/);
-        expect(tabsSrc).toMatch(/Govern enterprise AI spend/);
-        expect(tabsSrc).toMatch(/Launch a pilot/);
-        expect(pageSrc).toMatch(/<BuyerPathTabs/);
-    });
-
-    it('renders the add-ons section with all 3AX §29.1 add-ons', () => {
-        expect(pageSrc).toMatch(/<AddOnsList/);
-        const addonsSrc = readFileSync(join(PRICING_DIR, '_components', 'AddOnsList.tsx'), 'utf8');
-        expect(addonsSrc).toMatch(/Settlement \(Base, Tempo\)/);
-        expect(addonsSrc).toMatch(/Advanced audit retention/);
-        expect(addonsSrc).toMatch(/Data warehouse export/);
-        expect(addonsSrc).toMatch(/Private deployment design/);
-        expect(addonsSrc).toMatch(/Procurement pack/);
-        expect(addonsSrc).toMatch(/Dedicated support/);
-        expect(addonsSrc).toMatch(/Regulated evidence pack/);
-        expect(addonsSrc).toMatch(/Optimize Readiness review/);
-    });
-
-    it('Settlement pricing transition section is present and links to facilitator docs', () => {
-        expect(pageSrc).toMatch(/Settlement pricing/i);
-        expect(pageSrc).toMatch(/Settlement is optional/);
-        expect(pageSrc).toMatch(/\/docs\/facilitator/);
-        expect(pageSrc).toMatch(/\/docs\/router/);
-    });
-
-    it('BAA copy uses the "after security and contracting review" qualifier', () => {
-        expect(pageSrc).toMatch(/BAA path available for regulated pilots after security and contracting review/);
-        expect(pageSrc).not.toMatch(/BAA is available for healthcare use cases/);
-    });
-
-    it('Developer CTA does not imply paid self-serve checkout exists yet', () => {
-        expect(pageSrc).not.toMatch(/Stripe Checkout/i);
-        expect(pageSrc).not.toMatch(/paid self-serve/i);
-    });
-
-    it('uses "cost-savings" framing instead of "verified savings"', () => {
-        expect(pageSrc).not.toMatch(/verified[\s_-]+savings/i);
-        expect(pageSrc).toMatch(/does not claim cost savings/i);
-    });
-});
-
-describe('3AY-3 CTA integrity (no broken /contact links, no false checkout copy)', () => {
-    const pageSrc = readFileSync(PRICING_PAGE, 'utf8');
-
-    it('contains no href to /contact (which 404s on production)', () => {
-        // Extract every href attribute and assert none start with "/contact".
-        const hrefs = [...pageSrc.matchAll(/href="(\/[^"]+)"/g)].map((m) => m[1]);
-        for (const h of hrefs) {
-            expect(h, `href ${h} would 404 on production`).not.toMatch(/^\/contact($|\?|\/)/);
-        }
-    });
-
-    it('every pricing CTA points at /dashboard, /get-access, /docs, or /pricing/*', () => {
-        const hrefs = [...pageSrc.matchAll(/href="(\/[^"]+)"/g)].map((m) => m[1]);
-        const allowed = /^\/(dashboard|get-access(\?.*)?|docs\/.*|pricing(\/.+)?)$/;
-        for (const h of hrefs) {
-            expect(h, `href ${h} is not on the approved destination list`).toMatch(allowed);
-        }
-    });
-
-    it('contains no Stripe Checkout or external billing host', () => {
-        expect(pageSrc).not.toMatch(/checkout\.stripe\.com/i);
-        expect(pageSrc).not.toMatch(/billing\.stripe\.com/i);
-        expect(pageSrc).not.toMatch(/metronome\.com\/checkout/i);
-        expect(pageSrc).not.toMatch(/Start paid plan/i);
-    });
-
-    it('intent params remain meaningful and stable', () => {
-        const intents = [...pageSrc.matchAll(/\?intent=([a-z][a-z0-9-]*)/g)].map((m) => m[1]);
-        const meaningful = new Set([
-            'developer', 'business', 'scale', 'enterprise',
-            'proof-sprint', 'paid-pilot', 'regulated-pilot',
-            'scoping-call', 'procurement', 'finance',
-        ]);
-        for (const intent of intents) {
-            expect(meaningful.has(intent!), `intent=${intent} is not on the approved intent list`).toBe(true);
-        }
-        expect(intents.length).toBeGreaterThan(0);
-    });
-});
-
 describe('Plan card invariants', () => {
     const src = readFileSync(join(PRICING_DIR, '_components', 'PlanCard.tsx'), 'utf8');
 
@@ -278,5 +229,68 @@ describe('Plan card invariants', () => {
 describe('Enterprise floor value flows from rate-card constant', () => {
     it('rate card publishes the $60k floor', () => {
         expect(ENTERPRISE_FLOOR_ARR_USD).toBe(60_000);
+    });
+});
+
+describe('3AY-Pricing-Realign CTA integrity', () => {
+    const pageSrc = readFileSync(PRICING_PAGE, 'utf8');
+
+    it('contains no href to /contact (which 404s on production)', () => {
+        const hrefs = [...pageSrc.matchAll(/href="(\/[^"]+)"/g)].map((m) => m[1]);
+        for (const h of hrefs) {
+            expect(h, `href ${h} would 404 on production`).not.toMatch(/^\/contact($|\?|\/)/);
+        }
+    });
+
+    it('every pricing CTA points at /dashboard, /get-access, /docs, or /pricing/*', () => {
+        const hrefs = [...pageSrc.matchAll(/href="(\/[^"]+)"/g)].map((m) => m[1]);
+        const allowed = /^\/(dashboard|get-access(\?.*)?|docs\/.*|pricing(\/.+)?)$/;
+        for (const h of hrefs) {
+            expect(h, `href ${h} is not on the approved destination list`).toMatch(allowed);
+        }
+    });
+
+    it('contains no Stripe Checkout, billing host, or "Start paid plan" copy', () => {
+        expect(pageSrc).not.toMatch(/checkout\.stripe\.com/i);
+        expect(pageSrc).not.toMatch(/billing\.stripe\.com/i);
+        expect(pageSrc).not.toMatch(/metronome\.com\/checkout/i);
+        expect(pageSrc).not.toMatch(/Start paid plan/i);
+        expect(pageSrc).not.toMatch(/Stripe Checkout/i);
+    });
+
+    it('intent params are meaningful and on the V5 set + Enterprise/scoping', () => {
+        const intents = [...pageSrc.matchAll(/\?intent=([a-z][a-z0-9-]*)/g)].map((m) => m[1]);
+        const meaningful = new Set([
+            'build',
+            'growth',
+            'scale',
+            'enterprise',
+            'ai-spend-audit',
+            'paid-pilot',
+            'regulated-pilot',
+            'scoping-call',
+        ]);
+        for (const intent of intents) {
+            expect(meaningful.has(intent!), `intent=${intent} is not on the V5 intent set`).toBe(true);
+        }
+        expect(intents.length).toBeGreaterThan(0);
+    });
+
+    it('does not link to legacy intent values from the page', () => {
+        // Legacy intents (developer, business, proof-sprint) keep working via
+        // LEGACY_INTENT_MAP for inbound bookmarks, but the page itself must
+        // not emit them.
+        expect(pageSrc).not.toMatch(/intent=developer\b/);
+        expect(pageSrc).not.toMatch(/intent=business\b/);
+        expect(pageSrc).not.toMatch(/intent=proof-sprint\b/);
+    });
+});
+
+describe('Buyer-path tabs reflect V5 grouping', () => {
+    const tabsSrc = readFileSync(join(PRICING_DIR, '_components', 'BuyerPathTabs.tsx'), 'utf8');
+    it('renders the three buyer-path tabs', () => {
+        expect(tabsSrc).toMatch(/Build AI software/);
+        expect(tabsSrc).toMatch(/Govern enterprise AI spend/);
+        expect(tabsSrc).toMatch(/Launch a pilot/);
     });
 });

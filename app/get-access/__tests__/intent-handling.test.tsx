@@ -34,47 +34,45 @@ beforeEach(() => {
     currentParams.forEach((_, k) => currentParams.delete(k));
 });
 
-describe('GetAccessPage — intent rendering (3AY-4)', () => {
-    it('intent=developer renders Developer copy and the upcoming-billing notice', () => {
-        renderWithIntent('developer');
-        expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Developer/i);
+describe('GetAccessPage — V5-led intent rendering', () => {
+    it('intent=build renders Build copy and the upcoming-billing notice', () => {
+        renderWithIntent('build');
+        expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Build/i);
         expect(screen.getByText(/3AY-8R/)).toBeTruthy();
+        expect(document.body.textContent ?? '').toContain('$49');
     });
 
-    it('intent=developer does not mention Stripe Checkout or paid self-serve checkout', () => {
-        renderWithIntent('developer');
+    it('intent=growth renders Growth copy + $199 + upcoming-billing notice', () => {
+        renderWithIntent('growth');
         const body = document.body.textContent ?? '';
-        expect(body).not.toMatch(/Stripe Checkout/i);
-        expect(body).not.toMatch(/paid self-serve checkout exists/i);
-        expect(body).not.toMatch(/Start paid plan/i);
+        expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Growth/i);
+        expect(body).toContain('$199');
+        expect(body).toMatch(/3AY-8R/);
     });
 
-    it('intent=business renders Business copy', () => {
-        renderWithIntent('business');
-        expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Business/i);
-    });
-
-    it('intent=scale renders Scale copy', () => {
+    it('intent=scale renders Scale copy with $799 from rate card', () => {
         renderWithIntent('scale');
+        const body = document.body.textContent ?? '';
         expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Scale/i);
+        expect(body).toContain('$799');
     });
 
-    it('intent=enterprise renders Enterprise copy with from-$60,000 ARR sourced from rate card', () => {
+    it('intent=enterprise renders Enterprise copy with from-$60,000 ARR', () => {
         renderWithIntent('enterprise');
         expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Enterprise/i);
         expect(document.body.textContent ?? '').toMatch(/\$60,000\s*ARR/);
     });
 
-    it('intent=proof-sprint renders Proof Sprint, $15,000, 14 days, and 100% credit', () => {
-        renderWithIntent('proof-sprint');
+    it('intent=ai-spend-audit renders AI Spend Audit, $1,500, one-time, 100% credit', () => {
+        renderWithIntent('ai-spend-audit');
         const body = document.body.textContent ?? '';
-        expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Proof Sprint/i);
-        expect(body).toContain('$15,000');
-        expect(body).toMatch(/14[- ]day/);
+        expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/AI Spend Audit/i);
+        expect(body).toContain('$1,500');
+        expect(body.toLowerCase()).toContain('one-time');
         expect(body).toMatch(/100%/);
     });
 
-    it('intent=paid-pilot renders Paid Pilot, $35,000, and 50% credit', () => {
+    it('intent=paid-pilot renders Paid Pilot + $35,000 + 50% credit', () => {
         renderWithIntent('paid-pilot');
         const body = document.body.textContent ?? '';
         expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Paid Pilot/i);
@@ -82,7 +80,7 @@ describe('GetAccessPage — intent rendering (3AY-4)', () => {
         expect(body).toMatch(/50%/);
     });
 
-    it('intent=regulated-pilot renders Regulated Pilot, $50,000+, 90 days, and BAA qualification', () => {
+    it('intent=regulated-pilot renders Regulated Pilot + $50,000+ + 90 days + BAA qualification', () => {
         renderWithIntent('regulated-pilot');
         const body = document.body.textContent ?? '';
         expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Regulated Pilot/i);
@@ -91,11 +89,14 @@ describe('GetAccessPage — intent rendering (3AY-4)', () => {
         expect(body).toMatch(/BAA path available after security and contracting review/);
     });
 
-    it('intent=scoping-call renders general scoping copy with no-card language', () => {
+    it('intent=scoping-call renders general scoping copy + no-card language + V5 reference pricing', () => {
         renderWithIntent('scoping-call');
         const body = document.body.textContent ?? '';
         expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/scoping call/i);
         expect(body).toMatch(/No card required/i);
+        expect(body).toContain('$49');   // Build reference price
+        expect(body).toContain('$199');  // Growth reference price
+        expect(body).toContain('$1,500'); // AI Spend Audit reference price
     });
 
     it('unknown intent renders the generic access request page', () => {
@@ -107,20 +108,42 @@ describe('GetAccessPage — intent rendering (3AY-4)', () => {
         renderWithIntent(null);
         expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Request access to P402/i);
     });
+});
 
-    it('emits analytics-friendly data attributes on the form card', () => {
+describe('Legacy intent compatibility on /get-access', () => {
+    it('legacy intent=developer renders Build copy (resolved via LEGACY_INTENT_MAP)', () => {
+        renderWithIntent('developer');
+        expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Build/i);
+        expect(document.body.textContent ?? '').toContain('$49');
+    });
+
+    it('legacy intent=business renders Scale copy (resolved via LEGACY_INTENT_MAP)', () => {
+        renderWithIntent('business');
+        expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Scale/i);
+        expect(document.body.textContent ?? '').toContain('$799');
+    });
+
+    it('legacy intent=proof-sprint renders AI Spend Audit copy (resolved via LEGACY_INTENT_MAP)', () => {
         renderWithIntent('proof-sprint');
+        expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/AI Spend Audit/i);
+        expect(document.body.textContent ?? '').toContain('$1,500');
+    });
+});
+
+describe('GetAccessPage — analytics + hidden intent input', () => {
+    it('emits data attributes for new V5 intents', () => {
+        renderWithIntent('ai-spend-audit');
         const card = document.querySelector('[data-pricing-intent]') as HTMLElement | null;
         expect(card).not.toBeNull();
-        expect(card!.getAttribute('data-pricing-intent')).toBe('proof-sprint');
-        expect(card!.getAttribute('data-offer-id')).toBe('proof_sprint');
+        expect(card!.getAttribute('data-pricing-intent')).toBe('ai-spend-audit');
+        expect(card!.getAttribute('data-offer-id')).toBe('ai_spend_audit');
         expect(card!.getAttribute('data-plan-id')).toBe('');
     });
 
     it('emits data-plan-id for plan intents', () => {
-        renderWithIntent('enterprise');
+        renderWithIntent('build');
         const card = document.querySelector('[data-pricing-intent]') as HTMLElement | null;
-        expect(card?.getAttribute('data-plan-id')).toBe('enterprise');
+        expect(card?.getAttribute('data-plan-id')).toBe('build');
         expect(card?.getAttribute('data-offer-id')).toBe('');
     });
 
@@ -129,6 +152,14 @@ describe('GetAccessPage — intent rendering (3AY-4)', () => {
         const hidden = screen.getByTestId('hidden-intent') as HTMLInputElement;
         expect(hidden.value).toBe('paid-pilot');
         expect(hidden.type).toBe('hidden');
+    });
+
+    it('legacy intent flows through hidden input as the canonical (resolved) value', () => {
+        // The form's hidden intent reflects what the user sees, which for legacy
+        // values is the resolved intent (e.g. proof-sprint → ai-spend-audit).
+        renderWithIntent('proof-sprint');
+        const hidden = screen.getByTestId('hidden-intent') as HTMLInputElement;
+        expect(hidden.value).toBe('ai-spend-audit');
     });
 });
 
@@ -175,10 +206,11 @@ describe('GetAccessPage — source-shape (no forbidden phrases anywhere)', () =>
         const src = readFileSync(join(PAGE_DIR, 'page.tsx'), 'utf8');
         expect(src).toMatch(/from\s+['"]@\/lib\/pricing\/intent['"]/);
         const withoutImports = src.replace(/import[^;]+;/g, '');
-        expect(withoutImports).not.toMatch(/\$15,000/);
+        expect(withoutImports).not.toMatch(/\$49(?![0-9])/);
+        expect(withoutImports).not.toMatch(/\$199(?![0-9])/);
+        expect(withoutImports).not.toMatch(/\$799(?![0-9])/);
+        expect(withoutImports).not.toMatch(/\$1,500/);
         expect(withoutImports).not.toMatch(/\$35,000/);
         expect(withoutImports).not.toMatch(/\$60,000/);
-        expect(withoutImports).not.toMatch(/\$249/);
-        expect(withoutImports).not.toMatch(/\$2,500/);
     });
 });

@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
     INTENT_COPY,
     INTENT_IDS,
+    LEGACY_INTENT_MAP,
     getIntentCopy,
     isKnownIntent,
+    resolveIntent,
     type IntentId,
 } from '../intent';
 import {
@@ -13,14 +15,14 @@ import {
     formatUsd,
 } from '../rate-card';
 
-describe('intent module — 3AY-4 vocabulary', () => {
+describe('intent module — V5-led hybrid vocabulary', () => {
     it('declares exactly the 8 required intents in the documented order', () => {
         expect([...INTENT_IDS]).toEqual([
-            'developer',
-            'business',
+            'build',
+            'growth',
             'scale',
             'enterprise',
-            'proof-sprint',
+            'ai-spend-audit',
             'paid-pilot',
             'regulated-pilot',
             'scoping-call',
@@ -29,7 +31,7 @@ describe('intent module — 3AY-4 vocabulary', () => {
 
     it('isKnownIntent accepts every declared id and rejects unknown', () => {
         for (const id of INTENT_IDS) expect(isKnownIntent(id)).toBe(true);
-        for (const bad of ['', 'developer ', 'DEVELOPER', 'random', null, undefined]) {
+        for (const bad of ['', 'build ', 'BUILD', 'random', null, undefined]) {
             expect(isKnownIntent(bad as string | null | undefined)).toBe(false);
         }
     });
@@ -53,18 +55,39 @@ describe('intent module — 3AY-4 vocabulary', () => {
     });
 });
 
+describe('Legacy intent compatibility', () => {
+    it('legacy `developer` resolves to `build`', () => {
+        expect(resolveIntent('developer')).toBe('build');
+        expect(getIntentCopy('developer').intent).toBe('build');
+    });
+
+    it('legacy `business` resolves to `scale`', () => {
+        expect(resolveIntent('business')).toBe('scale');
+        expect(getIntentCopy('business').intent).toBe('scale');
+    });
+
+    it('legacy `proof-sprint` resolves to `ai-spend-audit`', () => {
+        expect(resolveIntent('proof-sprint')).toBe('ai-spend-audit');
+        expect(getIntentCopy('proof-sprint').intent).toBe('ai-spend-audit');
+    });
+
+    it('LEGACY_INTENT_MAP covers exactly the three retired intents', () => {
+        expect(Object.keys(LEGACY_INTENT_MAP).sort()).toEqual(['business', 'developer', 'proof-sprint']);
+    });
+});
+
 describe('intent copy sources prices from rate-card.ts (no hardcoded numbers)', () => {
-    it('developer intent surfaces the rate-card monthly price', () => {
-        const c = INTENT_COPY.developer;
-        expect(c.heading).toContain(formatUsd(PLANS.developer.monthlyPriceAnnualUsd));
-        expect(c.planId).toBe('developer');
+    it('build intent surfaces the rate-card monthly price', () => {
+        const c = INTENT_COPY.build;
+        expect(c.heading).toContain(formatUsd(PLANS.build.monthlyPriceAnnualUsd));
+        expect(c.planId).toBe('build');
         expect(c.offerId).toBeNull();
     });
 
-    it('business intent surfaces the rate-card monthly annual price', () => {
-        const c = INTENT_COPY.business;
-        expect(c.details.some((d) => d.includes(formatUsd(PLANS.business.monthlyPriceAnnualUsd)))).toBe(true);
-        expect(c.planId).toBe('business');
+    it('growth intent surfaces the rate-card monthly price', () => {
+        const c = INTENT_COPY.growth;
+        expect(c.heading).toContain(formatUsd(PLANS.growth.monthlyPriceAnnualUsd));
+        expect(c.planId).toBe('growth');
     });
 
     it('scale intent surfaces the rate-card monthly annual price', () => {
@@ -81,14 +104,14 @@ describe('intent copy sources prices from rate-card.ts (no hardcoded numbers)', 
         expect(c.planId).toBe('enterprise');
     });
 
-    it('proof-sprint intent surfaces the rate-card $15k price, 14-day duration, and credit policy', () => {
-        const c = INTENT_COPY['proof-sprint'];
-        const price = formatUsd(BRIDGE_OFFERS.proof_sprint.priceUsd);
+    it('ai-spend-audit intent surfaces $1,500 fixed fee, one-time, and 100% credit', () => {
+        const c = INTENT_COPY['ai-spend-audit'];
+        const price = formatUsd(BRIDGE_OFFERS.ai_spend_audit.priceUsd);
         expect(c.heading).toContain(price);
         expect(c.details.some((d) => d.includes(price))).toBe(true);
-        expect(c.details.some((d) => d.includes('14'))).toBe(true);
+        expect(c.details.some((d) => d.toLowerCase().includes('one-time'))).toBe(true);
         expect(c.details.some((d) => d.toLowerCase().includes('100%'))).toBe(true);
-        expect(c.offerId).toBe('proof_sprint');
+        expect(c.offerId).toBe('ai_spend_audit');
     });
 
     it('paid-pilot intent surfaces the rate-card $35k price and credit policy', () => {
@@ -99,7 +122,7 @@ describe('intent copy sources prices from rate-card.ts (no hardcoded numbers)', 
         expect(c.offerId).toBe('paid_pilot');
     });
 
-    it('regulated-pilot intent shows from-$50k floor and the 90-day duration', () => {
+    it('regulated-pilot intent shows from-$50k floor and 90-day duration', () => {
         const c = INTENT_COPY['regulated-pilot'];
         const price = formatUsd(BRIDGE_OFFERS.regulated_pilot.priceUsd);
         expect(c.heading).toContain(price);
@@ -107,25 +130,35 @@ describe('intent copy sources prices from rate-card.ts (no hardcoded numbers)', 
         expect(c.offerId).toBe('regulated_pilot');
     });
 
-    it('scoping-call intent shows reference pricing pulled from rate-card', () => {
+    it('scoping-call intent shows V5 reference pricing pulled from rate card', () => {
         const c = INTENT_COPY['scoping-call'];
-        expect(c.details.join(' ')).toContain(formatUsd(PLANS.developer.monthlyPriceAnnualUsd));
-        expect(c.details.join(' ')).toContain(formatUsd(ENTERPRISE_FLOOR_ARR_USD));
+        const all = c.details.join(' ');
+        expect(all).toContain(formatUsd(PLANS.build.monthlyPriceAnnualUsd));
+        expect(all).toContain(formatUsd(PLANS.growth.monthlyPriceAnnualUsd));
+        expect(all).toContain(formatUsd(BRIDGE_OFFERS.ai_spend_audit.priceUsd));
+        expect(all).toContain(formatUsd(ENTERPRISE_FLOOR_ARR_USD));
     });
 });
 
-describe('Developer intent does not imply paid checkout exists yet', () => {
-    const c = INTENT_COPY.developer;
-
-    it('mentions the upcoming Revenue Billing Foundation slice', () => {
+describe('Build and Growth do not imply paid checkout exists yet', () => {
+    it('build banner mentions the upcoming Revenue Billing Foundation', () => {
+        const c = INTENT_COPY.build;
         expect(c.handoffBanner).toMatch(/3AY-8R/);
     });
 
-    it('does not mention Stripe Checkout or "paid self-serve" capability', () => {
-        const all = `${c.heading} ${c.subheading} ${c.handoffBanner} ${c.details.join(' ')}`;
-        expect(all).not.toMatch(/Stripe Checkout/i);
-        expect(all).not.toMatch(/paid self-serve checkout exists/i);
-        expect(all).not.toMatch(/Start paid plan/i);
+    it('growth banner mentions the upcoming Revenue Billing Foundation', () => {
+        const c = INTENT_COPY.growth;
+        expect(c.handoffBanner).toMatch(/3AY-8R/);
+    });
+
+    it('neither mentions Stripe Checkout or "paid self-serve" as a current capability', () => {
+        for (const id of ['build', 'growth'] as const) {
+            const c = INTENT_COPY[id];
+            const all = `${c.heading} ${c.subheading} ${c.handoffBanner} ${c.details.join(' ')}`;
+            expect(all).not.toMatch(/Stripe Checkout/i);
+            expect(all).not.toMatch(/paid self-serve checkout exists/i);
+            expect(all).not.toMatch(/Start paid plan/i);
+        }
     });
 });
 

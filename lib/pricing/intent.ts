@@ -3,10 +3,14 @@
  *
  * Drives heading, subheading, and CRM hand-off when a buyer arrives from
  * /pricing with ?intent=<value>. Every value below has a one-to-one mapping
- * with a /pricing CTA per 3AY-3.
+ * with a /pricing CTA per the V5-led hybrid ladder (3AY-Pricing-Realign).
  *
  * Source of truth for prices / scope / credit policy is lib/pricing/rate-card.ts;
  * intent copy references those constants where the buyer will see a number.
+ *
+ * Legacy intents from the prior 3AX ladder (`developer`, `business`,
+ * `proof-sprint`) are not removed — they continue to resolve via a legacy map
+ * so existing inbound links and bookmarks keep working. See LEGACY_INTENT_MAP.
  */
 
 import {
@@ -19,11 +23,11 @@ import {
 } from './rate-card';
 
 export const INTENT_IDS = [
-    'developer',
-    'business',
+    'build',
+    'growth',
     'scale',
     'enterprise',
-    'proof-sprint',
+    'ai-spend-audit',
     'paid-pilot',
     'regulated-pilot',
     'scoping-call',
@@ -32,9 +36,29 @@ export type IntentId = typeof INTENT_IDS[number];
 
 export const INTENT_ID_SET: ReadonlySet<string> = new Set(INTENT_IDS);
 
+/**
+ * Legacy intent values that no longer correspond to a public SKU but should
+ * keep working for existing inbound links. Each maps to a current intent.
+ *
+ * - `developer` (3AX, $249/mo) → `build` (V5, $49/mo)
+ * - `business` (3AX, $2,500/mo) → `scale` (V5, $799/mo)
+ * - `proof-sprint` (3AX, $15k) → `ai-spend-audit` (V5, $1,500)
+ */
+export const LEGACY_INTENT_MAP: Readonly<Record<string, IntentId>> = {
+    developer: 'build',
+    business: 'scale',
+    'proof-sprint': 'ai-spend-audit',
+};
+
+export function resolveIntent(value: string | null | undefined): IntentId | null {
+    if (typeof value !== 'string') return null;
+    if (INTENT_ID_SET.has(value)) return value as IntentId;
+    if (value in LEGACY_INTENT_MAP) return LEGACY_INTENT_MAP[value]!;
+    return null;
+}
+
 export function isKnownIntent(value: string | null | undefined): value is IntentId {
-    if (typeof value !== 'string') return false;
-    return INTENT_ID_SET.has(value);
+    return resolveIntent(value) !== null;
 }
 
 export interface IntentCopy {
@@ -63,7 +87,7 @@ const UNKNOWN: IntentCopy = {
         'Our team routes inbound requests based on the workflow you describe. No card required.',
     details: [
         'Free Sandbox available for builders evaluating P402.',
-        'Production plans, pilots, and Enterprise contracts are sales-assisted.',
+        'Production plans, audits, pilots, and Enterprise contracts are sales-assisted.',
     ],
     defaultUseCase: 'Other',
     planId: null,
@@ -94,11 +118,10 @@ function buildOfferIntent(
     return { intent, heading, subheading, handoffBanner, details, defaultUseCase, planId: null, offerId };
 }
 
-const DEV = PLANS.developer;
-const BIZ = PLANS.business;
+const BUILD = PLANS.build;
+const GROWTH = PLANS.growth;
 const SCL = PLANS.scale;
-const ENT = PLANS.enterprise;
-const PS = BRIDGE_OFFERS.proof_sprint;
+const ASA = BRIDGE_OFFERS.ai_spend_audit;
 const PP = BRIDGE_OFFERS.paid_pilot;
 const RP = BRIDGE_OFFERS.regulated_pilot;
 
@@ -109,45 +132,46 @@ const RP = BRIDGE_OFFERS.regulated_pilot;
  */
 export const INTENT_COPY: Readonly<Record<IntentId | 'unknown', IntentCopy>> = {
     unknown: UNKNOWN,
-    developer: buildPlanIntent(
-        'developer',
-        'developer',
-        `Start with ${DEV.name} — ${formatUsd(DEV.monthlyPriceAnnualUsd)}/month`,
+    build: buildPlanIntent(
+        'build',
+        'build',
+        `Start with ${BUILD.name} — ${formatUsd(BUILD.monthlyPriceAnnualUsd)}/month`,
         'Production-ready for small teams that already have AI workflows in motion.',
-        'Paid self-serve checkout for Developer is in progress and will ship with our Revenue Billing Foundation (3AY-8R). Until then, we onboard Developer accounts manually so you can start without a card.',
+        'Paid self-serve checkout for Build and Growth will ship with our Revenue Billing Foundation (3AY-8R). Until then, we onboard accounts manually so you can start without a card.',
         [
-            `${(DEV.includedEventsPerMonth ?? 0).toLocaleString('en-US')} metered AI events per month included.`,
-            `${DEV.retentionDays}-day retention.`,
+            `${(BUILD.includedEventsPerMonth ?? 0).toLocaleString('en-US')} metered AI events per month included.`,
+            `${BUILD.retentionDays}-day retention.`,
             'Unlimited users, projects, and workflows.',
-            `Overage at $${DEV.overageUsdPer1kEvents?.toFixed(2)} per 1,000 events.`,
+            `Overage at $${BUILD.overageUsdPer1kEvents?.toFixed(2)} per 1,000 events.`,
         ],
         'Production AI workflow',
     ),
-    business: buildPlanIntent(
-        'business',
-        'business',
-        `Talk to sales about ${BIZ.name}`,
-        'Workflow attribution, shadow controls, audit exports for departments running multi-workflow AI.',
-        'Business is sales-assisted on annual contracts. We schedule a 30-minute scoping call within two business days.',
+    growth: buildPlanIntent(
+        'growth',
+        'growth',
+        `Start with ${GROWTH.name} — ${formatUsd(GROWTH.monthlyPriceAnnualUsd)}/month`,
+        'Production AI products with paying customers, customer-level margin, retry and context waste detection.',
+        'Paid self-serve checkout for Build and Growth will ship with our Revenue Billing Foundation (3AY-8R). Until then, we onboard accounts manually so you can start without a card.',
         [
-            `${formatUsd(BIZ.monthlyPriceAnnualUsd)}/month on annual contract.`,
-            `${(BIZ.includedEventsPerMonth ?? 0).toLocaleString('en-US')} metered AI events per month.`,
-            '1-year retention. Workflow attribution. Shadow controls. Audit exports.',
+            `${(GROWTH.includedEventsPerMonth ?? 0).toLocaleString('en-US')} metered AI events per month included.`,
+            `${GROWTH.retentionDays}-day retention.`,
+            'Customer-level cost attribution. Feature-level margin reporting.',
+            `Overage at $${GROWTH.overageUsdPer1kEvents?.toFixed(2)} per 1,000 events.`,
         ],
-        'Department AI accountability',
+        'Embedded AI margin control',
     ),
     scale: buildPlanIntent(
         'scale',
         'scale',
         `Talk to sales about ${SCL.name}`,
-        'Multi-department views, advanced controls, priority support for teams with material AI footprint.',
+        'High-volume AI products and platform teams with material AI footprint.',
         'Scale is annual-only and sales-led. Expect a scoping call within two business days.',
         [
             `${formatUsd(SCL.monthlyPriceAnnualUsd)}/month on annual contract.`,
             `${(SCL.includedEventsPerMonth ?? 0).toLocaleString('en-US')} metered AI events per month.`,
-            '2-year retention. Multi-department views. Advanced controls. Quarterly business review.',
+            '1-year retention. Advanced controls. Customer budgets. Margin floor enforcement. Audit exports.',
         ],
-        'Multi-department AI governance',
+        'High-volume AI platform',
     ),
     enterprise: buildPlanIntent(
         'enterprise',
@@ -162,18 +186,18 @@ export const INTENT_COPY: Readonly<Record<IntentId | 'unknown', IntentCopy>> = {
         ],
         'Enterprise AI spend governance',
     ),
-    'proof-sprint': buildOfferIntent(
-        'proof-sprint',
-        'proof_sprint',
-        `Book a ${PS.name} — ${formatUsd(PS.priceUsd)}`,
-        `${PS.durationDays}-day paid diagnostic. Spend map, outcome capture, shadow-control review, executive readout.`,
-        'Proof Sprint scoping calls are scheduled within two business days. Engagement begins after SOW signature.',
+    'ai-spend-audit': buildOfferIntent(
+        'ai-spend-audit',
+        'ai_spend_audit',
+        `Book an ${ASA.name} — ${formatUsd(ASA.priceUsd)}`,
+        'One-time enterprise diagnostic. Vendor invoice review, usage import, workflow-level cost analysis, executive report.',
+        'AI Spend Audit scoping calls are scheduled within two business days. Engagement begins after invoice signature and executive sponsor confirmation.',
         [
-            `${formatUsd(PS.priceUsd)} fixed fee, ${PS.durationDays}-day engagement.`,
-            PS.scope,
-            PS.creditPolicy,
+            `${formatUsd(ASA.priceUsd)} fixed fee, one-time engagement.`,
+            ASA.scope,
+            ASA.creditPolicy,
         ],
-        'Paid diagnostic engagement',
+        'Enterprise AI spend governance',
     ),
     'paid-pilot': buildOfferIntent(
         'paid-pilot',
@@ -182,7 +206,7 @@ export const INTENT_COPY: Readonly<Record<IntentId | 'unknown', IntentCopy>> = {
         'Multi-workflow accountability pilot. Procurement-ready evidence pack and annual proposal.',
         'Paid Pilot scoping calls include a stakeholder map and milestone plan. We respond within two business days.',
         [
-            `${formatUsd(PP.priceUsd)} fixed fee, ${PP.durationDays} to 90 days.`,
+            `${formatUsd(PP.priceUsd)} fixed fee, ${PP.durationDays ?? 60} to 90 days.`,
             PP.scope,
             PP.creditPolicy,
         ],
@@ -195,7 +219,7 @@ export const INTENT_COPY: Readonly<Record<IntentId | 'unknown', IntentCopy>> = {
         'Healthcare, finance, legal, insurance, public sector. Privacy mode and evidence requirements included.',
         'Regulated Pilots require a security and procurement review before SOW signature. BAA path available after security and contracting review.',
         [
-            `Starting at ${formatUsd(RP.priceUsd)} for a ${RP.durationDays}-day engagement.`,
+            `Starting at ${formatUsd(RP.priceUsd)} for a ${RP.durationDays ?? 90}-day engagement.`,
             RP.scope,
             RP.creditPolicy,
         ],
@@ -209,8 +233,8 @@ export const INTENT_COPY: Readonly<Record<IntentId | 'unknown', IntentCopy>> = {
             'Scoping calls are non-binding and free. We respond within one business day to find a time.',
         details: [
             'No card required. No commitment.',
-            'Outcome of the call: one-line recommendation (Sandbox, Developer, Proof Sprint, Paid Pilot, or no-go).',
-            `Reference pricing: Sandbox free; Developer ${formatUsd(DEV.monthlyPriceAnnualUsd)}/month; Business ${formatUsd(BIZ.monthlyPriceAnnualUsd)}/month annual; Enterprise from ${formatUsd(ENTERPRISE_FLOOR_ARR_USD)} ARR.`,
+            'Outcome of the call: one-line recommendation (Sandbox, Build, AI Spend Audit, Paid Pilot, or no-go).',
+            `Reference pricing: Sandbox free; Build ${formatUsd(BUILD.monthlyPriceAnnualUsd)}/month; Growth ${formatUsd(GROWTH.monthlyPriceAnnualUsd)}/month; AI Spend Audit ${formatUsd(ASA.priceUsd)} one-time; Enterprise from ${formatUsd(ENTERPRISE_FLOOR_ARR_USD)} ARR.`,
         ],
         defaultUseCase: 'Scoping call',
         planId: null,
@@ -220,6 +244,7 @@ export const INTENT_COPY: Readonly<Record<IntentId | 'unknown', IntentCopy>> = {
 
 /** Returns intent copy for the requested intent (or the unknown fallback). */
 export function getIntentCopy(value: string | null | undefined): IntentCopy {
-    if (!isKnownIntent(value)) return INTENT_COPY.unknown;
-    return INTENT_COPY[value];
+    const resolved = resolveIntent(value);
+    if (resolved === null) return INTENT_COPY.unknown;
+    return INTENT_COPY[resolved];
 }

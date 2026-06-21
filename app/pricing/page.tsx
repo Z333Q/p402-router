@@ -7,6 +7,7 @@ import {
     PLANS,
     PLAN_IDS,
     PRICING_PAGE_SUPPORT_LINE,
+    PUBLIC_BRIDGE_OFFER_IDS,
     formatUsd,
 } from "@/lib/pricing/rate-card";
 import { PlanCard } from "./_components/PlanCard";
@@ -17,11 +18,11 @@ import { AddOnsList } from "./_components/AddOnsList";
 
 export const metadata = {
     title: 'Pricing | P402 — AI Spend Accountability',
-    description: 'P402 pricing: Sandbox free, Developer $249/mo, Business $2,500/mo annual, Scale $5,000/mo annual, Enterprise from $60k ARR. Pilots from $15k. Usage-based metered AI events. No cost-savings claim.',
+    description: 'P402 pricing: Sandbox free, Build $49/mo, Growth $199/mo, Scale $799/mo annual, Enterprise from $60k ARR. AI Spend Audit $1,500 one-time. Usage-based metered AI events. No cost-savings claim.',
     alternates: { canonical: 'https://p402.io/pricing' },
     openGraph: {
         title: 'P402 Pricing — AI Spend Accountability',
-        description: 'Start free. Production plans from $249/month. Enterprise pilots from $35k. Usage-based, metadata-only, procurement-ready.',
+        description: 'Start free. Production plans from $49/month. Enterprise audits from $1,500. Usage-based, metadata-only, procurement-ready.',
         url: 'https://p402.io/pricing',
     },
 };
@@ -67,30 +68,30 @@ export default function PricingPage() {
                 <BuyerPathTabs />
             </section>
 
-            {/* ── "Build" plans: Sandbox + Developer ──────────────────── */}
+            {/* ── "Build" plans: Sandbox + Build + Growth ─────────────── */}
             <section id="plans-build" className="max-w-6xl mx-auto px-6 lg:px-8 pb-16 scroll-mt-20">
                 <h2 className="text-2xl font-black text-black uppercase tracking-tight mb-6">
                     For builders
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <PlanCard plan={PLANS.sandbox} />
-                    <PlanCard plan={PLANS.developer} />
+                    <PlanCard plan={PLANS.build} />
+                    <PlanCard plan={PLANS.growth} highlight />
                 </div>
             </section>
 
-            {/* ── "Govern" plans: Business + Scale + Enterprise ──────── */}
+            {/* ── "Govern" plans: Scale + Enterprise ──────────────────── */}
             <section id="plans-govern" className="bg-neutral-50 border-y-2 border-neutral-200 scroll-mt-20">
                 <div className="max-w-6xl mx-auto px-6 lg:px-8 py-16">
                     <h2 className="text-2xl font-black text-black uppercase tracking-tight mb-6">
                         For governance and FinOps
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <PlanCard plan={PLANS.business} highlight />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <PlanCard plan={PLANS.scale} />
                         <PlanCard plan={PLANS.enterprise} />
                     </div>
                     <p className="mt-6 text-xs font-mono text-neutral-500">
-                        Annual prices shown for Business and Scale. Business monthly billing is available at a 40% premium; Scale and Enterprise are annual only.
+                        Scale and Enterprise are annual only. Build and Growth are monthly self-serve when checkout ships.
                     </p>
                 </div>
             </section>
@@ -121,20 +122,20 @@ export default function PricingPage() {
                 </div>
             </section>
 
-            {/* ── "Pilot" bridge offers ───────────────────────────────── */}
+            {/* ── Bridge offers (public only — internal offers hidden in v2) ── */}
             <section id="bridge-offers" className="max-w-6xl mx-auto px-6 lg:px-8 py-16 scroll-mt-20">
                 <div className="mb-8">
                     <h2 className="text-3xl font-black text-black uppercase tracking-tight">
-                        Launch a pilot
+                        Need executive evidence first?
                     </h2>
                     <p className="mt-3 text-sm font-mono text-neutral-700 max-w-2xl">
-                        Two paid bridge engagements, each producing executive-grade evidence and a clear next step.
+                        Three paid engagements, from a $1,500 audit to a 90-day regulated pilot. Each produces executive-grade evidence and a clear next step.
                     </p>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    <BridgeOfferCard offer={BRIDGE_OFFERS.proof_sprint} />
-                    <BridgeOfferCard offer={BRIDGE_OFFERS.paid_pilot} />
-                    <BridgeOfferCard offer={BRIDGE_OFFERS.regulated_pilot} />
+                    {PUBLIC_BRIDGE_OFFER_IDS.map((id) => (
+                        <BridgeOfferCard key={id} offer={BRIDGE_OFFERS[id]} />
+                    ))}
                 </div>
             </section>
 
@@ -243,7 +244,7 @@ export default function PricingPage() {
                     </FAQItem>
                     <FAQItem question="What happens when I exceed included events?">
                         <p>
-                            You receive in-product and email alerts at 50%, 80%, 100%, and 120% of included usage. Sandbox stops recording at the cap. Developer, Business, and Scale apply the published overage rate ($0.25, $0.12, and $0.08 per 1,000 events respectively). Enterprise uses a committed annual rate, with overage trued up at renewal by default.
+                            You receive in-product and email alerts at 50%, 80%, 100%, and 120% of included usage. Sandbox stops recording at the cap. Build, Growth, and Scale apply the published overage rate ($0.25, $0.15, and $0.08 per 1,000 events respectively). Enterprise uses a committed annual rate, with overage trued up at renewal by default.
                         </p>
                         <p>
                             Self-serve plans support optional hard caps. No customer is surprised by a bill.
@@ -251,7 +252,7 @@ export default function PricingPage() {
                     </FAQItem>
                     <FAQItem question="Do you support annual contracts?">
                         <p>
-                            Yes. Business is annual-default with a 40% monthly premium if you prefer month-to-month. Scale and Enterprise are annual-only. Multi-year prepay discounts are available; ask sales.
+                            Yes. Scale and Enterprise are annual-only. Build and Growth are monthly self-serve when checkout ships; until then, both are sales-assisted on month-to-month invoices. Multi-year prepay discounts are available; ask sales.
                         </p>
                     </FAQItem>
                     <FAQItem question="Do you support SSO and SCIM?">
@@ -274,9 +275,9 @@ export default function PricingPage() {
                             P402 does not claim cost savings until a later measurement methodology ships. There is no success fee, no revenue share, and no specific percentage claim on any P402 surface today. Pricing is flat usage, not performance-based.
                         </p>
                     </FAQItem>
-                    <FAQItem question="How does Proof Sprint credit work?">
+                    <FAQItem question="How does AI Spend Audit credit work?">
                         <p>
-                            100% of the $15,000 Proof Sprint fee is credited toward a Paid Pilot if the Paid Pilot is signed within 30 days of Proof Sprint readout. The credit is one-time and does not apply to annual contract.
+                            100% of the $1,500 AI Spend Audit fee is credited toward a Paid Pilot if the Paid Pilot is signed within 30 days of the Audit executive readout. The credit is one-time and does not apply to annual contract.
                         </p>
                     </FAQItem>
                 </div>
