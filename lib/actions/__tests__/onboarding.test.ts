@@ -75,7 +75,6 @@ describe('completeOnboardingAction — idempotent onboarded_at set (plan §11.2)
         const sql = call[0] as string;
         expect(sql).toMatch(/UPDATE\s+tenants/i);
         expect(sql).toMatch(/onboarded_at\s*=\s*COALESCE\s*\(\s*onboarded_at\s*,\s*NOW\(\)\s*\)/i);
-        expect(sql).toMatch(/updated_at\s*=\s*NOW\(\)/i);
         expect(call[1]).toEqual([TENANT_ID]);
     });
 
@@ -85,6 +84,16 @@ describe('completeOnboardingAction — idempotent onboarded_at set (plan §11.2)
         // The presence of COALESCE is asserted above. Negative case: assert
         // we do not emit a bare `SET onboarded_at = NOW()` without COALESCE.
         expect(sql).not.toMatch(/SET\s+onboarded_at\s*=\s*NOW\(\)\s*,/i);
+        expect(sql).not.toMatch(/SET\s+onboarded_at\s*=\s*NOW\(\)\s*WHERE/i);
+    });
+
+    it('does NOT reference tenants.updated_at (column missing on production schema)', async () => {
+        await runExpectingRedirect(fd({ goal: 'test_routing' }));
+        const sql = mockDb.query.mock.calls[0]![0] as string;
+        // 42703 "column updated_at of relation tenants does not exist"
+        // observed in production 2026-06-23. Until the column is added
+        // via migration, the action must not touch updated_at.
+        expect(sql).not.toMatch(/updated_at/i);
     });
 });
 

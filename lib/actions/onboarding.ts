@@ -28,10 +28,18 @@ export async function completeOnboardingAction(formData: FormData) {
     // gate that will silently bounce them back to /onboarding.
     let updateOk = false;
     try {
+        // Production schema NOTE: tenants does not currently carry an
+        // `updated_at` column (verified 2026-06-23 via Vercel function
+        // logs: code 42703 "column updated_at of relation tenants does
+        // not exist"). Four other call sites in the repo do attempt to
+        // SET updated_at on tenants — they will fail with the same
+        // error if exercised on production. A dedicated migration is
+        // the proper fix; this action only sets onboarded_at to avoid
+        // dragging the unrelated column-missing bug into the
+        // onboarding critical path.
         const result = await db.query(
             `UPDATE tenants
-             SET onboarded_at = COALESCE(onboarded_at, NOW()),
-                 updated_at = NOW()
+             SET onboarded_at = COALESCE(onboarded_at, NOW())
              WHERE id = $1
              RETURNING id`,
             [tenantId]
