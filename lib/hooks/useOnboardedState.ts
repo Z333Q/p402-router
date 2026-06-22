@@ -26,6 +26,12 @@ export function useOnboardedState(): OnboardedState {
             try {
                 const res = await fetch('/api/v1/onboarding/state', {
                     credentials: 'same-origin',
+                    // Never cache: the gate must see the freshest
+                    // value right after completeOnboardingAction sets
+                    // tenants.onboarded_at; a cached `false` was the
+                    // root cause of the post-`Got it` redirect loop
+                    // observed on ccb25c7.
+                    cache: 'no-store',
                 });
                 if (!res.ok) {
                     if (!cancelled) {

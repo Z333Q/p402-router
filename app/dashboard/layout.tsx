@@ -8,6 +8,8 @@ import { Footer } from '@/components/Footer'
 import { FundWalletProvider } from './_components/FundWalletModal'
 import { useOnboardedState } from '@/lib/hooks/useOnboardedState'
 import { AttributionAttach } from '@/components/partner/AttributionAttach'
+import { DashboardTelemetry } from './_components/DashboardTelemetry'
+import { PlaygroundTile } from './_components/PlaygroundTile'
 
 // =============================================================================
 // Layout
@@ -127,6 +129,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                     <div className="flex-1 overflow-x-hidden p-4 lg:p-8">
                         <div className="mx-auto max-w-7xl animate-in fade-in duration-300">
+                            {/* 3AZ-2-E: funnel emits + Stage C first-visit tile.
+                                Both are pathname-aware client-only components.
+                                Telemetry has no UI; PlaygroundTile only
+                                renders on /dashboard. */}
+                            <DashboardTelemetry />
+                            <PlaygroundTile />
                             {children}
                         </div>
                     </div>

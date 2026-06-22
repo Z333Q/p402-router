@@ -20,17 +20,32 @@ import db from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
+// Never let intermediaries / browsers cache this response. The gate
+// must see the freshest value the instant completeOnboardingAction
+// sets tenants.onboarded_at, otherwise the user gets bounced back
+// to /onboarding after clicking "Got it" (regression seen on
+// ccb25c7).
+const NO_CACHE_HEADERS: Record<string, string> = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    Pragma: 'no-cache',
+    Expires: '0',
+};
+
+function jsonNoCache(body: Record<string, unknown>): NextResponse {
+    return NextResponse.json(body, { headers: NO_CACHE_HEADERS });
+}
+
 export async function GET() {
     let tenantId: string | undefined;
     try {
         const session = await getServerSession(authOptions);
         tenantId = (session?.user as { tenantId?: string } | undefined)?.tenantId;
     } catch {
-        return NextResponse.json({ onboarded: true });
+        return jsonNoCache({ onboarded: true });
     }
 
     if (!tenantId) {
-        return NextResponse.json({ onboarded: true });
+        return jsonNoCache({ onboarded: true });
     }
 
     try {
@@ -40,8 +55,8 @@ export async function GET() {
         )) as { rows: { onboarded_at: Date | string | null }[] };
 
         const onboarded = rows.length > 0 && !!rows[0]?.onboarded_at;
-        return NextResponse.json({ onboarded });
+        return jsonNoCache({ onboarded });
     } catch {
-        return NextResponse.json({ onboarded: true });
+        return jsonNoCache({ onboarded: true });
     }
 }

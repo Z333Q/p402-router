@@ -21,6 +21,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Copy, CheckCircle2, ArrowRight } from 'lucide-react';
 import { generateApiKeyAction } from '@/lib/actions/settings';
 import { completeOnboardingAction } from '@/lib/actions/onboarding';
@@ -72,6 +73,7 @@ response = client.chat.completions.create(
 const KEY_PLACEHOLDER = '••••••••••••••••••••••••••••••••';
 
 export function OnboardingKeyClient() {
+    const router = useRouter();
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [lang, setLang] = useState<Lang>('typescript');
     const [copied, setCopied] = useState(false);
@@ -130,18 +132,15 @@ export function OnboardingKeyClient() {
         setSubmitting(true);
         const fd = new FormData();
         // No goal passed: completeOnboardingAction falls through to
-        // /dashboard. completeOnboardingAction is a server action that
-        // calls redirect() server-side, so no further client code runs
-        // after this call resolves.
-        try {
-            await completeOnboardingAction(fd);
-        } catch {
-            // redirect() throws an internal Next signal on the server.
-            // On the client we treat any unexpected error as a soft
-            // failure and re-enable the button.
-            setSubmitting(false);
-        }
-    }, [submitting]);
+        // /dashboard via server-side redirect(). We deliberately do NOT
+        // wrap this in try/catch -- doing so intercepts the
+        // NEXT_REDIRECT signal that Server Actions use to navigate, and
+        // the user gets stuck on Stage B (regression seen on ccb25c7).
+        // router.push below is a defensive fallback for the unusual
+        // case where the action returns without redirecting.
+        await completeOnboardingAction(fd);
+        router.push('/dashboard');
+    }, [submitting, router]);
 
     const snippet = SNIPPETS[lang];
     const keyDisplay = apiKey ?? KEY_PLACEHOLDER;
