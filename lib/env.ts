@@ -24,6 +24,16 @@ const envSchema = z.object({
     // when unset.
     STRIPE_PRICE_ID_AUDIT: z.string().optional(),            // one-time, $1500
     STRIPE_PRICE_ID_DEPT_DASHBOARD: z.string().optional(),   // subscription, $1500/mo
+    // 3AY-8R-Impl-4 — V5 Build $49/month self-serve checkout.
+    // Optional: when unset, the build productKey returns CONTACT_SALES
+    // instead of creating a broken Stripe checkout session.
+    STRIPE_PRICE_ID_BUILD_MONTHLY: z.string().optional(),
+    // Kill switch for the V5 Build self-serve checkout path. Must be the
+    // literal string 'true' to enable. Anything else (including missing)
+    // treats Build checkout as disabled and the route returns
+    // { code: 'CHECKOUT_DISABLED' }. Existing pro / audit / dept_dashboard
+    // checkout paths are NOT gated by this flag.
+    BILLING_CHECKOUT_ENABLED: z.string().optional(),
     // Facilitator — P402_SIGNER_ADDRESS always required.
     // P402_FACILITATOR_PRIVATE_KEY only required when CDP_SERVER_WALLET_ENABLED != 'true'.
     // When CDP mode is active, the private key lives in CDP's TEE and is never set here.

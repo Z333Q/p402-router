@@ -22,8 +22,14 @@ export const dynamic = 'force-dynamic';
  * back-compat default to 'pro' only applies when the field is absent (e.g.
  * the sidebar upgrade button posts an empty body); an explicit invalid
  * value must never silently become a paid Pro checkout.
+ *
+ * 3AY-8R-Impl-4 adds the 'build' key for V5 Build $49/month checkout.
+ * Build is gated by env.BILLING_CHECKOUT_ENABLED === 'true'; when off the
+ * route returns CHECKOUT_DISABLED and the UI falls back to
+ * /get-access?intent=build. Existing pro / audit / dept_dashboard keys are
+ * not gated by the kill switch.
  */
-const PRODUCT_KEYS = ['pro', 'audit', 'dept_dashboard'] as const;
+const PRODUCT_KEYS = ['pro', 'build', 'audit', 'dept_dashboard'] as const;
 type ProductKey = typeof PRODUCT_KEYS[number];
 
 interface ResolvedProduct {
@@ -38,8 +44,29 @@ function resolveProduct(key: ProductKey): ResolvedProduct {
             return { priceId: env.STRIPE_PRICE_ID_AUDIT ?? null,            mode: 'payment',      label: 'AI Spend Audit' };
         case 'dept_dashboard':
             return { priceId: env.STRIPE_PRICE_ID_DEPT_DASHBOARD ?? null,   mode: 'subscription', label: 'Department Dashboard' };
+        case 'build':
+            return { priceId: env.STRIPE_PRICE_ID_BUILD_MONTHLY ?? null,    mode: 'subscription', label: 'Build' };
         case 'pro':
             return { priceId: env.STRIPE_PRICE_ID_PRO,                      mode: 'subscription', label: 'Pro' };
+    }
+}
+
+/**
+ * Map productKey to the V5 plan_id we write into Stripe metadata so the
+ * webhook (3AY-8R-Impl-5) can attribute the subscription to the right
+ * plan without a Stripe Price -> plan resolver. One-time products
+ * ('audit') do not carry a planId since they don't create a subscription.
+ */
+function planIdForProductKey(key: ProductKey): string | null {
+    switch (key) {
+        case 'build':
+            return 'build';
+        case 'pro':
+            return 'pro';
+        case 'dept_dashboard':
+            return 'dept_dashboard';
+        case 'audit':
+            return null;
     }
 }
 
@@ -77,10 +104,23 @@ export async function POST(req: Request) {
             return NextResponse.json({
                 ok: false,
                 code: 'INVALID_PRODUCT_KEY',
-                error: 'Unknown productKey. Must be one of: pro, audit, dept_dashboard.',
+                error: 'Unknown productKey. Must be one of: pro, build, audit, dept_dashboard.',
             }, { status: 400 });
         }
         const productKey = parsed.key;
+
+        // 3AY-8R-Impl-4 kill switch — applies ONLY to the new V5 Build
+        // checkout. Pro / audit / dept_dashboard paths continue to behave
+        // as they did before so existing flows aren't disturbed.
+        if (productKey === 'build' && env.BILLING_CHECKOUT_ENABLED !== 'true') {
+            return NextResponse.json({
+                ok: false,
+                code: 'CHECKOUT_DISABLED',
+                product: 'Build',
+                contactUrl: '/get-access?intent=build',
+            }, { status: 200 });
+        }
+
         const product = resolveProduct(productKey);
 
         // Price not provisioned in Stripe yet; surface a sales path rather
@@ -126,6 +166,13 @@ export async function POST(req: Request) {
 
         // 3. Create Checkout Session
         const isSubscription = product.mode === 'subscription';
+        const planIdMeta = planIdForProductKey(productKey);
+        const baseMetadata: Record<string, string> = {
+            tenantId: tenant.id,
+            productKey,
+            ...(planIdMeta ? { planId: planIdMeta } : {}),
+        };
+
         const checkoutSession = await stripe.checkout.sessions.create({
             customer: customerId,
             line_items: [
@@ -137,23 +184,14 @@ export async function POST(req: Request) {
             mode: product.mode,
             success_url: `${process.env.NEXTAUTH_URL}/dashboard/billing?success=true&product=${productKey}&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.NEXTAUTH_URL}/dashboard/billing?canceled=true`,
-            metadata: {
-                tenantId: tenant.id,
-                productKey,
-            },
+            metadata: baseMetadata,
             ...(isSubscription ? {
                 subscription_data: {
-                    metadata: {
-                        tenantId: tenant.id,
-                        productKey,
-                    },
+                    metadata: baseMetadata,
                 },
             } : {
                 payment_intent_data: {
-                    metadata: {
-                        tenantId: tenant.id,
-                        productKey,
-                    },
+                    metadata: baseMetadata,
                 },
             }),
         });

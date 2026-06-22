@@ -48,18 +48,47 @@ function BillingContent() {
 
     const handlePlanAction = async () => {
         setIsActionPending(true);
-        const endpoint = isPaidPlan ? '/api/v2/billing/portal' : '/api/v2/billing/checkout';
-        try {
-            const res = await fetch(endpoint, { method: 'POST' });
-            const data = await res.json();
-            if (data.url) {
-                window.location.href = data.url;
-            } else {
-                alert('Action failed: ' + (data.error || 'Unknown error'));
+        // 3AY-8R-Impl-4: sandbox tenants upgrade to V5 Build ($49/mo) via
+        // Stripe Checkout when the kill switch is on. The route returns
+        // CHECKOUT_DISABLED / CONTACT_SALES in soft-fail modes; both fall
+        // back to the /get-access?intent=build form. Paid tenants go to
+        // the existing portal.
+        if (isPaidPlan) {
+            try {
+                const res = await fetch('/api/v2/billing/portal', { method: 'POST' });
+                const data = await res.json();
+                if (data.url) {
+                    window.location.href = data.url;
+                    return;
+                }
+                alert('Could not open billing portal: ' + (data.error || 'Unknown error'));
+            } catch {
+                alert('Billing system unreachable');
+            } finally {
                 setIsActionPending(false);
             }
-        } catch (err) {
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/v2/billing/checkout', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ productKey: 'build' }),
+            });
+            const data = await res.json();
+            if (data.ok && data.url) {
+                window.location.href = data.url;
+                return;
+            }
+            if (data.code === 'CHECKOUT_DISABLED' || data.code === 'CONTACT_SALES') {
+                window.location.href = data.contactUrl || '/get-access?intent=build';
+                return;
+            }
+            alert('Could not start checkout: ' + (data.error || 'Unknown error'));
+        } catch {
             alert('Billing system unreachable');
+        } finally {
             setIsActionPending(false);
         }
     };
