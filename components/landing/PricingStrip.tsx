@@ -1,35 +1,68 @@
+/**
+ * 3AZ-2-D — Landing-page pricing strip refresh.
+ *
+ * Replaces the 3AX-era Free / Pro $499 / Enterprise teaser (with stale
+ * "Platform Fee" BPS numbers) with the V5-led hybrid ladder shipped at
+ * commit e1b20c2. Three slots chosen to match the public funnel:
+ *   - Sandbox (free entry)
+ *   - Build (first paid self-serve SKU)
+ *   - Growth (the core production tier)
+ *
+ * All prices come from lib/pricing/rate-card.ts so a price change in
+ * one place updates every public surface.
+ *
+ * CTAs route through /get-access?intent=… which is the live V5 funnel
+ * surface. Build will eventually go straight to Stripe checkout once
+ * 3AY-8R-Impl-4 ships; until then the access-request form (3AY-8R-3)
+ * captures the intent.
+ */
+
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { PLANS, formatUsd } from '@/lib/pricing/rate-card';
+
+interface PlanSlot {
+    name: string;
+    tag: string;
+    price: string;
+    suffix: string;
+    description: string;
+    cta: string;
+    href: string;
+    popular?: boolean;
+}
+
+const SLOTS: PlanSlot[] = [
+    {
+        name: PLANS.sandbox.name,
+        tag: 'Evaluate',
+        price: formatUsd(PLANS.sandbox.monthlyPriceAnnualUsd),
+        suffix: '/month',
+        description: `${(PLANS.sandbox.includedEventsPerMonth ?? 0).toLocaleString('en-US')} metered events. Hard cap.`,
+        cta: 'Start free',
+        href: '/login',
+    },
+    {
+        name: PLANS.build.name,
+        tag: 'Build',
+        price: formatUsd(PLANS.build.monthlyPriceAnnualUsd),
+        suffix: '/month',
+        description: `${(PLANS.build.includedEventsPerMonth ?? 0).toLocaleString('en-US')} events. ${PLANS.build.retentionDays}-day retention.`,
+        cta: 'Start Build',
+        href: '/get-access?intent=build',
+        popular: true,
+    },
+    {
+        name: PLANS.growth.name,
+        tag: 'Operate',
+        price: formatUsd(PLANS.growth.monthlyPriceAnnualUsd),
+        suffix: '/month',
+        description: `${(PLANS.growth.includedEventsPerMonth ?? 0).toLocaleString('en-US')} events. ${PLANS.growth.retentionDays}-day retention.`,
+        cta: 'Start Growth',
+        href: '/get-access?intent=growth',
+    },
+];
 
 export function PricingStrip() {
-    const plans = [
-        {
-            name: "Free",
-            tag: "Experiment",
-            price: "$0",
-            fee: "1.00%",
-            cta: "Get Started",
-            href: "/login"
-        },
-        {
-            name: "Pro",
-            tag: "Operate",
-            price: "$499",
-            fee: "0.75%",
-            cta: "Upgrade",
-            href: "/dashboard/billing",
-            popular: true
-        },
-        {
-            name: "Enterprise",
-            tag: "Govern",
-            price: "Custom",
-            fee: "Volume-tiered",
-            cta: "Contact Sales",
-            href: "mailto:sales@p402.io"
-        }
-    ];
-
     return (
         <section className="py-24 bg-white border-t-2 border-black overflow-hidden">
             <div className="container mx-auto px-6 max-w-7xl">
@@ -38,30 +71,29 @@ export function PricingStrip() {
                         Transparent Economics
                     </h2>
                     <p className="font-mono text-sm uppercase text-neutral-500 tracking-widest">
-                        Choose the tier that matches your production scale
+                        Free Sandbox. Production plans usage-based. Enterprise sales-led.
                     </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-2 border-black shadow-[12px_12px_0px_#000]">
-                    {plans.map((plan, i) => (
+                    {SLOTS.map((slot, i) => (
                         <div
-                            key={plan.name}
-                            className={`p-10 flex flex-col items-center text-center transition-all ${plan.popular ? 'bg-primary border-black md:border-x-2' : 'bg-white'
-                                } ${i !== 0 && !plan.popular ? 'border-t-2 md:border-t-0 md:border-l-2 border-black' : ''}`}
+                            key={slot.name}
+                            className={`p-10 flex flex-col items-center text-center transition-all ${slot.popular ? 'bg-primary border-black md:border-x-2' : 'bg-white'} ${i !== 0 && !slot.popular ? 'border-t-2 md:border-t-0 md:border-l-2 border-black' : ''}`}
                         >
-                            <div className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 opacity-60">{plan.tag}</div>
-                            <h3 className="text-3xl font-black uppercase mb-4 tracking-tighter">{plan.name}</h3>
-                            <div className="text-5xl font-black mb-2 tracking-tighter">{plan.price}</div>
-                            <div className="text-xs font-bold uppercase tracking-widest mb-8">
-                                <span className="opacity-60">Platform Fee:</span> {plan.fee}
-                            </div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 opacity-60">{slot.tag}</div>
+                            <h3 className="text-3xl font-black uppercase mb-4 tracking-tighter">{slot.name}</h3>
+                            <div className="text-5xl font-black mb-1 tracking-tighter">{slot.price}</div>
+                            <div className="text-[11px] font-bold uppercase tracking-widest mb-3 opacity-60">{slot.suffix}</div>
+                            <p className="text-xs font-medium text-neutral-700 mb-8 leading-relaxed">
+                                {slot.description}
+                            </p>
 
                             <Link
-                                href={plan.href}
-                                className={`w-full py-4 font-black uppercase tracking-widest text-sm border-2 border-black transition-all ${plan.popular ? 'bg-black text-white hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-primary'
-                                    }`}
+                                href={slot.href}
+                                className={`w-full py-4 font-black uppercase tracking-widest text-sm border-2 border-black transition-all ${slot.popular ? 'bg-black text-white hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-primary'}`}
                             >
-                                {plan.cta}
+                                {slot.cta}
                             </Link>
                         </div>
                     ))}
@@ -72,7 +104,7 @@ export function PricingStrip() {
                         href="/pricing"
                         className="font-black uppercase tracking-widest text-sm border-b-2 border-black hover:text-primary hover:border-primary transition-all pb-1"
                     >
-                        View full pricing & upgrade math &rarr;
+                        View full pricing, Scale, and Enterprise &rarr;
                     </Link>
                 </div>
             </div>

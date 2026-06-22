@@ -3,107 +3,22 @@ import { AppSidebar } from '@/components/layout/AppSidebar'
 import { useSession } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Menu, X } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { Footer } from '@/components/Footer'
-import { FundWalletProvider, useFundWallet } from './_components/FundWalletModal'
-import { useAuthState } from '@/lib/hooks/useAuthState'
+import { FundWalletProvider } from './_components/FundWalletModal'
 import { useOnboardedState } from '@/lib/hooks/useOnboardedState'
-import Link from 'next/link'
 import { AttributionAttach } from '@/components/partner/AttributionAttach'
-
-// =============================================================================
-// Auth State Banner — surfaces the user's authorization state prominently
-// =============================================================================
-
-function AuthStateBanner() {
-    const { openFundModal } = useFundWallet();
-    const { state: authState, isLoading } = useAuthState();
-    const [dismissed, setDismissed] = useState<string | null>(null);
-
-    useEffect(() => {
-        setDismissed(localStorage.getItem('auth_banner_dismissed'));
-    }, []);
-
-    if (isLoading || dismissed) return null;
-
-    // identity_only: Google user with no wallet — amber banner
-    if (authState === 'identity_only') {
-        return (
-            <div className="flex items-center justify-between gap-4 border-b-2 border-black bg-warning/10 border-warning px-4 lg:px-8 py-2.5">
-                <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-1.5 h-1.5 bg-warning shrink-0" />
-                    <p className="text-[11px] font-medium text-neutral-700 truncate">
-                        <span className="font-black text-black">Payments not activated.</span>
-                        {' '}Add a wallet in 30 seconds to unlock the AI Router.
-                    </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                    <Link
-                        href="/dashboard/settings?activate=payments"
-                        className="h-7 px-3 bg-warning text-black font-black text-[10px] uppercase tracking-widest border border-black hover:bg-black hover:text-warning transition-colors whitespace-nowrap"
-                    >
-                        Activate Now →
-                    </Link>
-                    <button
-                        onClick={() => {
-                            localStorage.setItem('auth_banner_dismissed', '1');
-                            setDismissed('1');
-                        }}
-                        className="p-1 text-neutral-400 hover:text-black transition-colors"
-                        aria-label="Dismiss"
-                    >
-                        <X size={14} />
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    // wallet_linked: has wallet but no funds — show funding nudge for new users
-    if (authState === 'wallet_linked') {
-        const justOnboarded = typeof window !== 'undefined'
-            && localStorage.getItem('api_key_generated') === '1';
-        const fundingDismissed = typeof window !== 'undefined'
-            && localStorage.getItem('funding_banner_dismissed') === '1';
-        if (!justOnboarded || fundingDismissed) return null;
-
-        return (
-            <div className="flex items-center justify-between gap-4 border-b-2 border-black bg-neutral-900 px-4 lg:px-8 py-2.5">
-                <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-1.5 h-1.5 bg-primary shrink-0" />
-                    <p className="text-[11px] font-medium text-neutral-300 truncate">
-                        <span className="text-white font-black">Your wallet has no USDC yet.</span>
-                        {' '}Add funds to enable on-chain payments — min $0.01.
-                    </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                    <button
-                        onClick={openFundModal}
-                        className="h-7 px-3 bg-primary text-black font-black text-[10px] uppercase tracking-widest border border-black hover:bg-white transition-colors whitespace-nowrap"
-                    >
-                        Fund wallet →
-                    </button>
-                    <button
-                        onClick={() => {
-                            localStorage.setItem('funding_banner_dismissed', '1');
-                            setDismissed('1');
-                        }}
-                        className="p-1 text-neutral-500 hover:text-white transition-colors"
-                        aria-label="Dismiss"
-                    >
-                        <X size={14} />
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    return null;
-}
 
 // =============================================================================
 // Layout
 // =============================================================================
+//
+// 3AZ-2-D: the AuthStateBanner that fired on every dashboard render for
+// `identity_only` and `wallet_linked` users has been removed per plan
+// §4.5. Wallet activation lives at M2 (just-in-time on first settlement-
+// eligible request), M3 (upgrade chooser), and M4 (Settings → Payments).
+// A persistent "activate now" prompt on every dashboard view trained
+// users to ignore it and contradicted the value-first principle.
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const { status } = useSession()
@@ -192,9 +107,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 {/* Main Content Area */}
                 <main className="flex-1 flex flex-col min-w-0 lg:ml-64">
-                    {/* Auth State Banner */}
-                    <AuthStateBanner />
-
                     {/* Global Status Bar */}
                     <header className="flex h-16 items-center justify-between border-b-2 border-black bg-white px-4 lg:px-8 sticky top-0 z-20">
                         <div className="flex items-center gap-4">
