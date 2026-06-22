@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import pool from '@/lib/db'
 import { Notifications } from '@/lib/notifications'
 import { verifyMessage } from 'viem'
+import { recordFunnelEvent } from '@/lib/analytics/funnel'
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -80,6 +81,8 @@ export const authOptions: NextAuthOptions = {
         async signIn({ user, account, profile }) {
             if (!user.email) return false
 
+            let isNewTenant = false
+            let resolvedTenantId: string | null = null
             try {
                 // Auto-Onboarding: Check if tenant exists for this email, if not create one
                 const res = await pool.query("SELECT id FROM tenants WHERE owner_email = $1", [user.email])
@@ -91,6 +94,8 @@ export const authOptions: NextAuthOptions = {
                         "INSERT INTO tenants (id, name, owner_email, status) VALUES ($1, $2, $3, 'active')",
                         [tenantId, user.name || 'New Tenant', user.email]
                     )
+                    isNewTenant = true
+                    resolvedTenantId = tenantId
 
                     // Notify Admin of new signup
                     Notifications.notifyNewSignup({
@@ -100,14 +105,35 @@ export const authOptions: NextAuthOptions = {
 
                     // Seed default policy for new tenant
                     await pool.query(
-                        `INSERT INTO policies (policy_id, tenant_id, name, rules) VALUES 
+                        `INSERT INTO policies (policy_id, tenant_id, name, rules) VALUES
                        ($1, $2, 'Default Start', '{"denyIf":{"legacyXPaymentHeader":true}}')`,
                         [`pol_${crypto.randomUUID().slice(0, 8)}`, tenantId]
                     )
+                } else {
+                    resolvedTenantId = (res.rows[0]?.id as string | undefined) ?? null
                 }
+
+                // 3AZ-2-B: emit funnel.signin_success. Fire-and-forget; the
+                // helper swallows DB errors internally. No PII in properties.
+                recordFunnelEvent({
+                    eventName: 'funnel.signin_success',
+                    tenantId: resolvedTenantId,
+                    properties: {
+                        provider: account?.provider ?? 'unknown',
+                        is_new_tenant: isNewTenant,
+                    },
+                }).catch(() => { /* belt-and-braces */ })
+
                 return true
             } catch (e) {
                 console.error("Onboarding error", e)
+                recordFunnelEvent({
+                    eventName: 'funnel.error',
+                    properties: {
+                        stage: 'signin',
+                        reason_code: 'signin_callback_error',
+                    },
+                }).catch(() => { /* belt-and-braces */ })
                 return false
             }
         },

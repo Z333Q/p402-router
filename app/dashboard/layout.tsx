@@ -7,6 +7,7 @@ import { Menu, X } from 'lucide-react'
 import { Footer } from '@/components/Footer'
 import { FundWalletProvider, useFundWallet } from './_components/FundWalletModal'
 import { useAuthState } from '@/lib/hooks/useAuthState'
+import { useOnboardedState } from '@/lib/hooks/useOnboardedState'
 import Link from 'next/link'
 import { AttributionAttach } from '@/components/partner/AttributionAttach'
 
@@ -113,11 +114,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const isPublicPage = pathname?.startsWith('/dashboard/bazaar')
 
+    // 3AZ-2-B: onboarding gate. Fetched only for authenticated, non-public
+    // dashboard views. The hook itself fails open (sets onboarded=true) on
+    // any fetch error so a transient DB hiccup never re-loops a returning
+    // user into onboarding.
+    const { onboarded, loading: onboardedLoading } = useOnboardedState()
+    const shouldGateOnboarding =
+        status === 'authenticated' && !isPublicPage && onboarded === false
+
     useEffect(() => {
         if (status === 'unauthenticated' && !isPublicPage) {
             router.push('/login')
         }
     }, [status, router, isPublicPage])
+
+    useEffect(() => {
+        if (shouldGateOnboarding) {
+            router.push('/onboarding')
+        }
+    }, [shouldGateOnboarding, router])
 
     useEffect(() => {
         if (status === 'loading' && !isPublicPage) {
@@ -127,7 +142,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setLoadingTooLong(false)
     }, [status, isPublicPage])
 
-    if (status === 'loading' && !isPublicPage) {
+    // Block render while either the session OR the onboarding gate is
+    // still resolving for an authenticated user, AND while the gate has
+    // decided to redirect (so the dashboard doesn't flash before push).
+    const isGateLoading =
+        (status === 'loading' ||
+            (status === 'authenticated' && (onboardedLoading || shouldGateOnboarding))) &&
+        !isPublicPage
+
+    if (isGateLoading) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-white">
                 <div className="flex flex-col items-center gap-4">
