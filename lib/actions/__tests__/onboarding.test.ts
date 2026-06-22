@@ -59,7 +59,9 @@ async function runExpectingRedirect(formData: FormData): Promise<string> {
 
 beforeEach(() => {
     mockDb.query.mockReset();
-    mockDb.query.mockResolvedValue({ rows: [] });
+    // Default mock simulates a successful UPDATE that hits one row.
+    // The 0-row case is exercised explicitly in the stale-JWT tests.
+    mockDb.query.mockResolvedValue({ rows: [{ id: TENANT_ID }], rowCount: 1 });
     mockGetServerSession.mockReset();
     mockGetServerSession.mockResolvedValue({ user: { tenantId: TENANT_ID } });
     mockRecordEvent.mockReset();
@@ -138,9 +140,53 @@ describe('completeOnboardingAction — funnel emit', () => {
         expect(arg.properties).toEqual({});
     });
 
-    it('continues to redirect even when the DB update throws', async () => {
+    it('falls back to /login when the DB update throws (stale-JWT / column-missing defense)', async () => {
         mockDb.query.mockRejectedValueOnce(new Error('connection refused'));
         const dest = await runExpectingRedirect(fd({ goal: 'test_routing' }));
+        // Defensive: the action used to redirect to /dashboard even on
+        // UPDATE failure, which trapped users in the onboarding gate
+        // loop when their JWT pointed at a missing tenant row. The
+        // post-fix behavior is to send them to /login so the signIn
+        // callback can re-provision the tenant and refresh the JWT.
+        expect(dest).toBe('/login');
+    });
+});
+
+describe('completeOnboardingAction — stale-JWT defense (3AZ-2 followup hotfix)', () => {
+    it('redirects to /login when UPDATE matches 0 rows (tenant row missing for this tenantId)', async () => {
+        mockDb.query.mockReset();
+        mockDb.query.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+        const dest = await runExpectingRedirect(fd({ goal: 'test_routing' }));
+        expect(dest).toBe('/login');
+    });
+
+    it('redirects to /login when UPDATE rowCount is undefined (defensive treat-as-zero)', async () => {
+        mockDb.query.mockReset();
+        mockDb.query.mockResolvedValueOnce({ rows: [] });  // no rowCount property
+        const dest = await runExpectingRedirect(fd({ goal: 'test_routing' }));
+        expect(dest).toBe('/login');
+    });
+
+    it('does NOT redirect to /login when UPDATE rowCount is 1 (normal happy path)', async () => {
+        mockDb.query.mockReset();
+        mockDb.query.mockResolvedValueOnce({ rows: [{ id: TENANT_ID }], rowCount: 1 });
+        const dest = await runExpectingRedirect(fd({ goal: 'test_routing' }));
         expect(dest).toBe('/dashboard/playground');
+    });
+
+    it('uses RETURNING id so we can detect 0-row UPDATEs in the new defense', async () => {
+        await runExpectingRedirect(fd({ goal: 'test_routing' }));
+        const sql = mockDb.query.mock.calls[0]![0] as string;
+        expect(sql).toMatch(/RETURNING\s+id/i);
+    });
+
+    it('does NOT fire funnel.onboarding_completed when UPDATE matches 0 rows', async () => {
+        mockDb.query.mockReset();
+        mockDb.query.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+        await runExpectingRedirect(fd({ goal: 'test_routing' }));
+        // Funnel emit lives inside the same try{} as the UPDATE; the
+        // emit only runs after a successful rowCount > 0. A 0-row case
+        // should not count as a completed onboarding for analytics.
+        expect(mockRecordEvent).not.toHaveBeenCalled();
     });
 });
