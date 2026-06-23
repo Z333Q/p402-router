@@ -15,7 +15,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import db from '@/lib/db';
 import type { EvaluationInput, EvaluationResult, EvaluationScores } from './types';
 
-const EVALUATOR_MODEL = 'gemini-3-flash-preview';
+const EVALUATOR_MODEL = 'gemini-3.5-flash';
 const DEFAULT_PASS_THRESHOLD = 0.70;
 
 // Dimension weights (sum to 1.0)

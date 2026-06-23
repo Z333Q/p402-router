@@ -41,61 +41,59 @@ export class OpenRouterAdapter extends BaseProviderAdapter {
     models: ModelInfo[] = [
         // OpenAI via OpenRouter
         {
-            id: 'openai/gpt-5.2',
-            name: 'GPT-5.2 (via OpenRouter)',
+            id: 'openai/gpt-5.5-pro',
+            name: 'GPT-5.5 Pro (via OpenRouter)',
             tier: 'premium',
-            contextWindow: 256000,
-            inputCostPer1k: 0.004,
-            outputCostPer1k: 0.012,
-            capabilities: ['chat', 'vision', 'function_calling', 'json_mode', 'streaming', 'reasoning'],
+            contextWindow: 1000000,
+            inputCostPer1k: 0.005,
+            outputCostPer1k: 0.02,
+            capabilities: ['chat', 'vision', 'function_calling', 'json_mode', 'streaming', 'reasoning', 'long_context'],
             supportsStreaming: true,
             maxOutputTokens: 32768
         },
         {
-            id: 'openai/gpt-4o',
-            name: 'GPT-4o (via OpenRouter)',
+            id: 'openai/gpt-5.5',
+            name: 'GPT-5.5 (via OpenRouter)',
             tier: 'mid',
-            contextWindow: 128000,
-            inputCostPer1k: 0.002,
-            outputCostPer1k: 0.006,
+            contextWindow: 1000000,
+            inputCostPer1k: 0.0005,
+            outputCostPer1k: 0.002,
             capabilities: ['chat', 'vision', 'function_calling', 'json_mode', 'streaming'],
             supportsStreaming: true,
             maxOutputTokens: 16384
         },
         // Anthropic via OpenRouter
         {
-            id: 'anthropic/claude-4.5-opus',
-            name: 'Claude 4.5 Opus (via OpenRouter)',
+            id: 'anthropic/claude-opus-4.8',
+            name: 'Claude Opus 4.8 (via OpenRouter)',
             tier: 'premium',
-            contextWindow: 400000,
-            inputCostPer1k: 0.008,
-            outputCostPer1k: 0.024,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning'],
+            contextWindow: 1000000,
+            inputCostPer1k: 0.015,
+            outputCostPer1k: 0.075,
+            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning', 'long_context'],
             supportsStreaming: true,
             maxOutputTokens: 16384
         },
         {
-            id: 'anthropic/claude-3.5-sonnet',
-            name: 'Claude 3.5 Sonnet (via OpenRouter)',
+            id: 'anthropic/claude-opus-4.7',
+            name: 'Claude Opus 4.7 (via OpenRouter)',
             tier: 'mid',
-            contextWindow: 200000,
-            inputCostPer1k: 0.003,
-            outputCostPer1k: 0.015,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code'],
+            contextWindow: 1000000,
+            inputCostPer1k: 0.008,
+            outputCostPer1k: 0.024,
+            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'code', 'reasoning', 'long_context'],
             supportsStreaming: true,
-            maxOutputTokens: 8192
+            maxOutputTokens: 16384
         },
-        // Google via OpenRouter.
-        // Reverted to the 1.5 family because the 3.x ids that previously
-        // sat here are not real on OpenRouter and were rejected with HTTP
-        // 400 "is not a valid model ID" (observed 2026-06-23 in
-        // production from /api/v2/chat/completions when the cost-mode
-        // router picked them). The 1.5 family has been stable on
-        // OpenRouter since mid-2024. Live catalog refresh will replace
-        // these on first request if newer ids are available.
+        // Google via OpenRouter. Ids verified against OpenRouter's live
+        // catalog 2026-06-24. The earlier `gemini-3-pro` / `gemini-3-flash`
+        // ids were speculative and returned HTTP 400 in production. The
+        // pro tier uses the floating `gemini-pro-latest` alias because
+        // OpenRouter currently exposes only image-specialized 3.x pro
+        // builds under a fixed id.
         {
-            id: 'google/gemini-pro-1.5',
-            name: 'Gemini 1.5 Pro (via OpenRouter)',
+            id: 'google/gemini-pro-latest',
+            name: 'Gemini Pro (latest, via OpenRouter)',
             tier: 'premium',
             contextWindow: 2000000,
             inputCostPer1k: 0.00125,
@@ -105,8 +103,8 @@ export class OpenRouterAdapter extends BaseProviderAdapter {
             maxOutputTokens: 8192
         },
         {
-            id: 'google/gemini-flash-1.5',
-            name: 'Gemini 1.5 Flash (via OpenRouter)',
+            id: 'google/gemini-3.5-flash',
+            name: 'Gemini 3.5 Flash (via OpenRouter)',
             tier: 'budget',
             contextWindow: 1000000,
             inputCostPer1k: 0.000075,
@@ -196,25 +194,28 @@ export class OpenRouterAdapter extends BaseProviderAdapter {
             supportsStreaming: true,
             maxOutputTokens: 8192
         },
-        // Perplexity models via OpenRouter
+        // Perplexity models via OpenRouter. The `llama-3.1-sonar-*-128k-online`
+        // ids were retired when Perplexity collapsed the lineup into
+        // `sonar` / `sonar-pro` in late 2024. Reasoning variant added for
+        // research-heavy queries.
         {
-            id: 'perplexity/llama-3.1-sonar-huge-128k-online',
-            name: 'Sonar Huge Online (via OpenRouter)',
+            id: 'perplexity/sonar-pro',
+            name: 'Sonar Pro (via OpenRouter)',
             tier: 'premium',
-            contextWindow: 127072,
-            inputCostPer1k: 0.005,
-            outputCostPer1k: 0.005,
+            contextWindow: 200000,
+            inputCostPer1k: 0.003,
+            outputCostPer1k: 0.015,
             capabilities: ['chat', 'streaming'],
             supportsStreaming: true,
             maxOutputTokens: 8192
         },
         {
-            id: 'perplexity/llama-3.1-sonar-small-128k-online',
-            name: 'Sonar Small Online (via OpenRouter)',
+            id: 'perplexity/sonar',
+            name: 'Sonar (via OpenRouter)',
             tier: 'mid',
             contextWindow: 127072,
-            inputCostPer1k: 0.0002,
-            outputCostPer1k: 0.0002,
+            inputCostPer1k: 0.001,
+            outputCostPer1k: 0.001,
             capabilities: ['chat', 'streaming'],
             supportsStreaming: true,
             maxOutputTokens: 8192

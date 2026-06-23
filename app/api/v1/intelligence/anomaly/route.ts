@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
             ...result,
             baseline,
             p402: {
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-3.5-flash',
                 thinking_level: 'low',
                 latency_target_ms: 500
             }

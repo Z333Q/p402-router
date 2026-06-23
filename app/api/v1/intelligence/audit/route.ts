@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
                 executed_optimizations: [],
                 total_estimated_savings_usd: 0,
                 created_at: new Date().toISOString(),
-                model_used: 'gemini-3-pro-preview',
+                model_used: 'gemini-3-pro',
                 thinking_level: 'high',
                 context_tokens_used: 0,
                 p402: { cached: false, source: 'empty_ledger' }

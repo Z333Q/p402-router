@@ -17,7 +17,7 @@ import { validateDag } from './dag-validator';
 import { listAvailableTools } from '@/lib/tools/registry';
 import { ApiError } from '@/lib/errors';
 
-const PLANNER_MODEL = 'gemini-3-flash-preview';
+const PLANNER_MODEL = 'gemini-3.5-flash';
 const PLANNER_VERSION = 'v1.0-flash';
 
 export interface PlannerContext {

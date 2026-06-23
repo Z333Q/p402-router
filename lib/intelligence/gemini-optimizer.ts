@@ -22,20 +22,23 @@ import crypto from 'crypto';
 // ============================================================================
 
 const GEMINI_MODELS = {
-  PRO: 'gemini-3-pro-preview',      // Deep analysis, high thinking
-  FLASH: 'gemini-3-flash-preview',  // Real-time monitoring, low thinking
-  EMBEDDING: 'text-embedding-004'   // Semantic similarity
+  PRO: 'gemini-3-pro',           // Deep analysis, high thinking
+  FLASH: 'gemini-3.5-flash',     // Real-time monitoring, low thinking
+  EMBEDDING: 'text-embedding-004' // Semantic similarity
 } as const;
 
 type RoutingMode = 'cost' | 'quality' | 'speed' | 'balanced';
 
-// OpenRouter model IDs (for reference in analysis)
+// OpenRouter model IDs (for reference in analysis). Verified against
+// OpenRouter's live catalog 2026-06-24. Earlier speculative ids
+// (gpt-5.2, claude-4.5-opus, gemini-3-pro, gemini-3-flash) were retired.
 const OPENROUTER_MODELS = {
-  GPT_5_2: 'openai/gpt-5.2',
-  CLAUDE_4_5: 'anthropic/claude-4.5-opus',
-  CLAUDE_SONNET: 'anthropic/claude-3.5-sonnet',
-  GEMINI_3_PRO: 'google/gemini-3-pro',
-  GEMINI_3_FLASH: 'google/gemini-3-flash',
+  GPT_5_5_PRO: 'openai/gpt-5.5-pro',
+  GPT_5_5: 'openai/gpt-5.5',
+  CLAUDE_OPUS_4_8: 'anthropic/claude-opus-4.8',
+  CLAUDE_OPUS_4_7: 'anthropic/claude-opus-4.7',
+  GEMINI_PRO_LATEST: 'google/gemini-pro-latest',
+  GEMINI_3_5_FLASH: 'google/gemini-3.5-flash',
   LLAMA_405B: 'meta/llama-3.2-405b',
   DEEPSEEK_V3: 'deepseek/deepseek-v3',
   MIXTRAL: 'mistralai/mixtral-8x22b'
@@ -171,7 +174,7 @@ const ECONOMIST_TOOLS: any[] = [
         },
         substitute_model: {
           type: SchemaType.STRING,
-          description: 'OpenRouter model ID to substitute (e.g., "openai/gpt-4o-mini")'
+          description: 'OpenRouter model ID to substitute (e.g., "openai/gpt-5.5")'
         },
         enabled: { type: SchemaType.BOOLEAN }
       },
@@ -235,7 +238,7 @@ const ECONOMIST_TOOLS: any[] = [
       properties: {
         model: {
           type: SchemaType.STRING,
-          description: 'OpenRouter model ID (e.g., "openai/gpt-5.2")'
+          description: 'OpenRouter model ID (e.g., "openai/gpt-5.5-pro")'
         },
         limits: {
           type: SchemaType.OBJECT,
@@ -479,11 +482,12 @@ P402 ARCHITECTURE:
 - Your job: analyze routing decisions and optimize for cost/speed/quality
 
 AVAILABLE OPENROUTER MODELS (sample):
-- openai/gpt-5.2 ($4/$12 per 1M tokens) - Premium reasoning
-- anthropic/claude-4.5-opus ($8/$24 per 1M tokens) - Premium coding
-- anthropic/claude-3.5-sonnet ($3/$15 per 1M tokens) - Mid-tier balanced
-- openai/gpt-4o ($2/$6 per 1M tokens) - Mid-tier fast
-- google/gemini-3-flash ($0.075/$0.30 per 1M tokens) - Budget fast
+- openai/gpt-5.5-pro ($5/$20 per 1M tokens) - Frontier reasoning
+- openai/gpt-5.5 ($0.50/$2 per 1M tokens) - Mid-tier balanced
+- anthropic/claude-opus-4.8 ($15/$75 per 1M tokens) - Frontier coding
+- anthropic/claude-opus-4.7 ($8/$24 per 1M tokens) - Mid-tier balanced
+- google/gemini-pro-latest ($1.25/$5 per 1M tokens) - Premium long-context
+- google/gemini-3.5-flash ($0.075/$0.30 per 1M tokens) - Budget fast
 - deepseek/deepseek-v3 ($0.27/$1.10 per 1M tokens) - Budget reasoning
 
 YOUR MANDATE:

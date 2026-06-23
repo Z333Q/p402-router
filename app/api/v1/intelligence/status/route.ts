@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
                 name: 'P402 Protocol Economist (OpenRouter-Aware)',
                 version: '2.0.0',
                 models: {
-                    sentinel: 'gemini-3-flash-preview',
-                    economist: 'gemini-3-pro-preview',
+                    sentinel: 'gemini-3.5-flash',
+                    economist: 'gemini-3-pro',
                     embedding: 'text-embedding-004'
                 },
                 capabilities: [

@@ -16,7 +16,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { storeManyMemories } from './store';
 import type { ExtractedMemory, MemoryType } from './types';
 
-const EXTRACTOR_MODEL = 'gemini-3-flash-preview';
+const EXTRACTOR_MODEL = 'gemini-3.5-flash';
 const VALID_TYPES: MemoryType[] = ['fact', 'preference', 'entity', 'instruction', 'summary'];
 
 // ── Public API ────────────────────────────────────────────────────────────────

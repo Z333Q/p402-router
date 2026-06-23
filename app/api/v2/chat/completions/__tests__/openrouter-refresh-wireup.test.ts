@@ -145,12 +145,14 @@ describe('3Z-C-Impl — scope confirmations', () => {
 });
 
 describe('3Z-C-Impl — adapter cold-start static catalog is still routable', () => {
-    it('static MODELS list still contains at least openai/gpt-4o', () => {
+    it('static MODELS list still contains at least one known-good OpenAI id', () => {
         // The hybrid catalog's cold-start state is the static MODELS
         // list. We pin one known-good id so the first request post-cold-
         // start has at least one routable model even before refresh
-        // completes.
-        expect(ADAPTER).toMatch(/id:\s*['"]openai\/gpt-4o['"]/);
+        // completes. Pinned to gpt-5.5-pro after openai/gpt-4o was
+        // retired from the static catalog 2026-06-24 in favor of the
+        // GPT-5.5 family (both verified against OpenRouter live).
+        expect(ADAPTER).toMatch(/id:\s*['"]openai\/gpt-5\.5-pro['"]/);
     });
 
     it('the static MODELS list still contains a budget-tier model', () => {

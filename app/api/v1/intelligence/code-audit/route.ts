@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         }
 
         const model = genAI.getGenerativeModel({
-            model: "gemini-3-pro-preview",
+            model: "gemini-3-pro",
             generationConfig: {
                 temperature: 0.1,
             }

@@ -23,12 +23,15 @@ export class OpenAIAdapter extends BaseProviderAdapter {
     baseUrl = 'https://api.openai.com/v1';
 
     models: ModelInfo[] = [
-        // GPT-5.2 Family (2026 Flagship)
+        // GPT-5.5 family (2026 frontier). gpt-5.2 / gpt-5.2-turbo were
+        // speculative ids that were never released; replaced with the
+        // current frontier line confirmed via OpenRouter's live catalog
+        // 2026-06-24.
         {
-            id: 'gpt-5.2',
-            name: 'GPT-5.2',
+            id: 'gpt-5.5-pro',
+            name: 'GPT-5.5 Pro',
             tier: 'premium',
-            contextWindow: 1000000, // 1M Context
+            contextWindow: 1000000,
             inputCostPer1k: 0.005,
             outputCostPer1k: 0.02,
             capabilities: ['chat', 'vision', 'function_calling', 'json_mode', 'streaming', 'code', 'reasoning', 'long_context'],
@@ -36,8 +39,8 @@ export class OpenAIAdapter extends BaseProviderAdapter {
             maxOutputTokens: 32768
         },
         {
-            id: 'gpt-5.2-turbo',
-            name: 'GPT-5.2 Turbo',
+            id: 'gpt-5.5',
+            name: 'GPT-5.5',
             tier: 'mid',
             contextWindow: 1000000,
             inputCostPer1k: 0.0005,

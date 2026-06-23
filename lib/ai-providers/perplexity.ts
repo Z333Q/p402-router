@@ -20,59 +20,38 @@ export class PerplexityAdapter extends BaseProviderAdapter {
     baseUrl = 'https://api.perplexity.ai';
 
     models: ModelInfo[] = [
-        // Sonar Models (with web search)
+        // Sonar lineup. The earlier `llama-3.1-sonar-*-128k-online` /
+        // `-chat` ids were retired when Perplexity collapsed the lineup
+        // into `sonar` / `sonar-pro` / `sonar-reasoning` in late 2024.
         {
-            id: 'llama-3.1-sonar-huge-128k-online',
-            name: 'Sonar Huge 128K Online',
+            id: 'sonar-pro',
+            name: 'Sonar Pro',
             tier: 'premium',
+            contextWindow: 200000,
+            inputCostPer1k: 0.003,
+            outputCostPer1k: 0.015,
+            capabilities: ['chat', 'streaming', 'long_context'],
+            supportsStreaming: true,
+            maxOutputTokens: 8192
+        },
+        {
+            id: 'sonar-reasoning',
+            name: 'Sonar Reasoning',
+            tier: 'mid',
             contextWindow: 127072,
-            inputCostPer1k: 0.005,
+            inputCostPer1k: 0.001,
             outputCostPer1k: 0.005,
-            capabilities: ['chat', 'streaming', 'long_context'],
+            capabilities: ['chat', 'streaming', 'long_context', 'reasoning'],
             supportsStreaming: true,
             maxOutputTokens: 8192
         },
         {
-            id: 'llama-3.1-sonar-large-128k-online',
-            name: 'Sonar Large 128K Online',
-            tier: 'mid',
+            id: 'sonar',
+            name: 'Sonar',
+            tier: 'budget',
             contextWindow: 127072,
             inputCostPer1k: 0.001,
             outputCostPer1k: 0.001,
-            capabilities: ['chat', 'streaming', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        {
-            id: 'llama-3.1-sonar-small-128k-online',
-            name: 'Sonar Small 128K Online',
-            tier: 'budget',
-            contextWindow: 127072,
-            inputCostPer1k: 0.0002,
-            outputCostPer1k: 0.0002,
-            capabilities: ['chat', 'streaming', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        // Chat Models (no web search, faster)
-        {
-            id: 'llama-3.1-sonar-large-128k-chat',
-            name: 'Sonar Large 128K Chat',
-            tier: 'mid',
-            contextWindow: 131072,
-            inputCostPer1k: 0.001,
-            outputCostPer1k: 0.001,
-            capabilities: ['chat', 'streaming', 'long_context'],
-            supportsStreaming: true,
-            maxOutputTokens: 8192
-        },
-        {
-            id: 'llama-3.1-sonar-small-128k-chat',
-            name: 'Sonar Small 128K Chat',
-            tier: 'budget',
-            contextWindow: 131072,
-            inputCostPer1k: 0.0002,
-            outputCostPer1k: 0.0002,
             capabilities: ['chat', 'streaming', 'long_context'],
             supportsStreaming: true,
             maxOutputTokens: 8192
