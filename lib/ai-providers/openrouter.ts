@@ -85,25 +85,32 @@ export class OpenRouterAdapter extends BaseProviderAdapter {
             supportsStreaming: true,
             maxOutputTokens: 8192
         },
-        // Google via OpenRouter
+        // Google via OpenRouter.
+        // Reverted to the 1.5 family because the 3.x ids that previously
+        // sat here are not real on OpenRouter and were rejected with HTTP
+        // 400 "is not a valid model ID" (observed 2026-06-23 in
+        // production from /api/v2/chat/completions when the cost-mode
+        // router picked them). The 1.5 family has been stable on
+        // OpenRouter since mid-2024. Live catalog refresh will replace
+        // these on first request if newer ids are available.
         {
-            id: 'google/gemini-3-pro',
-            name: 'Gemini 3 Pro (via OpenRouter)',
+            id: 'google/gemini-pro-1.5',
+            name: 'Gemini 1.5 Pro (via OpenRouter)',
             tier: 'premium',
-            contextWindow: 5000000,
-            inputCostPer1k: 0.001,
-            outputCostPer1k: 0.004,
-            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'long_context', 'video', 'audio'],
+            contextWindow: 2000000,
+            inputCostPer1k: 0.00125,
+            outputCostPer1k: 0.005,
+            capabilities: ['chat', 'vision', 'function_calling', 'streaming', 'long_context'],
             supportsStreaming: true,
-            maxOutputTokens: 16384
+            maxOutputTokens: 8192
         },
         {
-            id: 'google/gemini-3-flash',
-            name: 'Gemini 3 Flash (via OpenRouter)',
+            id: 'google/gemini-flash-1.5',
+            name: 'Gemini 1.5 Flash (via OpenRouter)',
             tier: 'budget',
-            contextWindow: 2000000,
-            inputCostPer1k: 0.00005,
-            outputCostPer1k: 0.0002,
+            contextWindow: 1000000,
+            inputCostPer1k: 0.000075,
+            outputCostPer1k: 0.0003,
             capabilities: ['chat', 'vision', 'streaming', 'long_context'],
             supportsStreaming: true,
             maxOutputTokens: 8192

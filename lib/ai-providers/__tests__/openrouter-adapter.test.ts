@@ -85,14 +85,21 @@ describe('refreshLiveCatalog — replace on success', () => {
             apiKey: 'test',
             catalogFetchImpl: fakeFetch(live),
         });
-        // Static catalog (pre-refresh) contains google/gemini-3-flash from the legacy list
-        expect(adapter.models.some((m) => m.id === 'google/gemini-3-flash')).toBe(true);
+        // Static catalog (pre-refresh) contains an id that is NOT in the
+        // mock live response — we use openai/gpt-5.2 as the sentinel
+        // because it is a forward-looking entry in the static list that
+        // is not part of the live snapshot, so its disappearance after
+        // refresh proves the replacement worked. (Prior versions of this
+        // test used google/gemini-3-flash for the same purpose; that id
+        // was retired from the static catalog after production returned
+        // HTTP 400 "is not a valid model ID" on 2026-06-23.)
+        expect(adapter.models.some((m) => m.id === 'openai/gpt-5.2')).toBe(true);
 
         await adapter.refreshLiveCatalog();
 
         const ids = adapter.models.map((m) => m.id).sort();
         expect(ids).toEqual(['deepseek/deepseek-chat', 'google/gemini-flash-1.5', 'openai/gpt-4o']);
-        expect(adapter.models.some((m) => m.id === 'google/gemini-3-flash')).toBe(false);
+        expect(adapter.models.some((m) => m.id === 'openai/gpt-5.2')).toBe(false);
         expect(adapter.getLastCatalogRefreshTs()).toBeGreaterThan(0);
         expect(adapter.getLastCatalogFailureTs()).toBe(0);
     });
