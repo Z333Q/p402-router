@@ -10,7 +10,7 @@ export function AgenticPatterns() {
                         <h2 className="text-3xl md:text-4xl font-black uppercase italic">Built for Autonomous AI</h2>
                         <p className="text-neutral-400 mt-4 max-w-xl font-medium">
                             Traditional APIs were built for people with credit cards and monthly subscriptions.
-                            <strong>P402 is built for AI agents with their own wallets</strong>—allowing them to
+                            <strong>P402 is built for AI agents with their own wallets</strong>, so they can
                             pay for exactly what they use, when they use it.
                         </p>
                     </div>

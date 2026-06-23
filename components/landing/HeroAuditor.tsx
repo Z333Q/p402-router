@@ -103,7 +103,7 @@ export const HeroAuditor = () => {
                     <div className="mt-3">
                         <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-neutral-400">
                             <span className="border border-neutral-300 px-1.5 py-0.5 text-neutral-500 font-bold">OpenAI schema supported</span>
-                            — routes to Claude, Gemini, and beyond.
+                            Routes to Claude, Gemini, and beyond.
                         </span>
                     </div>
                 </div>
@@ -134,7 +134,7 @@ export const HeroAuditor = () => {
 
                         {/* After */}
                         <div className="border-2 border-[#B6FF2E] bg-neutral-900 p-4 font-mono text-xs leading-relaxed shadow-[0_0_20px_rgba(182,255,46,0.1)]">
-                            <div className="text-[#B6FF2E] mb-2 text-[9px] uppercase tracking-widest">After — P402</div>
+                            <div className="text-[#B6FF2E] mb-2 text-[9px] uppercase tracking-widest">After: P402</div>
                             <div className="text-neutral-400">{'const openai = new OpenAI({'}</div>
                             <div className="pl-4 text-neutral-300">{'baseURL: '}<span className="text-[#B6FF2E]">{'\'https://p402.io/api/v2\''}</span></div>
                             <div className="text-neutral-400">{'});'}</div>

@@ -84,7 +84,7 @@ export default async function Page() {
                             <div className="bg-white p-6">
                                 <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-3">VS Code / Cursor / Windsurf</div>
                                 <div className="font-mono text-sm bg-neutral-50 border border-neutral-200 px-3 py-2 mb-2">ext install p402-protocol.p402</div>
-                                <p className="text-xs text-neutral-500 leading-relaxed">Embedded MCP server — tools appear in Copilot agent mode on install. No config files.</p>
+                                <p className="text-xs text-neutral-500 leading-relaxed">Embedded MCP server. Tools appear in Copilot agent mode on install. No config files.</p>
                             </div>
                             <div className="bg-white p-6">
                                 <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-3">Claude Desktop / JetBrains</div>
@@ -94,7 +94,7 @@ export default async function Page() {
                             <div className="bg-[#B6FF2E] p-6">
                                 <div className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-3">REST API / SDK</div>
                                 <div className="font-mono text-sm bg-black/10 border border-black/10 px-3 py-2 mb-2">npm install @p402/sdk</div>
-                                <p className="text-xs text-black/60 leading-relaxed">OpenAI-compatible endpoint. Drop-in replacement — change the base URL and API key.</p>
+                                <p className="text-xs text-black/60 leading-relaxed">OpenAI-compatible endpoint. Drop-in replacement. Change the base URL and API key.</p>
                             </div>
                         </div>
                     </div>
@@ -112,7 +112,7 @@ export default async function Page() {
                                 <div className="text-[10px] font-black text-black/60 uppercase tracking-widest group-hover:text-primary/60">AI Routing</div>
                                 <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Route. Optimise. Save.</h3>
                                 <p className="text-sm font-medium text-black/70 group-hover:text-neutral-400 leading-relaxed flex-1">
-                                    One OpenAI-compatible endpoint. 300+ models. P402 routes each request to the optimal provider for your cost and quality target — automatically.
+                                    One OpenAI-compatible endpoint. 300+ models. P402 routes each request to a provider that matches your cost and quality target, automatically.
                                 </p>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-black/50 group-hover:text-primary transition-colors mt-auto">AI routing →</span>
                             </Link>
@@ -144,7 +144,7 @@ export default async function Page() {
                                 <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Orchestration</div>
                                 <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Tasks. Stream. Trace.</h3>
                                 <p className="text-sm font-medium text-neutral-600 leading-relaxed flex-1">
-                                    A2A JSON-RPC 2.0 task protocol with SSE streaming. Payment-required events are structured messages — not errors. Live trace for every routing decision.
+                                    A2A JSON-RPC 2.0 task protocol with SSE streaming. Payment-required events are structured messages, not errors. Live trace for every routing decision.
                                 </p>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">A2A protocol →</span>
                             </Link>
@@ -152,7 +152,7 @@ export default async function Page() {
                                 <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Ecosystem</div>
                                 <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Skills. Bazaar. Verified.</h3>
                                 <p className="text-sm font-medium text-neutral-600 leading-relaxed flex-1">
-                                    Publish typed skills. List paid agents on the Bazaar. Earn Verified Publisher status. ERC-8004 on-chain reputation — optional, toggleable.
+                                    Publish typed skills. List paid agents on the Bazaar. Earn Verified Publisher status. ERC-8004 on-chain reputation is optional and toggleable.
                                 </p>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">Bazaar marketplace →</span>
                             </Link>
@@ -222,7 +222,7 @@ export default async function Page() {
                             Start routing<br />in minutes.
                         </h2>
                         <p className="text-black/70 font-bold text-xl mb-10 max-w-xl mx-auto">
-                            One endpoint. 300+ models. Automatic cost savings. Gasless payments on Base.
+                            One endpoint. 300+ models. Cost-aware routing. Gasless payments on Base.
                         </p>
                         <div className="flex flex-col sm:flex-row justify-center gap-4">
                             <Link href="/login" className="btn btn-dark text-xl px-10 py-5 h-auto">
