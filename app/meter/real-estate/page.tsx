@@ -9,6 +9,7 @@ import { ApplicantSelector } from './_components/ApplicantSelector';
 import { ScreeningPanel } from './_components/ScreeningPanel';
 import { ScreeningLedger } from './_components/ScreeningLedger';
 import { useRealEstateStore } from './_store/useRealEstateStore';
+import { SCENARIO_META } from '@/lib/demo/scenarios';
 
 export default function RealEstateDemoPage() {
   const { error, setError, reset, safeMode, screeningState } = useRealEstateStore();
@@ -56,14 +57,14 @@ export default function RealEstateDemoPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 mb-4">
-            {['Synthetic applicants', 'No real PII', 'Human final decision required', 'HUD fair-housing audit posture'].map((label) => (
+            {SCENARIO_META.real_estate_tenant_screening.safety_labels.map((label) => (
               <span key={label} className="border-2 border-neutral-600 text-neutral-300 text-[10px] font-mono uppercase tracking-wide px-3 py-1.5">
                 {label}
               </span>
             ))}
           </div>
           <p className="text-[11px] font-mono text-neutral-500 leading-relaxed mb-6">
-            <span className="text-neutral-200 font-extrabold">Human final decision required.</span> P402 does not approve or deny tenants. The fraud score shown is illustrative; the leasing decision rests with the property manager and follows fair-housing rules.
+            {SCENARIO_META.real_estate_tenant_screening.framing_disclaimer}
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <Link href="/dashboard?demo=1&scenario=real_estate_tenant_screening" className="btn btn-primary text-sm px-5">View dashboard proof</Link>

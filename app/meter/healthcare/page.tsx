@@ -34,6 +34,7 @@ import { ComplianceTracePanel } from './_components/ComplianceTracePanel';
 
 import { useMeterStore } from './_store/useMeterStore';
 import type { HealthcarePersona } from '@/lib/meter/healthcare/types';
+import { SCENARIO_META } from '@/lib/demo/scenarios';
 
 const VALID_PERSONAS = new Set<HealthcarePersona>(['medicaid-mco', 'dual-eligible', 'marketplace']);
 
@@ -117,14 +118,14 @@ export default function MeterHealthcarePage() {
         {/* Dashboard CTA strip + scenario safety chips + framing disclaimer */}
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-2">
-            {['Synthetic data', 'No PHI', 'Admin / non-clinical use', 'Human approval required', 'URAC-aligned audit posture'].map((label) => (
+            {SCENARIO_META.healthcare_prior_auth.safety_labels.map((label) => (
               <span key={label} className="border-2 border-neutral-600 text-neutral-300 text-[10px] font-mono uppercase tracking-wide px-3 py-1.5">
                 {label}
               </span>
             ))}
           </div>
           <p className="text-[11px] font-mono text-neutral-500 leading-relaxed">
-            P402 does not make medical decisions. Every prior-authorization outcome shown here is illustrative; a licensed clinician must adjudicate the real case.
+            {SCENARIO_META.healthcare_prior_auth.framing_disclaimer}
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <Link href="/dashboard?demo=1&scenario=healthcare_prior_auth" className="btn btn-primary text-sm px-5">View dashboard proof</Link>

@@ -9,6 +9,7 @@ import { ReviewPanel } from './_components/ReviewPanel';
 import { MatterLedger } from './_components/MatterLedger';
 import { ConflictPanel } from './_components/ConflictPanel';
 import { useLegalStore } from './_store/useLegalStore';
+import { SCENARIO_META } from '@/lib/demo/scenarios';
 
 export default function LegalDemoPage() {
   const { error, setError, reset, safeMode } = useLegalStore();
@@ -53,14 +54,14 @@ export default function LegalDemoPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 mb-4">
-            {['Synthetic data room', 'No real client contracts', 'Human legal review required', 'ABA-aligned audit posture'].map((label) => (
+            {SCENARIO_META.legal_mna_due_diligence.safety_labels.map((label) => (
               <span key={label} className="border-2 border-neutral-600 text-neutral-300 text-[10px] font-mono uppercase tracking-wide px-3 py-1.5">
                 {label}
               </span>
             ))}
           </div>
           <p className="text-[11px] font-mono text-neutral-500 leading-relaxed mb-6">
-            P402 does not provide legal advice or final judgment. Routing observations (Flash vs Pro complexity) are descriptive measurements of the demo run, not recommendations.
+            {SCENARIO_META.legal_mna_due_diligence.framing_disclaimer}
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <Link href="/dashboard?demo=1&scenario=legal_mna_due_diligence" className="btn btn-primary text-sm px-5">View dashboard proof</Link>

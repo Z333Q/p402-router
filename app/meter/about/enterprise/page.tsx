@@ -59,10 +59,10 @@ export default function EnterpriseAboutPage() {
             ))}
           </div>
           <div className="flex gap-4 flex-wrap">
-            <Link href="/dashboard?demo=1&scenario=enterprise" className="btn btn-primary text-sm px-6 py-2">
+            <Link href="/dashboard?demo=1" className="btn btn-primary text-sm px-6 py-2">
               View dashboard proof
             </Link>
-            <Link href="/dashboard/prove?demo=1&scenario=enterprise" className="btn btn-secondary text-sm px-6 py-2">
+            <Link href="/dashboard/prove?demo=1" className="btn btn-secondary text-sm px-6 py-2">
               See evidence
             </Link>
             <Link href="/meter/enterprise" className="btn btn-secondary text-sm px-6 py-2">

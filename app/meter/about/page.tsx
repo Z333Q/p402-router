@@ -335,8 +335,8 @@ export default function AboutRootPage() {
           <span>P402 Meter · Tempo Mainnet · MPP · 2026</span>
           <div className="flex gap-4">
             <Link href="/meter" className="hover:text-neutral-400 transition-colors">All Demos</Link>
-            <a href="https://explore.tempo.xyz" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-400 transition-colors">Tempo Explorer ↗</a>
-            <a href="https://p402.io/docs/router" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-400 transition-colors">Docs ↗</a>
+            <a href="https://explore.tempo.xyz" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-400 transition-colors">Tempo Explorer</a>
+            <a href="https://p402.io/docs/router" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-400 transition-colors">Docs</a>
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { MeterFunnelFooter } from '../_components/MeterFunnelFooter';
 import { MeterBrand } from '../_components/MeterBrand';
+import { SCENARIO_META } from '@/lib/demo/scenarios';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -317,18 +318,21 @@ export default function EnterpriseDemoPage() {
         {/* Dashboard CTA strip + scenario safety chips + framing disclaimer */}
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-2">
-            {['Synthetic data', 'Not written to your ledger'].map((label) => (
+            {SCENARIO_META.enterprise_ai_spend_control.safety_labels.map((label) => (
               <span key={label} className="border-2 border-neutral-600 text-neutral-300 text-[10px] font-mono uppercase tracking-wide px-3 py-1.5">
                 {label}
               </span>
             ))}
           </div>
           <p className="text-[11px] font-mono text-neutral-500 leading-relaxed">
-            Optimize recommendations remain blocked in the app. Public marketing copy that mentions Opt Savings is a separate artifact; inside this dashboard, P402 measures readiness only and never proposes a model switch or claims savings. Projection assumes synthetic demo velocity holds; not a forecast of real spend.
+            {SCENARIO_META.enterprise_ai_spend_control.framing_disclaimer}
+          </p>
+          <p className="text-[11px] font-mono text-neutral-600 leading-relaxed">
+            Projection assumes synthetic demo velocity holds; not a forecast of real spend.
           </p>
           <div className="flex flex-wrap gap-3 items-center">
-            <Link href="/dashboard?demo=1&scenario=enterprise" className="btn btn-primary text-sm px-5">View dashboard proof</Link>
-            <Link href="/dashboard/prove?demo=1&scenario=enterprise" className="btn btn-secondary text-sm">See evidence</Link>
+            <Link href="/dashboard?demo=1" className="btn btn-primary text-sm px-5">View dashboard proof</Link>
+            <Link href="/dashboard/prove?demo=1" className="btn btn-secondary text-sm">See evidence</Link>
             <Link href="/get-access?intent=ai-spend-audit" className="btn btn-secondary text-sm">Run AI Spend Audit</Link>
             <Link href="/meter/about/enterprise" className="btn btn-secondary text-sm">Case study</Link>
           </div>
