@@ -129,6 +129,98 @@ function MetaPanel({ meta }: { meta: ExecMeta }) {
     )
 }
 
+/**
+ * CostHistory — per-action cost comparison for the current session.
+ *
+ * The dashboard's events page already shows full request history across
+ * sessions, but during a Playground session a user is making rapid mode
+ * and prompt choices and wants the comparison inline. This panel pulls
+ * from the same in-memory `messages` array (each assistant message
+ * already carries the `p402_metadata` returned by the router) so there
+ * is no extra network call.
+ *
+ * Highlights the cheapest and most expensive runs so the cost delta
+ * across modes is visible at a glance.
+ */
+function CostHistory({ messages }: { messages: ChatMessage[] }) {
+    const runs = messages
+        .map((m, idx) => ({ m, idx }))
+        .filter((r): r is { m: ChatMessage & { meta: ExecMeta }; idx: number } => r.m.role === 'assistant' && !!r.m.meta)
+
+    if (runs.length < 2) return null
+
+    const paidCosts = runs.map(r => r.m.meta.cost_usd).filter(c => c > 0)
+    const minCost = paidCosts.length > 0 ? Math.min(...paidCosts) : null
+    const maxCost = paidCosts.length > 0 ? Math.max(...paidCosts) : null
+    const total = runs.reduce((s, r) => s + (r.m.meta.cost_usd ?? 0), 0)
+    const totalSaved = runs.reduce((s, r) => s + (r.m.meta.savings ?? 0), 0)
+
+    const ordered = [...runs].reverse()
+
+    return (
+        <div className="border-2 border-black bg-white overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50 border-b-2 border-black">
+                <BarChart2 size={10} className="text-black shrink-0" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-black">Cost History</span>
+                <span className="text-[9px] font-mono text-neutral-400">{runs.length} runs</span>
+                <div className="ml-auto flex items-center gap-3 text-[9px] font-mono text-neutral-500">
+                    <span>total: <span className="font-black text-black">{formatCost(total)}</span></span>
+                    {totalSaved > 0 && (
+                        <span>saved: <span className="font-black text-success">{formatCost(totalSaved)}</span></span>
+                    )}
+                </div>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full font-mono text-[10px]">
+                    <thead>
+                        <tr className="border-b-2 border-black bg-neutral-50">
+                            <th className="text-left px-3 py-1.5 font-black uppercase tracking-widest text-[8px] text-neutral-500">#</th>
+                            <th className="text-left px-3 py-1.5 font-black uppercase tracking-widest text-[8px] text-neutral-500">Mode</th>
+                            <th className="text-left px-3 py-1.5 font-black uppercase tracking-widest text-[8px] text-neutral-500">Provider / Model</th>
+                            <th className="text-right px-3 py-1.5 font-black uppercase tracking-widest text-[8px] text-neutral-500">Cost</th>
+                            <th className="text-right px-3 py-1.5 font-black uppercase tracking-widest text-[8px] text-neutral-500">Latency</th>
+                            <th className="text-right px-3 py-1.5 font-black uppercase tracking-widest text-[8px] text-neutral-500">Cache</th>
+                            <th className="text-right px-3 py-1.5 font-black uppercase tracking-widest text-[8px] text-neutral-500">Trace</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {ordered.map(({ m, idx }, rank) => {
+                            const meta = m.meta
+                            const isMin = minCost !== null && meta.cost_usd === minCost && meta.cost_usd > 0
+                            const isMax = maxCost !== null && meta.cost_usd === maxCost && meta.cost_usd > 0 && minCost !== maxCost
+                            const turn = runs.length - rank
+                            return (
+                                <tr key={idx} className="border-b border-neutral-100 hover:bg-neutral-50">
+                                    <td className="px-3 py-1.5 text-neutral-400">{turn}</td>
+                                    <td className="px-3 py-1.5 capitalize">{meta.routing_mode}</td>
+                                    <td className="px-3 py-1.5 truncate max-w-[180px]">
+                                        <span className="font-black text-black">{meta.provider}</span>
+                                        <span className="text-neutral-400"> / {meta.model}</span>
+                                    </td>
+                                    <td className={`px-3 py-1.5 text-right font-black ${meta.cost_usd === 0 ? 'text-primary' : isMin ? 'text-success' : isMax ? 'text-error' : 'text-black'}`}>
+                                        {meta.cost_usd === 0 ? 'FREE' : formatCost(meta.cost_usd)}
+                                        {isMin && <span className="ml-1 text-[8px] font-black uppercase tracking-widest text-success">min</span>}
+                                        {isMax && <span className="ml-1 text-[8px] font-black uppercase tracking-widest text-error">max</span>}
+                                    </td>
+                                    <td className="px-3 py-1.5 text-right text-neutral-600">{formatLatency(meta.latency_ms)}</td>
+                                    <td className="px-3 py-1.5 text-right">
+                                        {meta.cached ? <span className="text-[8px] font-black uppercase tracking-widest text-primary bg-black px-1.5 py-0.5">hit</span> : <span className="text-neutral-300">—</span>}
+                                    </td>
+                                    <td className="px-3 py-1.5 text-right">
+                                        <Link href={`/dashboard/requests?highlight=${meta.request_id}`} className="inline-flex items-center text-neutral-400 hover:text-black">
+                                            <ChevronRight size={10} />
+                                        </Link>
+                                    </td>
+                                </tr>
+                            )
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
+
 function SimulatePanel({ task, mode }: { task: string; mode: RoutingMode }) {
     const [result, setResult]     = useState<PreviewResult | null>(null)
     const [loading, setLoading]   = useState(false)
@@ -405,6 +497,9 @@ export default function ExecutePage() {
 
                     {/* Execution result panel — appears after first run */}
                     {lastMeta && <MetaPanel meta={lastMeta} />}
+
+                    {/* Per-action cost comparison — appears after the 2nd run */}
+                    <CostHistory messages={messages} />
 
                     {/* Reset */}
                     {visibleMessages.length > 0 && (
