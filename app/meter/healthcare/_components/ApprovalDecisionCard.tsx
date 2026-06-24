@@ -78,7 +78,7 @@ export function ApprovalDecisionCard() {
       <div className="p-4 flex flex-col gap-0">
         {/* Status rows */}
         <StatusRow label="Budget Status" value={insideBudget ? 'INSIDE CAP' : 'OVER BUDGET'} pass={insideBudget} detail={`$${totalCostUsd.toFixed(6)} / $${budgetCapUsd.toFixed(2)}`} />
-        <StatusRow label="Policy Compliance" value={policyCompliant ? 'COMPLIANT' : 'REVIEW REQUIRED'} pass={policyCompliant} />
+        <StatusRow label="Policy Compliance" value={policyCompliant ? 'POLICY MATCH' : 'REVIEW REQUIRED'} pass={policyCompliant} />
         <StatusRow label="Output Scope" value={outputInScope ? 'IN SCOPE' : 'OUT OF SCOPE'} pass={outputInScope} />
         <StatusRow label="Arc Proof" value="VERIFIED" pass={true} />
 

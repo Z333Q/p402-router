@@ -59,7 +59,7 @@ export default function MetricDefinitionPage() {
                             <li><strong>Admin audit action.</strong> A customer admin reading the audit log is not a billable event.</li>
                             <li><strong>Failed auth request before tenant resolution.</strong> If we can&apos;t identify the tenant, we cannot bill the tenant.</li>
                             <li><strong>Test fixture events.</strong> Events written from a tenant flagged as a test tenant are excluded by query.</li>
-                            <li><strong>Synthetic QA events.</strong> Events written by the P402 QA harness against an enrolled tenant are excluded by tenant id.</li>
+                            <li><strong>Synthetic QA events.</strong> Events written by the P402 QA suite against an enrolled tenant are excluded by tenant id.</li>
                         </ul>
                     </section>
 
