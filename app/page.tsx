@@ -7,6 +7,7 @@ import { LiveRoutingDemo } from "@/components/landing/LiveRoutingDemo"
 import { ProductionFeatures } from "@/components/landing/ProductionFeatures"
 import Link from 'next/link'
 import { PricingStrip } from "@/components/landing/PricingStrip"
+import { HeroABTest } from "@/components/landing/HeroABTest"
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
@@ -97,25 +98,34 @@ export default async function Page() {
             <main>
                 {/* 1. Hero */}
                 <section className="bg-white border-b-2 border-black">
-                    <div className="container mx-auto px-6 max-w-7xl py-24 md:py-32">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-6">AI spend accountability infrastructure</div>
-                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-tighter leading-none mb-8">
-                            Make AI spend<br />accountable.
-                        </h1>
-                        <p className="text-lg md:text-xl text-neutral-700 font-medium leading-relaxed max-w-3xl mb-10">
-                            P402 turns every AI request into an economic event with owner, workflow, model, provider, tokens, cost, budget, policy result, outcome, and evidence status. Private by default, metadata-only metering.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                            <Link href="/meter" className="btn btn-primary text-base px-8 py-4 h-auto">
-                                Install Meter
-                            </Link>
-                            <Link href="/dashboard?demo=1" className="text-base px-8 py-4 h-auto border-2 border-black bg-white text-black font-black uppercase tracking-wider hover:bg-black hover:text-primary transition-colors inline-flex items-center justify-center">
-                                See dashboard
-                            </Link>
+                    <div className="container mx-auto px-6 max-w-7xl py-20 md:py-28">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-stretch">
+                            <div className="lg:col-span-7 flex flex-col justify-center">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-6">AI spend accountability infrastructure</div>
+                                <h1 className="text-5xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter leading-none mb-8">
+                                    Make AI spend<br />accountable.
+                                </h1>
+                                <p className="text-base md:text-lg text-neutral-700 font-medium leading-relaxed mb-8">
+                                    P402 turns every AI request into an economic event with owner, workflow, model, provider, tokens, cost, budget, policy result, outcome, and evidence status. Private by default, metadata-only metering.
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                                    <Link href="/meter" className="btn btn-primary text-base px-8 py-4 h-auto">
+                                        Install Meter
+                                    </Link>
+                                    <Link href="/dashboard?demo=1" className="text-base px-8 py-4 h-auto border-2 border-black bg-white text-black font-black uppercase tracking-wider hover:bg-black hover:text-primary transition-colors inline-flex items-center justify-center">
+                                        See dashboard
+                                    </Link>
+                                </div>
+                                <p className="text-sm text-neutral-500 font-medium">
+                                    No prompt storage required. Metadata-only mode is available from the first event.
+                                </p>
+                            </div>
+                            <div className="lg:col-span-5 flex">
+                                <div className="w-full">
+                                    <HeroABTest />
+                                </div>
+                            </div>
                         </div>
-                        <p className="text-sm text-neutral-500 font-medium">
-                            No prompt storage required. Metadata-only mode is available from the first event.
-                        </p>
                     </div>
                 </section>
 
