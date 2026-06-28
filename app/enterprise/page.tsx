@@ -5,49 +5,49 @@ import { MeterBrand } from '../meter/_components/MeterBrand';
 /* eslint-disable react/no-unescaped-entities */
 
 /**
- * 3S-3: AI Spend Audit landing, rewritten onto the canonical /meter template.
- * Replaces the prior generic SeoLanding-based page. The audit is sold as a
- * one-time offer that produces the AI Spend Accountability Report. Per
- * 3S-public-buyer-surface.md section 11, no plan language and no price point.
+ * 3S-3: enterprise audience hub for CFO, controller, and FinOps buyers.
+ * Forked from the canonical /meter template. Section order is preserved.
+ * Persona sections cut to internal roles (finance, compliance) rather than
+ * external personas (developers, enterprise).
  */
 
 export const metadata: Metadata = {
-    title: 'AI Spend Audit for Enterprise Teams | P402',
+    title: 'Enterprise AI Budget Dashboard | P402',
     description:
-        'A one-time engagement that produces an AI Spend Accountability Report covering attribution, leakage, and evidence readiness.',
-    alternates: { canonical: 'https://p402.io/ai-spend-audit' },
+        'Give finance a dashboard for AI spend by department, employee, workflow, model, vendor, budget, outcome, and evidence status.',
+    alternates: { canonical: 'https://p402.io/enterprise' },
     openGraph: {
-        title: 'AI Spend Audit for Enterprise Teams | P402',
+        title: 'Enterprise AI Budget Dashboard | P402',
         description:
-            'A one-time engagement that produces an AI Spend Accountability Report covering attribution, leakage, and evidence readiness.',
-        url: 'https://p402.io/ai-spend-audit',
+            'Give finance a dashboard for AI spend by department, employee, workflow, model, vendor, budget, outcome, and evidence status.',
+        url: 'https://p402.io/enterprise',
     },
 };
 
 const FAQ_ENTRIES: ReadonlyArray<{ q: string; a: string }> = [
     {
-        q: 'What is included in the AI Spend Accountability Report?',
-        a: 'An attribution map across department, employee, workflow, model, vendor, and customer. A leakage report covering retry waste, context waste, and vendor concentration. An evidence readiness section covering policy result, privacy posture, and receipt coverage per workflow.',
+        q: 'How does P402 attribute AI calls to a department or employee?',
+        a: 'Owner metadata is attached at the moment of the call. Department, employee, workflow, model, vendor, customer, budget, and policy result are recorded with the event, not reconstructed from invoices weeks later.',
     },
     {
-        q: 'Is this a paid engagement?',
-        a: 'Yes, sold as an offer. See contact for scope and pricing. The audit stands on its own and does not require a longer-term commitment to read the report.',
+        q: 'Does P402 store prompts?',
+        a: 'No, by default. P402 runs in metadata-only mode out of the box. Owner, cost, tokens, budget, policy result, outcome, and evidence status are recorded. Prompt and response content stay out unless the tenant opts in to a different mode.',
     },
     {
-        q: 'Does the audit require sharing prompts?',
-        a: 'No. The audit defaults to metadata-only. Owner, model, tokens, cost, budget, policy result, outcome, and evidence status are recorded. Prompt and response content stay out unless the tenant explicitly opts in.',
+        q: 'How does this differ from a FinOps tool?',
+        a: 'FinOps tools report cloud spend after the billing period closes. P402 records the AI economic event when it happens, with owner, workflow, model, vendor, customer, budget, and outcome already attached. Finance reads the same ledger compliance signs off on.',
     },
     {
-        q: 'How long is the metering window?',
-        a: 'Two weeks of live metering across connected providers. The window is enough to surface attribution, leakage patterns, and evidence gaps without committing to a longer engagement.',
+        q: 'Can P402 cover multiple providers?',
+        a: 'Yes. P402 wraps any HTTP-callable model behind one ledger. OpenAI, Anthropic, Gemini, Bedrock, OpenRouter, and direct provider calls land in the same attribution surface, with consistent owner and budget taxonomy.',
     },
     {
-        q: 'What providers are supported?',
-        a: 'OpenAI, Anthropic, Gemini, Bedrock, OpenRouter, and any HTTP-callable model. Calls land in one ledger under a consistent owner taxonomy. Direct provider integrations and routed integrations are both covered.',
+        q: 'What is required to start?',
+        a: 'Create a P402 key and route existing AI calls through it, or post meter-only events from your backend. The first event lands in the ledger and the dashboard renders against real data.',
     },
     {
-        q: 'What happens after the audit?',
-        a: 'You keep the report. You decide whether to continue with Meter, Monitor, Control, Optimize, Receipts, or Prove. The same metering layer can stay running as a live ledger, or it can be turned off after delivery.',
+        q: 'Who in the organization owns this?',
+        a: 'Finance owns the budget and the report. Engineering owns the integration. Compliance reviews the evidence bundles and privacy posture. P402 keeps the same event ledger as the source of truth for all three.',
     },
 ];
 
@@ -56,18 +56,18 @@ const JSONLD = {
     '@graph': [
         {
             '@type': 'Service',
-            name: 'P402 AI Spend Audit',
+            name: 'P402 Enterprise',
             provider: { '@type': 'Organization', name: 'P402' },
-            url: 'https://p402.io/ai-spend-audit',
+            url: 'https://p402.io/enterprise',
             description:
-                'A one-time engagement that produces an AI Spend Accountability Report covering attribution, leakage, and evidence readiness across every AI provider.',
+                'Enterprise dashboard for AI spend by department, employee, workflow, model, vendor, budget, outcome, and evidence status. One ledger for finance, procurement, and audit.',
         },
         {
             '@type': 'Product',
-            name: 'P402 AI Spend Audit',
+            name: 'P402 Enterprise',
             brand: { '@type': 'Brand', name: 'P402' },
             description:
-                'One-time AI spend audit. Delivers attribution, leakage, and evidence readiness in a single report across every connected AI provider.',
+                'AI budget dashboard with department, employee, workflow, model, vendor, customer, budget, outcome, and evidence attribution on every event.',
         },
         {
             '@type': 'FAQPage',
@@ -80,7 +80,7 @@ const JSONLD = {
     ],
 };
 
-export default function AiSpendAuditPage() {
+export default function EnterprisePage() {
     return (
         <>
             <script
@@ -100,6 +100,7 @@ export default function AiSpendAuditPage() {
                 <ForFinance />
                 <ForCompliance />
                 <Faq />
+                <Related />
                 <FinalCta />
             </main>
         </>
@@ -138,35 +139,36 @@ function Hero() {
     return (
         <section className="flex flex-col gap-6 max-w-3xl">
             <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
-                {'>'} _ P402 AI SPEND AUDIT
+                {'>'} _ P402 ENTERPRISE
             </div>
             <h1 className="text-4xl lg:text-6xl font-bold uppercase tracking-tight leading-none">
-                A one-time audit of<br />
+                Give finance a real ledger for<br />
                 <span className="text-primary">AI spend.</span>
             </h1>
             <p className="text-base font-mono text-neutral-300 leading-relaxed">
-                The P402 AI Spend Audit produces an AI Spend Accountability Report
-                covering attribution, leakage, and evidence readiness across every AI
-                provider your organization uses.
+                P402 turns AI usage into a dashboard for department, employee, workflow,
+                model, vendor, budget, outcome, and evidence status. Finance reviews the
+                same event ledger compliance signs off on.
             </p>
 
             <div className="flex flex-wrap gap-3 pt-2">
                 <Link
-                    href="/get-access?intent=ai-spend-audit"
+                    href="/ai-spend-audit"
                     className="border-2 border-primary bg-primary text-neutral-900 text-xs font-black uppercase tracking-wider px-5 py-2.5 hover:bg-neutral-900 hover:text-primary transition-colors"
                 >
-                    Request audit
+                    Run AI Spend Audit
                 </Link>
                 <Link
-                    href="/dashboard?demo=1&view=audit-report"
+                    href="/dashboard?demo=1"
                     className="border-2 border-neutral-700 text-neutral-200 text-xs font-black uppercase tracking-wider px-5 py-2.5 hover:border-primary hover:text-primary transition-colors"
                 >
-                    See sample report
+                    See dashboard
                 </Link>
             </div>
 
             <p className="text-[11px] font-mono text-neutral-500 leading-relaxed pt-2">
-                One engagement. No long-term commitment required to read the report.
+                Metadata-only by default. Five privacy modes. P402 meters economics, not
+                content.
             </p>
         </section>
     );
@@ -177,33 +179,35 @@ function Problem() {
         <section className="flex flex-col gap-4 max-w-3xl">
             <SectionLabel>The problem</SectionLabel>
             <h2 className="text-2xl lg:text-3xl font-bold uppercase tracking-tight">
-                Finance owns the AI cost without the AI attribution.
+                AI spend lives outside finance.
             </h2>
             <p className="text-sm font-mono text-neutral-300 leading-relaxed">
-                Provider invoices arrive monthly and aggregate every call. There is no
-                department, no employee, no workflow, no vendor breakout. The AI Spend
-                Audit fills that gap as a discrete engagement, before broader rollout.
+                AI provider invoices arrive after the fact, aggregated by month, with no
+                department, employee, workflow, or vendor breakout. Finance owns the cost
+                without the attribution. P402 records ownership when the call happens,
+                then exposes it to finance, procurement, audit, and the budget owner in
+                one ledger.
             </p>
         </section>
     );
 }
 
 const RECORDS: ReadonlyArray<{ name: string; line: string }> = [
-    { name: 'Attribution map',       line: 'Spend split by department, employee, workflow, model, vendor, and customer.' },
-    { name: 'Leakage report',        line: 'Calls without an owner, runaway loops, and orphaned API keys surfaced as line items.' },
-    { name: 'Retry waste',           line: 'Tokens spent on retried calls that produced no new outcome.' },
-    { name: 'Context waste',         line: 'Tokens spent on context that did not change the outcome of the call.' },
-    { name: 'Vendor concentration',  line: 'Share of spend, share of outcomes, and single-vendor risk per workflow.' },
-    { name: 'Privacy posture',       line: 'Privacy mode in effect per workflow, with prompt retention exposure flagged.' },
-    { name: 'Evidence readiness',    line: 'Receipt and evidence bundle coverage per workflow for audit and finance review.' },
-    { name: 'Policy gap analysis',   line: 'Workflows running without a policy result attached, ranked by spend.' },
-    { name: 'Accountability report', line: 'One delivered report covering attribution, leakage, and evidence readiness.' },
+    { name: 'Department', line: 'Spend grouped by the department that owns the workflow.' },
+    { name: 'Employee',   line: 'Per-seat attribution for every call that ran under a user.' },
+    { name: 'Workflow',   line: 'The task or process the call served, surfaced in one view.' },
+    { name: 'Model',      line: 'Provider and model, with requested and used split out per event.' },
+    { name: 'Vendor',     line: 'Vendor mix, share of spend, and per-vendor outcomes.' },
+    { name: 'Customer',   line: 'Per-customer cost when the workflow served an end user.' },
+    { name: 'Budget',     line: 'Budget the event drew from and remaining balance for the owner.' },
+    { name: 'Outcome',    line: 'Accepted, rejected, revised, escalated, or failed events.' },
+    { name: 'Evidence',   line: 'Receipt and evidence bundle status on every event.' },
 ];
 
 function Records() {
     return (
         <section className="flex flex-col gap-6">
-            <SectionLabel>What the audit delivers</SectionLabel>
+            <SectionLabel>What enterprise sees</SectionLabel>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {RECORDS.map((r) => (
                     <div
@@ -226,23 +230,23 @@ function Records() {
 const STEPS: ReadonlyArray<{ n: string; title: string; body: string }> = [
     {
         n: '01',
-        title: 'Connect read-only access to existing AI providers via P402.',
-        body: 'Existing OpenAI, Anthropic, Gemini, Bedrock, and OpenRouter integrations land in the same ledger. No code changes required beyond routing through P402 or posting meter-only events.',
+        title: 'Connect existing AI providers through P402.',
+        body: 'Route AI calls through P402, or post meter-only events from your backend. Existing OpenAI, Anthropic, Gemini, Bedrock, and OpenRouter integrations land in the same ledger.',
     },
     {
         n: '02',
-        title: 'Two-week metering window collects events under your owner taxonomy.',
-        body: 'Events are tagged with department, employee, workflow, vendor, customer, and budget identifiers from the taxonomy finance already uses. Metadata-only by default.',
+        title: 'Tag events with owner taxonomy already used in finance.',
+        body: 'Department, employee, workflow, vendor, customer, and budget identifiers map to the same taxonomy finance already reports against. No new owner model required.',
     },
     {
         n: '03',
-        title: 'P402 produces the AI Spend Accountability Report, with attribution, leakage, and evidence readiness sections.',
-        body: 'One delivered report. Attribution map, leakage report, retry and context waste, vendor concentration, privacy posture, evidence readiness, and policy gap analysis.',
+        title: 'Review department, workflow, model, vendor, and customer spend in the dashboard.',
+        body: 'Group and filter events by any combination of owners. Compare against a baseline window to see drift in cost, mix, or outcome.',
     },
     {
         n: '04',
-        title: 'Review the report. Decide whether to continue with Meter, Monitor, Control, Optimize, Receipts, or Prove. The audit stands on its own.',
-        body: 'You keep the report. Continuing with the metering layer is a separate decision. The audit produces a deliverable, not a multi-year commitment.',
+        title: 'Export evidence bundles and finance reports for review.',
+        body: 'CSV and finance report bundles for procurement, finance, and audit. Evidence bundles surface policy result, privacy mode, and outcome per event without exposing prompts.',
     },
 ];
 
@@ -287,10 +291,10 @@ function Privacy() {
                 Meter economics, not content.
             </h2>
             <p className="text-sm font-mono text-neutral-300 leading-relaxed">
-                The audit defaults to metadata-only. Prompt content is not required to
-                produce the report. Sensitive workflows can run under private gateway
-                mode, where the inference stays in your environment and P402 records the
-                economic event over a signed channel.
+                Enterprise dashboards run over the same metadata-only events Meter
+                records. Prompt content is off by default. Finance, procurement, and
+                audit review the ledger without touching tenant content. Sensitive
+                workflows can run under private gateway mode.
             </p>
 
             <ul className="flex flex-col gap-2">
@@ -361,12 +365,13 @@ function ForFinance() {
         <section className="flex flex-col gap-4 max-w-3xl">
             <SectionLabel>For finance</SectionLabel>
             <h2 className="text-2xl lg:text-3xl font-bold uppercase tracking-tight">
-                Stop reconciling AI spend after the fact.
+                One ledger for AI spend by department, workflow, model, and vendor.
             </h2>
             <p className="text-sm font-mono text-neutral-300 leading-relaxed">
-                The audit delivers attribution at event time, not invoice time. Finance
-                reads spend by department, workflow, model, vendor, and customer in one
-                report, with outcome and evidence already attached.
+                Stop reconciling AI provider invoices against engineering tickets after
+                the month closes. P402 records attribution at event time. Finance opens
+                the dashboard and sees AI spend by department, workflow, model, vendor,
+                customer, and budget, with outcome and evidence already attached.
             </p>
             <div>
                 <Link
@@ -385,12 +390,13 @@ function ForCompliance() {
         <section className="flex flex-col gap-4 max-w-3xl">
             <SectionLabel>For compliance</SectionLabel>
             <h2 className="text-2xl lg:text-3xl font-bold uppercase tracking-tight">
-                Audit-grade evidence per AI call.
+                Evidence finance, audit, and legal can sign off on.
             </h2>
             <p className="text-sm font-mono text-neutral-300 leading-relaxed">
-                The report includes evidence readiness per workflow, with privacy mode,
-                policy result, and receipt coverage on every event. Audit and legal can
-                review the same record finance reports from.
+                Every event records the privacy mode, policy result, owner, model, and
+                outcome. Evidence bundles export the same record to finance, audit, and
+                legal. Compliance reviews posture and exceptions in the same ledger
+                finance reports from.
             </p>
             <div>
                 <Link
@@ -433,24 +439,54 @@ function Faq() {
     );
 }
 
+const RELATED: ReadonlyArray<{ name: string; line: string; href: string }> = [
+    { name: 'Monitor', line: 'Read-only dashboards for AI spend by department, workflow, model, vendor, and customer.', href: '/monitor' },
+    { name: 'Prove',   line: 'Cryptographic receipts and evidence bundles for finance, audit, and legal review.',       href: '/prove' },
+    { name: 'Trust',   line: 'Privacy posture, retention defaults, and operating model for regulated environments.',    href: '/trust' },
+];
+
+function Related() {
+    return (
+        <section className="flex flex-col gap-6">
+            <SectionLabel>Related</SectionLabel>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {RELATED.map((r) => (
+                    <Link
+                        key={r.href}
+                        href={r.href}
+                        className="border-2 border-neutral-700 p-4 flex flex-col gap-2 hover:border-primary transition-colors"
+                    >
+                        <div className="text-primary text-[10px] font-mono font-bold uppercase tracking-wider">
+                            {r.name}
+                        </div>
+                        <div className="text-[11px] font-mono text-neutral-300 leading-relaxed">
+                            {r.line}
+                        </div>
+                    </Link>
+                ))}
+            </div>
+        </section>
+    );
+}
+
 function FinalCta() {
     return (
         <section className="flex flex-col gap-4 max-w-3xl">
             <SectionLabel>Get started</SectionLabel>
             <h2 className="text-3xl lg:text-4xl font-bold uppercase tracking-tight">
-                Get the report. Decide the next step.
+                Run an AI Spend Audit, then keep the dashboard.
             </h2>
             <p className="text-sm font-mono text-neutral-300 leading-relaxed">
-                The AI Spend Audit is a one-time engagement. The report stands on its
-                own. Continuing with the metering layer is a separate decision after
-                delivery.
+                The audit produces the AI Spend Accountability Report. The same metering
+                layer continues as a live ledger for finance, procurement, audit, and the
+                budget owner.
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
                 <Link
-                    href="/get-access?intent=ai-spend-audit"
+                    href="/ai-spend-audit"
                     className="border-2 border-primary bg-primary text-neutral-900 text-xs font-black uppercase tracking-wider px-5 py-2.5 hover:bg-neutral-900 hover:text-primary transition-colors"
                 >
-                    Request audit
+                    Run AI Spend Audit
                 </Link>
                 <Link
                     href="/trust"
