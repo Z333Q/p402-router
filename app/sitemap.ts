@@ -19,6 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { url: `${baseUrl}/product/ecosystem`,      lastModified: now, changeFrequency: 'weekly',  priority: 0.8 },
 
         // ── Developer pages ───────────────────────────────────────────
+        { url: `${baseUrl}/developers`,             lastModified: now, changeFrequency: 'weekly',  priority: 0.95 },
         { url: `${baseUrl}/developers/quickstart`,  lastModified: now, changeFrequency: 'weekly',  priority: 0.95 },
 
         // ── Intelligence + marketplace ────────────────────────────────
