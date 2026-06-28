@@ -87,6 +87,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { url: `${baseUrl}/ai-cogs-dashboard`,               lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
         { url: `${baseUrl}/ai-cost-optimization`,            lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
 
+        // ── Partner program ───────────────────────────────────────────
+        { url: `${baseUrl}/partners`,                       lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },
+        { url: `${baseUrl}/partners/apply`,                 lastModified: now, changeFrequency: 'monthly', priority: 0.7  },
+
         // ── Changelog ─────────────────────────────────────────────────
         { url: `${baseUrl}/changelog`,                      lastModified: now, changeFrequency: 'weekly',  priority: 0.6  },
 

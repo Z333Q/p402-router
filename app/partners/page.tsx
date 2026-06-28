@@ -1,240 +1,561 @@
-import Link from 'next/link'
-import {
-    DollarSign,
-    Zap,
-    Shield,
-    BarChart2,
-    Users,
-    BookOpen,
-    ArrowRight,
-    Check,
-} from 'lucide-react'
-import type { Metadata } from 'next'
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { MeterBrand } from '../meter/_components/MeterBrand';
+
+/* eslint-disable react/no-unescaped-entities */
+
+/**
+ * 3S-7: partners buyer-surface hub. Forked from the canonical /meter
+ * template and the /trust hub. Preserves the three-track structure
+ * (developer affiliate, agency, enterprise referral) from the prior
+ * partner page, reframed under V5 AI spend accountability positioning.
+ */
 
 export const metadata: Metadata = {
-    title: 'Partner Program — P402',
+    title: 'P402 Partner Program | AI Spend Accountability',
     description:
-        'Earn recurring commissions by referring developers, agents, and enterprises to the P402 AI payment router. Three tracks: affiliate, agency, and enterprise referral.',
+        'Refer, implement, and advise teams adopting AI spend accountability with the P402 partner program.',
+    alternates: { canonical: 'https://p402.io/partners' },
+    openGraph: {
+        title: 'P402 Partner Program | AI Spend Accountability',
+        description:
+            'Refer, implement, and advise teams adopting AI spend accountability with the P402 partner program.',
+        url: 'https://p402.io/partners',
+    },
+};
+
+const FAQ_ENTRIES: ReadonlyArray<{ q: string; a: string }> = [
+    {
+        q: 'Who is the program for?',
+        a: 'Developers writing AI content or SDK integrations; agencies implementing P402 for clients; enterprise contacts referring budget owners.',
+    },
+    {
+        q: 'How are commissions reconciled?',
+        a: 'Monthly reconciliation tied to client P402 usage, with payout via the selected channel.',
+    },
+    {
+        q: 'Do partners see client prompts?',
+        a: 'No. P402 records metadata-only economic events. Partner attribution stays at the tenant boundary.',
+    },
+    {
+        q: 'Is there a sub-affiliate program?',
+        a: 'Partners can refer other partners. The referring partner sees override credit per the partner agreement.',
+    },
+    {
+        q: 'Do I need to be technical?',
+        a: 'No for referrers. Yes for implementers. The three tracks reflect that split.',
+    },
+    {
+        q: 'What does the application require?',
+        a: 'Identification, the referral channel you plan to use, and any client context. The form is on the apply page.',
+    },
+];
+
+const JSONLD = {
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'SoftwareApplication',
+            name: 'P402 Partner Program',
+            applicationCategory: 'BusinessApplication',
+            operatingSystem: 'Web',
+            url: 'https://p402.io/partners',
+            description:
+                'Partner program for developers, agencies, and enterprise referrers introducing P402 AI spend accountability to teams.',
+        },
+        {
+            '@type': 'Product',
+            name: 'P402 Partner Program',
+            brand: { '@type': 'Brand', name: 'P402' },
+            description:
+                'Three-track partner program: developer affiliate, agency integration, and enterprise referral.',
+        },
+        {
+            '@type': 'FAQPage',
+            mainEntity: FAQ_ENTRIES.map((e) => ({
+                '@type': 'Question',
+                name: e.q,
+                acceptedAnswer: { '@type': 'Answer', text: e.a },
+            })),
+        },
+    ],
+};
+
+export default function PartnersPage() {
+    return (
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(JSONLD) }}
+            />
+
+            <TopBar />
+
+            <main className="max-w-5xl mx-auto px-6 py-16 flex flex-col gap-20">
+                <Hero />
+                <WhyNow />
+                <Tracks />
+                <ClientOutcomes />
+                <HowItWorks />
+                <Privacy />
+                <Related />
+                <Faq />
+                <FinalCta />
+            </main>
+        </>
+    );
 }
 
-// ---------------------------------------------------------------------------
-// Data
-// ---------------------------------------------------------------------------
+function TopBar() {
+    return (
+        <div className="border-b-2 border-neutral-700 px-6 py-3 flex items-center justify-between">
+            <MeterBrand />
+            <div className="flex items-center gap-4">
+                <Link
+                    href="/docs"
+                    className="text-[10px] font-mono text-neutral-400 hover:text-primary uppercase tracking-wider transition-colors"
+                >
+                    Docs
+                </Link>
+                <Link
+                    href="/pricing"
+                    className="text-[10px] font-mono text-neutral-400 hover:text-primary uppercase tracking-wider transition-colors"
+                >
+                    Pricing
+                </Link>
+                <Link
+                    href="/dashboard"
+                    className="text-[10px] font-mono text-neutral-400 hover:text-primary uppercase tracking-wider transition-colors"
+                >
+                    Dashboard
+                </Link>
+            </div>
+        </div>
+    );
+}
 
-const TRACKS = [
+function Hero() {
+    return (
+        <section className="flex flex-col gap-6 max-w-3xl">
+            <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
+                {'>'} _ P402 PARTNERS
+            </div>
+            <h1 className="text-4xl lg:text-6xl font-bold uppercase tracking-tight leading-none">
+                Help clients deploy AI spend <span className="text-primary">accountability.</span>
+            </h1>
+            <p className="text-base font-mono text-neutral-300 leading-relaxed">
+                The P402 partner program is for developers, agencies, and enterprise
+                referrers introducing AI spend accountability infrastructure to teams
+                that need attribution, evidence, and margin control.
+            </p>
+
+            <div className="flex flex-wrap gap-3 pt-2">
+                <Link
+                    href="/partners/apply"
+                    className="border-2 border-primary bg-primary text-neutral-900 text-xs font-black uppercase tracking-wider px-5 py-2.5 hover:bg-neutral-900 hover:text-primary transition-colors"
+                >
+                    Apply as partner
+                </Link>
+                <Link
+                    href="/docs"
+                    className="border-2 border-neutral-700 text-neutral-200 text-xs font-black uppercase tracking-wider px-5 py-2.5 hover:border-primary hover:text-primary transition-colors"
+                >
+                    Read docs
+                </Link>
+            </div>
+
+            <p className="text-[11px] font-mono text-neutral-500 leading-relaxed pt-2">
+                Partners are part of the funnel, not a side page.
+            </p>
+        </section>
+    );
+}
+
+const WHY_NOW: ReadonlyArray<{ name: string; line: string }> = [
+    { name: 'Buyer demand', line: 'Finance, procurement, and engineering all want AI spend ownership.' },
+    { name: 'Adoption path', line: 'Meter, Monitor, Control, Optimize, Receipts, Prove. Six entry points.' },
+    { name: 'Privacy floor', line: 'Metadata-only by default. Audit-safe for regulated clients.' },
+];
+
+function WhyNow() {
+    return (
+        <section className="flex flex-col gap-6">
+            <SectionLabel>Why now</SectionLabel>
+            <h2 className="text-2xl lg:text-3xl font-bold uppercase tracking-tight">
+                AI spend is moving from invisible to attributed.
+            </h2>
+            <p className="text-sm font-mono text-neutral-300 leading-relaxed max-w-3xl">
+                Enterprise teams are looking for AI cost attribution, budget control,
+                policy result tracking, and evidence per call. P402 ships that
+                infrastructure. Partners help clients adopt it.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {WHY_NOW.map((w) => (
+                    <div
+                        key={w.name}
+                        className="border-2 border-neutral-700 p-4 flex flex-col gap-1"
+                    >
+                        <div className="text-primary text-[10px] font-mono font-bold uppercase tracking-wider">
+                            {w.name}
+                        </div>
+                        <div className="text-[11px] font-mono text-neutral-300 leading-relaxed">
+                            {w.line}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+}
+
+const TRACKS: ReadonlyArray<{
+    id: string;
+    badge: string;
+    name: string;
+    audience: string;
+    outcome: string;
+    commissions: ReadonlyArray<string>;
+    requirements: ReadonlyArray<string>;
+}> = [
     {
         id: 'affiliate',
         badge: 'Track A',
         name: 'Developer Affiliate',
-        for: 'AI builders, educators, SDK tutorial writers, technical content creators',
+        audience: 'AI builders, educators, SDK tutorial writers, technical content creators.',
+        outcome: 'Help developer audiences ship cost ownership on every AI feature they build.',
         commissions: [
             '20% recurring for 12 months on referred Pro subscriptions',
             'Share of P402 net platform fee from referred usage',
             'Bonus bounty for referred publisher activations',
         ],
-        cta: 'Apply as Affiliate',
+        requirements: [
+            'A technical audience or channel (newsletter, blog, video, SDK docs)',
+            'Disclosure of the partner relationship in referral content',
+            'Use of the approved attribution link and partner kit',
+        ],
     },
     {
         id: 'agency',
         badge: 'Track B',
         name: 'Integration Partner',
-        for: 'Agencies, consultant networks, AI automation firms, implementation shops',
+        audience: 'Agencies, consultant networks, AI automation firms, implementation shops.',
+        outcome: 'Deploy P402 for client teams that need attribution, budget control, and evidence.',
         commissions: [
             '25% recurring on referred Pro subscriptions',
             'Fixed bounty per launched client workspace',
             'Optional implementation rebate for onboarding assets',
         ],
-        cta: 'Apply as Agency',
+        requirements: [
+            'Capability to deploy P402 for client teams end-to-end',
+            'Named accounts registered through the partner portal',
+            'Implementation case write-up after each launch',
+        ],
     },
     {
         id: 'enterprise',
         badge: 'Track C',
         name: 'Enterprise Referral Partner',
-        for: 'Ecosystem connectors, investors, advisors, enterprise consultants',
+        audience: 'Ecosystem connectors, investors, advisors, enterprise consultants.',
+        outcome: 'Introduce enterprise budget owners to AI spend accountability and evidence reporting.',
         commissions: [
-            '5–10% of year-one net software revenue',
+            '5 to 10% of year-one net software revenue',
             'Fixed bounty for accepted and closed-won deals',
-            'Deal registration required — no cookie-only attribution',
+            'Deal registration required, no cookie-only attribution',
         ],
-        cta: 'Apply as Enterprise Partner',
+        requirements: [
+            'Direct contact with an enterprise budget owner or sponsor',
+            'Deal registration submitted before introduction',
+            'Compliance with the enterprise partner agreement',
+        ],
     },
-]
+];
 
-const HOW_IT_WORKS = [
-    { step: '01', title: 'Apply', body: 'Submit your application. We review channel quality and fit with the P402 ICP before approving.' },
-    { step: '02', title: 'Get your link', body: 'Once approved, generate referral links with UTM and SubID support for precise attribution.' },
-    { step: '03', title: 'Drive activation', body: 'Share P402 with your audience. Commissions start after meaningful activation — funded wallets, first settlements, paid subscriptions.' },
-    { step: '04', title: 'Earn recurring', body: 'Subscription commissions recur for 12 months per referred account. Usage commissions accrue monthly.' },
-]
-
-const PROGRAM_FEATURES = [
-    { icon: DollarSign, title: 'Revenue-based commissions', body: 'We pay on collected subscription revenue and P402 net platform fee — not on gross settlement volume.' },
-    { icon: Zap,         title: 'First-class dashboard',    body: 'Dedicated partner portal with links, conversion analytics, commission ledger, and payout tracking.' },
-    { icon: Shield,      title: 'Fraud-aware payouts',      body: 'Hold periods, manual review for anomalies, and idempotent ledger entries protect the commission pool.' },
-    { icon: BarChart2,   title: 'Full attribution trace',   body: 'First-touch + last-touch tracking with UTM and SubID. Override rules for registered leads and deals.' },
-    { icon: Users,       title: 'Agency lead workflows',    body: 'Agency partners can register leads and deals, overriding cookie attribution with accepted registrations.' },
-    { icon: BookOpen,    title: 'Gated partner docs',       body: 'Talk tracks, approved claims, ICP guides, comparison sheets, and campaign assets — gated by partner role.' },
-]
-
-// ---------------------------------------------------------------------------
-// Components
-// ---------------------------------------------------------------------------
-
-function TrackCard({ track }: { track: typeof TRACKS[number] }) {
+function Tracks() {
     return (
-        <div className="card p-6 flex flex-col gap-5">
-            <div>
-                <div className="flex items-center gap-3 mb-3">
-                    <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-neutral-100 border border-black text-neutral-600">
-                        {track.badge}
-                    </span>
-                </div>
-                <h3 className="text-lg font-black uppercase tracking-tight text-black mb-1">{track.name}</h3>
-                <p className="text-xs text-neutral-500">{track.for}</p>
+        <section className="flex flex-col gap-6">
+            <SectionLabel>Partner tracks</SectionLabel>
+            <h2 className="text-2xl lg:text-3xl font-bold uppercase tracking-tight">
+                Three tracks, one outcome.
+            </h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                {TRACKS.map((t) => (
+                    <div
+                        key={t.id}
+                        className="border-2 border-neutral-700 p-5 flex flex-col gap-3"
+                    >
+                        <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-mono font-bold text-neutral-900 bg-primary px-2 py-0.5 uppercase tracking-widest">
+                                {t.badge}
+                            </span>
+                        </div>
+                        <div className="text-sm font-bold uppercase tracking-tight text-neutral-50">
+                            {t.name}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-500">
+                                For
+                            </div>
+                            <div className="text-[11px] font-mono text-neutral-300 leading-relaxed">
+                                {t.audience}
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-primary">
+                                Outcome
+                            </div>
+                            <div className="text-[11px] font-mono text-neutral-300 leading-relaxed">
+                                {t.outcome}
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-primary">
+                                Commissions
+                            </div>
+                            <ul className="flex flex-col gap-1">
+                                {t.commissions.map((c) => (
+                                    <li
+                                        key={c}
+                                        className="text-[11px] font-mono text-neutral-300 leading-relaxed"
+                                    >
+                                        {c}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-500">
+                                Requirements
+                            </div>
+                            <ul className="flex flex-col gap-1">
+                                {t.requirements.map((r) => (
+                                    <li
+                                        key={r}
+                                        className="text-[11px] font-mono text-neutral-400 leading-relaxed"
+                                    >
+                                        {r}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                ))}
             </div>
-            <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 mb-2">Commissions</p>
-                <ul className="space-y-1.5">
-                    {track.commissions.map(c => (
-                        <li key={c} className="flex items-start gap-2 text-xs text-neutral-700">
-                            <Check size={12} className="text-primary shrink-0 mt-0.5" strokeWidth={3} />
-                            {c}
-                        </li>
-                    ))}
-                </ul>
-            </div>
-            <Link
-                href={`/partners/apply?type=${track.id}`}
-                className="btn btn-primary w-full text-center mt-auto flex items-center justify-center gap-2"
-            >
-                {track.cta}
-                <ArrowRight size={14} />
-            </Link>
-        </div>
-    )
+        </section>
+    );
 }
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
+const CLIENT_OUTCOMES: ReadonlyArray<{ name: string; line: string }> = [
+    { name: 'AI cost attribution', line: 'Per workflow, customer, department, employee, model, vendor.' },
+    { name: 'Budget control', line: 'Plan and simulate budgets and policy boundaries.' },
+    { name: 'Margin control', line: 'Track AI feature margin and cost per accepted output.' },
+    { name: 'Outcome reporting', line: 'Accepted, revised, escalated, failed: tied to cost.' },
+    { name: 'Evidence bundles', line: 'Exportable proof for finance, audit, and compliance.' },
+    { name: 'Optional settlement', line: 'x402 receipts for payable AI work, only when needed.' },
+];
 
-export default function PartnersLandingPage() {
+function ClientOutcomes() {
     return (
-        <div className="min-h-screen bg-white font-sans">
-            {/* Hero */}
-            <section className="border-b-2 border-black bg-black text-white">
-                <div className="mx-auto max-w-5xl px-6 py-20 lg:py-28">
-                    <div className="max-w-2xl">
-                        <div className="flex items-center gap-3 mb-6">
-                            <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-primary text-black border border-primary">
-                                Partner Program
-                            </span>
-                            <span className="text-[10px] text-neutral-400 font-mono">Application-only · Approval-based</span>
+        <section className="flex flex-col gap-6">
+            <SectionLabel>Client outcomes</SectionLabel>
+            <h2 className="text-2xl lg:text-3xl font-bold uppercase tracking-tight">
+                Help clients ship attribution, control, and evidence.
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {CLIENT_OUTCOMES.map((o) => (
+                    <div
+                        key={o.name}
+                        className="border-2 border-neutral-700 p-4 flex flex-col gap-1"
+                    >
+                        <div className="text-primary text-[10px] font-mono font-bold uppercase tracking-wider">
+                            {o.name}
                         </div>
-                        <h1 className="text-4xl lg:text-5xl font-black uppercase tracking-tight leading-none mb-6">
-                            Earn recurring revenue <span className="text-primary">by distributing the future of AI payments.</span>
-                        </h1>
-                        <p className="text-neutral-300 text-base leading-relaxed mb-8 max-w-xl">
-                            P402 is the payment-aware AI router trusted by agents, developers, and enterprises.
-                            Refer accounts that activate and grow — earn commissions that compound.
-                        </p>
-                        <div className="flex items-center gap-4 flex-wrap">
-                            <Link href="/partners/apply" className="btn btn-primary flex items-center gap-2">
-                                Apply Now
-                                <ArrowRight size={14} />
-                            </Link>
-                            <Link href="#program" className="text-sm font-black text-neutral-400 hover:text-white transition-colors uppercase tracking-widest">
-                                Learn More ↓
-                            </Link>
+                        <div className="text-[11px] font-mono text-neutral-300 leading-relaxed">
+                            {o.line}
                         </div>
                     </div>
-                </div>
-            </section>
+                ))}
+            </div>
+        </section>
+    );
+}
 
-            {/* Stats bar */}
-            <section className="border-b-2 border-black bg-primary">
-                <div className="mx-auto max-w-5xl px-6 py-5">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[
-                            { label: 'Commission on Pro', value: '20%' },
-                            { label: 'Commission duration', value: '12 mo' },
-                            { label: 'Attribution window', value: '90 days' },
-                            { label: 'Program tracks', value: '3' },
-                        ].map(item => (
-                            <div key={item.label}>
-                                <div className="text-3xl font-black text-black">{item.value}</div>
-                                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-700">{item.label}</div>
+const STEPS: ReadonlyArray<{ n: string; title: string; body: string }> = [
+    {
+        n: '01',
+        title: 'Apply.',
+        body: 'Submit the partner application form.',
+    },
+    {
+        n: '02',
+        title: 'Get onboarded.',
+        body: 'Receive partner portal access, attribution links, and resources.',
+    },
+    {
+        n: '03',
+        title: 'Refer or implement.',
+        body: 'Use your tracked link, or deploy P402 for clients directly.',
+    },
+    {
+        n: '04',
+        title: 'Earn payouts.',
+        body: 'Commissions reconcile monthly. Payouts via the selected channel.',
+    },
+];
+
+function HowItWorks() {
+    return (
+        <section className="flex flex-col gap-6">
+            <SectionLabel>How it works</SectionLabel>
+            <ol className="flex flex-col gap-4">
+                {STEPS.map((s) => (
+                    <li key={s.n} className="border-2 border-neutral-700 p-5 flex flex-col md:flex-row gap-4">
+                        <div className="text-3xl font-bold font-mono tabular-nums text-primary shrink-0 md:w-16">
+                            {s.n}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <div className="text-sm font-bold uppercase tracking-tight text-neutral-50">
+                                {s.title}
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Program tracks */}
-            <section id="program" className="border-b-2 border-black">
-                <div className="mx-auto max-w-5xl px-6 py-16">
-                    <div className="mb-10">
-                        <h2 className="text-2xl font-black uppercase tracking-tight text-black mb-3">
-                            Three Partner Tracks
-                        </h2>
-                        <p className="text-sm text-neutral-500 max-w-xl">
-                            Not a flat referral program. A segmented partner system designed for how P402 actually gets distributed.
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {TRACKS.map(t => <TrackCard key={t.id} track={t} />)}
-                    </div>
-                </div>
-            </section>
-
-            {/* How it works */}
-            <section className="border-b-2 border-black bg-neutral-50">
-                <div className="mx-auto max-w-5xl px-6 py-16">
-                    <h2 className="text-2xl font-black uppercase tracking-tight text-black mb-10">How It Works</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {HOW_IT_WORKS.map(item => (
-                            <div key={item.step} className="space-y-3">
-                                <div className="text-4xl font-black text-primary/40">{item.step}</div>
-                                <h3 className="text-sm font-black uppercase tracking-tight text-black">{item.title}</h3>
-                                <p className="text-xs text-neutral-500 leading-relaxed">{item.body}</p>
+                            <div className="text-[11px] font-mono text-neutral-400 leading-relaxed">
+                                {s.body}
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+                        </div>
+                    </li>
+                ))}
+            </ol>
+        </section>
+    );
+}
 
-            {/* Features */}
-            <section className="border-b-2 border-black">
-                <div className="mx-auto max-w-5xl px-6 py-16">
-                    <h2 className="text-2xl font-black uppercase tracking-tight text-black mb-10">What You Get</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {PROGRAM_FEATURES.map(f => (
-                            <div key={f.title} className="card p-5">
-                                <f.icon className="h-5 w-5 text-primary mb-3" />
-                                <h3 className="text-sm font-black uppercase tracking-tight text-black mb-2">{f.title}</h3>
-                                <p className="text-xs text-neutral-500 leading-relaxed">{f.body}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+function Privacy() {
+    return (
+        <section className="flex flex-col gap-4 max-w-3xl">
+            <SectionLabel>Privacy boundary</SectionLabel>
+            <h2 className="text-2xl lg:text-3xl font-bold uppercase tracking-tight">
+                Partner attribution at the tenant boundary.
+            </h2>
+            <p className="text-sm font-mono text-neutral-300 leading-relaxed">
+                Partners do not access client prompt content. P402 records
+                metadata-only economic events by default. Partner attribution lives at
+                the tenant boundary, not inside client AI workflows.
+            </p>
+            <div>
+                <Link
+                    href="/trust"
+                    className="border-2 border-neutral-700 text-neutral-200 text-xs font-black uppercase tracking-wider px-5 py-2.5 hover:border-primary hover:text-primary transition-colors"
+                >
+                    Read the trust posture
+                </Link>
+            </div>
+        </section>
+    );
+}
 
-            {/* CTA */}
-            <section className="bg-black text-white">
-                <div className="mx-auto max-w-5xl px-6 py-16 text-center">
-                    <h2 className="text-3xl font-black uppercase tracking-tight mb-4">
-                        Ready to Partner?
-                    </h2>
-                    <p className="text-neutral-400 text-sm mb-8 max-w-md mx-auto">
-                        Applications are reviewed manually. We prioritize quality distribution over volume.
-                        Approval takes 2–5 business days.
-                    </p>
-                    <Link href="/partners/apply" className="btn btn-primary inline-flex items-center gap-2">
-                        Apply to Partner Program
-                        <ArrowRight size={14} />
+const RELATED: ReadonlyArray<{ name: string; href: string; line: string }> = [
+    {
+        name: 'AI Spend Audit',
+        href: '/ai-spend-audit',
+        line: 'One-time engagement that produces an AI Spend Accountability Report.',
+    },
+    {
+        name: 'Developers',
+        href: '/developers',
+        line: 'OpenAI-compatible meter for AI usage, margin, and outcomes.',
+    },
+    {
+        name: 'Enterprise',
+        href: '/enterprise',
+        line: 'Department, employee, workflow, and vendor spend in one ledger.',
+    },
+    {
+        name: 'Apply',
+        href: '/partners/apply',
+        line: 'Submit the partner application.',
+    },
+];
+
+function Related() {
+    return (
+        <section className="flex flex-col gap-6">
+            <SectionLabel>Related</SectionLabel>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {RELATED.map((r) => (
+                    <Link
+                        key={r.href}
+                        href={r.href}
+                        className="border-2 border-neutral-700 p-4 flex flex-col gap-2 hover:border-primary transition-colors"
+                    >
+                        <div className="text-primary text-[10px] font-mono font-bold uppercase tracking-wider">
+                            {r.name}
+                        </div>
+                        <div className="text-[11px] font-mono text-neutral-300 leading-relaxed">
+                            {r.line}
+                        </div>
                     </Link>
-                </div>
-            </section>
+                ))}
+            </div>
+        </section>
+    );
+}
+
+function Faq() {
+    return (
+        <section className="flex flex-col gap-6">
+            <SectionLabel>FAQ</SectionLabel>
+            <div className="flex flex-col gap-3">
+                {FAQ_ENTRIES.map((e) => (
+                    <details
+                        key={e.q}
+                        className="border-2 border-neutral-700 p-4 group"
+                    >
+                        <summary className="text-sm font-bold uppercase tracking-tight text-neutral-50 cursor-pointer list-none flex items-center justify-between gap-4">
+                            <span>{e.q}</span>
+                            <span className="text-primary text-xs font-mono shrink-0 group-open:hidden">
+                                {'+'}
+                            </span>
+                            <span className="text-primary text-xs font-mono shrink-0 hidden group-open:inline">
+                                {'−'}
+                            </span>
+                        </summary>
+                        <p className="mt-3 text-[12px] font-mono text-neutral-300 leading-relaxed">
+                            {e.a}
+                        </p>
+                    </details>
+                ))}
+            </div>
+        </section>
+    );
+}
+
+function FinalCta() {
+    return (
+        <section className="flex flex-col gap-4 max-w-3xl">
+            <SectionLabel>Apply</SectionLabel>
+            <h2 className="text-3xl lg:text-4xl font-bold uppercase tracking-tight">
+                Bring AI spend accountability to your clients.
+            </h2>
+            <div className="flex flex-wrap gap-3 pt-2">
+                <Link
+                    href="/partners/apply"
+                    className="border-2 border-primary bg-primary text-neutral-900 text-xs font-black uppercase tracking-wider px-5 py-2.5 hover:bg-neutral-900 hover:text-primary transition-colors"
+                >
+                    Apply as partner
+                </Link>
+                <Link
+                    href="/docs"
+                    className="border-2 border-neutral-700 text-neutral-200 text-xs font-black uppercase tracking-wider px-5 py-2.5 hover:border-primary hover:text-primary transition-colors"
+                >
+                    Read docs
+                </Link>
+            </div>
+        </section>
+    );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
+            {children}
         </div>
-    )
+    );
 }
