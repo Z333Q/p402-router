@@ -14,7 +14,7 @@ const STAGES: ReadonlyArray<Stage> = [
     { name: 'Monitor',  href: '/monitor',  line: 'See spend by department, workflow, model, vendor, and customer.',                  status: 'shipped' },
     { name: 'Control',  href: '/control',  line: 'Design budgets and policy boundaries. Runtime enforcement is gated.',              status: 'gated' },
     { name: 'Optimize', href: '/optimize', line: 'Prepare AI spend for measured savings. Recommendations are gated.',                status: 'gated' },
-    { name: 'Settle',   href: '/settle',   line: 'Issue receipts and settlement records for payable AI work.',                       status: 'shipped' },
+    { name: 'Settle',   href: '/receipts', line: 'Issue receipts and settlement records for payable AI work.',                       status: 'shipped' },
     { name: 'Prove',    href: '/prove',    line: 'Export evidence bundles, finance reports, and event proof.',                       status: 'shipped' },
 ];
 
