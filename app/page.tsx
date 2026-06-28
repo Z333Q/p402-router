@@ -8,6 +8,7 @@ import { ProductionFeatures } from "@/components/landing/ProductionFeatures"
 import Link from 'next/link'
 import { PricingStrip } from "@/components/landing/PricingStrip"
 import { HeroABTest } from "@/components/landing/HeroABTest"
+import { ProblemTimeline } from "@/components/landing/ProblemTimeline"
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
@@ -161,13 +162,20 @@ export default async function Page() {
                 {/* 3. Problem block */}
                 <section className="py-20 md:py-28 bg-white border-b-2 border-black">
                     <div className="container mx-auto px-6 max-w-7xl">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-4">The problem</div>
-                        <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-8 max-w-4xl">
-                            AI spend arrives too late.
-                        </h2>
-                        <p className="text-lg md:text-xl text-neutral-700 font-medium leading-relaxed max-w-3xl">
-                            Provider invoices show totals after usage happens. They do not show which customer, feature, workflow, department, employee, model, or retry caused the cost. P402 records that ownership when the event happens.
-                        </p>
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+                            <div className="lg:col-span-5">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-4">The problem</div>
+                                <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-8">
+                                    AI spend arrives too late.
+                                </h2>
+                                <p className="text-base md:text-lg text-neutral-700 font-medium leading-relaxed">
+                                    Provider invoices show totals after usage happens. They do not show which customer, feature, workflow, department, employee, model, or retry caused the cost. P402 records that ownership when the event happens.
+                                </p>
+                            </div>
+                            <div className="lg:col-span-7">
+                                <ProblemTimeline />
+                            </div>
+                        </div>
                     </div>
                 </section>
 
