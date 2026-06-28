@@ -10,7 +10,7 @@ export const metadata: Metadata = {
         'healthcare AI governance', 'clinical LLM compliance', 'P402 Meter healthcare',
     ],
     openGraph: {
-        title: 'P402 Meter · Healthcare AI — HIPAA Audit Trail & Per-Token Billing',
+        title: 'P402 Meter · Healthcare AI: HIPAA Audit Trail & Per-Token Billing',
         description: 'HIPAA-grade AI metering for healthcare. Department attribution, clinical AI compliance, on-chain proof of settlement.',
         url: 'https://p402.io/meter/healthcare',
     },

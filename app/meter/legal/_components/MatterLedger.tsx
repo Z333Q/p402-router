@@ -125,7 +125,7 @@ export function MatterLedger() {
         <div className="text-[9px] font-mono text-neutral-600 uppercase tracking-wider mb-2">Cost comparison</div>
         <div className="grid grid-cols-3 gap-2 text-center">
           <div>
-            <div className="text-xs font-bold text-primary">${budgetSpentUsd.toFixed(4) || '—'}</div>
+            <div className="text-xs font-bold text-primary">${budgetSpentUsd.toFixed(4) || '-'}</div>
             <div className="text-[8px] font-mono text-neutral-600 uppercase">This matter</div>
           </div>
           <div>

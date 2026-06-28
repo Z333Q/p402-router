@@ -15,7 +15,7 @@ const MODES = [
         label: 'Cost',
         accent: '#B6FF2E',
         goal: 'Minimize spend per token.',
-        logic: 'Scores providers by effective cost per 1k tokens. Prefers semantic cache hits. Falls back through DeepSeek → Haiku → Flash.',
+        logic: 'Scores providers by effective cost per 1k tokens. Prefers semantic cache hits. Falls back through DeepSeek, then Haiku, then Flash.',
         models: ['deepseek-chat', 'claude-haiku-4-6', 'gemini-3.1-flash'],
         example: 'Batch summarization, classification, structured extraction.',
     },
@@ -52,7 +52,7 @@ const GUARD_LAYERS = [
     { n: '01', name: 'Rate limit', detail: '1,000 req / hr per tenant. Redis token bucket.' },
     { n: '02', name: 'Daily circuit breaker', detail: '$1,000 / day hard cap. Resets at UTC midnight.' },
     { n: '03', name: 'Concurrency cap', detail: 'Max 10 simultaneous in-flight requests per tenant.' },
-    { n: '04', name: 'Anomaly detection', detail: 'Z-score ≥ 3.0σ above cost history. Soft block — logs and alerts without hard-stopping.' },
+    { n: '04', name: 'Anomaly detection', detail: 'Z-score ≥ 3.0σ above cost history. Soft block, logs and alerts without hard-stopping.' },
     { n: '05', name: 'Per-request cap', detail: '$50 max per single request. Always enforced, fail-closed regardless of Redis availability.' },
     { n: '06', name: 'Budget reservation', detail: 'Atomic Redis lock before dispatch. 5-minute TTL. Finalises actual spend on completion.' },
 ] as const;
@@ -73,7 +73,7 @@ export default function RoutingPage() {
                         </h1>
                         <p className="text-lg font-medium text-neutral-600 max-w-2xl leading-relaxed border-l-4 border-black pl-5">
                             P402 is an OpenAI-compatible API that routes each request to the optimal model for your
-                            cost and quality target — automatically, continuously, across 300+ providers.
+                            cost and quality target: automatically, continuously, across 300+ providers.
                             Every response includes full cost metadata. No vendor lock-in.
                         </p>
                         <div className="mt-8 flex flex-wrap gap-4">
@@ -165,7 +165,7 @@ export default function RoutingPage() {
                             <div><span className="text-neutral-400">{'await openai.chat.completions.create({'}</span></div>
                             <div className="pl-4"><span className="text-neutral-400">model: </span><span className="text-primary">&apos;gpt-5.4&apos;</span><span className="text-neutral-500">,  {'// overridden by router'}</span></div>
                             <div className="pl-4"><span className="text-neutral-400">messages,</span></div>
-                            <div className="pl-4 text-neutral-400">{'// @ts-ignore — p402 extension field'}</div>
+                            <div className="pl-4 text-neutral-400">{'// @ts-ignore for p402 extension field'}</div>
                             <div className="pl-4 text-neutral-400">{'p402: {'}</div>
                             <div className="pl-8"><span className="text-primary">mode: </span><span className="text-[#22D3EE]">&apos;cost&apos;</span><span className="text-neutral-500">,  {'// cost | quality | speed | balanced'}</span></div>
                             <div className="pl-8"><span className="text-primary">cache: </span><span className="text-neutral-300">true</span><span className="text-neutral-500">,</span></div>
@@ -230,7 +230,7 @@ export default function RoutingPage() {
                         <h2 className="text-3xl font-black uppercase tracking-tighter mb-3">Repeated queries cost nothing.</h2>
                         <p className="text-sm font-medium text-neutral-600 mb-8 max-w-xl">
                             Every prompt is embedded and compared against the cache. If an incoming request is
-                            more than 92% similar to a cached response, P402 returns it instantly — no provider
+                            more than 92% similar to a cached response, P402 returns it instantly, no provider
                             call, no cost, sub-50ms latency.
                         </p>
 
@@ -262,7 +262,7 @@ export default function RoutingPage() {
                         <h2 className="text-3xl font-black uppercase tracking-tighter mb-3">Six layers of spending protection.</h2>
                         <p className="text-sm font-medium text-neutral-600 mb-8 max-w-xl">
                             Every request passes six enforcement layers before a model is called.
-                            Layers 1–4 are Redis-backed and fail-open if Redis is unavailable.
+                            Layers 1 to 4 are Redis-backed and fail-open if Redis is unavailable.
                             Layer 5 is always enforced. Layer 6 uses atomic budget reservation.
                         </p>
 
@@ -281,7 +281,7 @@ export default function RoutingPage() {
                         <div className="mt-4 p-4 border-2 border-black bg-white text-xs font-medium text-neutral-600">
                             Billing Guard errors return structured JSON with a <code className="font-mono bg-neutral-50 border border-neutral-200 px-1">code</code> and
                             a <code className="font-mono bg-neutral-50 border border-neutral-200 px-1">retry_after_ms</code> hint on rate limit responses.
-                            See <Link href="/product/controls" className="underline underline-offset-2 font-black">Controls →</Link> for mandate and policy-level spend governance.
+                            See <Link href="/product/controls" className="underline underline-offset-2 font-black">Controls</Link> for mandate and policy-level spend governance.
                         </div>
                     </div>
                 </section>

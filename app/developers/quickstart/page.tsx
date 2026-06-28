@@ -16,17 +16,17 @@ const STEPS = [
         purpose: 'Get credentials. The API key is returned exactly once.',
         command: null,
         code: `# 1. Sign up at p402.io/login
-# 2. Go to Dashboard → Settings → API Keys
+# 2. Go to Dashboard, then Settings, then API Keys
 # 3. Click "Generate new key"
 
 # Your key looks like:
 P402_API_KEY=p402_live_...
 
-# Save it now — P402 stores only the SHA-256 hash.
+# Save it now. P402 stores only the SHA-256 hash.
 # You cannot recover a lost key. Generate a new one if needed.`,
         expectedOutput: null,
         failureMode: 'Key display closes before you copy it.',
-        recovery: 'Go to Settings → API Keys → Delete the old key → Generate again. The old hash is invalidated immediately.',
+        recovery: 'Go to Settings, then API Keys, delete the old key, then generate again. The old hash is invalidated immediately.',
         ref: { label: 'API key docs', href: '/docs/api' },
         accent: '#B6FF2E',
     },
@@ -107,7 +107,7 @@ curl https://your-api.com/endpoint \\
   -H "x402-payment: $PAYMENT_PAYLOAD_BASE64" \\
   -H "x402-receipt: $TX_HASH"
 
-# Or use the SDK — it handles retry automatically:
+# Or use the SDK, it handles retry automatically:
 import { p402Fetch } from '@p402/sdk';
 
 const response = await p402Fetch('https://your-api.com/endpoint', {
@@ -120,7 +120,7 @@ x-p402-receipt: rcpt_01HX6...
 
 { ...your endpoint response... }`,
         failureMode: 'Still receiving HTTP 402 after settlement.',
-        recovery: 'Confirm settle returned success: true and you have a txHash. Check that you are sending the x402-payment header — not just the Authorization header. The resource server validates the payment header independently.',
+        recovery: 'Confirm settle returned success: true and you have a txHash. Check that you are sending the x402-payment header, not just the Authorization header. The resource server validates the payment header independently.',
         ref: { label: 'SDK reference', href: '/docs/sdk' },
         accent: '#F59E0B',
     },
@@ -155,7 +155,7 @@ x-p402-receipt: rcpt_01HX6...
         command: `curl https://p402.io/api/v1/receipts/rcpt_01HX6.../verify \\
   -H "Authorization: Bearer $P402_API_KEY"
 
-# If valid — serve without re-settling:
+# If valid, serve without re-settling:
 curl https://your-api.com/endpoint \\
   -H "x402-receipt: rcpt_01HX6..."`,
         expectedOutput: `# Receipt verify response:
@@ -167,9 +167,9 @@ curl https://your-api.com/endpoint \\
 }
 
 # Endpoint response:
-HTTP 200 OK — served without new settlement`,
+HTTP 200 OK, served without new settlement`,
         failureMode: `{"valid": false, "reason": "RECEIPT_EXPIRED", "requestId": "req_..."}`,
-        recovery: 'Receipt TTL has elapsed. Issue a new receipt (step 5) after your next settlement. Plan receipt TTLs around your usage patterns — longer TTLs reduce settlement costs for high-frequency access.',
+        recovery: 'Receipt TTL has elapsed. Issue a new receipt (step 5) after your next settlement. Plan receipt TTLs around your usage patterns: longer TTLs reduce settlement costs for high-frequency access.',
         ref: { label: 'Receipt lifecycle', href: '/docs/api' },
         accent: '#B6FF2E',
     },
@@ -302,7 +302,7 @@ export default function QuickstartPage() {
                                             href={step.ref.href}
                                             className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-black border-b-2 border-neutral-200 hover:border-black transition-colors no-underline pb-0.5"
                                         >
-                                            {step.ref.label} →
+                                            {step.ref.label}
                                         </Link>
                                     </div>
                                 </div>

@@ -17,11 +17,11 @@ import { BuyerPathTabs } from "./_components/BuyerPathTabs";
 import { AddOnsList } from "./_components/AddOnsList";
 
 export const metadata = {
-    title: 'Pricing | P402 — AI Spend Accountability',
+    title: 'Pricing | P402: AI Spend Accountability',
     description: 'P402 pricing: Sandbox free, Build $49/mo, Growth $199/mo, Scale $799/mo annual, Enterprise from $60k ARR. AI Spend Audit $1,500 one-time. Usage-based metered AI events. No cost-savings claim.',
     alternates: { canonical: 'https://p402.io/pricing' },
     openGraph: {
-        title: 'P402 Pricing — AI Spend Accountability',
+        title: 'P402 Pricing: AI Spend Accountability',
         description: 'Start free. Production plans from $49/month. Enterprise audits from $1,500. Usage-based, metadata-only, procurement-ready.',
         url: 'https://p402.io/pricing',
     },
@@ -31,7 +31,7 @@ export const metadata = {
 const pricingJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: 'P402 — AI Spend Accountability',
+    name: 'P402: AI Spend Accountability',
     description: 'AI spend accountability and governance software for the enterprise. Metered AI events, workflow attribution, shadow controls, outcome ingestion, audit-grade evidence.',
     brand: { '@type': 'Brand', name: 'P402' },
     offers: PLAN_IDS.map((id) => {
@@ -116,13 +116,13 @@ export default function PricingPage() {
                             href="/pricing/metric-definition"
                             className="inline-flex items-center gap-2 text-sm font-black text-black uppercase tracking-wide border-b-2 border-black hover:text-primary hover:border-primary"
                         >
-                            Read the full metric definition →
+                            Read the full metric definition
                         </Link>
                     </div>
                 </div>
             </section>
 
-            {/* ── Bridge offers (public only — internal offers hidden in v2) ── */}
+            {/* ── Bridge offers (public only, internal offers hidden in v2) ── */}
             <section id="bridge-offers" className="max-w-6xl mx-auto px-6 lg:px-8 py-16 scroll-mt-20">
                 <div className="mb-8">
                     <h2 className="text-3xl font-black text-black uppercase tracking-tight">
@@ -188,13 +188,13 @@ export default function PricingPage() {
                                 href="/docs/facilitator"
                                 className="inline-flex items-center gap-2 text-sm font-black text-black uppercase tracking-wide border-b-2 border-black hover:text-primary hover:border-primary"
                             >
-                                Facilitator docs →
+                                Facilitator docs
                             </Link>
                             <Link
                                 href="/docs/router"
                                 className="inline-flex items-center gap-2 text-sm font-black text-black uppercase tracking-wide border-b-2 border-black hover:text-primary hover:border-primary"
                             >
-                                Router docs →
+                                Router docs
                             </Link>
                         </div>
                     </div>

@@ -25,7 +25,7 @@ export default function EcosystemPage() {
                         </h1>
                         <p className="text-lg font-medium text-neutral-600 max-w-2xl leading-relaxed border-l-4 border-black pl-5">
                             Skills extend P402 with typed, versioned capabilities. The Bazaar lists paid agents for discovery.
-                            ERC-8004 provides on-chain identity and reputation signals — optional trust toggles you control.
+                            ERC-8004 provides on-chain identity and reputation signals: optional trust toggles you control.
                         </p>
                     </div>
                 </section>
@@ -122,7 +122,7 @@ export default function EcosystemPage() {
                                 <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">ERC-8004</div>
                                 <h2 className="text-3xl font-black uppercase tracking-tighter mb-4">On-chain agent trust</h2>
                                 <p className="text-sm font-medium text-neutral-600 leading-relaxed mb-5">
-                                    ERC-8004 is an optional trust layer. Register your agent DID on-chain. Accumulate reputation via feedback. The routing engine can weight decisions by on-chain reputation — if you enable the feature flag.
+                                    ERC-8004 is an optional trust layer. Register your agent DID on-chain. Accumulate reputation via feedback. The routing engine can weight decisions by on-chain reputation, if you enable the feature flag.
                                 </p>
                                 <div className="space-y-3 mb-6">
                                     {[
@@ -142,7 +142,7 @@ export default function EcosystemPage() {
                             </div>
                             <div className="lg:w-1/2">
                                 <div className="border-2 border-black p-6 bg-white">
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-4">Registry addresses — Base Mainnet</div>
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-4">Registry addresses: Base Mainnet</div>
                                     <div className="space-y-4">
                                         {[
                                             { label: 'Identity Registry', address: '0x8004A169FB4a3325136EB29fA0ceB6D2e539a432' },

@@ -26,7 +26,7 @@ export function SafeModeBanner() {
           className="text-[9px] font-mono uppercase tracking-wider text-neutral-400 hover:text-info border border-neutral-700 hover:border-info px-2 py-0.5 transition-colors"
           onClick={() => setSafeMode(false)}
         >
-          Switch to Live →
+          Switch to Live
         </button>
       </div>
     );

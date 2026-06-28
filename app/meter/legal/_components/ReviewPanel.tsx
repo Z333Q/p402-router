@@ -84,7 +84,7 @@ export function ReviewPanel() {
               setError(frame.message);
             }
           } catch {
-            // malformed frame — skip
+            // malformed frame, skip
           }
         }
       }
@@ -117,14 +117,14 @@ export function ReviewPanel() {
           docIdB: 'doc-007',
           description: 'MSA change-of-control notification vs. Acquisition Agreement closing condition',
           severity: 'high',
-          clause: 'MSA §8.1 requires customer consent for assignment; Acquisition Agreement §4.1(e) requires 80% ARR consent — scope of "consent" undefined.',
+          clause: 'MSA §8.1 requires customer consent for assignment; Acquisition Agreement §4.1(e) requires 80% ARR consent: scope of "consent" undefined.',
         },
         {
           docIdA: 'doc-006',
           docIdB: 'doc-007',
           description: 'Lease assignment landlord consent timing vs. closing timeline',
           severity: 'medium',
-          clause: 'Lease Assignment requires landlord consent within 30 days of closing; Acquisition Agreement §4.2 does not make lease assignment a closing condition — creates post-close risk.',
+          clause: 'Lease Assignment requires landlord consent within 30 days of closing; Acquisition Agreement §4.2 does not make lease assignment a closing condition, creates post-close risk.',
         },
         {
           docIdA: 'doc-007',
@@ -138,7 +138,7 @@ export function ReviewPanel() {
           docIdB: 'doc-008',
           description: 'CTO retention agreement non-compete vs. founder non-compete scope',
           severity: 'low',
-          clause: 'CTO agreement §6.1 restricts 4 states, 18 months; Founder agreement §2.1 is worldwide, 24 months — inconsistent treatment of similarly-situated employees.',
+          clause: 'CTO agreement §6.1 restricts 4 states, 18 months; Founder agreement §2.1 is worldwide, 24 months, inconsistent treatment of similarly-situated employees.',
         },
       ]);
     }, 1500);
@@ -156,7 +156,7 @@ export function ReviewPanel() {
     if (first) {
       setActiveDoc(first.id);
       // Reviews will be triggered by the user clicking "Run Review" for each,
-      // or we can run them sequentially — for demo UX, activate the first
+      // or we can run them sequentially: for demo UX, activate the first
     }
   }
 
@@ -169,7 +169,7 @@ export function ReviewPanel() {
       <div className="border-b-2 border-neutral-700 px-4 py-3 flex items-center justify-between">
         <div>
           <div className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest mb-0.5">
-            {activeDoc ? `Reviewing — ${activeDoc.type}` : 'Contract Review'}
+            {activeDoc ? `Reviewing: ${activeDoc.type}` : 'Contract Review'}
           </div>
           {activeDoc && (
             <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export function ReviewPanel() {
         <div className="flex items-center gap-2">
           {canRun && (
             <button onClick={handleRunReview} className="btn btn-primary text-[10px] px-3 py-1">
-              Run Review →
+              Run Review
             </button>
           )}
           {isReviewing && (
@@ -225,7 +225,7 @@ export function ReviewPanel() {
             </p>
             {canRun && (
               <button onClick={handleRunReview} className="btn btn-primary text-xs mt-2">
-                Run Review →
+                Run Review
               </button>
             )}
           </div>

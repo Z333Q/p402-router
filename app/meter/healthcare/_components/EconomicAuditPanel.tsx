@@ -79,7 +79,7 @@ export function EconomicAuditPanel() {
               <CostCell label="AI Tokens" value={`$${audit.costBreakdown.aiTokenCostUsd.toFixed(6)}`} />
               <CostCell label="P402 Routing" value={`$${audit.costBreakdown.routingFeeUsd.toFixed(6)}`} />
               <CostCell label="Tempo Gas" value={`$${audit.costBreakdown.settlementGasCostUsd.toFixed(8)}`} />
-              <CostCell label="Escrow" value={audit.costBreakdown.escrowCostUsd > 0 ? `$${audit.costBreakdown.escrowCostUsd.toFixed(4)}` : '—'} />
+              <CostCell label="Escrow" value={audit.costBreakdown.escrowCostUsd > 0 ? `$${audit.costBreakdown.escrowCostUsd.toFixed(4)}` : '-'} />
             </div>
 
             {/* Grand total */}

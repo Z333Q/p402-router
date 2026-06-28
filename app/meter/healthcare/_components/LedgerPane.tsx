@@ -116,7 +116,7 @@ function LedgerRow({ event }: { event: LedgerEvent }) {
 
   const time = event.createdAt
     ? new Date(event.createdAt).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    : '—';
+    : '-';
 
   const proofDisplay = event.settlementTxHash
     ? event.settlementTxHash.slice(0, 8) + '…'
@@ -131,7 +131,7 @@ function LedgerRow({ event }: { event: LedgerEvent }) {
       <td className="px-3 py-2 text-neutral-400 tabular-nums whitespace-nowrap">{time}</td>
       <td className={`px-3 py-2 ${color} uppercase tracking-wider`}>{label}</td>
       <td className="px-3 py-2 text-right text-neutral-400 tabular-nums">
-        {event.tokensEstimate != null ? event.tokensEstimate.toString() : '—'}
+        {event.tokensEstimate != null ? event.tokensEstimate.toString() : '-'}
       </td>
       <td className={`px-3 py-2 text-right tabular-nums ${event.provisional ? 'text-neutral-400' : 'text-neutral-200'}`}>
         ${event.costUsd.toFixed(6)}

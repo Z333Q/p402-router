@@ -104,7 +104,7 @@ export function ApprovalDecisionCard() {
                 onClick={() => handleAction('approve')}
                 disabled={actionState !== 'idle'}
               >
-                {actionState === 'approving' ? 'Approving...' : 'Approve & Release →'}
+                {actionState === 'approving' ? 'Approving...' : 'Approve & Release'}
               </button>
               <button
                 className="btn btn-secondary text-xs flex-1"

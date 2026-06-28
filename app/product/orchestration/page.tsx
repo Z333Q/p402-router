@@ -40,7 +40,7 @@ export default function OrchestrationPage() {
                         </h1>
                         <p className="text-lg font-medium text-neutral-600 max-w-2xl leading-relaxed border-l-4 border-black pl-5">
                             The A2A protocol lets agents communicate via JSON-RPC 2.0 task requests.
-                            Tasks stream live updates via SSE. Payment-required events are first-class — handled via the x402 extension, not as errors.
+                            Tasks stream live updates via SSE. Payment-required events are first-class, handled via the x402 extension, not as errors.
                         </p>
                         <div className="mt-8 flex flex-wrap gap-4">
                             <Link href="/docs/a2a" className="inline-flex items-center h-11 px-6 bg-primary text-black font-black text-[11px] uppercase tracking-wider border-2 border-black hover:bg-black hover:text-primary transition-colors no-underline">
@@ -140,7 +140,7 @@ export default function OrchestrationPage() {
                                 <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">Paid workflows</div>
                                 <h2 className="text-3xl font-black uppercase tracking-tighter mb-4">Payment-required tasks</h2>
                                 <p className="text-sm font-medium text-neutral-600 leading-relaxed mb-5">
-                                    When an agent requires payment, it emits a <code className="font-mono text-black">payment-required</code> message — not an HTTP error.
+                                    When an agent requires payment, it emits a <code className="font-mono text-black">payment-required</code> message, not an HTTP error.
                                     The orchestrator handles the x402 extension inline.
                                 </p>
                                 <div className="space-y-3">
@@ -158,7 +158,7 @@ export default function OrchestrationPage() {
                                     </div>
                                 </div>
                                 <p className="text-xs font-medium text-neutral-500 mt-4">
-                                    Payment events appear as structured cards in the Tasks dashboard. Billing cap errors are returned as JSON-RPC <code className="font-mono">-32000</code> block errors — the orchestrator does not crash.
+                                    Payment events appear as structured cards in the Tasks dashboard. Billing cap errors are returned as JSON-RPC <code className="font-mono">-32000</code> block errors. The orchestrator does not crash.
                                 </p>
                             </div>
                             <div className="lg:w-1/2">
@@ -186,7 +186,7 @@ data: {"type":"artifact","text":"Analysis complete..."}`}</pre>
                         <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">Decision trace</div>
                         <h2 className="text-3xl font-black uppercase tracking-tighter mb-4">See every routing decision</h2>
                         <p className="text-sm font-medium text-neutral-600 max-w-2xl leading-relaxed mb-8">
-                            The trace viewer streams every routing decision in real time — provider selected, cost saved, mandate checked, policy enforced, settlement attempted. Useful for debugging and auditing agentic workflows.
+                            The trace viewer streams every routing decision in real time: provider selected, cost saved, mandate checked, policy enforced, settlement attempted. Useful for debugging and auditing agentic workflows.
                         </p>
                         <div className="flex gap-4">
                             <Link href="/dashboard/tasks" className="inline-flex items-center h-11 px-6 bg-primary border-2 border-black font-black text-[11px] uppercase tracking-wider hover:bg-black hover:text-primary transition-colors no-underline">

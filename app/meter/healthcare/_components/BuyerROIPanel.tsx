@@ -48,7 +48,7 @@ export function BuyerROIPanel() {
           <span className="text-[10px] font-mono text-neutral-700">·</span>
           <span className="text-[10px] font-mono text-primary uppercase tracking-wider">Interactive ROI</span>
         </div>
-        <div className="text-[10px] font-mono text-neutral-600 uppercase">Your numbers → your outcome</div>
+        <div className="text-[10px] font-mono text-neutral-600 uppercase">Your numbers, your outcome</div>
       </div>
 
       <div className="px-6 py-6 flex flex-col gap-6">
@@ -142,7 +142,7 @@ export function BuyerROIPanel() {
           </div>
         </div>
 
-        {/* SI partner economics — the integrator's opportunity */}
+        {/* SI partner economics: the integrator's opportunity */}
         <div className="border-2 border-neutral-700 flex flex-col">
           <div className="border-b border-neutral-700 px-5 py-3 flex items-center justify-between">
             <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest">Implementation Partner Economics</span>
@@ -188,7 +188,7 @@ export function BuyerROIPanel() {
           </div>
           <div className="border-t border-neutral-700 px-5 py-3">
             <p className="text-[10px] font-mono text-neutral-600 leading-relaxed">
-              P402 is infrastructure, not a vendor. Partners own the implementation relationship, the training, the workflow integration, and the ongoing support contract. The on-chain audit trail makes every engagement fully verifiable — no opaque vendor billing.
+              P402 is infrastructure, not a vendor. Partners own the implementation relationship, the training, the workflow integration, and the ongoing support contract. The on-chain audit trail makes every engagement fully verifiable, no opaque vendor billing.
             </p>
           </div>
         </div>

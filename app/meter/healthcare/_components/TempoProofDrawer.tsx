@@ -43,10 +43,10 @@ export function TempoProofDrawer() {
 
       {/* Always-visible summary grid */}
       <div className="px-4 py-3 grid grid-cols-4 gap-4 border-b border-neutral-700">
-        <ProofStat label="Session" value={sessionId ? sessionId.slice(0, 10) + '…' : '—'} />
-        <ProofStat label="Total Cost" value={streamDone ? `$${totalCostUsd.toFixed(6)}` : '—'} highlight />
-        <ProofStat label="AI Events" value={authorizations > 0 ? `${authorizations}` : '—'} pass={thresholdMet || undefined} />
-        <ProofStat label="Tempo Tx" value={txEvents.length > 0 ? txEvents.length.toString() : batchEvents.length > 0 ? batchEvents.length.toString() : '—'} />
+        <ProofStat label="Session" value={sessionId ? sessionId.slice(0, 10) + '…' : '-'} />
+        <ProofStat label="Total Cost" value={streamDone ? `$${totalCostUsd.toFixed(6)}` : '-'} highlight />
+        <ProofStat label="AI Events" value={authorizations > 0 ? `${authorizations}` : '-'} pass={thresholdMet || undefined} />
+        <ProofStat label="Tempo Tx" value={txEvents.length > 0 ? txEvents.length.toString() : batchEvents.length > 0 ? batchEvents.length.toString() : '-'} />
       </div>
 
       {/* Explorer link, always visible */}
@@ -58,7 +58,7 @@ export function TempoProofDrawer() {
           className="px-4 py-2 border-b border-neutral-700 flex items-center justify-between hover:bg-neutral-800 transition-colors group"
         >
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-wider">Verify on Tempo Explorer →</span>
+            <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-wider">Verify on Tempo Explorer</span>
             <span className="text-[10px] font-mono text-info group-hover:text-primary truncate max-w-[200px]">{TEMPO_SIGNER_ADDRESS}</span>
           </div>
           <span className="text-[9px] font-mono text-primary font-bold uppercase tracking-wider flex-shrink-0">↗ Open</span>
@@ -74,7 +74,7 @@ export function TempoProofDrawer() {
             <ProofField label="Network" value={TEMPO_NETWORK} />
             <ProofField label="Chain ID" value={TEMPO_CHAIN_ID.toString()} />
             <ProofField label="Settlement Asset" value={USDC_ASSET} />
-            <ProofField label="Session ID" value={sessionId ?? '—'} mono />
+            <ProofField label="Session ID" value={sessionId ?? '-'} mono />
           </div>
 
           {/* Threshold proof */}
@@ -88,7 +88,7 @@ export function TempoProofDrawer() {
               </div>
             </div>
             <div className={`text-sm font-bold font-mono uppercase ${thresholdMet ? 'text-success' : 'text-neutral-600'}`}>
-              {thresholdMet ? `${authorizations} ✓ PASS` : authorizations > 0 ? `${authorizations} / 50` : '—'}
+              {thresholdMet ? `${authorizations} ✓ PASS` : authorizations > 0 ? `${authorizations} / 50` : '-'}
             </div>
           </div>
 
@@ -139,7 +139,7 @@ export function TempoProofDrawer() {
                 rel="noopener noreferrer"
                 className="text-[9px] font-mono text-info hover:text-primary uppercase tracking-wider"
               >
-                Run diagnostic → /api/meter/health
+                Run diagnostic: /api/meter/health
               </a>
             </div>
           )}

@@ -28,7 +28,7 @@ export function TempoSettlementProof() {
               {isLive ? `Tempo Mainnet · Chain ${TEMPO_CHAIN_ID}` : 'Proof Replay Session'}
             </div>
             <div className={`text-3xl lg:text-4xl font-bold uppercase tracking-tight leading-none ${isLive ? 'text-primary' : 'text-neutral-300'}`}>
-              {isLive ? 'Settled on Tempo Mainnet' : 'Verified — Proof Replay'}
+              {isLive ? 'Settled on Tempo Mainnet' : 'Verified, Proof Replay'}
             </div>
             <div className="text-sm font-mono text-neutral-400 mt-1">
               {authorizations} AI actions · <span className={isLive ? 'text-primary font-bold' : 'text-neutral-300 font-bold'}>${totalCostUsd.toFixed(6)} total</span>
@@ -37,7 +37,7 @@ export function TempoSettlementProof() {
           <div className={`text-right flex flex-col gap-1 ${isLive ? '' : 'hidden'}`}>
             <div className="text-[9px] font-mono text-neutral-600 uppercase tracking-wider">Cost this case</div>
             <div className="text-4xl font-bold tabular-nums text-primary leading-none">${totalCostUsd.toFixed(5)}</div>
-            <div className="text-[10px] font-mono text-neutral-500">vs $25–100 manual review</div>
+            <div className="text-[10px] font-mono text-neutral-500">vs $25 to $100 manual review</div>
           </div>
         </div>
 
@@ -51,7 +51,7 @@ export function TempoSettlementProof() {
             'Your compliance team has a defensible record. No spreadsheet. No manual log.',
           ].map((bullet, i) => (
             <div key={i} className="flex items-start gap-2">
-              <span className={`text-xs font-bold mt-0.5 shrink-0 ${isLive ? 'text-primary' : 'text-neutral-500'}`}>→</span>
+              <span className={`text-xs font-bold mt-0.5 shrink-0 ${isLive ? 'text-primary' : 'text-neutral-500'}`}>·</span>
               <span className="text-[11px] font-mono text-neutral-300 leading-relaxed">{bullet}</span>
             </div>
           ))}
@@ -60,7 +60,7 @@ export function TempoSettlementProof() {
 
       {isLive ? (
         <>
-          {/* ── Tx hash — large and front-center ──────────────────────────── */}
+          {/* Tx hash, large and front-center */}
           <a
             href={tempoExplorerTxUrl(reconcile!.settlementTxHash!)}
             target="_blank"
@@ -75,14 +75,14 @@ export function TempoSettlementProof() {
             </div>
             <div className="flex-shrink-0">
               <div className="border-2 border-primary text-primary text-xs font-bold uppercase px-5 py-2.5 group-hover:bg-primary group-hover:text-neutral-900 transition-colors whitespace-nowrap">
-                Verify on Tempo →
+                Verify on Tempo
               </div>
             </div>
           </a>
 
           {/* ── Technical proof details ────────────────────────────────────── */}
           <div className="border-t border-neutral-700 grid grid-cols-2 lg:grid-cols-4 divide-x divide-neutral-700">
-            <ProofCell label="Block" value={reconcile!.settlementBlock ? `#${reconcile!.settlementBlock.toLocaleString()}` : '—'} />
+            <ProofCell label="Block" value={reconcile!.settlementBlock ? `#${reconcile!.settlementBlock.toLocaleString()}` : '-'} />
             <ProofCell label="Reconciliation" value={`$${reconcile!.costUsd.toFixed(6)}`} highlight />
             <ProofCell label="Chain" value={`Tempo (${TEMPO_CHAIN_ID})`} />
             <ProofCell label="Status" value="Confirmed" success />
@@ -90,13 +90,13 @@ export function TempoSettlementProof() {
 
           <div className="border-t border-neutral-700 px-5 py-2 flex items-center justify-between">
             <span className="text-[10px] font-mono text-neutral-600 uppercase tracking-wider">Session</span>
-            <span className="text-[10px] font-mono text-neutral-500">{sessionId ? sessionId.slice(0, 24) + '…' : '—'}</span>
+            <span className="text-[10px] font-mono text-neutral-500">{sessionId ? sessionId.slice(0, 24) + '…' : '-'}</span>
           </div>
 
           {TEMPO_SIGNER_ADDRESS && (
             <div className="border-t border-neutral-700 px-5 py-3 flex items-center justify-between">
               <span className="text-[10px] font-mono text-neutral-600 uppercase tracking-wider">
-                Signer wallet — all session transactions
+                Signer wallet: all session transactions
               </span>
               <a
                 href={tempoExplorerAddressUrl(TEMPO_SIGNER_ADDRESS)}

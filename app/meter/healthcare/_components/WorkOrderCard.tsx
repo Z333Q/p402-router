@@ -2,17 +2,17 @@
 
 import { useMeterStore } from '../_store/useMeterStore';
 
-// Maps Gemini tool call names → what Circle/Arc action they trigger
+// Maps Gemini tool call names to what Circle/Arc action they trigger
 const TOOL_TARGETS: Record<string, string> = {
-  parsePriorAuthDocument:      'Gemini Flash multimodal → structured HealthcareExtract JSON',
-  parseMultimodalDocument:     'Gemini Flash vision → inlineData base64 decode + field extraction',
-  geminiVisionExtract:         'Gemini Flash multimodal → image/PDF structured extraction',
-  createReviewSession:         'Circle DCW → session wallet provisioned on ARC-TESTNET',
-  addLedgerEstimate:           'Arc nanopayment authorization → USDC ledger event recorded',
-  fundSession:                 'Circle Gateway x402 → payment verified, session funded',
-  writeWorkOrder:              'DB write → WorkOrder persisted with budget cap',
-  reconcileSession:            'Arc settlement → final USDC batch tx on chain 5042002',
-  releaseEscrow:               'ERC-8183 → escrow release tx on Arc, deliverable hash anchored',
+  parsePriorAuthDocument:      'Gemini Flash multimodal then structured HealthcareExtract JSON',
+  parseMultimodalDocument:     'Gemini Flash vision then inlineData base64 decode + field extraction',
+  geminiVisionExtract:         'Gemini Flash multimodal then image/PDF structured extraction',
+  createReviewSession:         'Circle DCW then session wallet provisioned on ARC-TESTNET',
+  addLedgerEstimate:           'Arc nanopayment authorization then USDC ledger event recorded',
+  fundSession:                 'Circle Gateway x402 then payment verified, session funded',
+  writeWorkOrder:              'DB write then WorkOrder persisted with budget cap',
+  reconcileSession:            'Arc settlement then final USDC batch tx on chain 5042002',
+  releaseEscrow:               'ERC-8183 then escrow release tx on Arc, deliverable hash anchored',
 };
 
 export function WorkOrderCard() {
@@ -161,7 +161,7 @@ export function WorkOrderCard() {
                     <div className="flex flex-col gap-0.5">
                       <span className="text-neutral-300">{trace}</span>
                       {target && (
-                        <span className="text-[9px] text-neutral-600">→ {target}</span>
+                        <span className="text-[9px] text-neutral-600">then {target}</span>
                       )}
                     </div>
                   </div>

@@ -18,7 +18,7 @@ export function MeterBrand({ section, light = false }: MeterBrandProps) {
 
   return (
     <div className="flex items-center gap-2.5 min-w-0">
-      {/* Logo mark — always links to landing page */}
+      {/* Logo mark, always links to landing page */}
       <Link href="/" className="flex items-center gap-2 no-underline shrink-0 group">
         <div className="w-7 h-7 bg-primary border-2 border-black flex items-center justify-center overflow-hidden shrink-0">
           <img src="/favicon.png" alt="P402" className="w-5 h-5" />

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-    title: 'P402 Meter · Enterprise AI Spend Dashboard — Department Budgets & Optimization',
+    title: 'P402 Meter · Enterprise AI Spend Dashboard: Department Budgets & Optimization',
     description:
         'CFO-grade AI spend management. Department budget caps, employee attribution, project-level cost breakdown, model mix analytics, spend forecasting, and AI-generated optimization findings. Connect your tenant and see live data.',
     keywords: [
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
         'AI spend optimization', 'model mix analytics', 'AI governance dashboard',
     ],
     openGraph: {
-        title: 'P402 Meter · Enterprise — CFO AI Spend Dashboard',
+        title: 'P402 Meter · Enterprise CFO AI Spend Dashboard',
         description: 'Department budgets, employee attribution, model mix analytics, spend forecasting. Connect your tenant for live data.',
         url: 'https://p402.io/meter/enterprise',
     },

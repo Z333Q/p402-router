@@ -63,7 +63,7 @@ export default function PaymentsPage() {
                                 {
                                     step: '02',
                                     title: 'POST /settle',
-                                    desc: 'Execute the on-chain transfer. Facilitator calls transferWithAuthorization on USDC. Returns txHash, payer, and requestId. Gas is paid by the facilitator — not the user.',
+                                    desc: 'Execute the on-chain transfer. Facilitator calls transferWithAuthorization on USDC. Returns txHash, payer, and requestId. Gas is paid by the facilitator, not the user.',
                                     href: '/docs/facilitator',
                                     color: '#22D3EE',
                                 },
@@ -80,7 +80,7 @@ export default function PaymentsPage() {
                                     <h3 className="font-mono text-sm font-black mt-3 mb-3 text-black">{s.title}</h3>
                                     <p className="text-xs font-medium text-neutral-600 leading-relaxed mb-4">{s.desc}</p>
                                     <Link href={s.href} className="text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-black no-underline border-b border-neutral-200 hover:border-black transition-colors">
-                                        Reference →
+                                        Reference
                                     </Link>
                                 </div>
                             ))}
@@ -96,7 +96,7 @@ export default function PaymentsPage() {
                                 <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">Receipt reuse</div>
                                 <h2 className="text-3xl font-black uppercase tracking-tighter mb-4">Pay once. Access many.</h2>
                                 <p className="text-sm font-medium text-neutral-600 leading-relaxed mb-6">
-                                    After settlement, issue a receipt with a TTL. Present the receipt ID on subsequent requests — the server verifies it without triggering a new settlement.
+                                    After settlement, issue a receipt with a TTL. Present the receipt ID on subsequent requests. The server verifies it without triggering a new settlement.
                                 </p>
                                 <div className="space-y-3">
                                     {[
@@ -180,11 +180,11 @@ Authorization: Bearer $P402_API_KEY
                             </div>
                             <div className="lg:w-1/2">
                                 <div className="border-2 border-black bg-[#0D0D0D] p-5">
-                                    <div className="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-3">SDK — one line</div>
+                                    <div className="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-3">SDK in one line</div>
                                     <pre className="font-mono text-[11px] text-neutral-300 overflow-x-auto leading-relaxed whitespace-pre">{`import { p402Fetch } from '@p402/sdk';
 
 // Drop-in fetch replacement.
-// Handles 402 → sign → settle → retry automatically.
+// Handles 402 then sign then settle then retry automatically.
 const res = await p402Fetch('https://your-api.com/endpoint', {
   wallet: yourWallet,
   maxAmount: 1_000_000n, // $1.00 USDC

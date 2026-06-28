@@ -58,14 +58,14 @@ export default function ControlsPage() {
                                 <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">AP2 mandates</div>
                                 <h2 className="text-3xl font-black uppercase tracking-tighter mb-4">Agent spending authority</h2>
                                 <p className="text-sm font-medium text-neutral-600 leading-relaxed mb-5">
-                                    A mandate is a user-signed authorization granting an agent permission to spend on their behalf — within defined constraints. Budget, categories, and expiry are cryptographically enforced.
+                                    A mandate is a user-signed authorization granting an agent permission to spend on their behalf, within defined constraints. Budget, categories, and expiry are cryptographically enforced.
                                 </p>
                                 <div className="space-y-3">
                                     {[
-                                        { label: 'max_amount_usd', desc: 'Hard spending ceiling. Exceeded → MANDATE_BUDGET_EXCEEDED.' },
-                                        { label: 'allowed_categories', desc: 'Whitelist of spend categories. Others → MANDATE_CATEGORY_DENIED.' },
-                                        { label: 'valid_until', desc: 'ISO 8601 expiry. Past → MANDATE_EXPIRED immediately.' },
-                                        { label: 'agent_did', desc: 'The specific agent DID this mandate grants. Non-matching agent → MANDATE_NOT_FOUND.' },
+                                        { label: 'max_amount_usd', desc: 'Hard spending ceiling. Exceeded, returns MANDATE_BUDGET_EXCEEDED.' },
+                                        { label: 'allowed_categories', desc: 'Whitelist of spend categories. Others return MANDATE_CATEGORY_DENIED.' },
+                                        { label: 'valid_until', desc: 'ISO 8601 expiry. Past dates return MANDATE_EXPIRED immediately.' },
+                                        { label: 'agent_did', desc: 'The specific agent DID this mandate grants. Non-matching agent returns MANDATE_NOT_FOUND.' },
                                     ].map(f => (
                                         <div key={f.label} className="p-3 border-2 border-black bg-white">
                                             <code className="font-mono text-[11px] font-black text-black">{f.label}</code>
@@ -133,7 +133,7 @@ export default function ControlsPage() {
                                 <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">Policies</div>
                                 <h2 className="text-3xl font-black uppercase tracking-tighter mb-4">Account-level routing rules</h2>
                                 <p className="text-sm font-medium text-neutral-600 leading-relaxed mb-5">
-                                    Policies apply to all routing decisions in the account. They run before mandate checks — if a policy denies a request, the mandate is never evaluated.
+                                    Policies apply to all routing decisions in the account. They run before mandate checks: if a policy denies a request, the mandate is never evaluated.
                                 </p>
                                 <div className="border-l-4 border-black pl-4 space-y-2">
                                     <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Evaluation order</div>

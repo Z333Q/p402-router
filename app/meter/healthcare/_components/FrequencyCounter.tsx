@@ -47,24 +47,24 @@ export function FrequencyCounter() {
         <CounterCell
           label="AI Events"
           sublabel={signedAuths > 0 ? 'Token-priced units' : 'Not started yet'}
-          value={signedAuths > 0 ? signedAuths.toString() : '—'}
+          value={signedAuths > 0 ? signedAuths.toString() : '-'}
           highlight={signedAuths > 0}
         />
         <CounterCell
           label="Signed Auths"
           sublabel={signedAuths > 0 ? 'Payment authorizations' : 'Not started yet'}
-          value={signedAuths > 0 ? signedAuths.toString() : '—'}
+          value={signedAuths > 0 ? signedAuths.toString() : '-'}
           highlight={signedAuths > 0}
         />
         <CounterCell
           label="Tempo Tx"
           sublabel={tempoTxCount > 0 ? `${tempoTxCount} settled` : settlements > 0 ? `${settlements} settlements` : 'Not started yet'}
-          value={tempoTxCount > 0 ? tempoTxCount.toString() : settlements > 0 ? settlements.toString() : '—'}
+          value={tempoTxCount > 0 ? tempoTxCount.toString() : settlements > 0 ? settlements.toString() : '-'}
         />
         <CounterCell
           label="Avg / Event"
           sublabel={signedAuths > 0 ? 'target ≤ $0.01' : 'Not started yet'}
-          value={signedAuths > 0 ? `$${avgCostPerAction.toFixed(6)}` : '—'}
+          value={signedAuths > 0 ? `$${avgCostPerAction.toFixed(6)}` : '-'}
           pass={costThresholdMet ? true : signedAuths > 0 ? false : undefined}
         />
         <CounterCell
@@ -81,7 +81,7 @@ export function FrequencyCounter() {
               ? 'PASS'
               : signedAuths > 0
               ? `${signedAuths}/${REQUIRED_TX_THRESHOLD}`
-              : '—'
+              : '-'
           }
           pass={signedAuths > 0 ? txThresholdMet : undefined}
         />

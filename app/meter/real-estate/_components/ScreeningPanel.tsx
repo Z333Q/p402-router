@@ -34,7 +34,7 @@ export function ScreeningPanel({ streamText, isStreaming }: { streamText: string
     approved:    '✓ APPROVED',
     conditional: '⚡ CONDITIONAL',
     declined:    '✗ DECLINED',
-    escalated:   '⚠ ESCALATED — Specialist Review',
+    escalated:   '⚠ ESCALATED: Specialist Review',
   };
 
   return (
@@ -42,7 +42,7 @@ export function ScreeningPanel({ streamText, isStreaming }: { streamText: string
       <div className="border-b-2 border-neutral-700 px-4 py-3 flex items-center justify-between">
         <div>
           <div className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest mb-0.5">
-            {scenario ? `Screening — ${scenario.name}` : 'Screening Output'}
+            {scenario ? `Screening: ${scenario.name}` : 'Screening Output'}
           </div>
           <div className="text-xs font-bold uppercase">Extraction · Consistency · Fraud Assessment</div>
         </div>

@@ -30,7 +30,7 @@ export function DataRoomPanel() {
               onClick={handleOpenMatter}
               className="btn btn-primary text-[10px] px-3 py-1"
             >
-              Open Matter →
+              Open Matter
             </button>
           )}
         </div>
@@ -45,7 +45,7 @@ export function DataRoomPanel() {
       </div>
 
       <div className="border-t-2 border-neutral-700 px-4 py-2 flex items-center justify-between text-[10px] font-mono text-neutral-500">
-        <span>{CONTRACTS.length} contracts · {CONTRACTS.filter(c => c.tier === 'pro').length} → Gemini Pro · {CONTRACTS.filter(c => c.tier === 'flash').length} → Gemini Flash</span>
+        <span>{CONTRACTS.length} contracts · {CONTRACTS.filter(c => c.tier === 'pro').length} on Gemini Pro · {CONTRACTS.filter(c => c.tier === 'flash').length} on Gemini Flash</span>
         <span>Budget cap: ${MATTER.budgetCapUsd.toFixed(2)}</span>
       </div>
     </div>

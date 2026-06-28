@@ -161,7 +161,7 @@ export function ScreeningDemoStrip({ onStreamText, onStreamReset }: Props) {
       <div className={`border-2 p-4 flex items-center justify-between ${outcomeStyle[scenario.scenario] ?? 'border-neutral-700'}`}>
         <div className="flex flex-col gap-1">
           <div className="text-xs font-bold uppercase">
-            {scenario.name} — Screening Complete
+            {scenario.name}: Screening Complete
           </div>
           <div className="text-[10px] font-mono text-neutral-400">
             {scenario.summary}

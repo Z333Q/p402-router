@@ -166,7 +166,7 @@ export function ReviewSummaryPane() {
             onClick={executeReview}
             disabled={executing || !workOrder || !sessionId}
           >
-            {executing ? 'Executing...' : 'Execute Review →'}
+            {executing ? 'Executing...' : 'Execute Review'}
           </button>
         )}
         {streamDone && (

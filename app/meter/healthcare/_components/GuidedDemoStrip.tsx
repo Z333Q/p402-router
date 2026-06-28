@@ -12,7 +12,7 @@ type DemoPhase =
   | 'done';
 
 const PHASE_LABELS: Record<DemoPhase, string> = {
-  idle:           'Run Full Demo →',
+  idle:           'Run Full Demo',
   loading_packet: 'Loading packet…',
   extracting:     'Gemini extracting…',
   executing:      'Billing in real time…',
@@ -166,7 +166,7 @@ export function GuidedDemoStrip() {
           className="btn btn-secondary text-[10px]"
           onClick={() => { reset(); setPhase('idle'); }}
         >
-          Reset → Run Again
+          Reset, Run Again
         </button>
       </div>
     );
@@ -191,9 +191,9 @@ export function GuidedDemoStrip() {
         {isRunning && (
           <div className="flex items-center gap-2 text-[9px] font-mono text-neutral-500 uppercase tracking-wider">
             <Step label="Packet" done={phase !== 'loading_packet'} active={phase === 'loading_packet'} />
-            <span className="text-neutral-800">→</span>
+            <span className="text-neutral-800">·</span>
             <Step label="Extract" done={phase === 'executing'} active={phase === 'extracting'} />
-            <span className="text-neutral-800">→</span>
+            <span className="text-neutral-800">·</span>
             <Step label="Billing" done={false} active={phase === 'executing'} />
           </div>
         )}

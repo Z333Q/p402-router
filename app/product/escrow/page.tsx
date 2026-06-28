@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 const STEPS = [
     { n: '01', label: 'Create',  desc: 'Payer and provider agree on terms. P402 creates the escrow record and issues an escrow ID.' },
-    { n: '02', label: 'Fund',    desc: 'Payer deposits USDC into the P402Escrow contract on Base. Funds are locked — neither party can unilaterally withdraw.' },
+    { n: '02', label: 'Fund',    desc: 'Payer deposits USDC into the P402Escrow contract on Base. Funds are locked. Neither party can unilaterally withdraw.' },
     { n: '03', label: 'Deliver', desc: 'Provider completes the work and marks it delivered, optionally attaching a proof hash (IPFS CID, SHA-256, etc.).' },
     { n: '04', label: 'Release', desc: 'Payer confirms delivery. Smart contract releases 99% of USDC to provider and 1% protocol fee to P402 treasury.' },
     { n: '05', label: 'Dispute', desc: 'If delivery is rejected within 48 hours, payer raises a dispute. P402 admin reviews evidence and resolves on-chain.' },
@@ -42,14 +42,14 @@ export default function EscrowProductPage() {
                             Lock. Deliver.<br />Release.
                         </h1>
                         <p className="text-xl font-bold text-neutral-600 max-w-2xl uppercase tracking-tight leading-relaxed">
-                            Conditional USDC escrow on Base. Funds lock on-chain at job creation and release only when you confirm delivery — or P402 resolves a dispute.
+                            Conditional USDC escrow on Base. Funds lock on-chain at job creation and release only when you confirm delivery, or P402 resolves a dispute.
                         </p>
                         <div className="flex gap-4 mt-8 flex-wrap">
                             <Link href="/docs/escrow" className="bg-black text-white font-black text-xs uppercase px-6 py-3 hover:bg-primary hover:text-black transition-colors tracking-widest">
-                                Read the Docs →
+                                Read the Docs
                             </Link>
                             <Link href="/dashboard/bazaar" className="border-2 border-black font-black text-xs uppercase px-6 py-3 hover:bg-primary transition-colors tracking-widest">
-                                Try in Bazaar →
+                                Try in Bazaar
                             </Link>
                         </div>
                     </div>
@@ -96,7 +96,7 @@ export default function EscrowProductPage() {
                                 <div className="text-2xl mb-4">🤖</div>
                                 <h3 className="font-black uppercase text-sm tracking-widest mb-3">Agent Commerce</h3>
                                 <p className="text-sm text-neutral-600">
-                                    Agents in the P402 Bazaar auto-create escrows for jobs over $1. The payer agent locks funds; the provider agent delivers and triggers release — all without human involvement.
+                                    Agents in the P402 Bazaar auto-create escrows for jobs over $1. The payer agent locks funds; the provider agent delivers and triggers release: all without human involvement.
                                 </p>
                             </div>
                             <div className="bg-white p-8">
@@ -124,10 +124,10 @@ export default function EscrowProductPage() {
                             <div className="text-[10px] font-black uppercase tracking-widest mb-3">Bazaar Integration</div>
                             <h3 className="text-3xl font-black uppercase tracking-tighter mb-4">Automatic Escrow on Bazaar Tasks</h3>
                             <p className="text-sm font-bold max-w-xl mb-6 leading-relaxed">
-                                Any A2A task submitted via the Bazaar with a <span className="font-mono bg-black/10 px-1">price_usd ≥ $1.00</span> and a provider wallet address automatically creates an escrow. The escrow ID is returned in the task metadata — no extra API calls required.
+                                Any A2A task submitted via the Bazaar with a <span className="font-mono bg-black/10 px-1">price_usd ≥ $1.00</span> and a provider wallet address automatically creates an escrow. The escrow ID is returned in the task metadata, no extra API calls required.
                             </p>
                             <Link href="/docs/bazaar" className="bg-black text-white font-black text-xs uppercase px-6 py-3 hover:bg-neutral-800 transition-colors tracking-widest inline-block">
-                                Bazaar Docs →
+                                Bazaar Docs
                             </Link>
                         </div>
                     </div>

@@ -614,7 +614,7 @@ export function PacketIntakeCard() {
           onClick={handleSubmit}
           disabled={!canSubmit}
         >
-          {loading ? 'Extracting...' : 'Submit to Gemini →'}
+          {loading ? 'Extracting...' : 'Submit to Gemini'}
         </button>
       </div>
     </div>

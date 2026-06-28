@@ -121,7 +121,7 @@ export function LegalDemoStrip() {
         docIdB: 'doc-007',
         description: 'MSA change-of-control notification vs. Acquisition Agreement closing condition',
         severity: 'high',
-        clause: 'MSA §8.1 requires customer consent for assignment; Acquisition Agreement §4.1(e) requires 80% ARR consent — scope of "consent" undefined.',
+        clause: 'MSA §8.1 requires customer consent for assignment; Acquisition Agreement §4.1(e) requires 80% ARR consent: scope of "consent" undefined.',
       },
       {
         docIdA: 'doc-006',
@@ -142,7 +142,7 @@ export function LegalDemoStrip() {
         docIdB: 'doc-008',
         description: 'CTO retention non-compete vs. founder non-compete scope',
         severity: 'low',
-        clause: 'CTO agreement restricts 4 states, 18 months; Founder agreement is worldwide, 24 months — inconsistent treatment of similarly-situated employees.',
+        clause: 'CTO agreement restricts 4 states, 18 months; Founder agreement is worldwide, 24 months, inconsistent treatment of similarly-situated employees.',
       },
     ]);
 
@@ -188,7 +188,7 @@ export function LegalDemoStrip() {
       <div className="shrink-0 flex flex-col items-end gap-2">
         {isIdle ? (
           <button onClick={handleRunAll} className="btn btn-primary text-sm px-6">
-            Run Full Matter →
+            Run Full Matter
           </button>
         ) : running ? (
           <div className="flex flex-col items-end gap-1">
@@ -204,7 +204,7 @@ export function LegalDemoStrip() {
           </div>
         ) : (
           <button onClick={handleRunAll} className="btn btn-primary text-sm px-6">
-            Run Full Matter →
+            Run Full Matter
           </button>
         )}
         <span className="text-[9px] font-mono text-neutral-600">

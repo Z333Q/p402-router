@@ -39,7 +39,7 @@ export function HealthcareHero() {
 
       <div className="flex flex-wrap gap-3 items-center">
         <a href="#demo" className="btn btn-primary text-sm px-5">
-          Run Medicaid PA Demo →
+          Run Medicaid PA Demo
         </a>
         <a href="#compliance-trace" className="btn btn-secondary text-sm">
           View Compliance Trace
@@ -48,7 +48,7 @@ export function HealthcareHero() {
           About
         </a>
         <a href="/meter" className="btn btn-secondary text-sm">
-          ← All Demos
+          All Demos
         </a>
       </div>
     </div>
