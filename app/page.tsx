@@ -1,54 +1,126 @@
 import type { Metadata } from 'next'
 import { TopNav } from "@/components/TopNav"
 import { Footer } from "@/components/Footer"
-import { HeroAuditor } from "@/components/landing/HeroAuditor"
-import { HowItWorks } from "@/components/landing/HowItWorks"
 import { BazaarLoop } from "@/components/landing/BazaarLoop"
 import { Testimonials } from "@/components/landing/Testimonials"
 import { LiveRoutingDemo } from "@/components/landing/LiveRoutingDemo"
 import { ProductionFeatures } from "@/components/landing/ProductionFeatures"
 import Link from 'next/link'
-import { Badge } from "@/app/dashboard/_components/ui"
 import { PricingStrip } from "@/components/landing/PricingStrip"
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-    title: 'P402 | Make AI spend accountable',
-    description: 'Meter every AI call before it becomes budget leakage. Turn token usage into a live cost ledger with owner, budget, and margin attribution. Private by default, metadata-only metering.',
+    title: 'P402 Meter | Make AI Spend Accountable',
+    description: 'P402 meters every AI call and turns token usage into a live ledger for budgets, margins, workflows, policy results, and evidence.',
     alternates: { canonical: 'https://p402.io' },
     keywords: [
         'AI spend accountability', 'AI cost ledger', 'AI COGS dashboard', 'AI budget control',
         'AI margin control', 'token usage attribution', 'AI spend audit', 'enterprise AI budget',
-        'embedded AI margin', 'metered AI economic events', 'AP2 mandates', 'A2A protocol',
-        'x402 protocol', 'USDC settlement', 'EIP-3009', 'OpenAI compatible router'
+        'embedded AI margin', 'metered AI economic events', 'AI feature margin',
+        'AI usage ledger', 'evidence bundle', 'AP2 mandates'
     ],
     openGraph: {
-        title: 'P402 | Make AI spend accountable',
-        description: 'Meter every AI call before it becomes budget leakage. Live cost ledger with owner, budget, and margin attribution. Private by default.',
+        title: 'P402 Meter | Make AI Spend Accountable',
+        description: 'Meter every AI call. Turn token usage into a live ledger for budgets, margins, workflows, policy results, and evidence.',
         url: 'https://p402.io',
         type: 'website',
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'P402: Make AI spend accountable',
-        description: 'Meter every AI call. Attribute every token. Control every margin. Private by default.',
+        title: 'P402 Meter | Make AI Spend Accountable',
+        description: 'Meter every AI call. Turn token usage into a live ledger with owner, budget, and policy result.',
         site: '@p402io',
     },
 };
+
+const buyerPaths = [
+    {
+        eyebrow: 'Developer building AI software',
+        title: 'Know AI feature margin.',
+        body: 'Track AI COGS, feature margin, customer cost, retry waste, context waste, and cost per accepted output.',
+        ctaLabel: 'Start free',
+        ctaHref: '/login',
+    },
+    {
+        eyebrow: 'Enterprise AI spend manager',
+        title: 'See department, employee, workflow, model, and vendor spend.',
+        body: 'A one-time engagement that produces an AI Spend Accountability Report covering attribution, leakage, and evidence readiness.',
+        ctaLabel: 'Run AI Spend Audit',
+        ctaHref: '/get-access?intent=ai-spend-audit',
+    },
+    {
+        eyebrow: 'Regulated workflow operator',
+        title: 'Track cost, review status, privacy mode, and exportable evidence.',
+        body: 'Export evidence bundles, finance reports, and event proof for every AI economic event.',
+        ctaLabel: 'See evidence',
+        ctaHref: '/dashboard/prove?demo=1',
+    },
+    {
+        eyebrow: 'Agent builder',
+        title: 'Give agents budgets, receipts, and payment traces.',
+        body: 'Mandates constrain each agent’s spend cryptographically. Receipts and settlement records back every payable AI work item.',
+        ctaLabel: 'Read docs',
+        ctaHref: '/docs',
+    },
+    {
+        eyebrow: 'Partner',
+        title: 'Help clients deploy AI spend accountability.',
+        body: 'Refer, implement, and advise teams adopting the P402 partner program.',
+        ctaLabel: 'Apply as partner',
+        ctaHref: '/partners/apply',
+    },
+];
+
+const trustSignals = [
+    {
+        label: 'Privacy boundary',
+        body: 'Meter economics, not content. Metadata-only by default. Five privacy modes from metadata-only to full-trace opt-in.',
+    },
+    {
+        label: 'Status boundary',
+        body: 'Meter is shipped. Control runtime flip remains gated. Optimize recommendations remain gated until outcome data is sufficient.',
+    },
+    {
+        label: 'Proof object',
+        body: 'Dashboard event detail, evidence bundle, finance report, CSV appendix.',
+    },
+    {
+        label: 'Conversion next step',
+        body: 'Start free, Run AI Spend Audit, See evidence, Apply as partner, or Read docs.',
+    },
+];
 
 export default async function Page() {
     return (
         <div className="min-h-screen bg-white text-black font-sans selection:bg-primary selection:text-black">
             <TopNav />
             <main>
-                {/* 1. Hero — one endpoint, code swap, live routing */}
-                <HeroAuditor />
+                {/* 1. Hero */}
+                <section className="bg-white border-b-2 border-black">
+                    <div className="container mx-auto px-6 max-w-7xl py-24 md:py-32">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-6">AI spend accountability infrastructure</div>
+                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-tighter leading-none mb-8">
+                            Make AI spend<br />accountable.
+                        </h1>
+                        <p className="text-lg md:text-xl text-neutral-700 font-medium leading-relaxed max-w-3xl mb-10">
+                            P402 turns every AI request into an economic event with owner, workflow, model, provider, tokens, cost, budget, policy result, outcome, and evidence status. Private by default, metadata-only metering.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                            <Link href="/meter" className="btn btn-primary text-base px-8 py-4 h-auto">
+                                Install Meter
+                            </Link>
+                            <Link href="/dashboard?demo=1" className="text-base px-8 py-4 h-auto border-2 border-black bg-white text-black font-black uppercase tracking-wider hover:bg-black hover:text-primary transition-colors inline-flex items-center justify-center">
+                                See dashboard
+                            </Link>
+                        </div>
+                        <p className="text-sm text-neutral-500 font-medium">
+                            No prompt storage required. Metadata-only mode is available from the first event.
+                        </p>
+                    </div>
+                </section>
 
-                {/* 2. How it works — 3-step activation path */}
-                <HowItWorks />
-
-                {/* 3. Proof strip — trust before depth */}
-                <section className="py-5 bg-neutral-50 border-t-2 border-b-2 border-black">
+                {/* 2. Verify strip */}
+                <section className="py-5 bg-neutral-50 border-b-2 border-black">
                     <div className="container mx-auto px-6 max-w-7xl">
                         <div className="flex flex-wrap items-center gap-6 text-[10px] font-black uppercase tracking-widest">
                             <span className="text-neutral-400">Verify independently:</span>
@@ -58,13 +130,13 @@ export default async function Page() {
                             </Link>
                             <Link href="/trust" className="text-black hover:text-primary transition-colors no-underline">Trust Center</Link>
                             <a href="https://basescan.org/address/0xd03c7ab9a84d86dbc171367168317d6ebe408601" target="_blank" rel="noopener noreferrer" className="text-black hover:text-primary transition-colors no-underline">
-                                Settlement contract ↗
+                                Settlement contract
                             </a>
                             <a href="https://basescan.org/address/0xFa772434DCe6ED78831EbC9eeAcbDF42E2A031a6" target="_blank" rel="noopener noreferrer" className="text-black hover:text-primary transition-colors no-underline">
-                                Treasury ↗
+                                Treasury
                             </a>
                             <a href="https://github.com/Z333Q/p402-protocol" target="_blank" rel="noopener noreferrer" className="text-black hover:text-primary transition-colors no-underline">
-                                Open source SDK ↗
+                                Open source SDK
                             </a>
                             <span className="text-neutral-200">|</span>
                             <Link href="/demo" className="text-black hover:text-primary transition-colors no-underline">Protocol demo</Link>
@@ -76,8 +148,21 @@ export default async function Page() {
                     </div>
                 </section>
 
-                {/* 3b. Client install strip */}
-                <section className="py-10 bg-white border-b-2 border-black">
+                {/* 3. Problem block */}
+                <section className="py-20 md:py-28 bg-white border-b-2 border-black">
+                    <div className="container mx-auto px-6 max-w-7xl">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-4">The problem</div>
+                        <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-8 max-w-4xl">
+                            AI spend arrives too late.
+                        </h2>
+                        <p className="text-lg md:text-xl text-neutral-700 font-medium leading-relaxed max-w-3xl">
+                            Provider invoices show totals after usage happens. They do not show which customer, feature, workflow, department, employee, model, or retry caused the cost. P402 records that ownership when the event happens.
+                        </p>
+                    </div>
+                </section>
+
+                {/* 4. System block: install strip */}
+                <section className="py-16 bg-white border-b-2 border-black">
                     <div className="container mx-auto px-6 max-w-7xl">
                         <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-6">Install in your environment</div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-black border-2 border-black">
@@ -100,141 +185,91 @@ export default async function Page() {
                     </div>
                 </section>
 
-                {/* 4. Product doorway cards — lead to where the work happens */}
-                <section id="product" className="py-20 bg-white border-b-2 border-black">
+                {/* 5. Buyer-path cards */}
+                <section id="buyer-paths" className="py-20 md:py-28 bg-white border-b-2 border-black">
                     <div className="container mx-auto px-6 max-w-7xl">
                         <div className="mb-10">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">What you get</div>
-                            <h2 className="text-4xl font-black uppercase tracking-tighter">Six capabilities. One protocol.</h2>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">Buyer paths</div>
+                            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter">Five paths. One protocol.</h2>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-px bg-black border-2 border-black">
-                            <Link href="/product/routing" className="group bg-primary p-8 flex flex-col gap-4 hover:bg-black transition-colors no-underline">
-                                <div className="text-[10px] font-black text-black/60 uppercase tracking-widest group-hover:text-primary/60">AI Routing</div>
-                                <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Route. Optimise. Save.</h3>
-                                <p className="text-sm font-medium text-black/70 group-hover:text-neutral-400 leading-relaxed flex-1">
-                                    One OpenAI-compatible endpoint. 300+ models. P402 routes each request to a provider that matches your cost and quality target, automatically.
-                                </p>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-black/50 group-hover:text-primary transition-colors mt-auto">AI routing →</span>
-                            </Link>
-                            <Link href="/product/payments" className="group bg-white p-8 flex flex-col gap-4 hover:bg-neutral-50 transition-colors no-underline">
-                                <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Payments</div>
-                                <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Verify. Settle. Receipt.</h3>
-                                <p className="text-sm font-medium text-neutral-600 leading-relaxed flex-1">
-                                    EIP-3009 gasless USDC settlement on Base. Sign once, facilitator executes. Receipts for repeat access without re-payment.
-                                </p>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">x402 protocol →</span>
-                            </Link>
-                            <Link href="/product/escrow" className="group bg-white p-8 flex flex-col gap-4 hover:bg-neutral-50 transition-colors no-underline">
-                                <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Escrow</div>
-                                <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Lock. Deliver. Release.</h3>
-                                <p className="text-sm font-medium text-neutral-600 leading-relaxed flex-1">
-                                    Conditional USDC escrow on Base. Funds lock on-chain, release only on confirmed delivery. 48-hour dispute window with on-chain resolution.
-                                </p>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">Escrow protocol →</span>
-                            </Link>
-                            <Link href="/product/controls" className="group bg-white p-8 flex flex-col gap-4 hover:bg-neutral-50 transition-colors no-underline">
-                                <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Controls</div>
-                                <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Mandates. Policies. Evidence.</h3>
-                                <p className="text-sm font-medium text-neutral-600 leading-relaxed flex-1">
-                                    AP2 mandates constrain each agent&apos;s spend cryptographically. Policies enforce account-wide limits. Every deny returns a structured code with requestId.
-                                </p>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">AP2 mandates →</span>
-                            </Link>
-                            <Link href="/product/orchestration" className="group bg-white p-8 flex flex-col gap-4 hover:bg-neutral-50 transition-colors no-underline">
-                                <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Orchestration</div>
-                                <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Tasks. Stream. Trace.</h3>
-                                <p className="text-sm font-medium text-neutral-600 leading-relaxed flex-1">
-                                    A2A JSON-RPC 2.0 task protocol with SSE streaming. Payment-required events are structured messages, not errors. Live trace for every routing decision.
-                                </p>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">A2A protocol →</span>
-                            </Link>
-                            <Link href="/product/ecosystem" className="group bg-white p-8 flex flex-col gap-4 hover:bg-neutral-50 transition-colors no-underline">
-                                <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Ecosystem</div>
-                                <h3 className="text-xl font-black uppercase tracking-tighter text-black group-hover:text-primary transition-colors">Skills. Bazaar. Verified.</h3>
-                                <p className="text-sm font-medium text-neutral-600 leading-relaxed flex-1">
-                                    Publish typed skills. List paid agents on the Bazaar. Earn Verified Publisher status. ERC-8004 on-chain reputation is optional and toggleable.
-                                </p>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-black transition-colors mt-auto">Bazaar marketplace →</span>
-                            </Link>
+                            {buyerPaths.map((path, i) => {
+                                const isAccent = i === 0;
+                                const spanClass = i < 4 ? 'lg:col-span-3 xl:col-span-2' : 'lg:col-span-6 xl:col-span-2';
+                                return (
+                                    <Link
+                                        key={i}
+                                        href={path.ctaHref}
+                                        className={`group ${isAccent ? 'bg-primary hover:bg-black' : 'bg-white hover:bg-neutral-50'} p-8 flex flex-col gap-4 transition-colors no-underline ${spanClass}`}
+                                    >
+                                        <div className={`text-[10px] font-black uppercase tracking-widest ${isAccent ? 'text-black/60 group-hover:text-primary/60' : 'text-neutral-500'}`}>
+                                            {path.eyebrow}
+                                        </div>
+                                        <h3 className={`text-xl font-black uppercase tracking-tighter ${isAccent ? 'text-black group-hover:text-primary' : 'text-black group-hover:text-primary'} transition-colors`}>
+                                            {path.title}
+                                        </h3>
+                                        <p className={`text-sm font-medium leading-relaxed flex-1 ${isAccent ? 'text-black/70 group-hover:text-neutral-400' : 'text-neutral-600'}`}>
+                                            {path.body}
+                                        </p>
+                                        <span className={`text-[10px] font-black uppercase tracking-widest mt-auto transition-colors ${isAccent ? 'text-black/50 group-hover:text-primary' : 'text-neutral-400 group-hover:text-black'}`}>
+                                            {path.ctaLabel}
+                                        </span>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     </div>
                 </section>
 
-                {/* 4. Live routing demo — show the product working */}
+                {/* 6. Trust block */}
+                <section className="py-20 md:py-28 bg-neutral-50 border-b-2 border-black">
+                    <div className="container mx-auto px-6 max-w-7xl">
+                        <div className="mb-10">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">Trust</div>
+                            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter">What P402 commits to.</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-black border-2 border-black">
+                            {trustSignals.map((signal, i) => (
+                                <div key={i} className="bg-white p-6 flex flex-col gap-3">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500">{signal.label}</div>
+                                    <p className="text-sm font-medium text-neutral-700 leading-relaxed">{signal.body}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* 7. Proof block: live routing demo */}
                 <LiveRoutingDemo />
 
-                {/* 5. Pricing — surface early before the deep dive */}
+                {/* 8. Pricing */}
                 <PricingStrip />
 
-                {/* 6. Production features */}
+                {/* 9. Production features */}
                 <ProductionFeatures />
 
-                {/* 7. Social proof */}
+                {/* 10. Social proof */}
                 <Testimonials />
 
-                {/* 8. Agent marketplace */}
+                {/* 11. Agent marketplace */}
                 <BazaarLoop />
 
-                {/* 9. Intelligence — for those who want the full story */}
-                <section className="py-20 bg-black text-white border-y-2 border-neutral-800">
-                    <div className="container mx-auto px-6 max-w-7xl">
-                        <div className="flex flex-col lg:flex-row gap-12 items-start">
-                            <div className="lg:w-80 shrink-0">
-                                <Badge variant="primary" className="mb-4">Research</Badge>
-                                <h2 className="text-3xl font-black uppercase tracking-tighter leading-none mb-4">
-                                    Intelligence Engine
-                                </h2>
-                                <p className="text-neutral-400 text-sm mb-6 leading-relaxed">
-                                    The routing decisions P402 makes are driven by a real-time intelligence layer. Explore the research.
-                                </p>
-                                <Link href="/intelligence" className="inline-flex items-center h-10 px-5 bg-primary text-black font-black text-[11px] uppercase tracking-wider border-2 border-primary hover:bg-black hover:text-primary hover:border-primary transition-colors no-underline">
-                                    Read the research →
-                                </Link>
-                            </div>
-                            <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-px bg-white/10 border border-white/10">
-                                {[
-                                    { title: "Protocol Economics", desc: "Atomic settlement & market design.", link: "/intelligence/protocol-economics" },
-                                    { title: "Machine Governance", desc: "Cryptographic AP2 mandates.", link: "/intelligence/machine-governance" },
-                                    { title: "Agentic Orchestration", desc: "QoS semantic routing logic.", link: "/intelligence/agentic-orchestration" },
-                                    { title: "The Sentinel Layer", desc: "Flash crash protection systems.", link: "/intelligence/sentinel-layer" },
-                                    { title: "Trustless Agents", desc: "ERC-8004 on-chain identity & reputation.", link: "/docs/erc8004" },
-                                    { title: "Validation Registry", desc: "High-value transaction verification.", link: "/docs/erc8004" },
-                                ].map((pillar, i) => (
-                                    <Link key={i} href={pillar.link} className="group bg-neutral-900 p-5 hover:bg-neutral-800 transition-colors no-underline">
-                                        <h3 className="text-sm font-black uppercase text-primary mb-1.5 group-hover:underline decoration-2 underline-offset-4">
-                                            {pillar.title}
-                                        </h3>
-                                        <p className="text-neutral-500 font-mono text-[11px] leading-relaxed">
-                                            {pillar.desc}
-                                        </p>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* 10. Final CTA — drive to signup */}
+                {/* 12. Final CTA */}
                 <section className="py-32 bg-primary text-center border-t-2 border-black">
                     <div className="container mx-auto px-6">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-4">Free to start. No credit card.</div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-black/60 mb-4">Meter is shipped.</div>
                         <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-4 leading-none">
-                            Start routing<br />in minutes.
+                            Give every token<br />an owner.
                         </h2>
                         <p className="text-black/70 font-bold text-xl mb-10 max-w-xl mx-auto">
-                            One endpoint. 300+ models. Cost-aware routing. Gasless payments on Base.
+                            Start with one metered event.
                         </p>
                         <div className="flex flex-col sm:flex-row justify-center gap-4">
-                            <Link href="/login" className="btn btn-dark text-xl px-10 py-5 h-auto">
-                                Create Free Account
+                            <Link href="/meter" className="btn btn-dark text-xl px-10 py-5 h-auto">
+                                Install Meter
                             </Link>
-                            <Link href="/developers/quickstart" className="text-xl px-10 py-5 h-auto border-2 border-black bg-transparent text-black font-black uppercase tracking-wider hover:bg-black hover:text-primary transition-colors inline-flex items-center justify-center">
-                                Run Quickstart
-                            </Link>
-                        </div>
-                        <div className="mt-8">
-                            <Link href="/docs/skill" className="inline-flex items-center gap-2 text-black font-black uppercase tracking-widest text-sm border-b-2 border-black hover:border-transparent transition-all">
-                                <span className="text-base">⬡</span> Get the Claude Skill →
+                            <Link href="/get-access?intent=ai-spend-audit" className="text-xl px-10 py-5 h-auto border-2 border-black bg-transparent text-black font-black uppercase tracking-wider hover:bg-black hover:text-primary transition-colors inline-flex items-center justify-center">
+                                Run AI Spend Audit
                             </Link>
                         </div>
                     </div>
