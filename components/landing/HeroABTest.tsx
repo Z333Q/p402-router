@@ -6,7 +6,7 @@ import { HeroSystemStages } from './HeroSystemStages';
 
 type Variant = 'A' | 'B';
 
-const STORAGE_KEY = 'p402_hero_variant';
+const STORAGE_KEY = 'p402_hero_variant_v2';
 
 declare global {
     interface Window {
