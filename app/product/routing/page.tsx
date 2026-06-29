@@ -4,7 +4,7 @@ import { TopNav } from '@/components/TopNav';
 import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
-    title: 'AI Routing | P402',
+    title: 'Routing engine | P402',
     description: 'Route AI calls across 300+ models via one OpenAI-compatible endpoint. Cost, Quality, Speed, and Balanced modes with full cost metadata on every response.',
     alternates: { canonical: 'https://p402.io/product/routing' },
 };
@@ -66,6 +66,15 @@ export default function RoutingPage() {
                 {/* Header */}
                 <section className="border-b-2 border-black py-16 bg-white">
                     <div className="container mx-auto px-6 max-w-5xl">
+                        <div className="border-2 border-black bg-primary text-black p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                            <div>
+                                <div className="text-[10px] font-black uppercase tracking-widest mb-1">New buyer page</div>
+                                <div className="text-sm font-bold">See the cost optimization layer routing enables.</div>
+                            </div>
+                            <Link href="/optimize" className="border-2 border-black bg-black text-primary text-xs font-black uppercase tracking-wider px-4 py-2 hover:bg-primary hover:text-black transition-colors whitespace-nowrap">
+                                See Optimize
+                            </Link>
+                        </div>
                         <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-3"><span className="font-mono">{">_"}</span> Product / AI Routing</div>
                         <h1 className="text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-none mb-5">
                             One endpoint.<br />

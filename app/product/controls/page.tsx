@@ -4,7 +4,7 @@ import { TopNav } from '@/components/TopNav';
 import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
-    title: 'Controls | P402',
+    title: 'Controls engine | P402',
     description: 'Constrain agent spend with AP2 mandates and policies. Export evidence bundles for compliance and risk review.',
     alternates: { canonical: 'https://p402.io/product/controls' },
 };
@@ -29,6 +29,15 @@ export default function ControlsPage() {
                 {/* Header */}
                 <section className="border-b-2 border-black py-16 bg-white">
                     <div className="container mx-auto px-6 max-w-5xl">
+                        <div className="border-2 border-black bg-primary text-black p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                            <div>
+                                <div className="text-[10px] font-black uppercase tracking-widest mb-1">New buyer page</div>
+                                <div className="text-sm font-bold">See the control layer for budgets and policy.</div>
+                            </div>
+                            <Link href="/control" className="border-2 border-black bg-black text-primary text-xs font-black uppercase tracking-wider px-4 py-2 hover:bg-primary hover:text-black transition-colors whitespace-nowrap">
+                                See Control
+                            </Link>
+                        </div>
                         <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-3"><span className="font-mono">{">_"}</span> Product / Controls</div>
                         <h1 className="text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-none mb-5">
                             Constrain spend.<br />

@@ -13,10 +13,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { url: `${baseUrl}/status`,                 lastModified: now, changeFrequency: 'hourly',  priority: 0.8 },
 
         // ── Product pages ─────────────────────────────────────────────
-        { url: `${baseUrl}/product/payments`,       lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
-        { url: `${baseUrl}/product/controls`,       lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },
-        { url: `${baseUrl}/product/orchestration`,  lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },
-        { url: `${baseUrl}/product/ecosystem`,      lastModified: now, changeFrequency: 'weekly',  priority: 0.8 },
+        { url: `${baseUrl}/product/controls`,       lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+        { url: `${baseUrl}/product/ecosystem`,      lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+        { url: `${baseUrl}/product/escrow`,         lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+        { url: `${baseUrl}/product/orchestration`,  lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+        { url: `${baseUrl}/product/payments`,       lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+        { url: `${baseUrl}/product/routing`,        lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
 
         // ── Developer pages ───────────────────────────────────────────
         { url: `${baseUrl}/developers`,             lastModified: now, changeFrequency: 'weekly',  priority: 0.95 },

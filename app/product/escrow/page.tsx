@@ -4,7 +4,7 @@ import { TopNav } from '@/components/TopNav';
 import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
-    title: 'Escrow | P402',
+    title: 'Escrow engine | P402',
     description: 'Conditional USDC escrow on Base mainnet. Funds lock on-chain and release only on confirmed delivery. 48-hour dispute window. 1% protocol fee. Built for agent-to-agent commerce.',
     alternates: { canonical: 'https://p402.io/product/escrow' },
 };
@@ -35,6 +35,15 @@ export default function EscrowProductPage() {
                 {/* Header */}
                 <section className="border-b-2 border-black py-16 bg-white">
                     <div className="container mx-auto px-6 max-w-5xl">
+                        <div className="border-2 border-black bg-primary text-black p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                            <div>
+                                <div className="text-[10px] font-black uppercase tracking-widest mb-1">New buyer page</div>
+                                <div className="text-sm font-bold">See the receipts layer escrow settlement produces.</div>
+                            </div>
+                            <Link href="/receipts" className="border-2 border-black bg-black text-primary text-xs font-black uppercase tracking-wider px-4 py-2 hover:bg-primary hover:text-black transition-colors whitespace-nowrap">
+                                See Receipts
+                            </Link>
+                        </div>
                         <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-3">
                             <span className="font-mono">{">_"}</span> Product / Escrow
                         </div>
