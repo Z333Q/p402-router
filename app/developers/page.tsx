@@ -427,13 +427,16 @@ function OptionalSettlement() {
 }
 
 const RESOURCES: ReadonlyArray<{ name: string; href: string; line: string }> = [
-    { name: 'Quickstart', href: '/developers/quickstart', line: 'Six-step path from key generation to receipt reuse.' },
-    { name: 'API keys',   href: '/docs/api',              line: 'Reference for key generation, scopes, and rotation.' },
-    { name: 'Meter',      href: '/meter',                 line: 'Canonical product page for the metering layer.' },
-    { name: 'Monitor',    href: '/monitor',               line: 'Read-only dashboards for AI spend and attribution.' },
-    { name: 'Control',    href: '/control',               line: 'Budgets, policy results, and review gates.' },
-    { name: 'Receipts',   href: '/receipts',              line: 'x402 settlement and receipt reuse for payable AI work.' },
-    { name: 'Prove',      href: '/prove',                 line: 'Evidence bundles for finance, audit, and legal review.' },
+    { name: 'Quickstart',   href: '/developers/quickstart', line: 'Six-step path from key generation to receipt reuse.' },
+    { name: 'API reference',href: '/docs/api',              line: 'Endpoints, request shapes, and error codes.' },
+    { name: 'SDK',          href: '/docs/sdk',              line: 'TypeScript and Python clients with OpenAI compatibility.' },
+    { name: 'Claude Skill', href: '/docs/skill',            line: 'P402 skill for Claude Code agents.' },
+    { name: 'MCP server',   href: '/docs/mcp',              line: 'Model Context Protocol server for agent integrations.' },
+    { name: 'Meter',        href: '/meter',                 line: 'Canonical product page for the metering layer.' },
+    { name: 'Monitor',      href: '/monitor',               line: 'Read-only dashboards for AI spend and attribution.' },
+    { name: 'Control',      href: '/control',               line: 'Budgets, policy results, and review gates.' },
+    { name: 'Receipts',     href: '/receipts',              line: 'x402 settlement and receipt reuse for payable AI work.' },
+    { name: 'Prove',        href: '/prove',                 line: 'Evidence bundles for finance, audit, and legal review.' },
 ];
 
 function Resources() {
