@@ -88,6 +88,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { url: `${baseUrl}/embedded-ai-margin-control`,      lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
         { url: `${baseUrl}/ai-cogs-dashboard`,               lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
         { url: `${baseUrl}/ai-cost-optimization`,            lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
+        { url: `${baseUrl}/ai-cost-management-reddit`,       lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
 
         // ── Partner program ───────────────────────────────────────────
         { url: `${baseUrl}/partners`,                       lastModified: now, changeFrequency: 'weekly',  priority: 0.85 },
