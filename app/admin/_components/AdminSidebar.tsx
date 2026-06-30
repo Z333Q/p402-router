@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
     LayoutDashboard, Users, TrendingUp, Activity, ShieldAlert,
-    Brain, Store, Crown, FileText, Server, Filter,
+    Brain, Store, Crown, FileText, Server, Filter, DollarSign,
 } from 'lucide-react';
 import { hasPermission, ROLE_LABELS, ROLE_COLORS, type AdminRole } from '@/lib/admin/permissions';
 
@@ -19,6 +19,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
     'file-text': FileText,
     'server': Server,
     'filter': Filter,
+    'dollar-sign': DollarSign,
 };
 
 const NAV = [
@@ -26,6 +27,7 @@ const NAV = [
     { label: 'Users',        href: '/admin/users',         icon: 'users',            permission: 'users.read' },
     { label: 'Analytics',    href: '/admin/analytics',     icon: 'trending-up',      permission: 'analytics.read' },
     { label: 'Funnel',       href: '/admin/funnel',        icon: 'filter',           permission: 'analytics.read' },
+    { label: 'Revenue',      href: '/admin/revenue',       icon: 'dollar-sign',      permission: 'analytics.read' },
     { label: 'Health',       href: '/admin/health',        icon: 'activity',         permission: 'health.*' },
     { label: 'Safety',       href: '/admin/safety',        icon: 'shield-alert',     permission: 'safety.*' },
     { label: 'Intelligence', href: '/admin/intelligence',  icon: 'brain',            permission: 'intelligence.read' },
