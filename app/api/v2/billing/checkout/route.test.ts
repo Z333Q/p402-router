@@ -59,9 +59,39 @@ vi.mock('@/lib/stripe', () => ({
     },
 }));
 
+// The route reads process.env directly (3AY-8R-4A) rather than @/lib/env,
+// so mirror every mockEnv write onto process.env. The vi.mock stub here
+// is a no-op safety net in case a helper still imports env.
 vi.mock('@/lib/env', () => ({
     env: mockEnv,
 }));
+
+const ENV_KEYS = [
+    'STRIPE_PRICE_ID_PRO',
+    'STRIPE_PRICE_ID_AUDIT',
+    'STRIPE_PRICE_ID_DEPT_DASHBOARD',
+    'STRIPE_PRICE_ID_BUILD_MONTHLY',
+    'BILLING_CHECKOUT_ENABLED',
+] as const;
+
+// Turn each env key on mockEnv into an accessor that also writes
+// process.env, so every existing `mockEnv.X = ...` / `delete mockEnv.X`
+// in the tests below propagates to what the route actually reads.
+for (const key of ENV_KEYS) {
+    let current: unknown = mockEnv[key];
+    if (current !== undefined) (process.env as Record<string, string | undefined>)[key] = String(current);
+    Object.defineProperty(mockEnv, key, {
+        configurable: true,
+        enumerable: true,
+        get() { return current; },
+        set(value: unknown) {
+            current = value;
+            const bag = process.env as Record<string, string | undefined>;
+            if (value === undefined) delete bag[key];
+            else bag[key] = String(value);
+        },
+    });
+}
 
 import { POST } from './route';
 
@@ -333,7 +363,7 @@ describe('POST /api/v2/billing/checkout — disabled-state hardening (3AY-8R-4A)
     });
 
     it('build with kill switch missing: still safely CHECKOUT_DISABLED, no Stripe call', async () => {
-        delete mockEnv.BILLING_CHECKOUT_ENABLED;
+        mockEnv.BILLING_CHECKOUT_ENABLED = undefined;
         const res = await POST(reqWithBody({ productKey: 'build' }));
         expect(res.status).toBe(200);
         const data = await res.json();

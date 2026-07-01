@@ -3,8 +3,21 @@ import { getServerSession, type Session } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import db from '@/lib/db';
 import { stripe } from '@/lib/stripe';
-import { env } from '@/lib/env';
 import { toApiErrorResponse } from '@/lib/errors';
+
+// 3AY-8R-4A: read env directly rather than through @/lib/env. That module
+// runs a full-schema Zod validation at import time and throws if ANY
+// required var is unset in the current runtime — which crashes this route
+// at module load (Next.js then serves its built-in _error HTML instead of
+// the JSON responses this handler returns). Reading process.env keeps the
+// route loadable regardless of other env drift.
+const env = process.env as {
+    STRIPE_PRICE_ID_PRO?: string;
+    STRIPE_PRICE_ID_AUDIT?: string;
+    STRIPE_PRICE_ID_DEPT_DASHBOARD?: string;
+    STRIPE_PRICE_ID_BUILD_MONTHLY?: string;
+    BILLING_CHECKOUT_ENABLED?: string;
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +60,7 @@ function resolveProduct(key: ProductKey): ResolvedProduct {
         case 'build':
             return { priceId: env.STRIPE_PRICE_ID_BUILD_MONTHLY ?? null,    mode: 'subscription', label: 'Build' };
         case 'pro':
-            return { priceId: env.STRIPE_PRICE_ID_PRO,                      mode: 'subscription', label: 'Pro' };
+            return { priceId: env.STRIPE_PRICE_ID_PRO ?? null,              mode: 'subscription', label: 'Pro' };
     }
 }
 
