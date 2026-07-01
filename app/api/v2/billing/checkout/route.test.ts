@@ -263,6 +263,94 @@ describe('POST /api/v2/billing/checkout — V5 Build (3AY-8R-Impl-4)', () => {
     });
 });
 
+describe('POST /api/v2/billing/checkout — disabled-state hardening (3AY-8R-4A)', () => {
+    it('unauthenticated request returns 401 JSON with UNAUTHORIZED code, no Stripe call', async () => {
+        const nextAuth = await import('next-auth');
+        const spy = vi.mocked(nextAuth.getServerSession).mockResolvedValueOnce(null as never);
+        try {
+            const res = await POST(reqWithBody({ productKey: 'build' }));
+            expect(res.status).toBe(401);
+            expect(res.headers.get('content-type')).toMatch(/application\/json/);
+            const data = await res.json();
+            expect(data.ok).toBe(false);
+            expect(data.code).toBe('UNAUTHORIZED');
+            expect(sessionsCreate).not.toHaveBeenCalled();
+        } finally {
+            spy.mockReset();
+        }
+    });
+
+    it('session lookup throwing is treated as unauthenticated, not 500', async () => {
+        const nextAuth = await import('next-auth');
+        const spy = vi.mocked(nextAuth.getServerSession).mockRejectedValueOnce(new Error('cookies parse failed'));
+        try {
+            const res = await POST(reqWithBody({ productKey: 'build' }));
+            expect(res.status).toBe(401);
+            const data = await res.json();
+            expect(data.code).toBe('UNAUTHORIZED');
+            expect(sessionsCreate).not.toHaveBeenCalled();
+        } finally {
+            spy.mockReset();
+        }
+    });
+
+    it('malformed JSON body returns 400 INVALID_REQUEST, no Stripe call', async () => {
+        const res = await POST(reqWithBody('{not valid json'));
+        expect(res.status).toBe(400);
+        expect(res.headers.get('content-type')).toMatch(/application\/json/);
+        const data = await res.json();
+        expect(data.ok).toBe(false);
+        expect(data.code).toBe('INVALID_REQUEST');
+        expect(sessionsCreate).not.toHaveBeenCalled();
+    });
+
+    it('non-object JSON body (array) returns 400 INVALID_REQUEST, no Stripe call', async () => {
+        const res = await POST(reqWithBody('[1,2,3]'));
+        expect(res.status).toBe(400);
+        const data = await res.json();
+        expect(data.code).toBe('INVALID_REQUEST');
+        expect(sessionsCreate).not.toHaveBeenCalled();
+    });
+
+    it('bare string body returns 400 INVALID_REQUEST, no Stripe call', async () => {
+        const res = await POST(reqWithBody('"pro"'));
+        expect(res.status).toBe(400);
+        const data = await res.json();
+        expect(data.code).toBe('INVALID_REQUEST');
+        expect(sessionsCreate).not.toHaveBeenCalled();
+    });
+
+    it('build with kill switch OFF: response body carries product + contactUrl and no Stripe call', async () => {
+        mockEnv.BILLING_CHECKOUT_ENABLED = 'false';
+        const res = await POST(reqWithBody({ productKey: 'build' }));
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.ok).toBe(false);
+        expect(data.code).toBe('CHECKOUT_DISABLED');
+        expect(data.product).toBe('Build');
+        expect(data.contactUrl).toBe('/get-access?intent=build');
+        expect(sessionsCreate).not.toHaveBeenCalled();
+    });
+
+    it('build with kill switch missing: still safely CHECKOUT_DISABLED, no Stripe call', async () => {
+        delete mockEnv.BILLING_CHECKOUT_ENABLED;
+        const res = await POST(reqWithBody({ productKey: 'build' }));
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.code).toBe('CHECKOUT_DISABLED');
+        expect(sessionsCreate).not.toHaveBeenCalled();
+    });
+
+    it('legacy sidebar upgrade (empty body) still defaults to pro subscription', async () => {
+        const res = await POST(reqWithBody(''));
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.ok).toBe(true);
+        const args = sessionsCreate.mock.calls[0]![0];
+        expect(args.line_items[0].price).toBe('price_pro_test');
+    });
+});
+
 describe('POST /api/v2/billing/checkout — source-shape contracts (3AY-8R-Impl-4)', () => {
     // Pulled in late so vi.mock at the top wins for module-load order.
     it('the route enum lists build in the canonical position', async () => {

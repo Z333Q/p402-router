@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession, type Session } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import db from '@/lib/db';
 import { stripe } from '@/lib/stripe';
@@ -85,19 +85,38 @@ function parseProductKey(raw: unknown): ProductKeyParse {
 
 export async function POST(req: Request) {
     try {
-        const session = await getServerSession(authOptions);
+        // 3AY-8R-4A: authenticate first, before touching env, body, DB, or
+        // Stripe. If session lookup itself throws (misconfigured NextAuth in
+        // prod, upstream cookie parse failure), fail closed as UNAUTHORIZED
+        // rather than bubble a 500 HTML page to the client.
+        let session: Session | null = null;
+        try {
+            session = await getServerSession(authOptions);
+        } catch {
+            session = null;
+        }
         if (!session?.user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return NextResponse.json({ ok: false, code: 'UNAUTHORIZED' }, { status: 401 });
         }
 
         const tenantId = session.user.tenantId;
 
+        // 3AY-8R-4A: parse body defensively. Empty body stays back-compat
+        // (defaults to 'pro' — the sidebar upgrade button posts no body).
+        // Non-empty but unparseable JSON returns 400 INVALID_REQUEST so a
+        // malformed client never crashes the route into a 500.
         let body: { productKey?: unknown } = {};
-        try {
-            body = await req.json() as { productKey?: unknown };
-        } catch {
-            // Empty body defaults to 'pro' (back-compat: existing sidebar
-            // upgrade button does not send a body).
+        const rawText = await req.text().catch(() => '');
+        if (rawText.length > 0) {
+            try {
+                const parsedJson: unknown = JSON.parse(rawText);
+                if (parsedJson === null || typeof parsedJson !== 'object' || Array.isArray(parsedJson)) {
+                    return NextResponse.json({ ok: false, code: 'INVALID_REQUEST' }, { status: 400 });
+                }
+                body = parsedJson as { productKey?: unknown };
+            } catch {
+                return NextResponse.json({ ok: false, code: 'INVALID_REQUEST' }, { status: 400 });
+            }
         }
         const parsed = parseProductKey(body.productKey);
         if (!parsed.ok) {
